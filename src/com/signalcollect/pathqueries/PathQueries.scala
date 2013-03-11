@@ -68,9 +68,32 @@ object PathQueries extends App {
     | - "X" - "http://swat.cse.lehigh.edu/onto/univ-bench.owl#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
     | - "X" - "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" - "http://swat.cse.lehigh.edu/onto/univ-bench.owl#GraduateStudent")
 
+  /**
+   * # Query2
+   * # This query increases in complexity: 3 classes and 3 properties are involved. Additionally,
+   * # there is a triangular pattern of relationships between the objects involved.
+   * PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+   * PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+   * SELECT ?X, ?Y, ?Z
+   * WHERE
+   * {?X rdf:type ub:GraduateStudent .
+   * ?Y rdf:type ub:University .
+   * ?Z rdf:type ub:Department .
+   * ?X ub:memberOf ?Z .
+   * ?Z ub:subOrganizationOf ?Y .
+   * ?X ub:undergraduateDegreeFrom ?Y}
+   */
+  val lubm2 = select ? "X" ? "Y" ? "Z" where (
+    | - "X" - "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" - "http://swat.cse.lehigh.edu/onto/univ-bench.owl#GraduateStudent",
+    | - "X" - "http://swat.cse.lehigh.edu/onto/univ-bench.owl#memberOf" - "Z",
+    | - "Z" - "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" - "http://swat.cse.lehigh.edu/onto/univ-bench.owl#Department",
+    | - "Z" - "http://swat.cse.lehigh.edu/onto/univ-bench.owl#subOrganizationOf" - "Y",
+    | - "X" - "http://swat.cse.lehigh.edu/onto/univ-bench.owl#undergraduateDegreeFrom" - "Y",
+    | - "Y" - "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" - "http://swat.cse.lehigh.edu/onto/univ-bench.owl#University")
+
   val g = GraphBuilder.build //.withLoggingLevel(LoggingLevel.Debug).build
 
-  for (fileNumber <- 0 to 14) {
+  for (fileNumber <- 0 to 0) {
     val filename = s"./uni0-$fileNumber.nt"
     print(s"loding $filename ...")
     load(filename)
@@ -96,8 +119,8 @@ object PathQueries extends App {
   println(g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous)))
   g.awaitIdle
   println("Starting query execution ...")
-  executeQuery(lubm1)
-
+  //executeQuery(lubm1)
+  executeQuery(lubm2)
   //g.foreachVertex((vertex => println(vertex.id)))
   g.shutdown
 
@@ -259,7 +282,10 @@ class TripleVertex(override val id: (Int, Int, Int), initialState: List[Query] =
     val boundQueries = state flatMap (_.bindTriple(id._1, id._2, id._3))
     val (fullyMatched, partiallyMatched) = boundQueries partition (_.unmatched.isEmpty)
     fullyMatched foreach (query => println("Solution: " + query.bindings.toString + " " + System.currentTimeMillis))
-    partiallyMatched foreach (query => graphEditor.sendSignal(List(query), query.nextTargetId.get, None))
+    partiallyMatched foreach (query => {
+      //println(query.nextTargetId.get)
+      graphEditor.sendSignal(List(query), query.nextTargetId.get, None)
+    })
     state = List()
   }
 }
@@ -307,5 +333,10 @@ class IndexVertex(override val id: (Int, Int, Int), initialState: List[Query] = 
   }
 
   type Signal = List[Query]
-  def collect(signal: List[Query]) = signal ::: state
+  def collect(signal: List[Query]) = {
+    if (!signal.isEmpty) {
+      println(signal.head + " ----" + signal.head.bindings.toString)
+    }
+    signal ::: state
+  }
 }
