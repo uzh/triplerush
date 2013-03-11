@@ -1,0 +1,6 @@
+<http://www.Department0.University0.edu/GraduateStudent44> <http://swat.cse.lehigh.edu/onto/univ-bench.owl#takesCourse> <http://www.Department0.University0.edu/GraduateCourse0> .
+<http://www.Department0.University0.edu/GraduateStudent44> <http://swat.cse.lehigh.edu/onto/univ-bench.owl#takesCourse> <http://www.Department0.University0.edu/GraduateCourse46> .
+<http://www.University144.edu> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://swat.cse.lehigh.edu/onto/univ-bench.owl#University> .
+<http://www.Department0.University0.edu/GraduateStudent44> <http://swat.cse.lehigh.edu/onto/univ-bench.owl#undergraduateDegreeFrom> <http://www.University144.edu> .
+<http://www.Department0.University0.edu/GraduateStudent44> <http://swat.cse.lehigh.edu/onto/univ-bench.owl#advisor> <http://www.Department0.University0.edu/AssociateProfessor8> .
+<http://www.Department0.University0.edu/GraduateStudent44> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://swat.cse.lehigh.edu/onto/univ-bench.owl#GraduateStudent> .
