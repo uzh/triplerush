@@ -7,6 +7,7 @@ import SparqlDsl._
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
 import com.hp.hpl.jena.rdf.model.Model
+import com.signalcollect.pathqueries.SparqlDsl._
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
@@ -14,25 +15,27 @@ class GroundTruthSpec extends SpecificationWithJUnit {
   sequential
 
   "LUBM Query 1" should {
-    val query1Dsl = select ? "x" where (
+
+    val query1Dsl = SELECT ? "x" WHERE (
       | - "x" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
       | - "x" - s"$rdf#type" - s"$ub#GraduateStudent")
 
-    val query1Sparql = """
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>    
-SELECT ?x WHERE { 
-  ?x rdf:type ub:GraduateStudent . 
-  ?x ub:takesCourse <http://www.Department0.University0.edu/GraduateCourse0> 
-}
-"""
-    "produce the same results in Jena" in {
+    val query1Sparql = s"""
+     PREFIX rdf: <$rdf#>
+     PREFIX ub: <$ub#>    
+     SELECT ?x WHERE {
+            ?x rdf:type ub:GraduateStudent . 
+            ?x ub:takesCourse <http://www.Department0.University0.edu/GraduateCourse0> 
+     }"""
+
+    "produce the same results in Jena" in {     
       1 must beBetween(0, 2)
     }
   }
 
   "LUBM Query 2" should {
-    val query1Dsl = select ? "x" ? "y" ? "z" where (
+
+    val query1Dsl = SELECT ? "x" ? "y" ? "z" WHERE (
       | - "x" - s"$rdf#type" - s"$ub#GraduateStudent",
       | - "x" - s"$ub#memberOf" - "z",
       | - "z" - s"$rdf#type" - s"$ub#Department",
@@ -40,34 +43,24 @@ SELECT ?x WHERE {
       | - "x" - s"$ub#undergraduateDegreeFrom" - "y",
       | - "y" - s"$rdf#type" - s"$ub#University")
 
-    val query1Sparql = """
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>    
-SELECT ?x ?y ?z WHERE { 
-	?x rdf:type ub:GraduateStudent . 
-	?y rdf:type ub:University . 
-	?z rdf:type ub:Department . 
-	?x ub:memberOf ?z . 
-	?z ub:subOrganizationOf ?y . 
-	?x ub:undergraduateDegreeFrom ?y
-}
-"""
+    val query1Sparql = s"""
+     PREFIX rdf: <$rdf#>
+     PREFIX ub: <$ub#>    
+     SELECT ?x ?y ?z WHERE { 
+	        ?x rdf:type ub:GraduateStudent . 
+	        ?y rdf:type ub:University . 
+	        ?z rdf:type ub:Department . 
+	        ?x ub:memberOf ?z . 
+	        ?z ub:subOrganizationOf ?y . 
+	        ?x ub:undergraduateDegreeFrom ?y
+     }"""
+
     "produce the same results in Jena" in {
       1 must beBetween(0, 2)
     }
   }
 
-  """
-
-# query 2
-SELECT ?x ?y ?z WHERE { 
-	?x <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent> . 
-	?y <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#University> . 
-	?z <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department> . 
-	?x <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#memberOf> ?z . 
-	?z <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#subOrganizationOf> ?y . 
-	?x <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#undergraduateDegreeFrom> ?y
-}
+  val others = """
 
 # query 3
 SELECT ?x WHERE { 

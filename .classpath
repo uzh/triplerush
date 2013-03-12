@@ -1,0 +1,42 @@
+<classpath>
+  <classpathentry output="target/scala-2.10/classes" path="src/main/scala" kind="src"></classpathentry>
+  <classpathentry output="target/scala-2.10/classes" path="src/main/java" kind="src"></classpathentry>
+  <classpathentry output="target/scala-2.10/test-classes" path="src/test/scala" kind="src"></classpathentry>
+  <classpathentry output="target/scala-2.10/test-classes" path="src/test/java" kind="src"></classpathentry>
+  <classpathentry path="./lib/nxparser-1.2.3.jar" kind="lib"></classpathentry>
+  <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/com.typesafe.akka/akka-actor_2.10/bundles/akka-actor_2.10-2.1.1.jar" sourcepath="/Users/stutz/.ivy2/cache/com.typesafe.akka/akka-actor_2.10/srcs/akka-actor_2.10-2.1.1-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/com.typesafe/config/bundles/config-1.0.0.jar" sourcepath="/Users/stutz/.ivy2/cache/com.typesafe/config/srcs/config-1.0.0-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/com.typesafe.akka/akka-remote_2.10/bundles/akka-remote_2.10-2.1.1.jar" sourcepath="/Users/stutz/.ivy2/cache/com.typesafe.akka/akka-remote_2.10/srcs/akka-remote_2.10-2.1.1-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/io.netty/netty/bundles/netty-3.5.8.Final.jar" sourcepath="/Users/stutz/.ivy2/cache/io.netty/netty/srcs/netty-3.5.8.Final-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/com.google.protobuf/protobuf-java/jars/protobuf-java-2.4.1.jar" sourcepath="/Users/stutz/.ivy2/cache/com.google.protobuf/protobuf-java/srcs/protobuf-java-2.4.1-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.uncommons.maths/uncommons-maths/jars/uncommons-maths-1.2.2a.jar" sourcepath="/Users/stutz/.ivy2/cache/org.uncommons.maths/uncommons-maths/srcs/uncommons-maths-1.2.2a-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/com.esotericsoftware.kryo/kryo/jars/kryo-2.20.jar" sourcepath="/Users/stutz/.ivy2/cache/com.esotericsoftware.kryo/kryo/srcs/kryo-2.20-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/com.esotericsoftware.reflectasm/reflectasm/jars/reflectasm-1.07-shaded.jar" sourcepath="/Users/stutz/.ivy2/cache/com.esotericsoftware.reflectasm/reflectasm/srcs/reflectasm-1.07-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.ow2.asm/asm/jars/asm-4.0.jar" sourcepath="/Users/stutz/.ivy2/cache/org.ow2.asm/asm/srcs/asm-4.0-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/com.esotericsoftware.minlog/minlog/jars/minlog-1.2.jar" sourcepath="/Users/stutz/.ivy2/cache/com.esotericsoftware.minlog/minlog/srcs/minlog-1.2-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.objenesis/objenesis/jars/objenesis-1.2.jar" sourcepath="/Users/stutz/.ivy2/cache/org.objenesis/objenesis/srcs/objenesis-1.2-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/ch.ethz.ganymed/ganymed-ssh2/jars/ganymed-ssh2-build210.jar" sourcepath="/Users/stutz/.ivy2/cache/ch.ethz.ganymed/ganymed-ssh2/srcs/ganymed-ssh2-build210-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/commons-codec/commons-codec/jars/commons-codec-1.7.jar" sourcepath="/Users/stutz/.ivy2/cache/commons-codec/commons-codec/srcs/commons-codec-1.7-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.apache.jena/jena-arq/jars/jena-arq-2.10.0.jar" sourcepath="/Users/stutz/.ivy2/cache/org.apache.jena/jena-arq/srcs/jena-arq-2.10.0-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.apache.jena/jena-core/jars/jena-core-2.10.0.jar" sourcepath="/Users/stutz/.ivy2/cache/org.apache.jena/jena-core/srcs/jena-core-2.10.0-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.apache.jena/jena-iri/jars/jena-iri-0.9.5.jar" sourcepath="/Users/stutz/.ivy2/cache/org.apache.jena/jena-iri/srcs/jena-iri-0.9.5-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.6.4.jar" sourcepath="/Users/stutz/.ivy2/cache/org.slf4j/slf4j-api/srcs/slf4j-api-1.6.4-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.slf4j/slf4j-log4j12/jars/slf4j-log4j12-1.6.4.jar" sourcepath="/Users/stutz/.ivy2/cache/org.slf4j/slf4j-log4j12/srcs/slf4j-log4j12-1.6.4-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/log4j/log4j/bundles/log4j-1.2.16.jar" sourcepath="/Users/stutz/.ivy2/cache/log4j/log4j/srcs/log4j-1.2.16-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/xerces/xercesImpl/jars/xercesImpl-2.10.0.jar" sourcepath="/Users/stutz/.ivy2/cache/xerces/xercesImpl/srcs/xercesImpl-2.10.0-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/xml-apis/xml-apis/jars/xml-apis-1.4.01.jar" sourcepath="/Users/stutz/.ivy2/cache/xml-apis/xml-apis/srcs/xml-apis-1.4.01-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.apache.httpcomponents/httpclient/jars/httpclient-4.2.3.jar" sourcepath="/Users/stutz/.ivy2/cache/org.apache.httpcomponents/httpclient/srcs/httpclient-4.2.3-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.apache.httpcomponents/httpcore/jars/httpcore-4.2.2.jar" sourcepath="/Users/stutz/.ivy2/cache/org.apache.httpcomponents/httpcore/srcs/httpcore-4.2.2-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.slf4j/jcl-over-slf4j/jars/jcl-over-slf4j-1.6.4.jar" sourcepath="/Users/stutz/.ivy2/cache/org.slf4j/jcl-over-slf4j/srcs/jcl-over-slf4j-1.6.4-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/junit/junit/jars/junit-4.8.2.jar" sourcepath="/Users/stutz/.ivy2/cache/junit/junit/srcs/junit-4.8.2-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.specs2/specs2_2.10/jars/specs2_2.10-1.13.jar" sourcepath="/Users/stutz/.ivy2/cache/org.specs2/specs2_2.10/srcs/specs2_2.10-1.13-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.specs2/scalaz-core_2.10/jars/scalaz-core_2.10-7.0.0.jar" sourcepath="/Users/stutz/.ivy2/cache/org.specs2/scalaz-core_2.10/srcs/scalaz-core_2.10-7.0.0-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.specs2/scalaz-concurrent_2.10/jars/scalaz-concurrent_2.10-7.0.0.jar" sourcepath="/Users/stutz/.ivy2/cache/org.specs2/scalaz-concurrent_2.10/srcs/scalaz-concurrent_2.10-7.0.0-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.specs2/scalaz-effect_2.10/jars/scalaz-effect_2.10-7.0.0.jar" sourcepath="/Users/stutz/.ivy2/cache/org.specs2/scalaz-effect_2.10/srcs/scalaz-effect_2.10-7.0.0-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.specs2/classycle/jars/classycle-1.4.1.jar" sourcepath="/Users/stutz/.ivy2/cache/org.specs2/classycle/srcs/classycle-1.4.1-sources.jar"></classpathentry>
+  <classpathentry kind="lib" path="/Users/stutz/.ivy2/cache/org.mockito/mockito-all/jars/mockito-all-1.9.0.jar" sourcepath="/Users/stutz/.ivy2/cache/org.mockito/mockito-all/srcs/mockito-all-1.9.0-sources.jar"></classpathentry>
+  <classpathentry exported="true" path="/signal-collect" kind="src" combineaccessrules="false"></classpathentry>
+  <classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"></classpathentry>
+  <classpathentry path="bin" kind="output"></classpathentry>
+</classpath>
