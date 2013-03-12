@@ -16,6 +16,7 @@ import SparqlDsl._
 import com.signalcollect.Graph
 import com.signalcollect.ExecutionConfiguration
 import com.signalcollect.configuration.ExecutionMode
+import scala.language.implicitConversions
 
 object Mapping {
   var id2String = Map[Int, String]()
@@ -45,7 +46,7 @@ object Mapping {
   def getId(s: String): Int = {
     string2Id(s)
   }
-  def getString(id: Int): String = synchronized {
+  def getString(id: Int): String = {
     id2String(id)
   }
 }
@@ -64,9 +65,11 @@ object PathQueries extends App {
    *  {?X rdf:type ub:GraduateStudent .
    *   ?X ub:takesCourse http://www.Department0.University0.edu/GraduateCourse0}
    */
+  val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
+  
   val lubm1 = select ? "X" where (
-    | - "X" - "http://swat.cse.lehigh.edu/onto/univ-bench.owl#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
-    | - "X" - "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" - "http://swat.cse.lehigh.edu/onto/univ-bench.owl#GraduateStudent")
+    | - "X" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
+    | - "X" - "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" - s"$ub#GraduateStudent")
 
   /**
    * # Query2
@@ -119,8 +122,8 @@ object PathQueries extends App {
   println(g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous)))
   g.awaitIdle
   println("Starting query execution ...")
-  //executeQuery(lubm1)
-  executeQuery(lubm2)
+  executeQuery(lubm1)
+  //executeQuery(lubm2)
   //g.foreachVertex((vertex => println(vertex.id)))
   g.shutdown
 
@@ -184,7 +187,7 @@ case class Expression(value: Int) extends AnyVal {
       // This is a variable, return the new binding.
       Some(Bindings(Map((value, constant))))
     } else if (value == constant) {
-      // Binding is compatible, but no new binsing created.
+      // Binding is compatible, but no new binding created.
       Some(Bindings())
     } else {
       // Cannot bind this.
@@ -242,7 +245,6 @@ case class Query(unmatched: List[TriplePattern], matched: List[TriplePattern] = 
         None
     }
   }
-
   def bindTriple(s: Int, p: Int, o: Int): Option[Query] = {
     unmatched match {
       case next :: others =>

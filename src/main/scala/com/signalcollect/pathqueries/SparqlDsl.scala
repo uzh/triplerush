@@ -1,5 +1,7 @@
 package com.signalcollect.pathqueries
 
+import scala.language.implicitConversions
+
 object SparqlDsl extends App {
   object | {
     def -(s: String): DslS = DslS(s)
