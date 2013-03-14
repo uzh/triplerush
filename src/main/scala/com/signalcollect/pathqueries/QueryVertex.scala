@@ -7,10 +7,14 @@ import com.signalcollect.GraphEditor
 class QueryVertex(id: Int, promise: Promise[List[PatternQuery]], initialState: List[PatternQuery] = List()) extends DataFlowVertex(id, initialState) {
   type Signal = PatternQuery
   private var fractionCompleted = 0.0
-  def collect(signal: PatternQuery) = {
-    fractionCompleted += signal.fraction
+  def collect(query: PatternQuery) = {
+    fractionCompleted += query.fraction
     //println(s"$id completed fraction: $fractionCompleted")
-    signal :: state
+    if (!query.isFailed) {
+      query :: state
+    } else {
+      state
+    }
   }
   override def scoreSignal = if (fractionCompleted > 0.999999) 1 else 0
   override def doSignal(graphEditor: GraphEditor[Any, Any]) {

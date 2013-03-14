@@ -1,6 +1,12 @@
 package com.signalcollect.pathqueries
 
-case class PatternQuery(queryId: Int, unmatched: List[TriplePattern], matched: List[TriplePattern] = List(), bindings: Bindings = Bindings(), fraction: Double = 1) {
+case class PatternQuery(
+  queryId: Int,
+  unmatched: List[TriplePattern],
+  matched: List[TriplePattern] = List(),
+  bindings: Bindings = Bindings(),
+  fraction: Double = 1,
+  isFailed: Boolean = false) {
   def nextTargetId: Option[TriplePattern] = {
     unmatched match {
       case next :: _ =>
@@ -29,9 +35,12 @@ case class PatternQuery(queryId: Int, unmatched: List[TriplePattern], matched: L
     }
   }
   def withId(newId: Int) = {
-    PatternQuery(newId, unmatched, matched, bindings, fraction)
+    PatternQuery(newId, unmatched, matched, bindings, fraction, isFailed)
   }
   def split(splitFactor: Double) = {
-    PatternQuery(queryId, unmatched, matched, bindings, fraction / splitFactor)
+    PatternQuery(queryId, unmatched, matched, bindings, fraction / splitFactor, isFailed)
+  }
+  def failed = {
+    PatternQuery(queryId, unmatched, matched, bindings, fraction, isFailed = true)
   }
 }

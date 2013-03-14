@@ -9,6 +9,8 @@ case class TriplePattern(s: Expression, p: Expression, o: Expression) {
     s"(${s.toString},${p.toString},${o.toString})"
   }
   
+  // TODO: Matching is not good here, becuase it materializes Expression
+  // (see http://docs.scala-lang.org/overviews/core/value-classes.html)
   def parentPatterns: List[TriplePattern] = {
     this match {
       case TriplePattern(Expression(0), Expression(0), Expression(0)) =>

@@ -27,7 +27,6 @@ class TripleVertex(override val id: TriplePattern, initialState: List[PatternQue
 
     fullyMatched foreach { query =>
       graphEditor.sendSignal(query, query.queryId, None)
-      //query => println("Solution: " + query.bindings.toString))
     }
     partiallyMatched foreach (query => {
       graphEditor.sendSignal(List(query), query.nextTargetId.get, None)

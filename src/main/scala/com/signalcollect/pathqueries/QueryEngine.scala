@@ -12,7 +12,14 @@ import java.util.concurrent.atomic.AtomicInteger
 class QueryEngine {
   private val g = GraphBuilder.build
   // TODO Undeliverable signal handler has to notify the corresponding QueryVertex about the missing fraction. 
-  g.setUndeliverableSignalHandler((s, id, sourceId, ge) => println("Undeliverable: targetId=" + id + " signal=" + s))
+  g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
+    val queries = signal.asInstanceOf[List[PatternQuery]]
+    queries foreach { query =>
+      println("failed query: " + query.nextTargetId + " bindings: " + query.bindings)
+      graphEditor.sendSignal(query.failed, query.queryId, None)
+    }
+  }
+  //println("Undeliverable: targetId=" + id + " signal=" + s)
   g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
   g.awaitIdle
 
