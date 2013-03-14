@@ -25,7 +25,8 @@ class QueryEngine {
       val predicateString = triple(1).toString
       val objectString = triple(2).toString
       g.addVertex(new TripleVertex(
-        (Mapping.register(subjectString),
+        TriplePattern(
+          Mapping.register(subjectString),
           Mapping.register(predicateString),
           Mapping.register(objectString))))
     }

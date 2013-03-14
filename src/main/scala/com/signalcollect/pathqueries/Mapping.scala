@@ -1,8 +1,8 @@
 package com.signalcollect.pathqueries
 
 object Mapping {
-  private var id2String = Map[Int, String]()
-  private var string2Id = Map[String, Int]()
+  private var id2String = Map[Int, String]((0 -> "*"))
+  private var string2Id = Map[String, Int](("*" -> 0))
   private var maxId = 0
   private var minId = 0
 

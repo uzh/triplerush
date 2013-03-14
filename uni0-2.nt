@@ -1,5 +1,3 @@
-<file:///Users/stutz/Dropbox/workspace/path-queries/University0_2.owl> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Ontology> .
-<file:///Users/stutz/Dropbox/workspace/path-queries/University0_2.owl> <http://www.w3.org/2002/07/owl#imports> <http://swat.cse.lehigh.edu/onto/univ-bench.owl> .
 <http://www.Department2.University0.edu> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://swat.cse.lehigh.edu/onto/univ-bench.owl#Department> .
 <http://www.Department2.University0.edu> <http://swat.cse.lehigh.edu/onto/univ-bench.owl#name> "Department2" .
 <http://www.University0.edu> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://swat.cse.lehigh.edu/onto/univ-bench.owl#University> .

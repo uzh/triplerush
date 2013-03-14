@@ -1,18 +1,18 @@
 package com.signalcollect.pathqueries
 
 case class PatternQuery(queryId: Int, unmatched: List[TriplePattern], matched: List[TriplePattern] = List(), bindings: Bindings = Bindings(), fraction: Double = 1) {
-  def nextTargetId: Option[(Int, Int, Int)] = {
+  def nextTargetId: Option[TriplePattern] = {
     unmatched match {
       case next :: _ =>
-        Some(next.id)
+        Some(next.routingAddress)
       case other =>
         None
     }
   }
-  def bindTriple(s: Int, p: Int, o: Int): Option[PatternQuery] = {
+  def bind(tp: TriplePattern): Option[PatternQuery] = {
     unmatched match {
       case unmatchedHead :: unmatchedTail =>
-        val newBindings = unmatchedHead.bindingsForTriple(s, p, o)
+        val newBindings = unmatchedHead.bindingsFor(tp)
         if (newBindings.isDefined && bindings.isCompatible(newBindings.get)) {
           val bound = unmatchedHead.applyBindings(newBindings.get)
           Some(PatternQuery(

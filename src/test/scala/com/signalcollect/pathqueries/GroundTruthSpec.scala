@@ -8,17 +8,101 @@ import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
 import com.hp.hpl.jena.rdf.model.Model
 import com.signalcollect.pathqueries.SparqlDsl._
+import scala.io.Source
+import scala.io.Codec
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.Await
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
 
   sequential
 
+  type Bindings = Map[String, String]
+  type QuerySolution = List[Bindings]
+
+  val queryBaseName = "./answers/answers_query"
+  val referenceFiles: Map[Int, String] = ((1 to 14) map (queryNumber => queryNumber -> (queryBaseName + queryNumber + ".txt"))).toMap
+  val referenceResults: Map[Int, QuerySolution] = {
+    referenceFiles map { entry =>
+      val fileName = entry._2
+      val file = Source.fromFile(fileName)
+      val lines = file.getLines
+      val bindings = getBindings(lines)
+      (entry._1, bindings)
+    }
+  }
+
+  def getBindings(lines: Iterator[String]): QuerySolution = {
+    var currentLine = lines.next
+    if (currentLine == "NO ANSWERS.") {
+      val bindings = Map[String, String]()
+      // No bindings.
+      List(bindings)
+    } else {
+      val variables = currentLine.split("\t").toIndexedSeq
+      var solution = List[Bindings]()
+      while (lines.hasNext) {
+        var binding = Map[String, String]()
+        currentLine = lines.next
+        val values = currentLine.split("\t").toIndexedSeq
+        for (i <- 0 until variables.size) {
+          binding += variables(i) -> values(i)
+        }
+        solution = binding :: solution
+      }
+      solution.sortBy(map => map.values)
+    }
+  }
+
+  val qe = new QueryEngine
+  for (fileNumber <- 0 to 14) {
+    val filename = s"./uni0-$fileNumber.nt"
+    print(s"loding $filename ...")
+    qe.load(filename)
+    println(" done")
+  }
+
   "LUBM Query 1" should {
 
-    val query1Dsl = SELECT ? "x" WHERE (
-      | - "x" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
-      | - "x" - s"$rdf#type" - s"$ub#GraduateStudent")
+    val query1 = SELECT ? "X" WHERE (
+      | - "X" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
+      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent")
+
+    "match the reference results" in {
+      val referenceResult = referenceResults(1)
+      val ourResult = executeOnQueryEngine(query1)
+      ourResult === referenceResult
+    }
+  }
+
+  "LUBM Query 2" should {
+
+    val query2 = SELECT ? "X" ? "Y" ? "Z" WHERE (
+      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
+      | - "X" - s"$ub#memberOf" - "Z",
+      | - "Z" - s"$rdf#type" - s"$ub#Department",
+      | - "Z" - s"$ub#subOrganizationOf" - "Y",
+      | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
+      | - "Y" - s"$rdf#type" - s"$ub#University")
+
+    "match the reference results" in {
+      val referenceResult = referenceResults(2)
+      val ourResult = executeOnQueryEngine(query2)
+      ourResult === referenceResult
+    }
+  }
+
+  "LUBM Query 3" should {
+
+    //    # query 3
+    //SELECT ?x WHERE { 
+    //	?x <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Publication> . 
+    //	?x <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#publicationAuthor> <http://www.Department0.University0.edu/AssistantProfessor0> 
+    //}
 
     val query1Sparql = s"""
      PREFIX rdf: <$rdf#>
@@ -28,22 +112,11 @@ class GroundTruthSpec extends SpecificationWithJUnit {
             ?x ub:takesCourse <http://www.Department0.University0.edu/GraduateCourse0> 
      }"""
 
-    "produce the same results in Jena" in {     
-      1 must beBetween(0, 2)
-    }
-  }
-
-  "LUBM Query 2" should {
-
-    val query1Dsl = SELECT ? "x" ? "y" ? "z" WHERE (
-      | - "x" - s"$rdf#type" - s"$ub#GraduateStudent",
+    val query3Dsl = SELECT ? "x" WHERE (
       | - "x" - s"$ub#memberOf" - "z",
-      | - "z" - s"$rdf#type" - s"$ub#Department",
-      | - "z" - s"$ub#subOrganizationOf" - "y",
-      | - "x" - s"$ub#undergraduateDegreeFrom" - "y",
-      | - "y" - s"$rdf#type" - s"$ub#University")
+      | - "x" - s"$ub#publicationAuthor" - "http://www.Department0.University0.edu/AssistantProfessor0")
 
-    val query1Sparql = s"""
+    val query2Sparql = s"""
      PREFIX rdf: <$rdf#>
      PREFIX ub: <$ub#>    
      SELECT ?x ?y ?z WHERE { 
@@ -55,19 +128,24 @@ class GroundTruthSpec extends SpecificationWithJUnit {
 	        ?x ub:undergraduateDegreeFrom ?y
      }"""
 
-    "produce the same results in Jena" in {
+    val query3Sparql = s"""
+     PREFIX rdf: <$rdf#>
+     PREFIX ub: <$ub#>    
+     SELECT ?x ?y ?z WHERE { 
+	        ?x rdf:type ub:GraduateStudent . 
+	        ?y rdf:type ub:University . 
+	        ?z rdf:type ub:Department . 
+	        ?x ub:memberOf ?z . 
+	        ?z ub:subOrganizationOf ?y . 
+	        ?x ub:undergraduateDegreeFrom ?y
+     }"""
+
+    "match the reference results" in {
       1 must beBetween(0, 2)
     }
   }
 
   val others = """
-
-# query 3
-SELECT ?x WHERE { 
-	?x <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Publication> . 
-	?x <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#publicationAuthor> <http://www.Department0.University0.edu/AssistantProfessor0> 
-}
-
 # query 4
 SELECT ?x ?y1 ?y2 ?y3 WHERE {
 	?x <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Professor> . 
@@ -151,6 +229,13 @@ SELECT ?x WHERE {
   val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
   val testData = "./uni0-0.nt"
   val jenaModel = ModelFactory.createDefaultModel
+
+  def executeOnQueryEngine(q: PatternQuery) = {
+    val resultFuture = qe.executeQuery(q)
+    val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
+    val bindings = result map (_.bindings.map map (entry => (Mapping.getString(entry._1), Mapping.getString(entry._2))))
+    val sortedBindings = bindings sortBy (map => map.values)
+  }
 
   loadJenaModel(testData, jenaModel)
   def loadJenaModel(filename: String, model: Model) {

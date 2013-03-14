@@ -11,12 +11,29 @@ object PatternQueriesExample extends App {
   val query1Dsl = SELECT ? "x" WHERE (
     | - "x" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
     | - "x" - s"$rdf#type" - s"$ub#GraduateStudent")
+  val query2Dsl = SELECT ? "x" ? "y" ? "z" WHERE (
+    | - "x" - s"$rdf#type" - s"$ub#GraduateStudent",
+    | - "x" - s"$ub#memberOf" - "z",
+    | - "z" - s"$rdf#type" - s"$ub#Department",
+    | - "z" - s"$ub#subOrganizationOf" - "y",
+    | - "x" - s"$ub#undergraduateDegreeFrom" - "y",
+    | - "y" - s"$rdf#type" - s"$ub#University") 
+  val query3Dsl = SELECT ? "x" WHERE (
+    | - "x" - s"$ub#publicationAuthor" - "http://www.Department0.University0.edu/AssistantProfessor0",
+    | - "x" - s"$rdf#type" - s"$ub#Publication")
 
   val qe = new QueryEngine
   println("Loading triples ...")
-  qe.load("./uni0-0.nt")
+
+  for (fileNumber <- 0 to 14) {
+    val filename = s"./uni0-$fileNumber.nt"
+    print(s"loding $filename ...")
+    qe.load(filename)
+    println(" done")
+  }
+
   println("Executing query ...")
-  qe.executeQuery(query1Dsl) onSuccess {
+  qe.executeQuery(query3Dsl) onSuccess {
     case results =>
       println("Result bindings:")
       results foreach { result =>
@@ -24,13 +41,6 @@ object PatternQueriesExample extends App {
       }
   }
   qe.shutdown
-
-  //  for (fileNumber <- 0 to 0) {
-  //    val filename = s"./uni0-$fileNumber.nt"
-  //    print(s"loding $filename ...")
-  //    load(filename)
-  //    println(" done")
-  //  }
 }
 
 
