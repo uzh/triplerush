@@ -1,4 +1,4 @@
-package com.signalcollect.pathqueries
+package com.signalcollect.triplerush
 
 import scala.language.implicitConversions
 import scala.concurrent.ExecutionContext.Implicits.global

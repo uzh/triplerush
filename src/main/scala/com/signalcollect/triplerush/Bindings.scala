@@ -1,4 +1,4 @@
-package com.signalcollect.pathqueries
+package com.signalcollect.triplerush
 
 /**
  * Stores mappings from variables to ids.

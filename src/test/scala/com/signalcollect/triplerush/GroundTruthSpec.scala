@@ -1,4 +1,4 @@
-package com.signalcollect.pathqueries
+package com.signalcollect.triplerush
 
 import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
@@ -7,7 +7,8 @@ import SparqlDsl._
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
 import com.hp.hpl.jena.rdf.model.Model
-import com.signalcollect.pathqueries.SparqlDsl._
+import com.signalcollect.triplerush.SparqlDsl._
+
 import scala.io.Source
 import scala.io.Codec
 import scala.concurrent.ExecutionContext.Implicits.global

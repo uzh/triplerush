@@ -1,4 +1,4 @@
-package com.signalcollect.pathqueries
+package com.signalcollect.triplerush
 
 import com.signalcollect.GraphEditor
 import com.signalcollect.DataFlowVertex

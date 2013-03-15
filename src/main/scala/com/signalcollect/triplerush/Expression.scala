@@ -1,4 +1,4 @@
-package com.signalcollect.pathqueries
+package com.signalcollect.triplerush
 
 object Expression {
   implicit def int2Expression(i: Int) = Expression(i)

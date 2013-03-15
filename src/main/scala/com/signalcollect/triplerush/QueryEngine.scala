@@ -1,4 +1,4 @@
-package com.signalcollect.pathqueries
+package com.signalcollect.triplerush
 
 import org.semanticweb.yars.nx.parser.NxParser
 import java.io.FileInputStream

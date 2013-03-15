@@ -1,4 +1,4 @@
-package com.signalcollect.pathqueries
+package com.signalcollect.triplerush
 
 object Mapping {
   private var id2String = Map[Int, String]((0 -> "*"))

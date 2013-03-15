@@ -1,4 +1,4 @@
-package com.signalcollect.pathqueries
+package com.signalcollect.triplerush
 
 import com.signalcollect.DataFlowVertex
 import scala.concurrent.Promise

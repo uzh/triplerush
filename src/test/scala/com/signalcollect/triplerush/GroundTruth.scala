@@ -1,9 +1,29 @@
-package com.signalcollect.pathqueries
+package com.signalcollect.triplerush
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
 import collection.JavaConversions._
 import com.hp.hpl.jena.query.QueryFactory
 import com.hp.hpl.jena.query.QueryExecutionFactory
+import com.hp.hpl.jena.sparql.syntax.ElementSubQuery
+import com.hp.hpl.jena.sparql.syntax.ElementGroup
+import com.hp.hpl.jena.sparql.syntax.ElementMinus
+import com.hp.hpl.jena.sparql.syntax.ElementNamedGraph
+import com.hp.hpl.jena.sparql.syntax.ElementExists
+import com.hp.hpl.jena.sparql.syntax.ElementAssign
+import com.hp.hpl.jena.sparql.syntax.ElementFetch
+import com.hp.hpl.jena.sparql.syntax.ElementDataset
+import com.hp.hpl.jena.sparql.syntax.ElementBind
+import com.hp.hpl.jena.sparql.syntax.ElementUnion
+import com.hp.hpl.jena.sparql.syntax.ElementOptional
+import com.hp.hpl.jena.sparql.syntax.ElementService
+import com.hp.hpl.jena.sparql.syntax.ElementData
+import com.hp.hpl.jena.sparql.syntax.ElementNotExists
+import com.hp.hpl.jena.sparql.syntax.ElementPathBlock
+import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock
+import com.hp.hpl.jena.sparql.syntax.ElementFilter
+import collection.JavaConversions._
+import com.hp.hpl.jena.sparql.syntax.ElementVisitor
+import com.hp.hpl.jena.query.Query
 
 object GroundTruth extends App {
   val model = ModelFactory.createDefaultModel
@@ -92,7 +112,8 @@ SELECT ?x WHERE {
 	        ?x ub:undergraduateDegreeFrom ?y
      }"""
 
-  val query = QueryFactory.create(queryString2)
+  val query: com.hp.hpl.jena.query.Query = QueryFactory.create(queryString2)
+
   val qexec = QueryExecutionFactory.create(query, model)
   try {
     val results = qexec.execSelect
