@@ -1,62 +1,100 @@
 package com.signalcollect.triplerush
 
-import com.hp.hpl.jena.sparql.syntax.ElementGroup
+import scala.collection.JavaConversions._
+import scala.language.dynamics
+import scala.reflect.classTag
+import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.query.QueryFactory
+import com.hp.hpl.jena.sparql.syntax.Element
+import com.hp.hpl.jena.sparql.syntax.ElementGroup
 import com.hp.hpl.jena.sparql.syntax.ElementPathBlock
 import com.hp.hpl.jena.sparql.syntax.ElementVisitor
-import collection.JavaConversions._
-import language.dynamics
-import com.hp.hpl.jena.query.Query
-import com.hp.hpl.jena.sparql.syntax.Element
+import com.hp.hpl.jena.sparql.syntax.ElementSubQuery
+import com.hp.hpl.jena.sparql.syntax.ElementMinus
+import com.hp.hpl.jena.sparql.syntax.ElementNamedGraph
+import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock
+import com.hp.hpl.jena.sparql.syntax.ElementExists
+import com.hp.hpl.jena.sparql.syntax.ElementAssign
+import com.hp.hpl.jena.sparql.syntax.ElementFetch
+import com.hp.hpl.jena.sparql.syntax.ElementDataset
+import com.hp.hpl.jena.sparql.syntax.ElementBind
+import com.hp.hpl.jena.sparql.syntax.ElementUnion
+import com.hp.hpl.jena.sparql.syntax.ElementOptional
+import com.hp.hpl.jena.sparql.syntax.ElementService
+import com.hp.hpl.jena.sparql.syntax.ElementData
+import com.hp.hpl.jena.sparql.syntax.ElementNotExists
+import com.hp.hpl.jena.sparql.syntax.ElementFilter
 
 object PatternQuery {
-  object JenaQueryVisitor extends Dynamic with ElementVisitor {
-    var result: Either[PatternQuery, String] = Right("No query processed yet.")
-    def applyDynamic(methodName: String)(args: Any*): Any = {
-      if (methodName == "visit" && args.length == 1) {
-        args(0) match {
-          case e: ElementPathBlock =>
-            for (pattern <- e.patternElts) {
-              println("this is a pattern: " + pattern)
-              val triple = pattern.asTriple
-              val s = triple.getSubject
-              if (s.isVariable()) {
-                println(s.getName)
-              } else {
-                println(s.getLiteral)
-              }
-              val p = triple.getPredicate
-              println(p.toString)
-              val o = triple.getObject
-              println(o.toString)
-            }
-          case e: ElementGroup =>
-            for (element <- e.getElements) {
-              element.visit(this)
-            }
-          case other =>
-        }
-      } else if (methodName == "getQuery") {
-        result
+  def build(q: String): Either[PatternQuery, String] = {
+    val visitor = new JenaQueryVisitor(q)
+    visitor.getPatternQuery
+  }
+
+  class JenaQueryVisitor(queryString: String) extends ElementVisitor {
+    private val jenaQuery = QueryFactory.create(queryString)
+    private val queryPatterns = jenaQuery.getQueryPattern
+    private var variables: Set[String] = Set()
+    private var patterns: List[TriplePattern] = List()
+    private var problem: Option[String] = if (!jenaQuery.isStrict) {
+      Some("Only strict queries are supported.")
+    } else if (jenaQuery.isDistinct) {
+      Some("Feature DISTINCT is unsupported.")
+    } else if (jenaQuery.isReduced) {
+      Some("Feature REDUCED is unsupported.")
+    } else if (jenaQuery.isOrdered) {
+      Some("Feature ORDERED is unsupported.")
+    } else if (jenaQuery.isQueryResultStar) {
+      Some("Result variables as * is unsupported.")
+    } else {
+      None
+    }
+    def getPatternQuery: Either[PatternQuery, String] = {
+      queryPatterns.visit(this)
+      if (problem.isDefined) {
+        Right(problem.get)
+      } else {
+        Left(PatternQuery(0, patterns))
       }
     }
+    def visit(el: ElementGroup) {
+      for (element <- el.getElements) {
+        element.visit(this)
+      }
+    }
+    def visit(el: ElementPathBlock) {
+      for (pattern <- el.patternElts) {
+        val triple = pattern.asTriple
+        val tripleList = List(triple.getSubject, triple.getPredicate, triple.getObject)
+        val idList = tripleList map { e =>
+          if (e.isVariable) {
+            Mapping.register(e.getName, isVariable = true)
+          } else if (e.isLiteral) {
+            Mapping.register(e.getLiteral.toString)
+          } else {
+            Mapping.register(e.getURI)
+          }
+        }
+        patterns = TriplePattern(idList(0), idList(1), idList(2)) :: patterns
+      }
+    }
+    private def unsupported(el: Element) = throw new UnsupportedOperationException(el.toString)
+    def visit(el: ElementTriplesBlock) = unsupported(el)
+    def visit(el: ElementFilter) = unsupported(el)
+    def visit(el: ElementAssign) = unsupported(el)
+    def visit(el: ElementBind) = unsupported(el)
+    def visit(el: ElementData) = unsupported(el)
+    def visit(el: ElementUnion) = unsupported(el)
+    def visit(el: ElementOptional) = unsupported(el)
+    def visit(el: ElementDataset) = unsupported(el)
+    def visit(el: ElementNamedGraph) = unsupported(el)
+    def visit(el: ElementExists) = unsupported(el)
+    def visit(el: ElementNotExists) = unsupported(el)
+    def visit(el: ElementMinus) = unsupported(el)
+    def visit(el: ElementService) = unsupported(el)
+    def visit(el: ElementFetch) = unsupported(el)
+    def visit(el: ElementSubQuery) = unsupported(el)
   }
-
-  def build(q: String): Either[PatternQuery, String] = {
-    //  if (query.isSelectType) {
-    //val myVistor = 
-    //isStrict
-    //isDistinct
-    //isReduced
-    //isOrdered
-    //isQueryResultStar
-    //val elements = query.getQueryPattern
-    //elements.visit(myVistor)
-    //elements.println()
-    val jenaQuery = QueryFactory.create(q).getQueryPattern
-    JenaQueryVisitor.getQuery(jenaQuery).asInstanceOf[Either[PatternQuery, String]]
-  }
-
 }
 
 case class PatternQuery(
