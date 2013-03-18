@@ -15,7 +15,7 @@ class TripleVertex(override val id: TriplePattern, initialState: List[PatternQue
 
   type Signal = List[PatternQuery]
   def collect(signal: List[PatternQuery]) = {
-    //println(signal.head.unmatched.head)  
+    //println(signal.head.unmatched.head)
     signal ::: state
   }
   

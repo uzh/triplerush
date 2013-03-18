@@ -23,89 +23,104 @@ class GroundTruthSpec extends SpecificationWithJUnit {
   sequential
 
   "LUBM Query 1" should {
-
-    //    val query1 = SELECT ? "X" WHERE (
-    //      | - "X" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
-    //      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent")
-
-    "match the reference results 1" in {
+    "DSL-match the reference results 1" in {
+      val q1 = SELECT ? "X" WHERE (
+        | - "X" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
+        | - "X" - s"$rdf#type" - s"$ub#GraduateStudent")
       val referenceResult = referenceResults(1)
       val ourResult = executeOnQueryEngine(q1)
       ourResult === referenceResult
     }
-  }
 
-  "LUBM Query 2" should {
-
-    val query2 = SELECT ? "X" ? "Y" ? "Z" WHERE (
-      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
-      | - "X" - s"$ub#memberOf" - "Z",
-      | - "Z" - s"$rdf#type" - s"$ub#Department",
-      | - "Z" - s"$ub#subOrganizationOf" - "Y",
-      | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
-      | - "Y" - s"$rdf#type" - s"$ub#University")
-
-    "match the reference results 2" in {
-      val referenceResult = referenceResults(2)
-      val ourResult = executeOnQueryEngine(query2)
+    "SPQRQL-match the reference results 1" in {
+      val q1 = """
+# Query1
+# This query bears large input and high selectivity. It queries about just one class and
+# one property and does not assume any hierarchy information or inference.
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+SELECT ?X	
+WHERE
+{?X rdf:type ub:GraduateStudent .
+  ?X ub:takesCourse "http://www.Department0.University0.edu/GraduateCourse0"}
+"""
+      val referenceResult = referenceResults(1)
+      val ourResult = executeOnQueryEngine(toQuery(q1))
       ourResult === referenceResult
     }
   }
 
-  "LUBM Query 3" should {
-
-    val query3 = SELECT ? "X" WHERE (
-      | - "X" - s"$ub#publicationAuthor" - "http://www.Department0.University0.edu/AssistantProfessor0",
-      | - "X" - s"$rdf#type" - s"$ub#Publication")
-
-    "match the reference results in 3" in {
-      val referenceResult = referenceResults(3)
-      val ourResult = executeOnQueryEngine(query3)
-      ourResult === referenceResult
-    }
-  }
-
-  "LUBM Query 4" should {
-
-    //    val query4 = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-    //      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-    //      | - "X" - s"$rdf#type" - s"$ub#Professor",
-    //      | - "X" - s"$ub#name" - "Y1",
-    //      | - "X" - s"$ub#emailAddress" - "Y2",
-    //      | - "X" - s"$ub#telephone" - "Y3")
-
-    val query4A = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-      | - "X" - s"$rdf#type" - s"$ub#AssistantProfessor",
-      | - "X" - s"$ub#name" - "Y1",
-      | - "X" - s"$ub#emailAddress" - "Y2",
-      | - "X" - s"$ub#telephone" - "Y3")
-
-    val query4B = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-      | - "X" - s"$rdf#type" - s"$ub#AssociateProfessor",
-      | - "X" - s"$ub#name" - "Y1",
-      | - "X" - s"$ub#emailAddress" - "Y2",
-      | - "X" - s"$ub#telephone" - "Y3")
-
-    val query4C = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-      | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
-      | - "X" - s"$ub#name" - "Y1",
-      | - "X" - s"$ub#emailAddress" - "Y2",
-      | - "X" - s"$ub#telephone" - "Y3")
-
-    "match the reference results in 4" in {
-      val referenceResult = referenceResults(4)
-      val a = executeOnQueryEngine(query4A)
-      val b = executeOnQueryEngine(query4B)
-      val c = executeOnQueryEngine(query4C)
-      val ourResult = (a ::: b ::: c).sortBy(map => map.values)
-      println("ref: " + referenceResult)
-      println("our: " + ourResult)
-      ourResult === referenceResult
-    }
-  }
+  //  "LUBM Query 2" should {
+  //
+  //    val query2 = SELECT ? "X" ? "Y" ? "Z" WHERE (
+  //      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
+  //      | - "X" - s"$ub#memberOf" - "Z",
+  //      | - "Z" - s"$rdf#type" - s"$ub#Department",
+  //      | - "Z" - s"$ub#subOrganizationOf" - "Y",
+  //      | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
+  //      | - "Y" - s"$rdf#type" - s"$ub#University")
+  //
+  //    "match the reference results 2" in {
+  //      val referenceResult = referenceResults(2)
+  //      val ourResult = executeOnQueryEngine(query2)
+  //      ourResult === referenceResult
+  //    }
+  //  }
+  //
+  //  "LUBM Query 3" should {
+  //
+  //    val query3 = SELECT ? "X" WHERE (
+  //      | - "X" - s"$ub#publicationAuthor" - "http://www.Department0.University0.edu/AssistantProfessor0",
+  //      | - "X" - s"$rdf#type" - s"$ub#Publication")
+  //
+  //    "match the reference results in 3" in {
+  //      val referenceResult = referenceResults(3)
+  //      val ourResult = executeOnQueryEngine(query3)
+  //      ourResult === referenceResult
+  //    }
+  //  }
+  //
+  //  "LUBM Query 4" should {
+  //
+  //    //    val query4 = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
+  //    //      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
+  //    //      | - "X" - s"$rdf#type" - s"$ub#Professor",
+  //    //      | - "X" - s"$ub#name" - "Y1",
+  //    //      | - "X" - s"$ub#emailAddress" - "Y2",
+  //    //      | - "X" - s"$ub#telephone" - "Y3")
+  //
+  //    val query4A = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
+  //      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
+  //      | - "X" - s"$rdf#type" - s"$ub#AssistantProfessor",
+  //      | - "X" - s"$ub#name" - "Y1",
+  //      | - "X" - s"$ub#emailAddress" - "Y2",
+  //      | - "X" - s"$ub#telephone" - "Y3")
+  //
+  //    val query4B = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
+  //      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
+  //      | - "X" - s"$rdf#type" - s"$ub#AssociateProfessor",
+  //      | - "X" - s"$ub#name" - "Y1",
+  //      | - "X" - s"$ub#emailAddress" - "Y2",
+  //      | - "X" - s"$ub#telephone" - "Y3")
+  //
+  //    val query4C = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
+  //      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
+  //      | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
+  //      | - "X" - s"$ub#name" - "Y1",
+  //      | - "X" - s"$ub#emailAddress" - "Y2",
+  //      | - "X" - s"$ub#telephone" - "Y3")
+  //
+  //    "match the reference results in 4" in {
+  //      val referenceResult = referenceResults(4)
+  //      val a = executeOnQueryEngine(query4A)
+  //      val b = executeOnQueryEngine(query4B)
+  //      val c = executeOnQueryEngine(query4C)
+  //      val ourResult = (a ::: b ::: c).sortBy(map => map.values)
+  //      println("ref: " + referenceResult)
+  //      println("our: " + ourResult)
+  //      ourResult === referenceResult
+  //    }
+  //  }
 
   //  "LUBM Query 5" should {
   //
@@ -131,33 +146,20 @@ class GroundTruthSpec extends SpecificationWithJUnit {
   //      ourResult === referenceResult
   //    }
   //  }
+  //
+  //  "LUBM Query 7" should {
+  //
+  //    val query7 = SELECT ? "X" WHERE (
+  //      | - "X" - s"$ub#type" - s"$ub#Student")
+  //
+  //    "match the reference results in 7" in {
+  //      val referenceResult = referenceResults(7)
+  //      val ourResult = executeOnQueryEngine(query7)
+  //      ourResult === referenceResult
+  //    }
+  //  }
 
-  "LUBM Query 7" should {
-
-    val query7 = SELECT ? "X" WHERE (
-      | - "X" - s"$ub#type" - s"$ub#Student")
-
-    "match the reference results in 7" in {
-      val referenceResult = referenceResults(7)
-      val ourResult = executeOnQueryEngine(query7)
-      ourResult === referenceResult
-    }
-  }
-
-  val query1String = """
-# Query1
-# This query bears large input and high selectivity. It queries about just one class and
-# one property and does not assume any hierarchy information or inference.
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
-SELECT ?X	
-WHERE
-{?X rdf:type ub:GraduateStudent .
-  ?X ub:takesCourse
-"http://www.Department0.University0.edu/GraduateCourse0"}
-"""
-
-  val q1 = PatternQuery.build(query1String) match {
+  def toQuery(s: String): PatternQuery = PatternQuery.build(s) match {
     case Left(q) =>
       println(q)
       q
@@ -353,17 +355,17 @@ WHERE {?X rdf:type ub:UndergraduateStudent}
 """
 
   val qe = new QueryEngine
-  for (fileNumber <- 0 to 14) {
-    val filename = s"./uni0-$fileNumber.nt"
-    print(s"loding $filename ...")
-    qe.load(filename)
-    println(" done")
-  }
+  //  for (fileNumber <- 0 to 14) {
+  //    val filename = s"./uni0-$fileNumber.nt"
+  //    print(s"loding $filename ...")
+  //    qe.load(filename)
+  //    println(" done")
+  //  }
 
-  val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
+  qe.load("./lubm/inferred.nt")
+
+  val ub = "http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl"
   val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
-  val testData = "./uni0-0.nt"
-  val jenaModel = ModelFactory.createDefaultModel
 
   def executeOnQueryEngine(q: PatternQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)

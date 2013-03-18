@@ -1,5 +1,7 @@
 package com.signalcollect.triplerush
 
+import language.implicitConversions
+
 object Expression {
   implicit def int2Expression(i: Int) = Expression(i)
 }

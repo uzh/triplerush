@@ -1,0 +1,780 @@
+-------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_0.owl
+-------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 271 271
+Department 1 1
+Faculty 0 0
+Professor 0 0
+FullProfessor 10 10
+AssociateProfessor 14 14
+AssistantProfessor 10 10
+Lecturer 7 7
+Student 0 0
+UndergraduateStudent 532 532
+GraduateStudent 146 146
+TeachingAssistant 29 29
+ResearchAssistant 39 39
+Course 61 61
+GraduateCourse 67 67
+Publication 460 460
+Chair 0 0
+Research 0 0
+ResearchGroup 10 10
+
+TOTAL: 1657
+TOTAL SO FAR: 1657
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1309 1309
+takesCourse 1878 1878
+teacherOf 128 128
+undergraduateDegreeFrom 187 187
+mastersDegreeFrom 41 41
+doctoralDegreeFrom 41 41
+advisor 255 255
+memberOf 678 678
+publicationAuthor 825 825
+headOf 1 1
+teachingAssistantOf 29 29
+researchInterest 34 34
+emailAddress 719 719
+telephone 719 719
+subOrganizationOf 11 11
+worksFor 41 41
+
+TOTAL: 6896
+TOTAL SO FAR: 6896
+
+-------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_1.owl
+-------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 213 484
+Department 1 2
+Faculty 0 0
+Professor 0 0
+FullProfessor 10 20
+AssociateProfessor 10 24
+AssistantProfessor 8 18
+Lecturer 6 13
+Student 0 0
+UndergraduateStudent 411 943
+GraduateStudent 110 256
+TeachingAssistant 27 56
+ResearchAssistant 35 74
+Course 48 109
+GraduateCourse 46 113
+Publication 383 843
+Chair 0 0
+Research 0 0
+ResearchGroup 19 29
+
+TOTAL: 1327
+TOTAL SO FAR: 2984
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1033 2342
+takesCourse 1434 3312
+teacherOf 94 222
+undergraduateDegreeFrom 144 331
+mastersDegreeFrom 34 75
+doctoralDegreeFrom 34 75
+advisor 202 457
+memberOf 521 1199
+publicationAuthor 648 1473
+headOf 1 2
+teachingAssistantOf 27 56
+researchInterest 28 62
+emailAddress 555 1274
+telephone 555 1274
+subOrganizationOf 20 31
+worksFor 34 75
+
+TOTAL: 5364
+TOTAL SO FAR: 12260
+
+-------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_2.owl
+-------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 210 694
+Department 1 3
+Faculty 0 0
+Professor 0 0
+FullProfessor 7 27
+AssociateProfessor 12 36
+AssistantProfessor 8 26
+Lecturer 7 20
+Student 0 0
+UndergraduateStudent 376 1319
+GraduateStudent 107 363
+TeachingAssistant 23 79
+ResearchAssistant 34 108
+Course 49 158
+GraduateCourse 47 160
+Publication 381 1224
+Chair 0 0
+Research 0 0
+ResearchGroup 13 42
+
+TOTAL: 1275
+TOTAL SO FAR: 4259
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 995 3337
+takesCourse 1332 4644
+teacherOf 96 318
+undergraduateDegreeFrom 141 472
+mastersDegreeFrom 34 109
+doctoralDegreeFrom 34 109
+advisor 186 643
+memberOf 483 1682
+publicationAuthor 651 2124
+headOf 1 3
+teachingAssistantOf 23 79
+researchInterest 27 89
+emailAddress 517 1791
+telephone 517 1791
+subOrganizationOf 14 45
+worksFor 34 109
+
+TOTAL: 5085
+TOTAL SO FAR: 17345
+
+-------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_3.owl
+-------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 232 926
+Department 1 4
+Faculty 0 0
+Professor 0 0
+FullProfessor 9 36
+AssociateProfessor 12 48
+AssistantProfessor 10 36
+Lecturer 6 26
+Student 0 0
+UndergraduateStudent 340 1659
+GraduateStudent 120 483
+TeachingAssistant 25 104
+ResearchAssistant 37 145
+Course 55 213
+GraduateCourse 58 218
+Publication 430 1654
+Chair 0 0
+Research 0 0
+ResearchGroup 18 60
+
+TOTAL: 1353
+TOTAL SO FAR: 5612
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1041 4378
+takesCourse 1262 5906
+teacherOf 113 431
+undergraduateDegreeFrom 157 629
+mastersDegreeFrom 37 146
+doctoralDegreeFrom 37 146
+advisor 196 839
+memberOf 460 2142
+publicationAuthor 742 2866
+headOf 1 4
+teachingAssistantOf 25 104
+researchInterest 31 120
+emailAddress 497 2288
+telephone 497 2288
+subOrganizationOf 19 64
+worksFor 37 146
+
+TOTAL: 5152
+TOTAL SO FAR: 22497
+
+-------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_4.owl
+-------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 239 1165
+Department 1 5
+Faculty 0 0
+Professor 0 0
+FullProfessor 7 43
+AssociateProfessor 10 58
+AssistantProfessor 10 46
+Lecturer 7 33
+Student 0 0
+UndergraduateStudent 408 2067
+GraduateStudent 136 619
+TeachingAssistant 29 133
+ResearchAssistant 44 189
+Course 51 264
+GraduateCourse 51 269
+Publication 348 2002
+Chair 0 0
+Research 0 0
+ResearchGroup 20 80
+
+TOTAL: 1361
+TOTAL SO FAR: 6973
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1029 5407
+takesCourse 1487 7393
+teacherOf 102 533
+undergraduateDegreeFrom 170 799
+mastersDegreeFrom 34 180
+doctoralDegreeFrom 34 180
+advisor 207 1046
+memberOf 544 2686
+publicationAuthor 667 3533
+headOf 1 5
+teachingAssistantOf 29 133
+researchInterest 27 147
+emailAddress 578 2866
+telephone 578 2866
+subOrganizationOf 21 85
+worksFor 34 180
+
+TOTAL: 5542
+TOTAL SO FAR: 28039
+
+-------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_5.owl
+-------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 216 1381
+Department 1 6
+Faculty 0 0
+Professor 0 0
+FullProfessor 10 53
+AssociateProfessor 11 69
+AssistantProfessor 8 54
+Lecturer 6 39
+Student 0 0
+UndergraduateStudent 444 2511
+GraduateStudent 110 729
+TeachingAssistant 26 159
+ResearchAssistant 31 220
+Course 57 321
+GraduateCourse 50 319
+Publication 410 2412
+Chair 0 0
+Research 0 0
+ResearchGroup 14 94
+
+TOTAL: 1394
+TOTAL SO FAR: 8367
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1107 6514
+takesCourse 1561 8954
+teacherOf 107 640
+undergraduateDegreeFrom 145 944
+mastersDegreeFrom 35 215
+doctoralDegreeFrom 35 215
+advisor 195 1241
+memberOf 554 3240
+publicationAuthor 694 4227
+headOf 1 6
+teachingAssistantOf 26 159
+researchInterest 29 176
+emailAddress 589 3455
+telephone 589 3455
+subOrganizationOf 15 100
+worksFor 35 215
+
+TOTAL: 5717
+TOTAL SO FAR: 33756
+
+-------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_6.owl
+-------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 209 1590
+Department 1 7
+Faculty 0 0
+Professor 0 0
+FullProfessor 10 63
+AssociateProfessor 10 79
+AssistantProfessor 8 62
+Lecturer 6 45
+Student 0 0
+UndergraduateStudent 299 2810
+GraduateStudent 106 835
+TeachingAssistant 26 185
+ResearchAssistant 26 246
+Course 56 377
+GraduateCourse 48 367
+Publication 381 2793
+Chair 0 0
+Research 0 0
+ResearchGroup 16 110
+
+TOTAL: 1202
+TOTAL SO FAR: 9569
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 925 7439
+takesCourse 1149 10103
+teacherOf 104 744
+undergraduateDegreeFrom 140 1084
+mastersDegreeFrom 34 249
+doctoralDegreeFrom 34 249
+advisor 161 1402
+memberOf 405 3645
+publicationAuthor 657 4884
+headOf 1 7
+teachingAssistantOf 26 185
+researchInterest 28 204
+emailAddress 439 3894
+telephone 439 3894
+subOrganizationOf 17 117
+worksFor 34 249
+
+TOTAL: 4593
+TOTAL SO FAR: 38349
+
+-------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_7.owl
+-------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 239 1829
+Department 1 8
+Faculty 0 0
+Professor 0 0
+FullProfessor 7 70
+AssociateProfessor 14 93
+AssistantProfessor 10 72
+Lecturer 6 51
+Student 0 0
+UndergraduateStudent 454 3264
+GraduateStudent 127 962
+TeachingAssistant 25 210
+ResearchAssistant 32 278
+Course 63 440
+GraduateCourse 58 425
+Publication 417 3210
+Chair 0 0
+Research 0 0
+ResearchGroup 20 130
+
+TOTAL: 1473
+TOTAL SO FAR: 11042
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1157 8596
+takesCourse 1594 11697
+teacherOf 121 865
+undergraduateDegreeFrom 164 1248
+mastersDegreeFrom 37 286
+doctoralDegreeFrom 37 286
+advisor 230 1632
+memberOf 581 4226
+publicationAuthor 738 5622
+headOf 1 8
+teachingAssistantOf 25 210
+researchInterest 31 235
+emailAddress 618 4512
+telephone 618 4512
+subOrganizationOf 21 138
+worksFor 37 286
+
+TOTAL: 6010
+TOTAL SO FAR: 44359
+
+-------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_8.owl
+-------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 255 2084
+Department 1 9
+Faculty 0 0
+Professor 0 0
+FullProfessor 9 79
+AssociateProfessor 11 104
+AssistantProfessor 11 83
+Lecturer 6 57
+Student 0 0
+UndergraduateStudent 436 3700
+GraduateStudent 143 1105
+TeachingAssistant 34 244
+ResearchAssistant 47 325
+Course 62 502
+GraduateCourse 51 476
+Publication 422 3632
+Chair 0 0
+Research 0 0
+ResearchGroup 18 148
+
+TOTAL: 1506
+TOTAL SO FAR: 12548
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1152 9748
+takesCourse 1565 13262
+teacherOf 113 978
+undergraduateDegreeFrom 180 1428
+mastersDegreeFrom 37 323
+doctoralDegreeFrom 37 323
+advisor 234 1866
+memberOf 579 4805
+publicationAuthor 787 6409
+headOf 1 9
+teachingAssistantOf 34 244
+researchInterest 31 266
+emailAddress 616 5128
+telephone 616 5128
+subOrganizationOf 19 157
+worksFor 37 323
+
+TOTAL: 6038
+TOTAL SO FAR: 50397
+
+-------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_9.owl
+-------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 218 2302
+Department 1 10
+Faculty 0 0
+Professor 0 0
+FullProfessor 7 86
+AssociateProfessor 10 114
+AssistantProfessor 11 94
+Lecturer 7 64
+Student 0 0
+UndergraduateStudent 322 4022
+GraduateStudent 112 1217
+TeachingAssistant 24 268
+ResearchAssistant 32 357
+Course 48 550
+GraduateCourse 58 534
+Publication 355 3987
+Chair 0 0
+Research 0 0
+ResearchGroup 12 160
+
+TOTAL: 1217
+TOTAL SO FAR: 13765
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 931 10679
+takesCourse 1211 14473
+teacherOf 106 1084
+undergraduateDegreeFrom 147 1575
+mastersDegreeFrom 35 358
+doctoralDegreeFrom 35 358
+advisor 194 2060
+memberOf 434 5239
+publicationAuthor 611 7020
+headOf 1 10
+teachingAssistantOf 24 268
+researchInterest 28 294
+emailAddress 469 5597
+telephone 469 5597
+subOrganizationOf 13 170
+worksFor 35 358
+
+TOTAL: 4743
+TOTAL SO FAR: 55140
+
+--------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_10.owl
+--------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 247 2549
+Department 1 11
+Faculty 0 0
+Professor 0 0
+FullProfessor 7 93
+AssociateProfessor 11 125
+AssistantProfessor 11 105
+Lecturer 7 71
+Student 0 0
+UndergraduateStudent 411 4433
+GraduateStudent 138 1355
+TeachingAssistant 31 299
+ResearchAssistant 46 403
+Course 57 607
+GraduateCourse 48 582
+Publication 400 4387
+Chair 0 0
+Research 0 0
+ResearchGroup 15 175
+
+TOTAL: 1430
+TOTAL SO FAR: 15195
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1091 11770
+takesCourse 1484 15957
+teacherOf 105 1189
+undergraduateDegreeFrom 174 1749
+mastersDegreeFrom 36 394
+doctoralDegreeFrom 36 394
+advisor 225 2285
+memberOf 549 5788
+publicationAuthor 736 7756
+headOf 1 11
+teachingAssistantOf 31 299
+researchInterest 29 323
+emailAddress 585 6182
+telephone 585 6182
+subOrganizationOf 16 186
+worksFor 36 394
+
+TOTAL: 5719
+TOTAL SO FAR: 60859
+
+--------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_11.owl
+--------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 266 2815
+Department 1 12
+Faculty 0 0
+Professor 0 0
+FullProfessor 8 101
+AssociateProfessor 14 139
+AssistantProfessor 11 116
+Lecturer 6 77
+Student 0 0
+UndergraduateStudent 382 4815
+GraduateStudent 148 1503
+TeachingAssistant 29 328
+ResearchAssistant 45 448
+Course 59 666
+GraduateCourse 60 642
+Publication 443 4830
+Chair 0 0
+Research 0 0
+ResearchGroup 13 188
+
+TOTAL: 1485
+TOTAL SO FAR: 16680
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1132 12902
+takesCourse 1446 17403
+teacherOf 119 1308
+undergraduateDegreeFrom 187 1936
+mastersDegreeFrom 39 433
+doctoralDegreeFrom 39 433
+advisor 229 2514
+memberOf 530 6318
+publicationAuthor 773 8529
+headOf 1 12
+teachingAssistantOf 29 328
+researchInterest 33 356
+emailAddress 569 6751
+telephone 569 6751
+subOrganizationOf 14 200
+worksFor 39 433
+
+TOTAL: 5748
+TOTAL SO FAR: 66607
+
+--------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_12.owl
+--------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 226 3041
+Department 1 13
+Faculty 0 0
+Professor 0 0
+FullProfessor 9 110
+AssociateProfessor 11 150
+AssistantProfessor 11 127
+Lecturer 5 82
+Student 0 0
+UndergraduateStudent 359 5174
+GraduateStudent 117 1620
+TeachingAssistant 27 355
+ResearchAssistant 34 482
+Course 56 722
+GraduateCourse 53 695
+Publication 397 5227
+Chair 0 0
+Research 0 0
+ResearchGroup 11 199
+
+TOTAL: 1317
+TOTAL SO FAR: 17997
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1019 13921
+takesCourse 1330 18733
+teacherOf 109 1417
+undergraduateDegreeFrom 153 2089
+mastersDegreeFrom 36 469
+doctoralDegreeFrom 36 469
+advisor 184 2698
+memberOf 476 6794
+publicationAuthor 664 9193
+headOf 1 13
+teachingAssistantOf 27 355
+researchInterest 31 387
+emailAddress 512 7263
+telephone 512 7263
+subOrganizationOf 12 212
+worksFor 36 469
+
+TOTAL: 5138
+TOTAL SO FAR: 71745
+
+--------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_13.owl
+--------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 258 3299
+Department 1 14
+Faculty 0 0
+Professor 0 0
+FullProfessor 8 118
+AssociateProfessor 14 164
+AssistantProfessor 11 138
+Lecturer 5 87
+Student 0 0
+UndergraduateStudent 477 5651
+GraduateStudent 143 1763
+TeachingAssistant 30 385
+ResearchAssistant 35 517
+Course 55 777
+GraduateCourse 58 753
+Publication 407 5634
+Chair 0 0
+Research 0 0
+ResearchGroup 13 212
+
+TOTAL: 1515
+TOTAL SO FAR: 19512
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 1179 15100
+takesCourse 1735 20468
+teacherOf 113 1530
+undergraduateDegreeFrom 181 2270
+mastersDegreeFrom 38 507
+doctoralDegreeFrom 38 507
+advisor 238 2936
+memberOf 620 7414
+publicationAuthor 775 9968
+headOf 1 14
+teachingAssistantOf 30 385
+researchInterest 33 420
+emailAddress 658 7921
+telephone 658 7921
+subOrganizationOf 14 226
+worksFor 38 507
+
+TOTAL: 6349
+TOTAL SO FAR: 78094
+
+--------------------------------------------------------
+/Users/stutz/Dropbox/workspace/uba1.7\University0_14.owl
+--------------------------------------------------------
+External Seed=0 Interal Seed=0
+
+CLASS INSTANCE# TOTAL-SO-FAR
+----------------------------
+University 211 3510
+Department 1 15
+Faculty 0 0
+Professor 0 0
+FullProfessor 7 125
+AssociateProfessor 12 176
+AssistantProfessor 8 146
+Lecturer 6 93
+Student 0 0
+UndergraduateStudent 265 5916
+GraduateStudent 111 1874
+TeachingAssistant 22 407
+ResearchAssistant 30 547
+Course 51 828
+GraduateCourse 46 799
+Publication 365 5999
+Chair 0 0
+Research 0 0
+ResearchGroup 12 224
+
+TOTAL: 1147
+TOTAL SO FAR: 20659
+
+PROPERTY INSTANCE# TOTAL-SO-FAR
+-------------------------------
+name 872 15972
+takesCourse 1021 21489
+teacherOf 97 1627
+undergraduateDegreeFrom 144 2414
+mastersDegreeFrom 33 540
+doctoralDegreeFrom 33 540
+advisor 165 3101
+memberOf 376 7790
+publicationAuthor 666 10634
+headOf 1 15
+teachingAssistantOf 22 407
+researchInterest 27 447
+emailAddress 409 8330
+telephone 409 8330
+subOrganizationOf 13 239
+worksFor 33 540
+
+TOTAL: 4321
+TOTAL SO FAR: 82415
+
