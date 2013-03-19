@@ -15,50 +15,29 @@ import com.hp.hpl.jena.reasoner.rulesys.RDFSRuleReasonerFactory
 
 object JenaLubmConversion extends App {
   val baseModel = ModelFactory.createDefaultModel
+  loadJenaModelXml("./lubm/univ-bench.owl", baseModel)
 
-  loadJenaModel("./lubm/univ-bench.owl", baseModel)
   for (fileNumber <- 0 to 14) {
     val filename = s"./lubm/university0_$fileNumber.owl"
-    print(s"loding $filename ...")
-    loadJenaModel(filename, baseModel)
+    print(s"loading $filename ...")
+    loadJenaModelXml(filename, baseModel)
     println(" done")
   }
 
-  def loadJenaModel(filename: String, model: Model) {
-    val testFile = filename
-    val is = FileManager.get.open(testFile)
-    if (is != null) {
-      model.read(is, "", "RDF/XML")
-    } else {
-      System.err.println("cannot read " + testFile)
-    }
+  val inferenceModel = ModelFactory.createRDFSModel(baseModel)
+  val inferred = new FileOutputStream(new File("./lubm/all-inferred.nt"))
+  inferenceModel.write(inferred, "N-TRIPLE", null)
+  inferred.close
+
+  def loadJenaModelXml(filename: String, model: Model) {
+    val is = FileManager.get.open(filename)
+    model.read(is, "", "RDF/XML")
   }
 
-  val schema = ModelFactory.createDefaultModel
-  loadJenaModel("./lubm/univ-bench.owl", schema)
-
-//  val inferenceModel = ModelFactory.createRDFSModel(schema, baseModel)
-//  val config = ModelFactory.createDefaultModel.
-//    createResource
-//    .addProperty(ReasonerVocabulary.PROPsetRDFSLevel, ReasonerVocabulary.RDFS_FULL)
-//
-//  val reasoner = RDFSRuleReasonerFactory.theInstance.create(config)
-  val reasoner = ReasonerRegistry.getOWLReasoner.bindSchema(schema)
-  val infmodel = ModelFactory.createInfModel(reasoner, baseModel)
-
-//  reasoner.setParameter(ReasonerVocabulary.PROPsetRDFSLevel, ReasonerVocabulary.RDFS_FULL)
-
-  //val inferenceModel = ModelFactory.createOntologyModel(OntModelSpec.RDFS_MEM_RDFS_INF, baseModel)
-
-  val base = new FileOutputStream(new File("./lubm/base.nt"))
-  val inferred = new FileOutputStream(new File("./lubm/inferred.nt"))
-
-  baseModel.write(base, "N-TRIPLE")
-  //inferenceModel.writeAll(inferred, "N-TRIPLE", null)
-  infmodel.write(inferred, "N-TRIPLE", null)
-
-  base.close
-  inferred.close
+  def loadJenaModelTriples(filename: String, model: Model) {
+    val is = FileManager.get.open(filename)
+    model.read(is, "", "N-TRIPLE")
+  }
 }
 
 

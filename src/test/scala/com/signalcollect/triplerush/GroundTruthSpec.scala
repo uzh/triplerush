@@ -32,13 +32,13 @@ class GroundTruthSpec extends SpecificationWithJUnit {
       ourResult === referenceResult
     }
 
-    "SPQRQL-match the reference results 1" in {
+    "SPARQL-match the reference results 1" in {
       val q1 = """
 # Query1
 # This query bears large input and high selectivity. It queries about just one class and
 # one property and does not assume any hierarchy information or inference.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X	
 WHERE
 {?X rdf:type ub:GraduateStudent .
@@ -50,77 +50,101 @@ WHERE
     }
   }
 
-  //  "LUBM Query 2" should {
-  //
-  //    val query2 = SELECT ? "X" ? "Y" ? "Z" WHERE (
-  //      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
-  //      | - "X" - s"$ub#memberOf" - "Z",
-  //      | - "Z" - s"$rdf#type" - s"$ub#Department",
-  //      | - "Z" - s"$ub#subOrganizationOf" - "Y",
-  //      | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
-  //      | - "Y" - s"$rdf#type" - s"$ub#University")
-  //
-  //    "match the reference results 2" in {
-  //      val referenceResult = referenceResults(2)
-  //      val ourResult = executeOnQueryEngine(query2)
-  //      ourResult === referenceResult
-  //    }
-  //  }
-  //
-  //  "LUBM Query 3" should {
-  //
-  //    val query3 = SELECT ? "X" WHERE (
-  //      | - "X" - s"$ub#publicationAuthor" - "http://www.Department0.University0.edu/AssistantProfessor0",
-  //      | - "X" - s"$rdf#type" - s"$ub#Publication")
-  //
-  //    "match the reference results in 3" in {
-  //      val referenceResult = referenceResults(3)
-  //      val ourResult = executeOnQueryEngine(query3)
-  //      ourResult === referenceResult
-  //    }
-  //  }
-  //
-  //  "LUBM Query 4" should {
-  //
-  //    //    val query4 = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-  //    //      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-  //    //      | - "X" - s"$rdf#type" - s"$ub#Professor",
-  //    //      | - "X" - s"$ub#name" - "Y1",
-  //    //      | - "X" - s"$ub#emailAddress" - "Y2",
-  //    //      | - "X" - s"$ub#telephone" - "Y3")
-  //
-  //    val query4A = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-  //      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-  //      | - "X" - s"$rdf#type" - s"$ub#AssistantProfessor",
-  //      | - "X" - s"$ub#name" - "Y1",
-  //      | - "X" - s"$ub#emailAddress" - "Y2",
-  //      | - "X" - s"$ub#telephone" - "Y3")
-  //
-  //    val query4B = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-  //      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-  //      | - "X" - s"$rdf#type" - s"$ub#AssociateProfessor",
-  //      | - "X" - s"$ub#name" - "Y1",
-  //      | - "X" - s"$ub#emailAddress" - "Y2",
-  //      | - "X" - s"$ub#telephone" - "Y3")
-  //
-  //    val query4C = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-  //      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-  //      | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
-  //      | - "X" - s"$ub#name" - "Y1",
-  //      | - "X" - s"$ub#emailAddress" - "Y2",
-  //      | - "X" - s"$ub#telephone" - "Y3")
-  //
-  //    "match the reference results in 4" in {
-  //      val referenceResult = referenceResults(4)
-  //      val a = executeOnQueryEngine(query4A)
-  //      val b = executeOnQueryEngine(query4B)
-  //      val c = executeOnQueryEngine(query4C)
-  //      val ourResult = (a ::: b ::: c).sortBy(map => map.values)
-  //      println("ref: " + referenceResult)
-  //      println("our: " + ourResult)
-  //      ourResult === referenceResult
-  //    }
-  //  }
+  "LUBM Query 2" should {
+    "DSL-match the reference results 2" in {
+      val q2 = SELECT ? "X" ? "Y" ? "Z" WHERE (
+        | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
+        | - "X" - s"$ub#memberOf" - "Z",
+        | - "Z" - s"$rdf#type" - s"$ub#Department",
+        | - "Z" - s"$ub#subOrganizationOf" - "Y",
+        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
+        | - "Y" - s"$rdf#type" - s"$ub#University")
+      val referenceResult = referenceResults(2)
+      val ourResult = executeOnQueryEngine(q2)
+      ourResult === referenceResult
+    }
+    "SPARQL-match the reference results 2" in {
+      val q2 = """
+# Query2
+# This query increases in complexity: 3 classes and 3 properties are involved. Additionally, 
+# there is a triangular pattern of relationships between the objects involved.
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X ?Y ?Z
+WHERE
+{?X rdf:type ub:GraduateStudent .
+  ?Y rdf:type ub:University .
+  ?Z rdf:type ub:Department .
+  ?X ub:memberOf ?Z .
+  ?Z ub:subOrganizationOf ?Y .
+  ?X ub:undergraduateDegreeFrom ?Y}
+"""
+      val referenceResult = referenceResults(2)
+      val ourResult = executeOnQueryEngine(toQuery(q2))
+      ourResult === referenceResult
+    }
+  }
+
+  "LUBM Query 3" should {
+    "DSL-match the reference results in 3" in {
+      val q3 = SELECT ? "X" WHERE (
+        | - "X" - s"$ub#publicationAuthor" - "http://www.Department0.University0.edu/AssistantProfessor0",
+        | - "X" - s"$rdf#type" - s"$ub#Publication")
+      val referenceResult = referenceResults(3)
+      val ourResult = executeOnQueryEngine(q3)
+      ourResult === referenceResult
+    }
+    "SPARQL-match the reference results 3" in {
+      val q3 = """
+# Query3
+# This query is similar to Query 1 but class Publication has a wide hierarchy.
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X
+WHERE
+{?X rdf:type ub:Publication .
+  ?X ub:publicationAuthor 
+        <http://www.Department0.University0.edu/AssistantProfessor0>}
+"""
+      val referenceResult = referenceResults(3)
+      val ourResult = executeOnQueryEngine(toQuery(q3))
+      ourResult === referenceResult
+    }
+  }
+
+  "LUBM Query 4" should {
+    "DSL-match the reference results in 4" in {
+      val q4 = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
+        | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
+        | - "X" - s"$rdf#type" - s"$ub#Professor",
+        | - "X" - s"$ub#name" - "Y1",
+        | - "X" - s"$ub#emailAddress" - "Y2",
+        | - "X" - s"$ub#telephone" - "Y3")
+      val referenceResult = referenceResults(4)
+      val ourResult = executeOnQueryEngine(q4)
+      ourResult === referenceResult
+    }
+    "SPARQL-match the reference results 4" in {
+      val q4 = """
+# Query4
+# This query has small input and high selectivity. It assumes subClassOf relationship 
+# between Professor and its subclasses. Class Professor has a wide hierarchy. Another 
+# feature is that it queries about multiple properties of a single class.
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X ?Y1 ?Y2 ?Y3
+WHERE
+{?X rdf:type ub:Professor .
+  ?X ub:worksFor <http://www.Department0.University0.edu> .
+  ?X ub:name ?Y1 .
+  ?X ub:emailAddress ?Y2 .
+  ?X ub:telephone ?Y3}
+"""
+      val referenceResult = referenceResults(4)
+      val ourResult = executeOnQueryEngine(toQuery(q4))
+      ourResult === referenceResult
+    }
+  }
 
   //  "LUBM Query 5" should {
   //
@@ -160,70 +184,17 @@ WHERE
   //  }
 
   def toQuery(s: String): PatternQuery = PatternQuery.build(s) match {
-    case Left(q) =>
-      println(q)
-      q
-    case Right(error) =>
-      println(error)
-      throw new Exception(error)
+    case Left(q) => q
+    case Right(error) => throw new Exception(error)
   }
 
   val others = """
-# Query1
-# This query bears large input and high selectivity. It queries about just one class and
-# one property and does not assume any hierarchy information or inference.
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
-SELECT ?X	
-WHERE
-{?X rdf:type ub:GraduateStudent .
-  ?X ub:takesCourse
-http://www.Department0.University0.edu/GraduateCourse0}
-
-# Query2
-# This query increases in complexity: 3 classes and 3 properties are involved. Additionally, 
-# there is a triangular pattern of relationships between the objects involved.
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
-SELECT ?X, ?Y, ?Z
-WHERE
-{?X rdf:type ub:GraduateStudent .
-  ?Y rdf:type ub:University .
-  ?Z rdf:type ub:Department .
-  ?X ub:memberOf ?Z .
-  ?Z ub:subOrganizationOf ?Y .
-  ?X ub:undergraduateDegreeFrom ?Y}
-
-# Query3
-# This query is similar to Query 1 but class Publication has a wide hierarchy.
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
-SELECT ?X
-WHERE
-{?X rdf:type ub:Publication .
-  ?X ub:publicationAuthor 
-        http://www.Department0.University0.edu/AssistantProfessor0}
-
-# Query4
-# This query has small input and high selectivity. It assumes subClassOf relationship 
-# between Professor and its subclasses. Class Professor has a wide hierarchy. Another 
-# feature is that it queries about multiple properties of a single class.
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
-SELECT ?X, ?Y1, ?Y2, ?Y3
-WHERE
-{?X rdf:type ub:Professor .
-  ?X ub:worksFor <http://www.Department0.University0.edu> .
-  ?X ub:name ?Y1 .
-  ?X ub:emailAddress ?Y2 .
-  ?X ub:telephone ?Y3}
-
 # Query5
 # This query assumes subClassOf relationship between Person and its subclasses
 # and subPropertyOf relationship between memberOf and its subproperties.
 # Moreover, class Person features a deep and wide hierarchy.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
 WHERE
 {?X rdf:type ub:Person .
@@ -236,7 +207,7 @@ WHERE
 # implicit one between GraduateStudent and Student. In addition, it has large
 # input and low selectivity.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X WHERE {?X rdf:type ub:Student}
 
 
@@ -244,7 +215,7 @@ SELECT ?X WHERE {?X rdf:type ub:Student}
 # This query is similar to Query 6 in terms of class Student but it increases in the
 # number of classes and properties and its selectivity is high.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X, ?Y
 WHERE 
 {?X rdf:type ub:Student .
@@ -257,7 +228,7 @@ WHERE
 # Query8
 # This query is further more complex than Query 7 by including one more property.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X, ?Y, ?Z
 WHERE
 {?X rdf:type ub:Student .
@@ -272,7 +243,7 @@ WHERE
 # class Faculty, like Query 2, this query is characterized by the most classes and
 # properties in the query set and there is a triangular pattern of relationships.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X, ?Y, ?Z
 WHERE
 {?X rdf:type ub:Student .
@@ -289,7 +260,7 @@ WHERE
 #subClassOf rela-tionship between UndergraduateStudent and Student does not add
 # to the results.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
 WHERE
 {?X rdf:type ub:Student .
@@ -306,7 +277,7 @@ WHERE
 # instances of ResearchGroup and University is required to answer this query. 
 # Additionally, its input is small.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
 WHERE
 {?X rdf:type ub:ResearchGroup .
@@ -320,7 +291,7 @@ WHERE
 # that professor is an instance of class Chair because he or she is the head of a
 # department. Input of this query is small as well.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X, ?Y
 WHERE
 {?X rdf:type ub:Chair .
@@ -337,7 +308,7 @@ WHERE
 # hasAlumnus. Therefore, this query assumes subPropertyOf relationships between 
 # degreeFrom and its subproperties, and also requires inference about inverseOf.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
 WHERE
 {?X rdf:type ub:Person .
@@ -347,7 +318,7 @@ WHERE
 # Query14
 # This query is the simplest in the test set. This query represents those with large input and low selectivity and does not assume any hierarchy information or inference.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
 WHERE {?X rdf:type ub:UndergraduateStudent}
 
@@ -355,16 +326,9 @@ WHERE {?X rdf:type ub:UndergraduateStudent}
 """
 
   val qe = new QueryEngine
-  //  for (fileNumber <- 0 to 14) {
-  //    val filename = s"./uni0-$fileNumber.nt"
-  //    print(s"loding $filename ...")
-  //    qe.load(filename)
-  //    println(" done")
-  //  }
+  qe.load("./lubm/all-inferred.nt")
 
-  qe.load("./lubm/inferred.nt")
-
-  val ub = "http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl"
+  val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
   val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
   def executeOnQueryEngine(q: PatternQuery): List[Bindings] = {
@@ -410,16 +374,4 @@ WHERE {?X rdf:type ub:UndergraduateStudent}
       solution.sortBy(map => map.values)
     }
   }
-
-  //  loadJenaModel(testData, jenaModel)
-  //  def loadJenaModel(filename: String, model: Model) {
-  //    val testFile = filename
-  //    val is = FileManager.get.open(testFile)
-  //    if (is != null) {
-  //      model.read(is, null, "N-TRIPLE")
-  //    } else {
-  //      System.err.println("cannot read " + testFile)
-  //    }
-  //  }
-
 }

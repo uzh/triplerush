@@ -18,7 +18,7 @@ class QueryEngine {
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     val queries = signal.asInstanceOf[List[PatternQuery]]
     queries foreach { query =>
-      println("failed query: " + query.nextTargetId + " bindings: " + query.bindings)
+      //println("failed query: " + query.nextTargetId + " bindings: " + query.bindings)
       graphEditor.sendSignal(query.failed, query.queryId, None)
     }
   }
