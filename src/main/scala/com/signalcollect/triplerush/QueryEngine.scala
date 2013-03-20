@@ -61,7 +61,7 @@ class QueryEngine {
     val id = maxQueryId.incrementAndGet
     g.addVertex(new QueryVertex(id, p), blocking = true)
     println(s"Added query vertex for query id $id")
-    g.sendSignal(List(q.withId(id)), q.nextTargetId.get, None)
+    g.sendSignal(q.withId(id), q.nextTargetId.get, None)
     p.future
   }
 

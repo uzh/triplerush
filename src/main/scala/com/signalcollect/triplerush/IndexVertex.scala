@@ -8,35 +8,94 @@ object SignalSet extends Enumeration with Serializable {
   val BoundObject = Value
 }
 
-class IndexVertex(override val id: TriplePattern, initialState: List[PatternQuery] = List())
-  extends DataFlowVertex(id, initialState)
-  with ResetStateAfterSignaling[TriplePattern, List[PatternQuery]] {
+class IndexVertex(override val id: TriplePattern)
+  extends Vertex[TriplePattern, List[PatternQuery]] {
 
-  def resetState = List()
+  var state = List[PatternQuery]()
+  def outEdges = activeSet.length
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  def setState(s: List[PatternQuery]) {
+    state = s
+  }
+
+  override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
+    val targetId = e.targetId.asInstanceOf[TriplePattern]
+    if (id.s.isWildcard && targetId.isPartOfSignalSet(SignalSet.BoundSubject)) {
+      subjectSet = targetId :: subjectSet
+    } else if (id.p.isWildcard && targetId.isPartOfSignalSet(SignalSet.BoundPredicate)) {
+      predicateSet = targetId :: predicateSet
+    } else if (id.o.isWildcard && targetId.isPartOfSignalSet(SignalSet.BoundObject)) {
+      objectSet = targetId :: objectSet
+    } else {
+      // TODO: Remove this and throw exception.
+      println("NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+    }
+    true
+  }
+
+  def deliverSignal(signal: Any, sourceId: Option[Any]): Boolean = {
+    val s = signal.asInstanceOf[PatternQuery]
+    setState(s.split(activeSetLength) :: state)
+    true
+  }
+
+  override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
+    state foreach (query => {
+      activeSet.foreach { targetId =>
+        graphEditor.sendSignal(query, targetId, None)
+      }
+    })
+    setState(List())
+  }
+
+  def executeCollectOperation(graphEditor: GraphEditor[Any, Any]) {
+  }
+
+  override def scoreSignal: Double = state.size
+
+  def scoreCollect = 0 // because signals are directly collected at arrival
+
+  def edgeCount = activeSet.length
+
+  def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
+
+  override def removeEdge(targetId: Any, graphEditor: GraphEditor[Any, Any]): Boolean = {
+    throw new UnsupportedOperationException
+  }
+
+  override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
+    throw new UnsupportedOperationException
+  }
+
+  def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     // Build the hierarchical index.
     id.parentPatterns foreach { parentId =>
       graphEditor.addVertex(new IndexVertex(parentId))
-      graphEditor.addEdge(parentId, new QueryListEdge(id))
+      graphEditor.addEdge(parentId, new StateForwarderEdge(id))
     }
   }
 
-  val signalSet: SignalSet.Value = {
+  def activeSetLength = activeSet.length
+
+  def activeSet = {
+    // TODO: This is ugly, make it better.
+    var minSize = Int.MaxValue
+    var candidate = subjectSet
     if (id.s.isWildcard) {
-      SignalSet.BoundSubject
-    } else if (id.p.isWildcard) {
-      SignalSet.BoundPredicate
-    } else {
-      SignalSet.BoundObject
+      minSize = subjectSet.length
     }
+    if (id.p.isWildcard && predicateSet.length < minSize) {
+      candidate = predicateSet
+      minSize = predicateSet.length
+    }
+    if (id.o.isWildcard && objectSet.length < minSize) {
+      candidate = objectSet
+    }
+    candidate
   }
 
-  val fractionDivider = 1 // TODO this is the number we cannot determine with this approach. edgeCount.toDouble / id.splitFactor
-
-  type Signal = List[PatternQuery]
-  def collect(signal: List[PatternQuery]) = {
-    (signal map (_.split(fractionDivider))) ::: state
-  }
+  var subjectSet: List[TriplePattern] = List()
+  var predicateSet: List[TriplePattern] = List()
+  var objectSet: List[TriplePattern] = List()
 
 }

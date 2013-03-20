@@ -8,7 +8,7 @@ case class TriplePattern(s: Expression, p: Expression, o: Expression) {
   override def toString = {
     s"(${s.toString},${p.toString},${o.toString})"
   }
-
+  
   /**
    * Returns true if this pattern is part of a signal set.
    */

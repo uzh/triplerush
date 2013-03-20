@@ -17,6 +17,11 @@ class QueryVertex(id: Int, promise: Promise[List[PatternQuery]], initialState: L
     }
   }
   override def scoreSignal = if (fractionCompleted > 0.999999) 1 else 0
+
+  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    println("Query added: " + id)
+  }
+
   override def doSignal(graphEditor: GraphEditor[Any, Any]) {
     promise success state
     graphEditor.removeVertex(id)
