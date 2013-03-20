@@ -8,7 +8,33 @@ case class TriplePattern(s: Expression, p: Expression, o: Expression) {
   override def toString = {
     s"(${s.toString},${p.toString},${o.toString})"
   }
-  
+
+  /**
+   * Returns true if this pattern is part of a signal set.
+   */
+  def isPartOfSignalSet(signalSet: SignalSet.Value): Boolean = {
+    signalSet match {
+      case SignalSet.BoundSubject =>
+        if (s.isConstant) {
+          true
+        } else {
+          false
+        }
+      case SignalSet.BoundPredicate =>
+        if (p.isConstant) {
+          true
+        } else {
+          false
+        }
+      case SignalSet.BoundObject =>
+        if (o.isConstant) {
+          true
+        } else {
+          false
+        }
+    }
+  }
+
   // TODO: Matching is not good here, becuase it materializes Expression
   // (see http://docs.scala-lang.org/overviews/core/value-classes.html)
   def parentPatterns: List[TriplePattern] = {

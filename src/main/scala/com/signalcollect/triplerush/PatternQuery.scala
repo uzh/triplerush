@@ -75,7 +75,7 @@ object PatternQuery {
             Mapping.register(e.getURI)
           }
         }
-        patterns = TriplePattern(idList(0), idList(1), idList(2)) :: patterns
+        patterns = patterns ::: List(TriplePattern(idList(0), idList(1), idList(2)))
       }
     }
     private def unsupported(el: Element) = throw new UnsupportedOperationException(el.toString)
@@ -104,6 +104,11 @@ case class PatternQuery(
   bindings: Bindings = Bindings(),
   fraction: Double = 1,
   isFailed: Boolean = false) {
+  
+  override def toString = {
+    matched.mkString("\n") + unmatched.mkString("\n") + bindings.toString
+  }
+  
   def nextTargetId: Option[TriplePattern] = {
     unmatched match {
       case next :: _ =>

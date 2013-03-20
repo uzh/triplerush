@@ -9,7 +9,7 @@ class TripleVertex(override val id: TriplePattern, initialState: List[PatternQue
     // Build the hierarchical index.
     id.parentPatterns foreach { parentId =>
       graphEditor.addVertex(new IndexVertex(parentId))
-      graphEditor.addEdge(parentId, new StateForwarderEdge(id))
+      graphEditor.addEdge(parentId, new QueryListEdge(id))
     }
   }
 
@@ -18,7 +18,7 @@ class TripleVertex(override val id: TriplePattern, initialState: List[PatternQue
     //println(signal.head.unmatched.head)
     signal ::: state
   }
-  
+
   override def scoreSignal = state.size
 
   override def doSignal(graphEditor: GraphEditor[Any, Any]) {
@@ -29,6 +29,12 @@ class TripleVertex(override val id: TriplePattern, initialState: List[PatternQue
       graphEditor.sendSignal(query, query.queryId, None)
     }
     partiallyMatched foreach (query => {
+//      if (query.matched.head.s.value == Mapping.getId("http://www.Department0.University0.edu/AssistantProfessor0")) {
+//        println("next destination: " + query.nextTargetId +
+//            "\npassenger=" + query.matched.head + 
+//            "\ncurrently @ " + id + 
+//            "\nfull query = " + query)
+//      }
       graphEditor.sendSignal(List(query), query.nextTargetId.get, None)
     })
     state = List()

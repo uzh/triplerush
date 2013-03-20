@@ -16,10 +16,14 @@ import com.signalcollect.triplerush.Expression.int2Expression
 class QueryEngine {
   private val g = GraphBuilder.build
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
-    val queries = signal.asInstanceOf[List[PatternQuery]]
-    queries foreach { query =>
-      //println("failed query: " + query.nextTargetId + " bindings: " + query.bindings)
-      graphEditor.sendSignal(query.failed, query.queryId, None)
+    signal match {
+      case qs: List[PatternQuery] =>
+        qs foreach { query =>
+          graphEditor.sendSignal(query.failed, query.queryId, None)
+        }
+      case p: PatternQuery => println("Query could not find its query vertex: " + p.isFailed + " queryId=" + p.queryId)
+      case other =>
+        println(s"failed signal delivery $other of type ${other.getClass}")
     }
   }
   g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
@@ -55,7 +59,8 @@ class QueryEngine {
   def executeQuery(q: PatternQuery): Future[List[PatternQuery]] = {
     val p = promise[List[PatternQuery]]
     val id = maxQueryId.incrementAndGet
-    g.addVertex(new QueryVertex(id, p))
+    g.addVertex(new QueryVertex(id, p), blocking = true)
+    println(s"Added query vertex for query id $id")
     g.sendSignal(List(q.withId(id)), q.nextTargetId.get, None)
     p.future
   }
