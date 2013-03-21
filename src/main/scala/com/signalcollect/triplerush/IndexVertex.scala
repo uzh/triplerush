@@ -27,8 +27,7 @@ class IndexVertex(override val id: TriplePattern)
     } else if (id.o.isWildcard && targetId.isPartOfSignalSet(SignalSet.BoundObject)) {
       objectSet = targetId :: objectSet
     } else {
-      // TODO: Remove this and throw exception.
-      println("NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+      throw new Exception(s"Cannot add edge $e to index vertex with id $id.")
     }
     true
   }
@@ -40,9 +39,11 @@ class IndexVertex(override val id: TriplePattern)
   }
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
+    val edgeSet = activeSet
+    val edgeSetLength = edgeSet.length
     state foreach (query => {
-      val splitQuery = query.split(activeSetLength)
-      activeSet.foreach { targetId =>
+      val splitQuery = query.split(edgeSetLength)
+      edgeSet foreach { targetId =>
         graphEditor.sendSignal(splitQuery, targetId, None)
       }
     })
@@ -75,8 +76,6 @@ class IndexVertex(override val id: TriplePattern)
       graphEditor.addEdge(parentId, new StateForwarderEdge(id))
     }
   }
-
-  def activeSetLength = activeSet.length
 
   def activeSet = {
     // TODO: This is ugly, make it better.
