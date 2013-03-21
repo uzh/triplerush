@@ -45,11 +45,13 @@ class IndexVertex(override val id: TriplePattern)
     state foreach (query => {
       if (query.explorationFactor < 1 && query.matched.isEmpty && id.isLowestIndexLevel) {
         var edgeIndex = 0
-        val maxEdgeId =
-          while (edgeIndex < edgeSetLength) {
-            val targetId = edgeSet(edgeIndex)
-            edgeIndex += 1
-          }
+        val maxEdgeId = query.explorationFactor * edgeSetLength
+        val splitQuery = query.split(maxEdgeId)
+        while (edgeIndex < maxEdgeId) {
+          val targetId = edgeSet(edgeIndex)
+          graphEditor.sendSignal(splitQuery, targetId, None)
+          edgeIndex += 1
+        }
       } else {
         val splitQuery = query.split(edgeSetLength)
         edgeSet foreach { targetId =>
