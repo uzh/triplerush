@@ -42,30 +42,21 @@ class IndexVertex(override val id: TriplePattern)
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
     val edgeSet = activeSet
     val edgeSetLength = edgeSet.length
-//    state foreach (query => {
-//      if (query.explorationFactor < 1 && query.matched.isEmpty && id.isLowestIndexLevel) {
-//        var edgeIndex = 0
-//        val maxEdgeId = 
-//        while (edgeIndex < edgeSetLength ) {
-//          val targetId = edgeSet(edgeIndex)
-//          
-//          edgeIndex += 1  
-//        }
-//      } else {
-//  
-//        val splitQuery = query.split(edgeSetLength)
-//        edgeSet foreach { targetId =>
-//          graphEditor.sendSignal(splitQuery, targetId, None)
-//      } 
-//      }
-//      val edgesToSample = query.explorationFactor * 
-//      var edgeIndex = 0
-//      while (edgeIndex )
-//      val splitQuery = query.split(edgeSetLength)
-//      edgeSet foreach { targetId =>
-//        graphEditor.sendSignal(splitQuery, targetId, None)
-//      }
-//    })
+    state foreach (query => {
+      if (query.explorationFactor < 1 && query.matched.isEmpty && id.isLowestIndexLevel) {
+        var edgeIndex = 0
+        val maxEdgeId =
+          while (edgeIndex < edgeSetLength) {
+            val targetId = edgeSet(edgeIndex)
+            edgeIndex += 1
+          }
+      } else {
+        val splitQuery = query.split(edgeSetLength)
+        edgeSet foreach { targetId =>
+          graphEditor.sendSignal(splitQuery, targetId, None)
+        }
+      }
+    })
     setState(List())
   }
 

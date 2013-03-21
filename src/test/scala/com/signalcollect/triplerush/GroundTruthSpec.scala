@@ -24,7 +24,7 @@ class GroundTruthSpec extends SpecificationWithJUnit {
 
   sequential
 
-  val enabledQueries = Set( /*1, 2, 3, 4, 5,*/ 6, 7, 8, 9, 10, 11, 12, 13, 14)
+  val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
   val dslEnabled = true
   val sparqlEnabled = false
 
@@ -293,7 +293,13 @@ WHERE
   }
 
   val qe = new QueryEngine
-  qe.load("./lubm/all-inferred.nt")
+
+  for (fileNumber <- 0 to 14) {
+    val filename = s"./lubm/university0_$fileNumber.nt"
+    print(s"loading $filename ...")
+    qe.load(filename)
+    println(" done")
+  }
 
   def executeOnQueryEngine(q: PatternQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)
