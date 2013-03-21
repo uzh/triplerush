@@ -24,7 +24,7 @@ class GroundTruthSpec extends SpecificationWithJUnit {
 
   sequential
 
-  val enabledQueries = Set(1, 2, 3, 4)
+  val enabledQueries = Set( /*1, 2, 3, 4, 5,*/ 6, 7, 8, 9, 10, 11, 12, 13, 14)
   val dslEnabled = true
   val sparqlEnabled = false
 
@@ -54,7 +54,56 @@ class GroundTruthSpec extends SpecificationWithJUnit {
       | - "X" - s"$rdf#type" - s"$ub#Professor",
       | - "X" - s"$ub#name" - "Y1",
       | - "X" - s"$ub#emailAddress" - "Y2",
-      | - "X" - s"$ub#telephone" - "Y3"))
+      | - "X" - s"$ub#telephone" - "Y3"),
+    //Query 5
+    SELECT ? "X" WHERE (
+      | - "X" - s"$ub#memberOf" - "http://www.Department0.University0.edu",
+      | - "X" - s"$rdf#type" - s"$ub#Person"),
+    //Query 6
+    SELECT ? "X" WHERE (
+      | - "X" - s"$rdf#type" - s"$ub#Student"),
+    //Query 7
+    SELECT ? "X" ? "Y" WHERE (
+      | - "http://www.Department0.University0.edu/AssociateProfessor0" - s"$ub#teacherOf" - "Y",
+      | - "Y" - s"$rdf#type" - s"$ub#Course",
+      | - "X" - s"$ub#takesCourse" - "Y",
+      | - "X" - s"$rdf#type" - s"$ub#Student"),
+    //Query 8
+    SELECT ? "X" ? "Y" ? "Z" WHERE (
+      | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
+      | - "Y" - s"$rdf#type" - s"$ub#Department",
+      | - "X" - s"$ub#memberOf" - "Y",
+      | - "X" - s"$rdf#type" - s"$ub#Student",
+      | - "X" - s"$ub#emailAddress" - "Z"),
+    //Query 9
+    SELECT ? "X" ? "Y" ? "Z" WHERE (
+      | - "Y" - s"$rdf#type" - s"$ub#Faculty",
+      | - "Y" - s"$ub#teacherOf" - "Z",
+      | - "Z" - s"$rdf#type" - s"$ub#Course",
+      | - "X" - s"$ub#advisor" - "Y",
+      | - "X" - s"$ub#takesCourse" - "Z",
+      | - "X" - s"$rdf#type" - s"$ub#Student"),
+    //Query 10
+    SELECT ? "X" WHERE (
+      | - "X" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
+      | - "X" - s"$rdf#type" - s"$ub#Student"),
+    //Query 11
+    SELECT ? "X" WHERE (
+      | - "X" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
+      | - "X" - s"$rdf#type" - s"$ub#ResearchGroup"),
+    //Query 12
+    SELECT ? "X" ? "Y" WHERE (
+      | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
+      | - "Y" - s"$rdf#type" - s"$ub#Department",
+      | - "X" - s"$ub#worksFor" - "Y",
+      | - "X" - s"$rdf#type" - s"$ub#Chair"),
+    //Query 13
+    SELECT ? "X" WHERE (
+      | - "http://www.University0.edu" - s"$ub#hasAlumnus" - "X",
+      | - "X" - s"$rdf#type" - s"$ub#Person"),
+    //Query 14
+    SELECT ? "X" WHERE (
+      | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
 
   val sparqlQueries = List(
     """
@@ -147,43 +196,96 @@ WHERE
       runTest(queryId, sparql = true)
     }
   }
-
-  //  "LUBM Query 5" should {
-  //
-  //    val query5 = SELECT ? "X" WHERE (
-  //      | - "X" - s"$ub#memberOf" - "http://www.Department0.University0.edu",
-  //      | - "X" - s"$rdf#type" - s"$ub#Person")
-  //
-  //    "match the reference results in 5" in {
-  //      val referenceResult = referenceResults(5)
-  //      val ourResult = executeOnQueryEngine(query5)
-  //      ourResult === referenceResult
-  //    }
-  //  }
-
-  //  "LUBM Query 6" should {
-  //
-  //    val query6 = SELECT ? "X" WHERE (
-  //      | - "X" - s"$ub#type" - s"$ub#Student")
-  //
-  //    "match the reference results in 6" in {
-  //      val referenceResult = referenceResults(6)
-  //      val ourResult = executeOnQueryEngine(query6)
-  //      ourResult === referenceResult
-  //    }
-  //  }
-  //
-  //  "LUBM Query 7" should {
-  //
-  //    val query7 = SELECT ? "X" WHERE (
-  //      | - "X" - s"$ub#type" - s"$ub#Student")
-  //
-  //    "match the reference results in 7" in {
-  //      val referenceResult = referenceResults(7)
-  //      val ourResult = executeOnQueryEngine(query7)
-  //      ourResult === referenceResult
-  //    }
-  //  }
+  "LUBM Query 5" should {
+    val queryId = 5
+    s"DSL-match the reference results $queryId" in {
+      runTest(queryId, sparql = false)
+    }
+    s"SPARQL-match the reference results $queryId" in {
+      runTest(queryId, sparql = true)
+    }
+  }
+  "LUBM Query 6" should {
+    val queryId = 6
+    s"DSL-match the reference results $queryId" in {
+      runTest(queryId, sparql = false)
+    }
+    s"SPARQL-match the reference results $queryId" in {
+      runTest(queryId, sparql = true)
+    }
+  }
+  "LUBM Query 7" should {
+    val queryId = 7
+    s"DSL-match the reference results $queryId" in {
+      runTest(queryId, sparql = false)
+    }
+    s"SPARQL-match the reference results $queryId" in {
+      runTest(queryId, sparql = true)
+    }
+  }
+  "LUBM Query 8" should {
+    val queryId = 8
+    s"DSL-match the reference results $queryId" in {
+      runTest(queryId, sparql = false)
+    }
+    s"SPARQL-match the reference results $queryId" in {
+      runTest(queryId, sparql = true)
+    }
+  }
+  "LUBM Query 9" should {
+    val queryId = 9
+    s"DSL-match the reference results $queryId" in {
+      runTest(queryId, sparql = false)
+    }
+    s"SPARQL-match the reference results $queryId" in {
+      runTest(queryId, sparql = true)
+    }
+  }
+  "LUBM Query 10" should {
+    val queryId = 10
+    s"DSL-match the reference results $queryId" in {
+      runTest(queryId, sparql = false)
+    }
+    s"SPARQL-match the reference results $queryId" in {
+      runTest(queryId, sparql = true)
+    }
+  }
+  "LUBM Query 11" should {
+    val queryId = 11
+    s"DSL-match the reference results $queryId" in {
+      runTest(queryId, sparql = false)
+    }
+    s"SPARQL-match the reference results $queryId" in {
+      runTest(queryId, sparql = true)
+    }
+  }
+  "LUBM Query 12" should {
+    val queryId = 12
+    s"DSL-match the reference results $queryId" in {
+      runTest(queryId, sparql = false)
+    }
+    s"SPARQL-match the reference results $queryId" in {
+      runTest(queryId, sparql = true)
+    }
+  }
+  "LUBM Query 13" should {
+    val queryId = 13
+    s"DSL-match the reference results $queryId" in {
+      runTest(queryId, sparql = false)
+    }
+    s"SPARQL-match the reference results $queryId" in {
+      runTest(queryId, sparql = true)
+    }
+  }
+  "LUBM Query 14" should {
+    val queryId = 14
+    s"DSL-match the reference results $queryId" in {
+      runTest(queryId, sparql = false)
+    }
+    s"SPARQL-match the reference results $queryId" in {
+      runTest(queryId, sparql = true)
+    }
+  }
 
   def toQuery(s: String): PatternQuery = PatternQuery.build(s) match {
     case Left(q) => q
