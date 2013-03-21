@@ -35,14 +35,15 @@ class IndexVertex(override val id: TriplePattern)
 
   def deliverSignal(signal: Any, sourceId: Option[Any]): Boolean = {
     val s = signal.asInstanceOf[PatternQuery]
-    setState(s.split(activeSetLength) :: state)
+    setState(s :: state)
     true
   }
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
     state foreach (query => {
+      val splitQuery = query.split(activeSetLength)
       activeSet.foreach { targetId =>
-        graphEditor.sendSignal(query, targetId, None)
+        graphEditor.sendSignal(splitQuery, targetId, None)
       }
     })
     setState(List())
