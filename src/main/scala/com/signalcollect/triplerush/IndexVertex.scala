@@ -1,6 +1,7 @@
 package com.signalcollect.triplerush
 
 import com.signalcollect._
+import scala.collection.mutable.ArrayBuffer
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -21,11 +22,11 @@ class IndexVertex(override val id: TriplePattern)
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
     val targetId = e.targetId.asInstanceOf[TriplePattern]
     if (id.s.isWildcard && targetId.isPartOfSignalSet(SignalSet.BoundSubject)) {
-      subjectSet = targetId :: subjectSet
+      subjectSet += targetId
     } else if (id.p.isWildcard && targetId.isPartOfSignalSet(SignalSet.BoundPredicate)) {
-      predicateSet = targetId :: predicateSet
+      predicateSet += targetId
     } else if (id.o.isWildcard && targetId.isPartOfSignalSet(SignalSet.BoundObject)) {
-      objectSet = targetId :: objectSet
+      objectSet += targetId
     } else {
       throw new Exception(s"Cannot add edge $e to index vertex with id $id.")
     }
@@ -57,7 +58,7 @@ class IndexVertex(override val id: TriplePattern)
 
   def scoreCollect = 0 // because signals are directly collected at arrival
 
-  def edgeCount = activeSet.length
+  def edgeCount = subjectSet.length + predicateSet.length + objectSet.length
 
   def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
 
@@ -94,8 +95,8 @@ class IndexVertex(override val id: TriplePattern)
     candidate
   }
 
-  var subjectSet: List[TriplePattern] = List()
-  var predicateSet: List[TriplePattern] = List()
-  var objectSet: List[TriplePattern] = List()
+  var subjectSet: ArrayBuffer[TriplePattern] = ArrayBuffer()
+  var predicateSet: ArrayBuffer[TriplePattern] = ArrayBuffer()
+  var objectSet: ArrayBuffer[TriplePattern] = ArrayBuffer()
 
 }
