@@ -9,6 +9,12 @@ case class TriplePattern(s: Expression, p: Expression, o: Expression) {
     s"(${s.toString},${p.toString},${o.toString})"
   }
   
+  def isLowestIndexLevel: Boolean = {
+    (s.isWildcard && !p.isWildcard && !o.isWildcard) ||
+    (!s.isWildcard && p.isWildcard && !o.isWildcard) ||
+    (!s.isWildcard && !p.isWildcard && o.isWildcard)
+  }
+  
   /**
    * Returns true if this pattern is part of a signal set.
    */
