@@ -17,11 +17,9 @@ class QueryEngine {
   private val g = GraphBuilder.build
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     signal match {
-      case qs: List[PatternQuery] =>
-        qs foreach { query =>
-          graphEditor.sendSignal(query.failed, query.queryId, None)
-        }
-      case p: PatternQuery => println("Query could not find its query vertex: " + p.isFailed + " queryId=" + p.queryId)
+      case query: PatternQuery => 
+        graphEditor.sendSignal(query.failed, query.queryId, None)
+        //println("Query could not find its query vertex: " + p.isFailed + " queryId=" + p.queryId)
       case other =>
         println(s"failed signal delivery $other of type ${other.getClass}")
     }

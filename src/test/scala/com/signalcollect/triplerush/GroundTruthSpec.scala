@@ -24,7 +24,7 @@ class GroundTruthSpec extends SpecificationWithJUnit {
 
   sequential
 
-  val enabledQueries = Set(4)
+  val enabledQueries = Set(1, 2, 3, 4)
   val dslEnabled = true
   val sparqlEnabled = false
 
@@ -49,19 +49,12 @@ class GroundTruthSpec extends SpecificationWithJUnit {
       | - "X" - s"$ub#publicationAuthor" - "http://www.Department0.University0.edu/AssistantProfessor0",
       | - "X" - s"$rdf#type" - s"$ub#Publication"),
     // Query 4
-    //    SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-    //      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-    //      | - "X" - s"$rdf#type" - s"$ub#Professor",
-    //      | - "X" - s"$ub#name" - "Y1",
-    //      | - "X" - s"$ub#emailAddress" - "Y2",
-    //      | - "X" - s"$ub#telephone" - "Y3")
     SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-      | - "X" - s"$ub#telephone" - "Y3",
-      | - "X" - s"$ub#emailAddress" - "Y2",
-      | - "X" - s"$ub#name" - "Y1",
+      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
       | - "X" - s"$rdf#type" - s"$ub#Professor",
-      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu")
-      )
+      | - "X" - s"$ub#name" - "Y1",
+      | - "X" - s"$ub#emailAddress" - "Y2",
+      | - "X" - s"$ub#telephone" - "Y3"))
 
   val sparqlQueries = List(
     """
@@ -217,13 +210,13 @@ WHERE
       val referenceResult = referenceResults(queryId)
       val query: PatternQuery = {
         if (sparql) {
+          println(s"Query $queryId SPARQL")
           toQuery(sparqlQueries(queryId - 1))
         } else {
+          println(s"Query $queryId DSL")
           dslQueries(queryId - 1)
         }
       }
-      println(s"Query $queryId:")
-      println(query)
       val ourResult = executeOnQueryEngine(query)
       ourResult === referenceResult
     } else {
@@ -263,4 +256,12 @@ WHERE
       solution.sortBy(map => map.values)
     }
   }
+
+  //  val debug = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
+  //    | - "X" - s"$ub#telephone" - "Y3",
+  //    | - "X" - s"$ub#emailAddress" - "Y2",
+  //    | - "X" - s"$ub#name" - "Y1",
+  //    | - "X" - s"$rdf#type" - s"$ub#Professor",
+  //    | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu")
+
 }
