@@ -326,6 +326,8 @@ WHERE
         }
       }
       val ourResult = executeOnQueryEngine(query)
+      //ourResult.length === referenceResult.length
+      //ourResult.slice(0, math.min(300, ourResult.length)) === referenceResult.slice(0, math.min(300, referenceResult.length))
       ourResult === referenceResult
     } else {
       "Test was not enabled" === "Test was not enabled"
