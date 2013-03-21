@@ -2,6 +2,7 @@ package com.signalcollect.triplerush
 
 import com.signalcollect._
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -43,14 +44,21 @@ class IndexVertex(override val id: TriplePattern)
     val edgeSet = activeSet
     val edgeSetLength = edgeSet.length
     state foreach (query => {
-      if (query.explorationFactor < 1 && query.matched.isEmpty && id.isLowestIndexLevel) {
-        var edgeIndex = 0
-        val maxEdgeId = query.explorationFactor * edgeSetLength
-        val splitQuery = query.split(maxEdgeId)
-        while (edgeIndex < maxEdgeId) {
-          val targetId = edgeSet(edgeIndex)
-          graphEditor.sendSignal(splitQuery, targetId, None)
-          edgeIndex += 1
+      if (query.randomWalks > 0) {
+        val bins = new Array[Int](edgeSetLength)
+        var i = 0
+        while (i < query.randomWalks) {
+          val index = Random.nextInt(edgeSetLength)
+          bins(index) += 1
+          i += 1
+        }
+        i = 0
+        while (i < edgeSetLength) {
+          val randomWalksForEdge = bins(i)
+          if (randomWalksForEdge > 0) {
+            graphEditor.sendSignal(query.split(query.randomWalks / randomWalksForEdge, randomWalksForEdge), edgeSet(i), None)
+          }
+          i += 1
         }
       } else {
         val splitQuery = query.split(edgeSetLength)

@@ -31,7 +31,7 @@ case class PatternQuery(
   matched: List[TriplePattern] = List(),
   bindings: Bindings = Bindings(),
   fraction: Double = 1,
-  explorationFactor: Double = 1,
+  randomWalks: Int = 0,  // 0 means disabled
   isFailed: Boolean = false) {
   
   override def toString = {
@@ -57,7 +57,9 @@ case class PatternQuery(
             unmatchedTail map (_.applyBindings(newBindings.get)),
             bound :: matched,
             bindings.merge(newBindings.get),
-            fraction))
+            fraction,
+            randomWalks,
+            isFailed))
         } else {
           None
         }
@@ -66,13 +68,13 @@ case class PatternQuery(
     }
   }
   def withId(newId: Int) = {
-    PatternQuery(newId, unmatched, matched, bindings, fraction, explorationFactor, isFailed)
+    PatternQuery(newId, unmatched, matched, bindings, fraction, randomWalks, isFailed)
   }
-  def split(splitFactor: Double) = {
-    PatternQuery(queryId, unmatched, matched, bindings, fraction / splitFactor, explorationFactor, isFailed)
+  def split(splitFactor: Double, walks: Int = 0) = {
+    PatternQuery(queryId, unmatched, matched, bindings, fraction / splitFactor, walks, isFailed)
   }
   def failed = {
-    PatternQuery(queryId, unmatched, matched, bindings, fraction, isFailed = true)
+    PatternQuery(queryId, unmatched, matched, bindings, fraction, randomWalks, isFailed = true)
   }
 }
 

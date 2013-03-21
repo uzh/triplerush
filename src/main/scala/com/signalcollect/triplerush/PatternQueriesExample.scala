@@ -8,7 +8,7 @@ import SparqlDsl._
 object PatternQueriesExample extends App {
   val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
   val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
-  val query1Dsl = SELECT ? "x" WHERE (
+  val query1Dsl = SAMPLE(3) ? "x" WHERE (
     | - "x" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
     | - "x" - s"$rdf#type" - s"$ub#GraduateStudent")
   val query2Dsl = SELECT ? "x" ? "y" ? "z" WHERE (
@@ -26,18 +26,18 @@ object PatternQueriesExample extends App {
   println("Loading triples ...")
 
   for (fileNumber <- 0 to 14) {
-    val filename = s"./uni0-$fileNumber.nt"
+    val filename = s"./lubm/university0_$fileNumber.nt"
     print(s"loding $filename ...")
     qe.load(filename)
     println(" done")
   }
 
   println("Executing query ...")
-  qe.executeQuery(query3Dsl) onSuccess {
+  qe.executeQuery(query1Dsl) onSuccess {
     case results =>
       println("Result bindings:")
       results foreach { result =>
-        println("\t" + result.bindings)
+        println("\t" + result.bindings + " paths = " + result.randomWalks)
       }
   }
   qe.shutdown
