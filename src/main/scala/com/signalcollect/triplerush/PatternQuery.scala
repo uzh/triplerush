@@ -30,14 +30,15 @@ case class PatternQuery(
   unmatched: List[TriplePattern],
   matched: List[TriplePattern] = List(),
   bindings: Bindings = Bindings(),
-  fraction: Double = 1,
-  randomWalks: Int = 0,  // 0 means disabled
+  tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
+  isSamplingQuery: Boolean = false,
+  isComplete: Boolean = true, // set to false as soon as there are not enough tickets to follow all edges
   isFailed: Boolean = false) {
-  
+
   override def toString = {
     matched.mkString("\n") + unmatched.mkString("\n") + bindings.toString
   }
-  
+
   def nextTargetId: Option[TriplePattern] = {
     unmatched match {
       case next :: _ =>
@@ -57,8 +58,9 @@ case class PatternQuery(
             unmatchedTail map (_.applyBindings(newBindings.get)),
             bound :: matched,
             bindings.merge(newBindings.get),
-            fraction,
-            randomWalks,
+            tickets,
+            isSamplingQuery,
+            isComplete,
             isFailed))
         } else {
           None
@@ -68,13 +70,13 @@ case class PatternQuery(
     }
   }
   def withId(newId: Int) = {
-    PatternQuery(newId, unmatched, matched, bindings, fraction, randomWalks, isFailed)
+    PatternQuery(newId, unmatched, matched, bindings, tickets, isSamplingQuery, isComplete, isFailed)
   }
-  def split(splitFactor: Double, walks: Int = 0) = {
-    PatternQuery(queryId, unmatched, matched, bindings, fraction / splitFactor, walks, isFailed)
+  def withTickets(numberOfTickets: Long, complete: Boolean = true) = {
+    PatternQuery(queryId, unmatched, matched, bindings,  numberOfTickets, isSamplingQuery, complete, isFailed)
   }
   def failed = {
-    PatternQuery(queryId, unmatched, matched, bindings, fraction, randomWalks, isFailed = true)
+    PatternQuery(queryId, unmatched, matched, bindings, tickets, isSamplingQuery, isComplete, isFailed = true)
   }
 }
 

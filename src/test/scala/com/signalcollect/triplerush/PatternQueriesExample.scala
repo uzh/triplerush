@@ -9,7 +9,7 @@ import SparqlDsl.{| => |}
 object PatternQueriesExample extends App {
   val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
   val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
-  val query1Dsl = SAMPLE(10000) ? "x" WHERE (
+  val query1Dsl = SAMPLE(100000) ? "x" WHERE (
     | - "x" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
     | - "x" - s"$rdf#type" - s"$ub#GraduateStudent")
   val query2Dsl = SAMPLE(100000) ? "x" ? "y" ? "z" WHERE (
@@ -36,11 +36,11 @@ object PatternQueriesExample extends App {
   }
 
   println("Executing query ...")
-  qe.executeQuery(crazyQuery) onSuccess {
+  qe.executeQuery(query1Dsl) onSuccess {
     case results =>
       println("Result bindings:")
       results foreach { result =>
-        println("\t" + result.bindings + " paths = " + result.randomWalks)
+        println("\t" + result.bindings + " tickets = " + result.tickets)
       }
   }
   qe.shutdown

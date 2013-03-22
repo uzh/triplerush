@@ -23,6 +23,7 @@ class TripleVertex(override val id: TriplePattern, initialState: List[PatternQue
     val (fullyMatched, partiallyMatched) = boundQueries partition (_.unmatched.isEmpty)
 
     fullyMatched foreach { query =>
+      println(s"Sending ${query.tickets} to the query vertex")
       graphEditor.sendSignal(query, query.queryId, None)
     }
     partiallyMatched foreach (query => {

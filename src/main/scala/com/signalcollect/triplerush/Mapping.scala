@@ -31,4 +31,7 @@ object Mapping {
   def getString(id: Int): String = {
     id2String(id)
   }
+  def existsMappingForString(s: String): Boolean = {
+    string2Id.contains(s)
+  }
 }
