@@ -1,6 +1,7 @@
 package com.signalcollect.triplerush
 
 import com.signalcollect.triplerush.Expression.int2Expression
+import language.implicitConversions
 
 object SparqlDsl extends App {
   object | {
@@ -32,6 +33,6 @@ object SparqlDsl extends App {
   case class DslQuery(samples: Long, variables: List[String], dslTriplePatterns: List[DslTriplePattern])
   implicit def dsl2Query(q: DslQuery): PatternQuery = {
     q.variables foreach (Mapping.register(_, isVariable = true))
-    PatternQuery(0, q.dslTriplePatterns map (_.toTriplePattern), tickets = q.samples, isSamplingQuery = (q.samples < Long.MaxValue) )
+    PatternQuery(QueryIds.next, q.dslTriplePatterns map (_.toTriplePattern), tickets = q.samples, isSamplingQuery = (q.samples < Long.MaxValue) )
   }
 }

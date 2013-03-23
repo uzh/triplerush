@@ -318,10 +318,10 @@ WHERE
       val referenceResult = referenceResults(queryId)
       val query: PatternQuery = {
         if (sparql) {
-          println(s"Query $queryId SPARQL")
+          //println(s"Query $queryId SPARQL")
           toQuery(sparqlQueries(queryId - 1))
         } else {
-          println(s"Query $queryId DSL")
+          //println(s"Query $queryId DSL")
           dslQueries(queryId - 1)
         }
       }

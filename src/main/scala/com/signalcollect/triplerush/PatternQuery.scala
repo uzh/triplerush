@@ -3,27 +3,14 @@ package com.signalcollect.triplerush
 import scala.collection.JavaConversions._
 import scala.language.dynamics
 import scala.reflect.classTag
-import com.hp.hpl.jena.query.Query
-import com.hp.hpl.jena.query.QueryFactory
-import com.hp.hpl.jena.sparql.syntax.Element
-import com.hp.hpl.jena.sparql.syntax.ElementGroup
-import com.hp.hpl.jena.sparql.syntax.ElementPathBlock
-import com.hp.hpl.jena.sparql.syntax.ElementVisitor
-import com.hp.hpl.jena.sparql.syntax.ElementSubQuery
-import com.hp.hpl.jena.sparql.syntax.ElementMinus
-import com.hp.hpl.jena.sparql.syntax.ElementNamedGraph
-import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock
-import com.hp.hpl.jena.sparql.syntax.ElementExists
-import com.hp.hpl.jena.sparql.syntax.ElementAssign
-import com.hp.hpl.jena.sparql.syntax.ElementFetch
-import com.hp.hpl.jena.sparql.syntax.ElementDataset
-import com.hp.hpl.jena.sparql.syntax.ElementBind
-import com.hp.hpl.jena.sparql.syntax.ElementUnion
-import com.hp.hpl.jena.sparql.syntax.ElementOptional
-import com.hp.hpl.jena.sparql.syntax.ElementService
-import com.hp.hpl.jena.sparql.syntax.ElementData
-import com.hp.hpl.jena.sparql.syntax.ElementNotExists
-import com.hp.hpl.jena.sparql.syntax.ElementFilter
+import com.hp.hpl.jena.query._
+import com.hp.hpl.jena.sparql.syntax._
+import java.util.concurrent.atomic.AtomicInteger
+
+object QueryIds {
+  private val maxQueryId = new AtomicInteger
+  def next = maxQueryId.incrementAndGet
+}
 
 case class PatternQuery(
   queryId: Int,

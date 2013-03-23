@@ -1,8 +1,7 @@
 package com.signalcollect.triplerush
 
-import com.signalcollect.DataFlowVertex
+import com.signalcollect._
 import scala.concurrent.Promise
-import com.signalcollect.GraphEditor
 
 class QueryVertex(id: Int, promise: Promise[List[PatternQuery]], val expectedTickets: Long, initialState: List[PatternQuery] = List()) extends DataFlowVertex(id, initialState) {
   type Signal = PatternQuery
@@ -12,7 +11,7 @@ class QueryVertex(id: Int, promise: Promise[List[PatternQuery]], val expectedTic
   def collect(query: PatternQuery) = {
     receivedTickets += query.tickets
     complete &&= query.isComplete 
-    println(s"$id tickets: $receivedTickets/$expectedTickets. Total bindings so far: ${state.filter(!_.isFailed).length}.")
+    //println(s"$id tickets: $receivedTickets/$expectedTickets. Total bindings so far: ${state.filter(!_.isFailed).length}.")
     if (!query.isFailed) {
       query :: state
     } else {

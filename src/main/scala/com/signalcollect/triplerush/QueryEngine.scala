@@ -13,29 +13,15 @@ import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorqueHost
 import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
 import com.signalcollect.configuration.LoggingLevel
+import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 
 class QueryEngine(kraken: Boolean = false) {
-  private val g = {
-    if (kraken) {
-      val baseOptions =
-        " -Xmx64000m" +
-          " -Xms64000m" +
-          " -Xmn8000m" +
-          " -d64"
-      GraphBuilder.withNodeProvisioner(new TorqueNodeProvisioner(
-        torqueHost = new TorqueHost(
-          jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-          localJarPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar"),
-        numberOfNodes = 1, jvmParameters = baseOptions)).withLoggingLevel(LoggingLevel.Debug).build
-    } else {
-      GraphBuilder.build
-    }
-  }
+  private val g = GraphBuilder.build //TODO: .withMessageBusFactory(new BulkAkkaMessageBusFactory(50, false))
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     signal match {
       case query: PatternQuery =>
         if (query.isFailed) {
-        	println(s"Failed query ${query.bindings}. Could not deliver its results to its respective query vertex ${query.queryId}")
+          println(s"Failed query ${query.bindings}. Could not deliver its results to its respective query vertex ${query.queryId}")
         } else {
           //println(s"Query ${query.bindings} is failing.")
           graphEditor.sendSignal(query.failed, query.queryId, None)
@@ -48,7 +34,10 @@ class QueryEngine(kraken: Boolean = false) {
   g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
   g.awaitIdle
 
-  def load(ntriplesFilename: String, onlyTriplesAboutKnownEntities: Boolean = false, bannedPredicates: Set[String] = Set()) {
+  def load(ntriplesFilename: String,
+    bidirectionalPredicates: Boolean = false,
+    onlyTriplesAboutKnownEntities: Boolean = false,
+    bannedPredicates: Set[String] = Set()) {
     val is = new FileInputStream(ntriplesFilename)
     val nxp = new NxParser(is)
     var triplesRead = 0
@@ -60,11 +49,22 @@ class QueryEngine(kraken: Boolean = false) {
         val subjectString = triple(0).toString
         val objectString = triple(2).toString
         if (!onlyTriplesAboutKnownEntities || Mapping.existsMappingForString(subjectString) || Mapping.existsMappingForString(objectString)) {
+          val sId = Mapping.register(subjectString)
+          val pId = Mapping.register(predicateString)
+          val oId = Mapping.register(objectString)
           g.addVertex(new TripleVertex(
             TriplePattern(
-              Mapping.register(subjectString),
-              Mapping.register(predicateString),
-              Mapping.register(objectString))))
+              sId,
+              pId,
+              oId)))
+          if (bidirectionalPredicates) {
+            g.addVertex(new TripleVertex(
+              TriplePattern(
+                oId,
+                pId,
+                sId)))
+            triplesRead += 1
+          }
           triplesRead += 1
           if (triplesRead % 1000 == 0) {
             println("Triples read: " + triplesRead)
@@ -78,21 +78,18 @@ class QueryEngine(kraken: Boolean = false) {
     println("done")
   }
 
-  private val maxQueryId = new AtomicInteger
-
   def executeQuery(q: PatternQuery): Future[List[PatternQuery]] = {
     val p = promise[List[PatternQuery]]
-    val id = maxQueryId.incrementAndGet
-    g.addVertex(new QueryVertex(id, p, q.tickets), blocking = true)
+    g.addVertex(new QueryVertex(q.queryId, p, q.tickets), blocking = true)
     //println(s"Added query vertex for query id $id")
-    g.sendSignal(q.withId(id), q.nextTargetId.get, None)
+    g.sendSignal(q, q.nextTargetId.get, None)
     p.future
   }
 
   def awaitIdle {
     g.awaitIdle
   }
-  
+
   def shutdown {
     g.shutdown
   }

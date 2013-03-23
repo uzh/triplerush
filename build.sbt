@@ -12,6 +12,10 @@ scalaVersion := "2.10.1"
 
 EclipseKeys.withSource := true
 
+excludedJars in assembly <<= (fullClasspath in assembly) map { cp => 
+  cp filter {_.data.getName == "minlog-1.2.jar"}
+}
+
 /** Dependencies */
 libraryDependencies ++= Seq(
  "org.scala-lang" % "scala-library" % "2.10.1"  % "compile",

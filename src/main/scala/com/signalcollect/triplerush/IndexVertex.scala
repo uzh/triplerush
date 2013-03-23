@@ -45,7 +45,7 @@ class IndexVertex(override val id: TriplePattern)
     val edgeSetLength = edgeSet.length
     state foreach (query => {
       if (query.isSamplingQuery) {
-        println("Executed as sampling query")
+        //println("Executed as sampling query")
         val bins = new Array[Long](edgeSetLength)
         var i = 0
         while (i < query.tickets) {
@@ -54,7 +54,7 @@ class IndexVertex(override val id: TriplePattern)
           i += 1
         }
         val complete: Boolean = bins forall (_ > 0)
-        println(id + " " + bins.toList)
+        //println(id + " " + bins.toList)
         i = 0
         while (i < edgeSetLength) {
           val ticketsForEdge = bins(i)
