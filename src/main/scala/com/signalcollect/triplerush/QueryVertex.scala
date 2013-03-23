@@ -11,7 +11,7 @@ class QueryVertex(id: Int, promise: Promise[List[PatternQuery]], val expectedTic
   def collect(query: PatternQuery) = {
     receivedTickets += query.tickets
     if (complete && !query.isComplete) {
-      println("Query is n")
+      println("Query is not complete.")
     }
     complete &&= query.isComplete
     //println(s"$id tickets: $receivedTickets/$expectedTickets. Total bindings so far: ${state.filter(!_.isFailed).length}.")
