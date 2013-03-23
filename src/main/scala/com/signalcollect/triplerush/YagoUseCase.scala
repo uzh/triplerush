@@ -22,8 +22,8 @@ object YagoUseCase extends App {
   val yago = "http://yago-knowledge.org/resource"
   val rdf = "http://www.w3.org/2000/01/rdf-schema"
   val owl = "http://www.w3.org/2002/07/owl"
-  val q = SELECT ? "p1" ? "p2" ? "o1" ? "o2" ? "p3" ? "o3" ? "p4" ? "o4" ? "p5" ? "o5" WHERE ( //SAMPLE(10000000)
-    | - s"$yago/wordnet_brown_bear_102132136" - "p1" - "o1",
+  val q = SAMPLE(10000) ? "o1" ? "o2" ? "o3" ? "o4" ? "o5" ? "p1" ? "p2" ? "p3" ? "p4" ? "p5" WHERE ( //SAMPLE(10000000)
+    | - s"$yago/Barack_Obama" - "p1" - "o1",
     | - "o1" - "p2" - "o2",
     | - "o2" - "p3" - "o3",
     | - "o3" - "p4" - "o4",
@@ -67,8 +67,8 @@ object YagoUseCase extends App {
   }
   qe.awaitIdle
   qe.shutdown
+  output.flush
   output.close
-
   def output(msg: String) {
     print(msg)
     output.write(msg.getBytes)
