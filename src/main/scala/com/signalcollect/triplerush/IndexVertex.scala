@@ -55,32 +55,13 @@ class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
     var extras = new AtomicLong(query.tickets % targetIdCount)
     val averageTicketQuery = query.withTickets(avg, complete)
     val aboveAverageTicketQuery = query.withTickets(avg + 1, complete)
-    val signalInParallel = targetIdCount > 10000
-    val targetIdArray = {
-      if (signalInParallel) {
-        targetIds.par
-      } else {
-        targetIds
-      }
-    }
-    for (targetId <- targetIdArray) {
+    for (targetId <- targetIds) {
       val hasExtra = extras.decrementAndGet >= 0
       if (hasExtra) {
-        forwardQuery(aboveAverageTicketQuery, targetId, signalInParallel, graphEditor)
+        graphEditor.sendSignal(aboveAverageTicketQuery, targetId, None)
       } else if (complete) {
-        forwardQuery(averageTicketQuery, targetId, signalInParallel, graphEditor)
+        graphEditor.sendSignal(averageTicketQuery, targetId, None)
       }
-    }
-  }
-
-  def forwardQuery(query: PatternQuery, targetId: Any, sendingInParallel: Boolean, graphEditor: GraphEditor[Any, Any]) {
-//    println(s"query=$query targetId=$targetId")
-    if (sendingInParallel) {
-      synchronized {
-        graphEditor.sendSignal(query, targetId, None)
-      }
-    } else {
-      graphEditor.sendSignal(query, targetId, None)
     }
   }
 

@@ -19,7 +19,7 @@ import scala.collection.mutable.ArrayBuffer
 import com.signalcollect.StateForwarderEdge
 
 case class QueryEngine() {
-  private val g = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(196, false)).build
+  private val g = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).build
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     signal match {
       case query: PatternQuery =>
