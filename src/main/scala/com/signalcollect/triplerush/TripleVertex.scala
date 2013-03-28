@@ -8,14 +8,11 @@ class TripleVertex(id: TriplePattern) extends PatternVertex(id) {
    * Binds the queries to the pattern of this vertex and routes them to their next destinations.
    */
   def signal(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
-    val boundQueryOption = query.bind(id)
-    if (boundQueryOption.isDefined) {
-      val boundQuery = boundQueryOption.get
+    for (boundQuery <- query.bind(id)) {
       if (boundQuery.unmatched.isEmpty) {
         graphEditor.sendSignal(boundQuery, boundQuery.queryId, None)
       } else {
-        val routingAddress = boundQuery.unmatched.head.routingAddress
-        graphEditor.sendSignal(boundQuery, routingAddress, None)
+        graphEditor.sendSignal(boundQuery, boundQuery.unmatched.head.routingAddress, None)
       }
     }
   }

@@ -34,7 +34,7 @@ object PatternQueriesExample extends App {
     qe.load(filename)
     println(" done")
   }
-
+  qe.awaitIdle
   println("Executing query ...")
   qe.executeQuery(query1Dsl) onSuccess {
     case results =>

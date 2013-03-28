@@ -45,7 +45,7 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  val evalName = "LUBM benchmarking with Q1 & Q3 patterns ordered as in paper"
+  val evalName = "LUBM benchmarking with Q1 & Q3 patterns shuffled (last version probably ran out of memory)"
   val runs = 10
   val evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
@@ -94,22 +94,22 @@ object LubmBenchmark extends App {
      */
     val queries: List[PatternQuery] = List(
       SELECT ? "X" ? "Y" ? "Z" WHERE (
+        | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
+        | - "X" - s"$ub#memberOf" - "Z",
+        | - "Z" - s"$rdf#type" - s"$ub#Department",
         | - "Z" - s"$ub#subOrganizationOf" - "Y",
         | - "Y" - s"$rdf#type" - s"$ub#University",
-        | - "Z" - s"$rdf#type" - s"$ub#Department",
-        | - "X" - s"$ub#memberOf" - "Z",
-        | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
         | - "X" - s"$ub#undergraduateDegreeFrom" - "Y"),
       SELECT ? "X" ? "Y" WHERE (
         | - "X" - s"$rdf#type" - s"$ub#Course",
         | - "X" - s"$ub#name" - "Y"),
       SELECT ? "X" ? "Y" ? "Z" WHERE (
         | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
-        | - "Y" - s"$rdf#type" - s"$ub#University",
-        | - "Z" - s"$rdf#type" - s"$ub#Department",
         | - "X" - s"$ub#memberOf" - "Z",
         | - "Z" - s"$ub#subOrganizationOf" - "Y",
-        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y"),
+        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
+        | - "Z" - s"$rdf#type" - s"$ub#Department",
+        | - "Y" - s"$rdf#type" - s"$ub#University"),
       SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
         | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
         | - "X" - s"$rdf#type" - s"$ub#FullProfessor",

@@ -2,6 +2,7 @@ package com.signalcollect.triplerush
 
 import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
+import scala.util.Random
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -22,27 +23,24 @@ class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
   }
 
   def processSamplingQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
-    throw new Exception("Sampling currently not supported")
-    //TODO: Fix for triple vertex style interactions
-    //    val targetIdCount = targetIds.length
-    //    val bins = new Array[Long](targetIdCount)
-    //    var binIndex = 0
-    //    while (binIndex < query.tickets) {
-    //      val index = Random.nextInt(targetIdCount)
-    //      bins(index) += 1
-    //      binIndex += 1
-    //    }
-    //    val complete: Boolean = bins forall (_ > 0)
-    //    var targetIdIndex = 0
-    //    while (targetIdIndex < targetIdCount) {
-    //      val ticketsForEdge = bins(targetIdIndex)
-    //      if (ticketsForEdge > 0) {
-    //        val ticketEquippedQuery = query.withTickets(ticketsForEdge, complete)
-    //        val targetId = targetIds(targetIdIndex)
-    //        routeQuery(ticketEquippedQuery, targetId, graphEditor)
-    //      }
-    //      targetIdIndex += 1
-    //    }
+    val targetIdCount = targetIds.length
+    val bins = new Array[Long](targetIdCount)
+    var binIndex = 0
+    while (binIndex < query.tickets) {
+      val index = Random.nextInt(targetIdCount)
+      bins(index) += 1
+      binIndex += 1
+    }
+    val complete: Boolean = bins forall (_ > 0)
+    var targetIdIndex = 0
+    for (targetId <- targetIds) {
+      val ticketsForEdge = bins(targetIdIndex)
+      if (ticketsForEdge > 0) {
+        val ticketEquippedQuery = query.withTickets(ticketsForEdge, complete)
+        val targetId = targetIds(targetIdIndex)
+        graphEditor.sendSignal(ticketEquippedQuery, targetId, None)
+      }
+    }
   }
 
   def processFullQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
