@@ -16,6 +16,7 @@ import com.signalcollect.configuration.LoggingLevel
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.GraphEditor
 import scala.collection.mutable.ArrayBuffer
+import com.signalcollect.StateForwarderEdge
 
 case class QueryEngine() {
   private val g = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(196, false)).build
@@ -58,11 +59,11 @@ case class QueryEngine() {
             val oId = Mapping.register(objectString)
             val tp = TriplePattern(sId, pId, oId)
             //            QueryOptimizer.addTriple(tp)
-            graphEditor.addVertex(new TripleVertex(tp))
+            graphEditor.addVertex(new IndexVertex(tp))
             if (bidirectionalPredicates) {
               val reverseTp = TriplePattern(oId, pId, sId)
               //              QueryOptimizer.addTriple(reverseTp)
-              graphEditor.addVertex(new TripleVertex(reverseTp))
+              graphEditor.addVertex(new IndexVertex(reverseTp))
               //            triplesRead += 1
             }
             //          triplesRead += 1
