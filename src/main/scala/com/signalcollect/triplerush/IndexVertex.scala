@@ -52,13 +52,13 @@ class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
     val targetIdCount = targetIds.length
     val avg = query.tickets / targetIdCount
     val complete = avg > 0
-    var extras = new AtomicLong(query.tickets % targetIdCount)
+    var extras = query.tickets % targetIdCount
     val averageTicketQuery = query.withTickets(avg, complete)
     val aboveAverageTicketQuery = query.withTickets(avg + 1, complete)
     for (targetId <- targetIds) {
-      val hasExtra = extras.decrementAndGet >= 0
-      if (hasExtra) {
+      if (extras > 0) {
         graphEditor.sendSignal(aboveAverageTicketQuery, targetId, None)
+        extras -= 1
       } else if (complete) {
         graphEditor.sendSignal(averageTicketQuery, targetId, None)
       }

@@ -165,10 +165,11 @@ object LubmBenchmark extends App {
       qe.awaitIdle
     }
     results += "loadingTime" -> loadingTime.toString
+    results += "evaluationDescription" -> evalName
 
-//    println("Attach profiler and press any key...")
-//    readLine
-//    println("Running.")
+    //    println("Attach profiler and press any key...")
+    //    readLine
+    //    println("Running.")
 
     for (queryId <- 1 to 7) {
       val queryIndex = queryId - 1
