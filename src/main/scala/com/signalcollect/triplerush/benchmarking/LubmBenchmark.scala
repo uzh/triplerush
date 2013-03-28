@@ -26,7 +26,6 @@ import scala.collection.mutable.ArrayBuffer
  * Evaluation is set to execute on a 'Kraken'-node.
  */
 object LubmBenchmark extends App {
-  val evalName = "LUBM Benchmark"
   val jvmParameters = " -Xmx64000m" +
     " -Xms64000m" +
     " -Xmn8000m" +
@@ -44,8 +43,12 @@ object LubmBenchmark extends App {
     localJarPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar", jvmParameters = jvmParameters, priority = TorquePriority.fast)
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
-  val runs = 1
-  val evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
+
+  /*********/
+  val evalName = "LUBM benchmarking after optimizations"
+  val runs = 10
+  val evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
+  /*********/
 
   val evalWithRuns = (1 to runs).foldLeft(evaluation) {
     case (aggr, next) => aggr.addEvaluationRun(lubmBenchmarkRun _)
@@ -85,7 +88,7 @@ object LubmBenchmark extends App {
      *            L1   L2       L3 L4 L5 L6  L7
      * LUBM-160   397  173040   0  10 10 125 7125
      * LUBM-10240 2502 11016920 0  10 10 125 450721
-     * 
+     *
      * Times Trinity: 281 132 110  5    4 9 630
      * Time TripleR: 3815 222 3126 2    1 2 603
      */
@@ -135,7 +138,7 @@ object LubmBenchmark extends App {
     val folder = new File(toRenameFolder)
     val qe = new QueryEngine()
     def loadLubm160 {
-      for (file <- folder.listFiles.take(60)) {
+      for (file <- folder.listFiles) {
         if (file.getName.startsWith("University") && file.getName.endsWith(".nt")) {
           qe.load(file.getAbsolutePath)
         }
@@ -153,7 +156,7 @@ object LubmBenchmark extends App {
 
     def executeOnQueryEngine(q: PatternQuery): ArrayBuffer[PatternQuery] = {
       val resultFuture = qe.executeQuery(q)
-      val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
+      val result = Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS))
       result
     }
 
@@ -163,9 +166,10 @@ object LubmBenchmark extends App {
     }
     results += "loadingTime" -> loadingTime.toString
 
-    println("Attach profiler and press any key...")
-    readLine
-    
+//    println("Attach profiler and press any key...")
+//    readLine
+//    println("Running.")
+
     for (queryId <- 1 to 7) {
       val queryIndex = queryId - 1
       val executionTime = measureTime {

@@ -29,24 +29,26 @@ case class PatternQuery(
   def bind(tp: TriplePattern): Option[PatternQuery] = {
     unmatched match {
       case unmatchedHead :: unmatchedTail =>
-        val newBindings = unmatchedHead.bindingsFor(tp)
-        if (newBindings.isDefined && bindings.isCompatible(newBindings.get)) {
-          val bound = unmatchedHead.applyBindings(newBindings.get)
-          Some(PatternQuery(
-            queryId,
-            unmatchedTail map (_.applyBindings(newBindings.get)),
-            bound :: matched,
-            bindings.merge(newBindings.get),
-            tickets,
-            isSamplingQuery,
-            isComplete,
-            isFailed))
-        } else {
-          None
+        val newBindingsOption = unmatchedHead.bindingsFor(tp)
+        if (newBindingsOption.isDefined) {
+          val newBindings = newBindingsOption.get
+          if (newBindings.isCompatible(bindings)) {
+            val bound = unmatchedHead.applyBindings(newBindings)
+            return Some(PatternQuery(
+              queryId,
+              unmatchedTail map (_.applyBindings(newBindings)),
+              bound :: matched,
+              bindings.merge(newBindings),
+              tickets,
+              isSamplingQuery,
+              isComplete,
+              isFailed))
+          }
         }
       case other =>
-        None
+        return None
     }
+    None
   }
   def withId(newId: Int) = {
     PatternQuery(newId, unmatched, matched, bindings, tickets, isSamplingQuery, isComplete, isFailed)

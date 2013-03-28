@@ -28,7 +28,7 @@ case class Expression(value: Int) extends AnyVal {
   @inline def bindTo(constant: Expression): Option[Bindings] = {
     if (isVariable) {
       // This is a variable, return the new binding.
-      Some(Bindings(Map((value, constant.value))))
+      Some(Bindings(Map(value -> constant.value)))
     } else if (isConstant && value == constant.value) {
       // Binding is compatible, but no new binding created.
       Some(Bindings())

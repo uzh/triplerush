@@ -25,6 +25,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
   }
 
   def processSamplingQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
+    throw new Exception("Sampling currently not supported")
     //TODO: Fix for triple vertex style interactions
     //    val targetIdCount = targetIds.length
     //    val bins = new Array[Long](targetIdCount)
@@ -73,6 +74,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
   }
 
   def forwardQuery(query: PatternQuery, targetId: Any, sendingInParallel: Boolean, graphEditor: GraphEditor[Any, Any]) {
+//    println(s"query=$query targetId=$targetId")
     if (sendingInParallel) {
       synchronized {
         graphEditor.sendSignal(query, targetId, None)
