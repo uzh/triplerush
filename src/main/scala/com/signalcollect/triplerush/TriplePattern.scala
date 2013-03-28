@@ -44,17 +44,17 @@ case class TriplePattern(s: Expression, p: Expression, o: Expression) {
       case TriplePattern(s, Expression(0), Expression(0)) =>
         List(TriplePattern(0, 0, 0))
       case TriplePattern(Expression(0), p, Expression(0)) =>
-        List(TriplePattern(0, 0, 0))
+        List()//  List(TriplePattern(0, 0, 0))
       case TriplePattern(Expression(0), Expression(0), o) =>
-        List(TriplePattern(0, 0, 0))
+        List()// List(TriplePattern(0, 0, 0))
       case TriplePattern(Expression(0), p, o) =>
-        List(TriplePattern(0, 0, o), TriplePattern(0, p, 0))
+        List(TriplePattern(0, p, 0))//List(TriplePattern(0, 0, o), TriplePattern(0, p, 0))
       case TriplePattern(s, Expression(0), o) =>
-        List(TriplePattern(0, 0, o), TriplePattern(s, 0, 0))
+        List(TriplePattern(0, 0, o))//List(TriplePattern(0, 0, o), TriplePattern(s, 0, 0))
       case TriplePattern(s, p, Expression(0)) =>
-        List(TriplePattern(0, p, 0), TriplePattern(s, 0, 0))
+        List(TriplePattern(s, 0, 0))//List(TriplePattern(0, p, 0), TriplePattern(s, 0, 0))
       case TriplePattern(s, p, o) =>
-        List(TriplePattern(0, p, o), TriplePattern(s, 0, o), TriplePattern(s, p, 0))
+        List(TriplePattern(0, p, o), TriplePattern(s, 0, o), TriplePattern(s, p, 0)) //List(TriplePattern(0, p, o), TriplePattern(s, 0, o), TriplePattern(s, p, 0))
     }
   }
 

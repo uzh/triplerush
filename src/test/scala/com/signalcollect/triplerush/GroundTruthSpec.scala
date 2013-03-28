@@ -38,12 +38,12 @@ class GroundTruthSpec extends SpecificationWithJUnit {
       | - "X" - s"$rdf#type" - s"$ub#GraduateStudent"),
     // Query 2
     SELECT ? "X" ? "Y" ? "Z" WHERE (
-      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
-      | - "X" - s"$ub#memberOf" - "Z",
-      | - "Z" - s"$rdf#type" - s"$ub#Department",
+      | - "Y" - s"$rdf#type" - s"$ub#University",
       | - "Z" - s"$ub#subOrganizationOf" - "Y",
+      | - "Z" - s"$rdf#type" - s"$ub#Department",
       | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
-      | - "Y" - s"$rdf#type" - s"$ub#University"),
+      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
+      | - "X" - s"$ub#memberOf" - "Z"),
     // Query 3
     SELECT ? "X" WHERE (
       | - "X" - s"$ub#publicationAuthor" - "http://www.Department0.University0.edu/AssistantProfessor0",
@@ -294,19 +294,20 @@ WHERE
 
   val qe = new QueryEngine
 
+  println("Loading LUBM1 ... ")
   for (fileNumber <- 0 to 14) {
     val filename = s"./lubm/university0_$fileNumber.nt"
-    print(s"loading $filename ...")
     qe.load(filename)
-    println(" done")
   }
+  qe.awaitIdle
+  println("Finished loading LUBM1.")
 
   def executeOnQueryEngine(q: PatternQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
     val bindings = result map (_.bindings.map map (entry => (Mapping.getString(entry._1), Mapping.getString(entry._2))))
     val sortedBindings = bindings map (unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
-    val sortedBindingList = sortedBindings sortBy (map => map.values)
+    val sortedBindingList = (sortedBindings sortBy (map => map.values)).toList
     sortedBindingList
   }
 
@@ -318,16 +319,12 @@ WHERE
       val referenceResult = referenceResults(queryId)
       val query: PatternQuery = {
         if (sparql) {
-          //println(s"Query $queryId SPARQL")
           toQuery(sparqlQueries(queryId - 1))
         } else {
-          //println(s"Query $queryId DSL")
           dslQueries(queryId - 1)
         }
       }
       val ourResult = executeOnQueryEngine(query)
-      //ourResult.length === referenceResult.length
-      //ourResult.slice(0, math.min(300, ourResult.length)) === referenceResult.slice(0, math.min(300, referenceResult.length))
       ourResult === referenceResult
     } else {
       "Test was not enabled" === "Test was not enabled"

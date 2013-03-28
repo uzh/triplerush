@@ -14,9 +14,11 @@ import com.signalcollect.nodeprovisioning.torque.TorqueHost
 import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
 import com.signalcollect.configuration.LoggingLevel
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
+import com.signalcollect.GraphEditor
+import scala.collection.mutable.ArrayBuffer
 
-class QueryEngine(kraken: Boolean = false) {
-  private val g = GraphBuilder.build //TODO: .withMessageBusFactory(new BulkAkkaMessageBusFactory(50, false))
+case class QueryEngine() {
+  private val g = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(196, false)).build
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     signal match {
       case query: PatternQuery =>
@@ -38,59 +40,59 @@ class QueryEngine(kraken: Boolean = false) {
     bidirectionalPredicates: Boolean = false,
     onlyTriplesAboutKnownEntities: Boolean = false,
     bannedPredicates: Set[String] = Set()) {
-    val is = new FileInputStream(ntriplesFilename)
-    val nxp = new NxParser(is)
-    var triplesRead = 0
-    println("Reading triples ...")
-    while (nxp.hasNext) {
-      val triple = nxp.next
-      val predicateString = triple(1).toString
-      if (!bannedPredicates.contains(predicateString)) {
-        val subjectString = triple(0).toString
-        val objectString = triple(2).toString
-        if (!onlyTriplesAboutKnownEntities || Mapping.existsMappingForString(subjectString) || Mapping.existsMappingForString(objectString)) {
-          val sId = Mapping.register(subjectString)
-          val pId = Mapping.register(predicateString)
-          val oId = Mapping.register(objectString)
-          g.addVertex(new TripleVertex(
-            TriplePattern(
-              sId,
-              pId,
-              oId)))
-          if (bidirectionalPredicates) {
-            g.addVertex(new TripleVertex(
-              TriplePattern(
-                oId,
-                pId,
-                sId)))
-            triplesRead += 1
-          }
-          triplesRead += 1
-          if (triplesRead % 1000 == 0) {
-            println("Triples read: " + triplesRead)
-          }
+    g.modifyGraph(loadFile _, None)
+    def loadFile(graphEditor: GraphEditor[Any, Any]) {
+      val is = new FileInputStream(ntriplesFilename)
+      val nxp = new NxParser(is)
+      //    var triplesRead = 0
+      println(s"Reading triples from $ntriplesFilename ...")
+      while (nxp.hasNext) {
+        val triple = nxp.next
+        val predicateString = triple(1).toString
+        if (!bannedPredicates.contains(predicateString)) {
+          val subjectString = triple(0).toString
+          val objectString = triple(2).toString
+          if (!onlyTriplesAboutKnownEntities || Mapping.existsMappingForString(subjectString) || Mapping.existsMappingForString(objectString)) {
+            val sId = Mapping.register(subjectString)
+            val pId = Mapping.register(predicateString)
+            val oId = Mapping.register(objectString)
+            val tp = TriplePattern(sId, pId, oId)
+            //            QueryOptimizer.addTriple(tp)
+            graphEditor.addVertex(new TripleVertex(tp))
+            if (bidirectionalPredicates) {
+              val reverseTp = TriplePattern(oId, pId, sId)
+              //              QueryOptimizer.addTriple(reverseTp)
+              graphEditor.addVertex(new TripleVertex(reverseTp))
+              //            triplesRead += 1
+            }
+            //          triplesRead += 1
+            //          if (triplesRead % 1000 == 0) {
+            //            println("Triples read: " + triplesRead)
+            //          }
 
+          }
         }
       }
     }
-    print("Waiting for graph loading to finish ... ")
-    g.awaitIdle
-    println("done")
+    //    print("Waiting for graph loading to finish ... ")
   }
 
-  def executeQuery(q: PatternQuery): Future[List[PatternQuery]] = {
-    val p = promise[List[PatternQuery]]
-    g.addVertex(new QueryVertex(q.queryId, p, q.tickets), blocking = true)
-    //println(s"Added query vertex for query id $id")
-    g.sendSignal(q, q.nextTargetId.get, None)
-    p.future
+  def executeQuery(q: PatternQuery): Future[ArrayBuffer[PatternQuery]] = {
+    val p = promise[ArrayBuffer[PatternQuery]]
+    if (!q.unmatched.isEmpty) {
+      g.addVertex(new QueryVertex(q.queryId, p, q.tickets), blocking = true)
+      g.sendSignal(q, q.unmatched.head.routingAddress, None)
+      p.future
+    } else {
+      p success ArrayBuffer()
+      p.future
+    }
   }
 
   def awaitIdle {
     g.awaitIdle
   }
 
-  def shutdown {
-    g.shutdown
-  }
+  def shutdown = g.shutdown
+
 }

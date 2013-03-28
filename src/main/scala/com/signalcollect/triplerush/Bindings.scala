@@ -8,10 +8,14 @@ package com.signalcollect.triplerush
 case class Bindings(map: Map[Int, Int] = Map.empty) extends AnyVal {
   @inline def isCompatible(bindings: Bindings): Boolean = {
     val otherMap = bindings.map
-    val otherKeySet = otherMap.keySet
-    val keySet = map.keySet
-    val keyIntersection = keySet intersect otherKeySet
-    keyIntersection forall { key => map(key) equals otherMap(key) }
+    for (key <- map.keys) {
+      if (otherMap.contains(key)) {
+        if (otherMap(key) != map(key)) {
+          return false
+        }  
+      }
+    }
+    true
   }
 
   @inline override def toString = {

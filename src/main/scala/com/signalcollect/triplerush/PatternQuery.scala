@@ -26,14 +26,6 @@ case class PatternQuery(
     matched.mkString("\n") + unmatched.mkString("\n") + bindings.toString
   }
 
-  def nextTargetId: Option[TriplePattern] = {
-    unmatched match {
-      case next :: _ =>
-        Some(next.routingAddress)
-      case other =>
-        None
-    }
-  }
   def bind(tp: TriplePattern): Option[PatternQuery] = {
     unmatched match {
       case unmatchedHead :: unmatchedTail =>
@@ -60,7 +52,7 @@ case class PatternQuery(
     PatternQuery(newId, unmatched, matched, bindings, tickets, isSamplingQuery, isComplete, isFailed)
   }
   def withTickets(numberOfTickets: Long, complete: Boolean = true) = {
-    PatternQuery(queryId, unmatched, matched, bindings,  numberOfTickets, isSamplingQuery, complete, isFailed)
+    PatternQuery(queryId, unmatched, matched, bindings, numberOfTickets, isSamplingQuery, complete, isFailed)
   }
   def failed = {
     PatternQuery(queryId, unmatched, matched, bindings, tickets, isSamplingQuery, isComplete, isFailed = true)

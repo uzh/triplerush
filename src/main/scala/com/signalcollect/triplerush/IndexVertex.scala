@@ -14,7 +14,6 @@ class IndexVertex(override val id: TriplePattern)
   extends Vertex[TriplePattern, List[PatternQuery]] {
 
   var state = List[PatternQuery]()
-  def outEdges = activeSet.length
 
   def setState(s: List[PatternQuery]) {
     state = s
@@ -22,15 +21,7 @@ class IndexVertex(override val id: TriplePattern)
 
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
     val targetId = e.targetId.asInstanceOf[TriplePattern]
-    if (id.s.isWildcard && targetId.isPartOfSignalSet(SignalSet.BoundSubject)) {
-      subjectSet += targetId
-    } else if (id.p.isWildcard && targetId.isPartOfSignalSet(SignalSet.BoundPredicate)) {
-      predicateSet += targetId
-    } else if (id.o.isWildcard && targetId.isPartOfSignalSet(SignalSet.BoundObject)) {
-      objectSet += targetId
-    } else {
-      throw new Exception(s"Cannot add edge $e to index vertex with id $id.")
-    }
+    targetIdSet += targetId
     true
   }
 
@@ -41,11 +32,10 @@ class IndexVertex(override val id: TriplePattern)
   }
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
-    val edgeSet = activeSet
+    val edgeSet = targetIdSet
     val edgeSetLength = edgeSet.length
     state foreach (query => {
       if (query.isSamplingQuery) {
-        //println("Executed as sampling query")
         val bins = new Array[Long](edgeSetLength)
         var i = 0
         while (i < query.tickets) {
@@ -54,7 +44,6 @@ class IndexVertex(override val id: TriplePattern)
           i += 1
         }
         val complete: Boolean = bins forall (_ > 0)
-        //println(id + " " + bins.toList)
         i = 0
         while (i < edgeSetLength) {
           val ticketsForEdge = bins(i)
@@ -89,7 +78,7 @@ class IndexVertex(override val id: TriplePattern)
 
   def scoreCollect = 0 // because signals are directly collected at arrival
 
-  def edgeCount = subjectSet.length + predicateSet.length + objectSet.length
+  def edgeCount = targetIdSet.length
 
   def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
 
@@ -109,25 +98,6 @@ class IndexVertex(override val id: TriplePattern)
     }
   }
 
-  def activeSet = {
-    // TODO: This is ugly, make it better.
-    var minSize = Int.MaxValue
-    var candidate = subjectSet
-    if (id.s.isWildcard) {
-      minSize = subjectSet.length
-    }
-    if (id.p.isWildcard && predicateSet.length < minSize) {
-      candidate = predicateSet
-      minSize = predicateSet.length
-    }
-    if (id.o.isWildcard && objectSet.length < minSize) {
-      candidate = objectSet
-    }
-    candidate
-  }
-
-  var subjectSet: ArrayBuffer[TriplePattern] = ArrayBuffer()
-  var predicateSet: ArrayBuffer[TriplePattern] = ArrayBuffer()
-  var objectSet: ArrayBuffer[TriplePattern] = ArrayBuffer()
+  var targetIdSet: ArrayBuffer[TriplePattern] = ArrayBuffer()
 
 }

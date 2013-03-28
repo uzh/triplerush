@@ -10,8 +10,8 @@ object YagoUseCase extends App {
   val qe = new QueryEngine
   load("./yago/yagoSchema.nt")
   load("./yago/yagoTaxonomy.nt")
-  load("./yago/yagoTypes.nt", onlyKnown = true)
-  load("./yago/yagoFacts.nt", onlyKnown = true)
+  //load("./yago/yagoTypes.nt", onlyKnown = true)
+  //load("./yago/yagoFacts.nt", onlyKnown = true)
 
   def load(f: String, onlyKnown: Boolean = false) {
     print(s"loading $f ...")
@@ -22,12 +22,16 @@ object YagoUseCase extends App {
   val yago = "http://yago-knowledge.org/resource"
   val rdf = "http://www.w3.org/2000/01/rdf-schema"
   val owl = "http://www.w3.org/2002/07/owl"
-  val q = SAMPLE(100000000) ? "o1" ? "o2" ? "o3" ? "o4" ? "o5" ? "p1" ? "p2" ? "p3" ? "p4" ? "p5" WHERE ( //SAMPLE(10000000)
-    | - s"$yago/Elvis_Presley" - "p1" - "o1",
-    | - "o1" - "p2" - "o2",
-    | - "o2" - "p3" - "o3",
-    | - "o3" - "p4" - "o4",
-    | - "o4" - "p5" - "o5")
+  //  val q = SAMPLE(1000000) ? "o1" ? "o2" ? "o3" ? "o4" ? "o5" ? "p1" ? "p2" ? "p3" ? "p4" ? "p5" WHERE ( //SAMPLE(10000000)
+  //    | - s"$yago/Elvis_Presley" - "p1" - "o1",
+  //    | - "o1" - "p2" - "o2",
+  //    | - "o2" - "p3" - "o3",
+  //    | - "o3" - "p4" - "o4",
+  //    | - "o4" - "p5" - "o5")
+
+  val q = SAMPLE(100000) ? "o1" ? "o2" ? "p1" ? "p2" WHERE ( //SAMPLE(10000000)
+    | - s"$yago/wordnet_president_110467179" - "p1" - "o1",
+    | - "o1" - "p2" - "o2")
 
   val result = qe.executeQuery(q)
   //  result onSuccess {
