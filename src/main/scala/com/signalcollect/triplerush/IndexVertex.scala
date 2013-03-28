@@ -1,10 +1,7 @@
 package com.signalcollect.triplerush
 
-import com.signalcollect._
-import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
+import com.signalcollect.Edge
+import com.signalcollect.GraphEditor
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -16,11 +13,11 @@ class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
 
   override def edgeCount = targetIds.length
 
-  var targetIds: ArrayBuffer[TriplePattern] = new ArrayBuffer(1)
+  var targetIds = List[TriplePattern]()
 
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
     val targetId = e.targetId.asInstanceOf[TriplePattern]
-    targetIds += targetId
+    targetIds = targetId :: targetIds
     true
   }
 

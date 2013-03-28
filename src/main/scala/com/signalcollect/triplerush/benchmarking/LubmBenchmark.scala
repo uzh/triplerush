@@ -45,7 +45,7 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  val evalName = "LUBM benchmarking after optimizations"
+  val evalName = "LUBM benchmarking with Q1 & Q3 patterns ordered as in paper"
   val runs = 10
   val evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
@@ -92,24 +92,24 @@ object LubmBenchmark extends App {
      * Times Trinity: 281 132 110  5    4 9 630
      * Time TripleR: 3815 222 3126 2    1 2 603
      */
-    lazy val queries: List[PatternQuery] = List(
+    val queries: List[PatternQuery] = List(
       SELECT ? "X" ? "Y" ? "Z" WHERE (
-        | - "Y" - s"$rdf#type" - s"$ub#University",
         | - "Z" - s"$ub#subOrganizationOf" - "Y",
+        | - "Y" - s"$rdf#type" - s"$ub#University",
         | - "Z" - s"$rdf#type" - s"$ub#Department",
-        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
+        | - "X" - s"$ub#memberOf" - "Z",
         | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
-        | - "X" - s"$ub#memberOf" - "Z"),
+        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y"),
       SELECT ? "X" ? "Y" WHERE (
         | - "X" - s"$rdf#type" - s"$ub#Course",
         | - "X" - s"$ub#name" - "Y"),
       SELECT ? "X" ? "Y" ? "Z" WHERE (
-        | - "Y" - s"$rdf#type" - s"$ub#University",
-        | - "Z" - s"$ub#subOrganizationOf" - "Y",
-        | - "Z" - s"$rdf#type" - s"$ub#Department",
-        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
         | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
-        | - "X" - s"$ub#memberOf" - "Z"),
+        | - "Y" - s"$rdf#type" - s"$ub#University",
+        | - "Z" - s"$rdf#type" - s"$ub#Department",
+        | - "X" - s"$ub#memberOf" - "Z",
+        | - "Z" - s"$ub#subOrganizationOf" - "Y",
+        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y"),
       SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
         | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
         | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
