@@ -46,7 +46,7 @@ object LubmBenchmark extends App {
 
   /*********/
   def evalName = "LUBM benchmarking with both full and sampling queries, measuring the time until first responses as well."
-//  def evalName = "Local debugging."
+  //  def evalName = "Local debugging."
   val runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
@@ -140,38 +140,38 @@ object LubmBenchmark extends App {
         | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
 
     def samplingQueries(sampleSize: Int): List[PatternQuery] = List(
-      SAMPLE(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
+      BOUNDED(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
         | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
         | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
         | - "X" - s"$ub#memberOf" - "Z",
         | - "Z" - s"$rdf#type" - s"$ub#Department",
         | - "Z" - s"$ub#subOrganizationOf" - "Y",
         | - "Y" - s"$rdf#type" - s"$ub#University"),
-      SAMPLE(sampleSize) ? "X" ? "Y" WHERE (
+      BOUNDED(sampleSize) ? "X" ? "Y" WHERE (
         | - "X" - s"$rdf#type" - s"$ub#Course",
         | - "X" - s"$ub#name" - "Y"),
-      SAMPLE(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
+      BOUNDED(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
         | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
         | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
         | - "X" - s"$ub#memberOf" - "Z",
         | - "Z" - s"$ub#subOrganizationOf" - "Y",
         | - "Z" - s"$rdf#type" - s"$ub#Department",
         | - "Y" - s"$rdf#type" - s"$ub#University"),
-      SAMPLE(sampleSize) ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
+      BOUNDED(sampleSize) ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
         | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
         | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
         | - "X" - s"$ub#name" - "Y1",
         | - "X" - s"$ub#emailAddress" - "Y2",
         | - "X" - s"$ub#telephone" - "Y3"),
-      SAMPLE(sampleSize) ? "X" WHERE (
+      BOUNDED(sampleSize) ? "X" WHERE (
         | - "X" - s"$ub#subOrganizationOf" - "http://www.Department0.University0.edu",
         | - "X" - s"$rdf#type" - s"$ub#ResearchGroup"),
-      SAMPLE(sampleSize) ? "X" ? "Y" WHERE (
+      BOUNDED(sampleSize) ? "X" ? "Y" WHERE (
         | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
         | - "Y" - s"$rdf#type" - s"$ub#Department",
         | - "X" - s"$ub#worksFor" - "Y",
         | - "X" - s"$rdf#type" - s"$ub#FullProfessor"),
-      SAMPLE(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
+      BOUNDED(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
         | - "Y" - s"$rdf#type" - s"$ub#FullProfessor",
         | - "Y" - s"$ub#teacherOf" - "Z",
         | - "Z" - s"$rdf#type" - s"$ub#Course",
@@ -227,6 +227,7 @@ object LubmBenchmark extends App {
     results += "evaluationDescription" -> description
 
     for (queryId <- 1 to 7) {
+      System.gc
       val queryIndex = queryId - 1
       val query = queries(queryIndex)
       val startTime = System.nanoTime

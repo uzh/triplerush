@@ -19,20 +19,23 @@ object SparqlDsl extends App {
     }
   }
   object SELECT {
-    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(Long.MaxValue, List(s))
+    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery = false, Long.MaxValue, List(s))
   }
-  case class SAMPLE(samples: Long) {
-    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(samples, List(s))
+  case class SAMPLE(tickets: Long) {
+    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery = true, tickets, List(s))
   }
-  case class DslVariableDeclaration(samples: Long, variables: List[String]) {
-    def ?(variableName: String): DslVariableDeclaration = DslVariableDeclaration(samples, variableName :: variables)
+  case class BOUNDED(tickets: Long) {
+    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery = false, tickets, List(s))
+  }
+  case class DslVariableDeclaration(isSamplingQuery: Boolean, tickets: Long, variables: List[String]) {
+    def ?(variableName: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery, tickets, variableName :: variables)
     def WHERE(triplePatterns: DslTriplePattern*): DslQuery = {
-      DslQuery(samples, variables, triplePatterns.toList)
+      DslQuery(isSamplingQuery, tickets, variables, triplePatterns.toList)
     }
   }
-  case class DslQuery(samples: Long, variables: List[String], dslTriplePatterns: List[DslTriplePattern])
+  case class DslQuery(isSamplingQuery: Boolean, tickets: Long, variables: List[String], dslTriplePatterns: List[DslTriplePattern])
   implicit def dsl2Query(q: DslQuery): PatternQuery = {
     q.variables foreach (Mapping.register(_, isVariable = true))
-    PatternQuery(QueryIds.next, q.dslTriplePatterns map (_.toTriplePattern), tickets = q.samples, isSamplingQuery = (q.samples < Long.MaxValue) )
+    PatternQuery(QueryIds.next, q.dslTriplePatterns map (_.toTriplePattern), tickets = q.tickets, isSamplingQuery = q.isSamplingQuery)
   }
 }
