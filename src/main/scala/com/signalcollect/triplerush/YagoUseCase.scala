@@ -42,7 +42,7 @@ object YagoUseCase extends App {
   //      }
   //  } 
   result onSuccess {
-    case results =>
+    case (results, metadata) =>
       //                   variable binding #paths
       var bindingsStats = Map[Int, Map[Int, Long]]().withDefaultValue(Map[Int, Long]().withDefaultValue(0l))
       output(s"Total # of result bindings ${results.length}\n")

@@ -305,7 +305,7 @@ WHERE
   def executeOnQueryEngine(q: PatternQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
-    val bindings = result map (_.bindings.map map (entry => (Mapping.getString(entry._1), Mapping.getString(entry._2))))
+    val bindings = result._1 map (_.bindings.map map (entry => (Mapping.getString(entry._1), Mapping.getString(entry._2))))
     val sortedBindings = bindings map (unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
     val sortedBindingList = (sortedBindings sortBy (map => map.values)).toList
     sortedBindingList

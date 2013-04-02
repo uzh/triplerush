@@ -45,19 +45,26 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  val evalName = "LUBM benchmarking with Q3 patterns shuffled (fail faster, hopefully)"
+  def evalName = "LUBM benchmarking with both full and sampling queries, measuring the time until first responses as well."
+//  def evalName = "Local debugging."
   val runs = 10
-  val evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
+  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
 
-  val evalWithRuns = (1 to runs).foldLeft(evaluation) {
-    case (aggr, next) => aggr.addEvaluationRun(lubmBenchmarkRun _)
+  for (run <- 1 to runs) {
+    for (sampleSize <- List(10000, 100000, 1000000, 10000000)) {
+      evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, Some(sampleSize)))
+    }
   }
-  evalWithRuns.execute
+  for (run <- 1 to runs) {
+    evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, None))
+  }
+  evaluation.execute
 
-  def lubmBenchmarkRun: Map[String, String] = {
+  def lubmBenchmarkRun(description: String, sampling: Option[Int])(): Map[String, String] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
+
     Mapping.setAbbreviations(Map(
       ub -> "ub:",
       rdf -> "rdf:",
@@ -92,20 +99,20 @@ object LubmBenchmark extends App {
      * Times Trinity: 281 132 110  5    4 9 630
      * Time TripleR: 3815 222 3126 2    1 2 603
      */
-    val queries: List[PatternQuery] = List(
+    def fullQueries: List[PatternQuery] = List(
       SELECT ? "X" ? "Y" ? "Z" WHERE (
         | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
+        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
         | - "X" - s"$ub#memberOf" - "Z",
         | - "Z" - s"$rdf#type" - s"$ub#Department",
         | - "Z" - s"$ub#subOrganizationOf" - "Y",
-        | - "Y" - s"$rdf#type" - s"$ub#University",
-        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y"),
+        | - "Y" - s"$rdf#type" - s"$ub#University"),
       SELECT ? "X" ? "Y" WHERE (
         | - "X" - s"$rdf#type" - s"$ub#Course",
         | - "X" - s"$ub#name" - "Y"),
       SELECT ? "X" ? "Y" ? "Z" WHERE (
-        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
         | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
+        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
         | - "X" - s"$ub#memberOf" - "Z",
         | - "Z" - s"$ub#subOrganizationOf" - "Y",
         | - "Z" - s"$rdf#type" - s"$ub#Department",
@@ -132,6 +139,54 @@ object LubmBenchmark extends App {
         | - "X" - s"$ub#takesCourse" - "Z",
         | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
 
+    def samplingQueries(sampleSize: Int): List[PatternQuery] = List(
+      SAMPLE(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
+        | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
+        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
+        | - "X" - s"$ub#memberOf" - "Z",
+        | - "Z" - s"$rdf#type" - s"$ub#Department",
+        | - "Z" - s"$ub#subOrganizationOf" - "Y",
+        | - "Y" - s"$rdf#type" - s"$ub#University"),
+      SAMPLE(sampleSize) ? "X" ? "Y" WHERE (
+        | - "X" - s"$rdf#type" - s"$ub#Course",
+        | - "X" - s"$ub#name" - "Y"),
+      SAMPLE(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
+        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
+        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
+        | - "X" - s"$ub#memberOf" - "Z",
+        | - "Z" - s"$ub#subOrganizationOf" - "Y",
+        | - "Z" - s"$rdf#type" - s"$ub#Department",
+        | - "Y" - s"$rdf#type" - s"$ub#University"),
+      SAMPLE(sampleSize) ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
+        | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
+        | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
+        | - "X" - s"$ub#name" - "Y1",
+        | - "X" - s"$ub#emailAddress" - "Y2",
+        | - "X" - s"$ub#telephone" - "Y3"),
+      SAMPLE(sampleSize) ? "X" WHERE (
+        | - "X" - s"$ub#subOrganizationOf" - "http://www.Department0.University0.edu",
+        | - "X" - s"$rdf#type" - s"$ub#ResearchGroup"),
+      SAMPLE(sampleSize) ? "X" ? "Y" WHERE (
+        | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
+        | - "Y" - s"$rdf#type" - s"$ub#Department",
+        | - "X" - s"$ub#worksFor" - "Y",
+        | - "X" - s"$rdf#type" - s"$ub#FullProfessor"),
+      SAMPLE(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
+        | - "Y" - s"$rdf#type" - s"$ub#FullProfessor",
+        | - "Y" - s"$ub#teacherOf" - "Z",
+        | - "Z" - s"$rdf#type" - s"$ub#Course",
+        | - "X" - s"$ub#advisor" - "Y",
+        | - "X" - s"$ub#takesCourse" - "Z",
+        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
+
+    val queries = {
+      if (sampling.isDefined) {
+        samplingQueries(sampling.get)
+      } else {
+        fullQueries
+      }
+    }
+
     var results = Map[String, String]()
     results += "evaluationDescription" -> evalName
     val toRenameFolder = "lubm160"
@@ -154,7 +209,11 @@ object LubmBenchmark extends App {
       finishTime - startTime
     }
 
-    def executeOnQueryEngine(q: PatternQuery): ArrayBuffer[PatternQuery] = {
+    def roundToMillisecondFraction(nanoseconds: Long): Double = {
+      ((nanoseconds / 100000.0).round) / 10.0
+    }
+
+    def executeOnQueryEngine(q: PatternQuery): (List[PatternQuery], Map[String, Any]) = {
       val resultFuture = qe.executeQuery(q)
       val result = Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS))
       result
@@ -165,24 +224,24 @@ object LubmBenchmark extends App {
       qe.awaitIdle
     }
     results += "loadingTime" -> loadingTime.toString
-    results += "evaluationDescription" -> evalName
-
-    //    println("Attach profiler and press any key...")
-    //    readLine
-    //    println("Running.")
+    results += "evaluationDescription" -> description
 
     for (queryId <- 1 to 7) {
       val queryIndex = queryId - 1
-      val executionTime = measureTime {
-        val bindings = executeOnQueryEngine(queries(queryIndex)).size
-        results += s"resultsQuery$queryId" -> bindings.toString
-      }
+      val query = queries(queryIndex)
+      val startTime = System.nanoTime
+      val queryResult = executeOnQueryEngine(query)
+      val finishTime = System.nanoTime
+      val executionTime = roundToMillisecondFraction(finishTime - startTime)
+      val timeToFirstResult = roundToMillisecondFraction(queryResult._2("firstResultNanoTime").asInstanceOf[Long] - startTime)
+      results += s"resultsQuery$queryId" -> queryResult._1.length.toString
+      results += s"samplingQuery" -> query.isSamplingQuery.toString
+      results += s"sampleSize" -> query.tickets.toString
       results += s"executionTimeQuery$queryId" -> executionTime.toString
+      results += s"timeUntilFirstResult$queryId" -> timeToFirstResult.toString
     }
-
     qe.awaitIdle
     qe.shutdown
-
     results
   }
 

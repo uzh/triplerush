@@ -25,19 +25,16 @@ class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
   def processSamplingQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
     val targetIdCount = targetIds.length
     val bins = new Array[Long](targetIdCount)
-    var binIndex = 0
-    while (binIndex < query.tickets) {
-      val index = Random.nextInt(targetIdCount)
-      bins(index) += 1
-      binIndex += 1
+    for (i <- 1l to query.tickets) {
+      val randomIndex = Random.nextInt(targetIdCount)
+      bins(randomIndex) += 1
     }
     val complete: Boolean = bins forall (_ > 0)
-    var targetIdIndex = 0
-    for (targetId <- targetIds) {
-      val ticketsForEdge = bins(targetIdIndex)
+    for (i <- 0 until targetIdCount) {
+      val ticketsForEdge = bins(i)
       if (ticketsForEdge > 0) {
         val ticketEquippedQuery = query.withTickets(ticketsForEdge, complete)
-        val targetId = targetIds(targetIdIndex)
+        val targetId = targetIds(i)
         graphEditor.sendSignal(ticketEquippedQuery, targetId, None)
       }
     }

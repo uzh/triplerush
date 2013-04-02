@@ -6,27 +6,31 @@ import scala.collection.mutable.ArrayBuffer
 
 class QueryVertex(
   val id: Int,
-  val promise: Promise[ArrayBuffer[PatternQuery]],
+  val promise: Promise[(List[PatternQuery], Map[String, Any])],
   val expectedTickets: Long,
-  var state: ArrayBuffer[PatternQuery] = new ArrayBuffer(180000)) extends Vertex[Int, ArrayBuffer[PatternQuery]] {
+  var state: List[PatternQuery] = List()) extends Vertex[Int, List[PatternQuery]] {
   var receivedTickets: Long = 0
+  var firstResultNanoTime = 0l
   var complete = true
-  def setState(s: ArrayBuffer[PatternQuery]) {
+  def setState(s: List[PatternQuery]) {
     state = s
   }
   def deliverSignal(signal: Any, sourceId: Option[Any]): Boolean = {
     val query = signal.asInstanceOf[PatternQuery]
     receivedTickets += query.tickets
     complete &&= query.isComplete
-//    println(s"$id tickets: $receivedTickets/$expectedTickets. Total bindings so far: ${state.filter(!_.isFailed).length}.")
+//    println(s"queryId: $id tickets: $receivedTickets/$expectedTickets. Total bindings so far: ${state.filter(!_.isFailed).length}.")
     if (!query.isFailed) {
-      state.append(query)
+      if (firstResultNanoTime == 0) {
+        firstResultNanoTime = System.nanoTime
+      }
+      state = query :: state
     }
     true
   }
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
     //println(s"$id Result will be submitted. This query is going to do its laundry. Tickets: $receivedTickets/$expectedTickets. Total bindings so far: ${state.filter(!_.isFailed).length}.")
-    promise success state
+    promise success (state, Map("firstResultNanoTime" -> firstResultNanoTime))
     graphEditor.removeVertex(id)
     //println(s"Query $id returns result: is complete = $complete" )
   }
@@ -37,28 +41,7 @@ class QueryVertex(
   def afterInitialization(graphEditor: GraphEditor[Any, Any]) {}
   def executeCollectOperation(graphEditor: GraphEditor[Any, Any]) {}
   def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
-  override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException("Use setTargetIds(...)")
+  override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
   override def removeEdge(targetId: Any, graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = 0
 }
-//    complete &&= query.isComplete
-//    println(s"$id tickets: $receivedTickets/$expectedTickets. Total bindings so far: ${state.filter(!_.isFailed).length}.")
-//    if (!query.isFailed) {
-//      query :: state
-//    } else {
-//      state
-//    }
-//  }
-//  override def scoreSignal = if (expectedTickets == receivedTickets) 1 else 0
-//  
-//  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-//    //println("Query added: " + id)
-//  }
-//
-//  override def doSignal(graphEditor: GraphEditor[Any, Any]) {
-//    //println(s"$id Result will be submitted. This query is going to do its laundry. Tickets: $receivedTickets/$expectedTickets. Total bindings so far: ${state.filter(!_.isFailed).length}.")
-//    promise success state
-//    graphEditor.removeVertex(id)
-//    //println(s"Query $id returns result: is complete = $complete" )
-//  }
-//}

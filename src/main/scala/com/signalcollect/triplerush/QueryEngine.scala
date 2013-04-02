@@ -70,7 +70,6 @@ case class QueryEngine() {
             //          if (triplesRead % 1000 == 0) {
             //            println("Triples read: " + triplesRead)
             //          }
-
           }
         }
       }
@@ -78,14 +77,14 @@ case class QueryEngine() {
     //    print("Waiting for graph loading to finish ... ")
   }
 
-  def executeQuery(q: PatternQuery): Future[ArrayBuffer[PatternQuery]] = {
-    val p = promise[ArrayBuffer[PatternQuery]]
+  def executeQuery(q: PatternQuery): Future[(List[PatternQuery], Map[String, Any])] = {
+    val p = promise[(List[PatternQuery], Map[String, Any])]
     if (!q.unmatched.isEmpty) {
       g.addVertex(new QueryVertex(q.queryId, p, q.tickets), blocking = true)
       g.sendSignal(q, q.unmatched.head.routingAddress, None)
       p.future
     } else {
-      p success ArrayBuffer()
+      p success (List(), Map())
       p.future
     }
   }
