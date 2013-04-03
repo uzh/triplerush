@@ -30,13 +30,14 @@ class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
       bins(randomIndex) += 1
     }
     val complete: Boolean = bins forall (_ > 0)
-    for (i <- 0 until targetIdCount) {
-      val ticketsForEdge = bins(i)
+    var binIndex = 0
+    for (targetId <- targetIds) {
+      val ticketsForEdge = bins(binIndex)
       if (ticketsForEdge > 0) {
         val ticketEquippedQuery = query.withTickets(ticketsForEdge, complete)
-        val targetId = targetIds(i)
         graphEditor.sendSignal(ticketEquippedQuery, targetId, None)
       }
+      binIndex += 1
     }
   }
 
