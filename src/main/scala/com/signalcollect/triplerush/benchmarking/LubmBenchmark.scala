@@ -47,7 +47,7 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  def evalName = "LUBM benchmarking, fixed bug in sampling queries and added bounded queries."
+  def evalName = "LUBM benchmarking."
   //  def evalName = "Local debugging."
   val runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -55,7 +55,7 @@ object LubmBenchmark extends App {
 
   for (run <- 1 to runs) {
     for (queryId <- 1 to 7) {
-      for (tickets <- List(10000, 100000, 1000000, 10000000)) {
+      for (tickets <- List(1, 10, 100, 1000, 10000, 100000, 1000000)) {
         evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
         evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
       }
