@@ -26,20 +26,20 @@ import scala.collection.mutable.ArrayBuffer
  * Evaluation is set to execute on a 'Kraken'-node.
  */
 object LubmBenchmark extends App {
-  //  val jvmParameters = " -Xmx64000m" +
-  //    " -Xms64000m" +
-  //    " -Xmn8000m" +
-  //    " -d64" +
-  //    " -XX:+UnlockExperimentalVMOptions" +
-  //    " -XX:+UseConcMarkSweepGC" +
-  //    " -XX:+UseParNewGC" +
-  //    " -XX:+CMSIncrementalPacing" +
-  //    " -XX:+CMSIncrementalMode" +
-  //    " -XX:ParallelGCThreads=20" +
-  //    " -XX:ParallelCMSThreads=20" +
-  //    " -XX:MaxInlineSize=1024"
   val jvmParameters = " -Xmx64000m" +
-    " -Xms64000m"
+    " -Xms64000m" +
+    " -Xmn8000m" +
+    " -d64" +
+    " -XX:+UnlockExperimentalVMOptions" +
+    " -XX:+UseConcMarkSweepGC" +
+    " -XX:+UseParNewGC" +
+    " -XX:+CMSIncrementalPacing" +
+    " -XX:+CMSIncrementalMode" +
+    " -XX:ParallelGCThreads=20" +
+    " -XX:ParallelCMSThreads=20" +
+    " -XX:MaxInlineSize=1024"
+  //  val jvmParameters = " -Xmx64000m" +
+  //    " -Xms64000m"
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
     localJarPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar", jvmParameters = jvmParameters, priority = TorquePriority.fast)

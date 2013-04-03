@@ -73,6 +73,7 @@ case class QueryEngine() {
           }
         }
       }
+      is.close
     }
     //    print("Waiting for graph loading to finish ... ")
   }
