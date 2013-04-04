@@ -48,24 +48,22 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  def evalName = "LUBM benchmarking -- only full queries, FIFO processing order."
+  def evalName = "LUBM benchmarking -- Back to lists and LIFO processing order, added -optimize compiler parameter."
   //  def evalName = "Local debugging."
   val runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
 
   for (run <- 1 to runs) {
-    for (queryId <- 1 to 7) {
-      //for (tickets <- List(1000, 10000, 100000, 1000000)) {
-        //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
-//        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
-//      }
-      evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue))
-    }
+    //for (tickets <- List(1000, 10000, 100000, 1000000)) {
+    //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
+    //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
+    //      }
+    evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, false, Long.MaxValue))
   }
   evaluation.execute
 
-  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long)(): Map[String, String] = {
+  def lubmBenchmarkRun(description: String, sampling: Boolean, tickets: Long)(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
@@ -223,6 +221,10 @@ object LubmBenchmark extends App {
         | - "X" - s"$ub#takesCourse" - "Z",
         | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
 
+    def warmupQuery(uniId: Int) = SELECT ? "X" WHERE (
+      | - "X" - s"$ub#takesCourse" - s"http://www.Department0.University$uniId.edu/GraduateCourse0",
+      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent")
+
     val queries = {
       if (sampling) {
         samplingQueries(tickets)
@@ -235,7 +237,7 @@ object LubmBenchmark extends App {
       }
     }
 
-    var results = Map[String, String]()
+    var baseResults = Map[String, String]()
     val qe = new QueryEngine()
 
     def loadLubm160 {
@@ -262,24 +264,21 @@ object LubmBenchmark extends App {
       ((nanoseconds / 100000.0).round) / 10.0
     }
 
-    def executeOnQueryEngine(q: PatternQuery): (ArrayBuffer[PatternQuery], Map[String, Any]) = {
+    def executeOnQueryEngine(q: PatternQuery): (List[PatternQuery], Map[String, Any]) = {
       val resultFuture = qe.executeQuery(q)
       val result = Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS))
       result
     }
 
     /**
-     * Go to JVM JIT steady state by executing the full versions of other queries 10 times.
+     * Go to JVM JIT steady state by executing the the unrelated warmup query for universities 1 to 100.
      */
     def jitSteadyState {
       for (i <- 1 to 10) {
-        for (id <- 1 to 7) {
-          if (id != queryId) {
-            val queryIndex = queryId - 1
-            val query = fullQueries(queryIndex)
-            executeOnQueryEngine(query)
-            qe.awaitIdle
-          }
+        for (uniId <- 1 to 100) {
+          val query = warmupQuery(uniId)
+          executeOnQueryEngine(query)
+          qe.awaitIdle
         }
       }
     }
@@ -292,7 +291,9 @@ object LubmBenchmark extends App {
       Thread.sleep(10000)
     }
 
-    def runEvaluation {
+    var finalResults = List[Map[String, String]]()
+    def runEvaluation(queryId: Int) {
+      var runResult = baseResults
       val queryIndex = queryId - 1
       val query = queries(queryIndex)
       val startTime = System.nanoTime
@@ -300,28 +301,30 @@ object LubmBenchmark extends App {
       val finishTime = System.nanoTime
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
       val timeToFirstResult = roundToMillisecondFraction(queryResult._2("firstResultNanoTime").asInstanceOf[Long] - startTime)
-      results += s"queryId" -> queryId.toString
-      results += s"results" -> queryResult._1.length.toString
-      results += s"samplingQuery" -> query.isSamplingQuery.toString
-      results += s"tickets" -> query.tickets.toString
-      results += s"executionTime" -> executionTime.toString
-      results += s"timeUntilFirstResult" -> timeToFirstResult.toString
+      runResult += s"queryId" -> queryId.toString
+      runResult += s"results" -> queryResult._1.length.toString
+      runResult += s"samplingQuery" -> query.isSamplingQuery.toString
+      runResult += s"tickets" -> query.tickets.toString
+      runResult += s"executionTime" -> executionTime.toString
+      runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
+      finalResults = runResult :: finalResults
     }
 
-    results += "evaluationDescription" -> description
+    baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
       loadLubm160
       qe.awaitIdle
     }
-    results += "loadingTime" -> loadingTime.toString
+    baseResults += "loadingTime" -> loadingTime.toString
 
     jitSteadyState
-    cleanGarbage
-    runEvaluation
-
+    for (queryId <- 1 to 7) {
+      cleanGarbage
+      runEvaluation(queryId)
+    }
     qe.awaitIdle
     qe.shutdown
-    results
+    finalResults
   }
 
 }

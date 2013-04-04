@@ -6,7 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 
 class QueryVertex(
   id: Int,
-  val promise: Promise[(ArrayBuffer[PatternQuery], Map[String, Any])],
+  val promise: Promise[(List[PatternQuery], Map[String, Any])],
   val expectedTickets: Long) extends ProcessingVertex[Int, PatternQuery](id) {
   var receivedTickets: Long = 0
   var firstResultNanoTime = 0l

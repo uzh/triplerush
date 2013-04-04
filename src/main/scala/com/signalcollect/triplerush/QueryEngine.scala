@@ -58,14 +58,14 @@ case class QueryEngine() {
     }
   }
 
-  def executeQuery(q: PatternQuery): Future[(ArrayBuffer[PatternQuery], Map[String, Any])] = {
-    val p = promise[(ArrayBuffer[PatternQuery], Map[String, Any])]
+  def executeQuery(q: PatternQuery): Future[(List[PatternQuery], Map[String, Any])] = {
+    val p = promise[(List[PatternQuery], Map[String, Any])]
     if (!q.unmatched.isEmpty) {
       g.addVertex(new QueryVertex(q.queryId, p, q.tickets), blocking = true)
       g.sendSignal(q, q.unmatched.head.routingAddress, None)
       p.future
     } else {
-      p success (ArrayBuffer(), Map())
+      p success (List(), Map())
       p.future
     }
   }
