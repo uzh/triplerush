@@ -48,7 +48,7 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  def evalName = "LUBM benchmarking -- Back to lists and LIFO processing order, added -optimize compiler parameter."
+  def evalName = "LUBM benchmarking -- OPTIMIZED, no copying of failed queries."
   //  def evalName = "Local debugging."
   val runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
