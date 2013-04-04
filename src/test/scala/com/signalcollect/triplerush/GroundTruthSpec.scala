@@ -3,11 +3,9 @@ package com.signalcollect.triplerush
 import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
 import org.specs2.mutable.SpecificationWithJUnit
-import SparqlDsl._
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
 import com.hp.hpl.jena.rdf.model.Model
-import com.signalcollect.triplerush.SparqlDsl._
 import scala.io.Source
 import scala.io.Codec
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,6 +16,8 @@ import scala.concurrent.duration.FiniteDuration
 import scala.collection.immutable.SortedMap
 import scala.collection.immutable.TreeMap
 import org.specs2.matcher.MatchResult
+import com.signalcollect.triplerush.evaluation.PatternQueryParser
+import com.signalcollect.triplerush.evaluation.SparqlDsl._
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
@@ -287,7 +287,7 @@ WHERE
     }
   }
 
-  def toQuery(s: String): PatternQuery = PatternQuery.build(s) match {
+  def toQuery(s: String): PatternQuery = PatternQueryParser.build(s) match {
     case Left(q) => q
     case Right(error) => throw new Exception(error)
   }

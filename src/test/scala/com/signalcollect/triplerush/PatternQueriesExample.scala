@@ -1,10 +1,7 @@
 package com.signalcollect.triplerush
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
-import SparqlDsl.SAMPLE
-import SparqlDsl.dsl2Query
-import SparqlDsl.{ | => | }
+import com.signalcollect.triplerush.evaluation.SparqlDsl._
 
 object PatternQueriesExample extends App {
   val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"

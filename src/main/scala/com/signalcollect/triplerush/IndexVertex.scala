@@ -1,8 +1,8 @@
 package com.signalcollect.triplerush
 
+import scala.util.Random
 import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
-import scala.util.Random
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -58,7 +58,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
     }
   }
 
-  override def signal(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
+  override def process(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
     if (query.isSamplingQuery) {
       processSamplingQuery(query, graphEditor)
     } else {

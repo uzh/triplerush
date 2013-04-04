@@ -1,17 +1,18 @@
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.evaluation
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import SparqlDsl._
+import com.signalcollect.triplerush.evaluation.SparqlDsl._
 import java.io.FileOutputStream
-import java.io.DataOutputStream
+import com.signalcollect.triplerush.Mapping
+import com.signalcollect.triplerush.QueryEngine
 
 object YagoUseCase extends App {
   val output = new FileOutputStream("results.txt")
   val qe = new QueryEngine
   load("./yago/yagoSchema.nt")
   load("./yago/yagoTaxonomy.nt")
-  //load("./yago/yagoTypes.nt", onlyKnown = true)
-  //load("./yago/yagoFacts.nt", onlyKnown = true)
+  load("./yago/yagoTypes.nt", onlyKnown = true)
+  load("./yago/yagoFacts.nt", onlyKnown = true)
 
   def load(f: String, onlyKnown: Boolean = false) {
     print(s"loading $f ...")

@@ -1,7 +1,7 @@
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.evaluation
 
-import com.signalcollect.triplerush.Expression.int2Expression
-import language.implicitConversions
+import com.signalcollect.triplerush._
+import scala.language.implicitConversions
 
 object SparqlDsl extends App {
   object | {

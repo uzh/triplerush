@@ -1,4 +1,4 @@
-package com.signalcollect.triplerush.benchmarking
+package com.signalcollect.triplerush.evaluation
 
 import com.signalcollect.nodeprovisioning.torque._
 import scala.util.Random

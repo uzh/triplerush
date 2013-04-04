@@ -18,7 +18,7 @@
  *  
  */
 
-package com.signalcollect.triplerush.benchmarking
+package com.signalcollect.triplerush.evaluation
 
 import java.net.URL
 import scala.collection.JavaConversions._

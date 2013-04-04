@@ -1,5 +1,6 @@
-package com.signalcollect.triplerush.benchmarking
-import com.signalcollect.triplerush.SparqlDsl._
+package com.signalcollect.triplerush.evaluation
+
+import com.signalcollect.triplerush.evaluation.SparqlDsl._
 import com.signalcollect.nodeprovisioning.torque._
 import com.signalcollect.configuration._
 import com.signalcollect._
@@ -47,7 +48,7 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  def evalName = "LUBM benchmarking."
+  def evalName = "LUBM benchmarking -- only full queries, FIFO processing order."
   //  def evalName = "Local debugging."
   val runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -55,10 +56,10 @@ object LubmBenchmark extends App {
 
   for (run <- 1 to runs) {
     for (queryId <- 1 to 7) {
-      for (tickets <- List(1000, 10000, 100000, 1000000)) {
+      //for (tickets <- List(1000, 10000, 100000, 1000000)) {
         //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
-        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
-      }
+//        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
+//      }
       evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue))
     }
   }
@@ -261,7 +262,7 @@ object LubmBenchmark extends App {
       ((nanoseconds / 100000.0).round) / 10.0
     }
 
-    def executeOnQueryEngine(q: PatternQuery): (List[PatternQuery], Map[String, Any]) = {
+    def executeOnQueryEngine(q: PatternQuery): (ArrayBuffer[PatternQuery], Map[String, Any]) = {
       val resultFuture = qe.executeQuery(q)
       val result = Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS))
       result

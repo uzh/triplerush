@@ -1,17 +1,12 @@
 package com.signalcollect.triplerush
 
-import scala.language.implicitConversions
-import scala.concurrent.ExecutionContext.Implicits.global
-import SparqlDsl._
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.rdf.model.Model
-import com.hp.hpl.jena.util.FileManager
 import java.io.File
 import java.io.FileOutputStream
+
 import com.hp.hpl.jena.ontology.OntModelSpec
-import com.hp.hpl.jena.reasoner.ReasonerRegistry
-import com.hp.hpl.jena.vocabulary.ReasonerVocabulary
-import com.hp.hpl.jena.reasoner.rulesys.RDFSRuleReasonerFactory
+import com.hp.hpl.jena.rdf.model.Model
+import com.hp.hpl.jena.rdf.model.ModelFactory
+import com.hp.hpl.jena.util.FileManager
 
 object JenaLubmConversion extends App {
   for (fileNumber <- 0 to 14) {
