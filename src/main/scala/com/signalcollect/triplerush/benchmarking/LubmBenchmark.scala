@@ -55,8 +55,8 @@ object LubmBenchmark extends App {
 
   for (run <- 1 to runs) {
     for (queryId <- 1 to 7) {
-      for (tickets <- List(1, 10, 100, 1000, 10000, 100000, 1000000)) {
-        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
+      for (tickets <- List(1000, 10000, 100000, 1000000)) {
+        //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
         evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
       }
       evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue))
