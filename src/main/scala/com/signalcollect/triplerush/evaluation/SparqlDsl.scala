@@ -36,6 +36,7 @@ object SparqlDsl extends App {
   case class DslQuery(isSamplingQuery: Boolean, tickets: Long, variables: List[String], dslTriplePatterns: List[DslTriplePattern])
   implicit def dsl2Query(q: DslQuery): PatternQuery = {
     q.variables foreach (Mapping.register(_, isVariable = true))
-    PatternQuery(QueryIds.next, q.dslTriplePatterns map (_.toTriplePattern), tickets = q.tickets, isSamplingQuery = q.isSamplingQuery)
+    val queryId =  if (q.isSamplingQuery) QueryIds.nextSamplingQueryId  else QueryIds.nextFullQueryId
+    PatternQuery(queryId, q.dslTriplePatterns map (_.toTriplePattern), tickets = q.tickets)
   }
 }

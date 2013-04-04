@@ -14,13 +14,9 @@ case class QueryEngine() {
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     signal match {
       case query: PatternQuery =>
-        if (query.isFailed) {
-          println(s"Failed query ${query.bindings}. Could not deliver its results to its respective query vertex ${query.queryId}")
-        } else {
-          graphEditor.sendSignal(query.failed, query.queryId, None)
-        }
+        graphEditor.sendSignal(query, query.queryId, None)
       case other =>
-        println(s"failed signal delivery $other of type ${other.getClass}")
+        println(s"Failed signal delivery $other of type ${other.getClass}")
     }
   }
   g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))

@@ -275,7 +275,7 @@ object LubmBenchmark extends App {
      */
     def jitSteadyState {
       for (i <- 1 to 10) {
-        for (uniId <- 1 to 100) {
+        for (uniId <- 1 to 10) {
           val query = warmupQuery(uniId)
           executeOnQueryEngine(query)
           qe.awaitIdle
@@ -286,9 +286,9 @@ object LubmBenchmark extends App {
     def cleanGarbage {
       for (i <- 1 to 10) {
         System.gc
-        Thread.sleep(100)
+        Thread.sleep(10)
       }
-      Thread.sleep(10000)
+      Thread.sleep(1000)
     }
 
     var finalResults = List[Map[String, String]]()
@@ -321,8 +321,8 @@ object LubmBenchmark extends App {
     for (queryId <- 1 to 7) {
       cleanGarbage
       runEvaluation(queryId)
+      qe.awaitIdle
     }
-    qe.awaitIdle
     qe.shutdown
     finalResults
   }

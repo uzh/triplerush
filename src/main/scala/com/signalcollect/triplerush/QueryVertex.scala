@@ -15,7 +15,8 @@ class QueryVertex(
   override def shouldProcess(query: PatternQuery): Boolean = {
     receivedTickets += query.tickets
     complete &&= query.isComplete
-    if (!query.isFailed) {
+    if (query.unmatched.isEmpty) {
+      // Query was matched successfully.
       if (firstResultNanoTime == 0) {
         firstResultNanoTime = System.nanoTime
       }

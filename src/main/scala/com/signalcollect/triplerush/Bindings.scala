@@ -33,7 +33,7 @@ case class Bindings(map: Map[Int, Int] = Map.empty) extends AnyVal {
    *  Precondition: Bindings are compatible.
    */
   @inline def merge(bindings: Bindings): Bindings = {
-    new Bindings(bindings.map ++ map)
+    new Bindings( map ++ bindings.map)
   }
 
 }
