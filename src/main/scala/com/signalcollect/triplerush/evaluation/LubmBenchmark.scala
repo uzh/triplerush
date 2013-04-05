@@ -48,22 +48,24 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  def evalName = "LUBM benchmarking -- OPTIMIZED, no more message bus flushing after undeliverable message delivery."
+  def evalName = "LUBM benchmarking -- Running each query in its own JVM again."
   //  def evalName = "Local debugging."
   val runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
 
   for (run <- 1 to runs) {
-    //for (tickets <- List(1000, 10000, 100000, 1000000)) {
-    //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
-    //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
-    //      }
-    evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, false, Long.MaxValue))
+    for (queryId <- 1 to 7) {
+      //for (tickets <- List(1000, 10000, 100000, 1000000)) {
+      //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
+      //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
+      //      }
+      evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue))
+    }
   }
   evaluation.execute
 
-  def lubmBenchmarkRun(description: String, sampling: Boolean, tickets: Long)(): List[Map[String, String]] = {
+  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long)(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
@@ -221,10 +223,6 @@ object LubmBenchmark extends App {
         | - "X" - s"$ub#takesCourse" - "Z",
         | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
 
-    def warmupQuery(uniId: Int) = SELECT ? "X" WHERE (
-      | - "X" - s"$ub#takesCourse" - s"http://www.Department0.University$uniId.edu/GraduateCourse0",
-      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent")
-
     val queries = {
       if (sampling) {
         samplingQueries(tickets)
@@ -271,14 +269,17 @@ object LubmBenchmark extends App {
     }
 
     /**
-     * Go to JVM JIT steady state by executing the the unrelated warmup query for universities 1 to 100.
+     * Go to JVM JIT steady state by executing the full versions of other queries 10 times.
      */
     def jitSteadyState {
       for (i <- 1 to 10) {
-        for (uniId <- 1 to 10) {
-          val query = warmupQuery(uniId)
-          executeOnQueryEngine(query)
-          qe.awaitIdle
+        for (id <- 1 to 7) {
+          if (id != queryId) {
+            val queryIndex = queryId - 1
+            val query = fullQueries(queryIndex)
+            executeOnQueryEngine(query)
+            qe.awaitIdle
+          }
         }
       }
     }
@@ -286,9 +287,9 @@ object LubmBenchmark extends App {
     def cleanGarbage {
       for (i <- 1 to 10) {
         System.gc
-        Thread.sleep(10)
+        Thread.sleep(100)
       }
-      Thread.sleep(1000)
+      Thread.sleep(10000)
     }
 
     var finalResults = List[Map[String, String]]()
@@ -318,11 +319,9 @@ object LubmBenchmark extends App {
     baseResults += "loadingTime" -> loadingTime.toString
 
     jitSteadyState
-    for (queryId <- 1 to 7) {
-      cleanGarbage
-      runEvaluation(queryId)
-      qe.awaitIdle
-    }
+    cleanGarbage
+    runEvaluation(queryId)
+    qe.awaitIdle
     qe.shutdown
     finalResults
   }
