@@ -31,6 +31,7 @@ case class QueryEngine() {
       val is = new FileInputStream(ntriplesFilename)
       val nxp = new NxParser(is)
       println(s"Reading triples from $ntriplesFilename ...")
+      var triplesLoaded = 0
       while (nxp.hasNext) {
         val triple = nxp.next
         val predicateString = triple(1).toString
@@ -42,14 +43,20 @@ case class QueryEngine() {
             val pId = Mapping.register(predicateString)
             val oId = Mapping.register(objectString)
             val tp = TriplePattern(sId, pId, oId)
+            triplesLoaded += 1
             graphEditor.addVertex(new TripleVertex(tp))
             if (bidirectionalPredicates) {
               val reverseTp = TriplePattern(oId, pId, sId)
+              triplesLoaded += 1
               graphEditor.addVertex(new TripleVertex(reverseTp))
             }
           }
         }
+        if (triplesLoaded % 10000 == 0) {
+          println(s"Loaded $triplesLoaded triples from file $ntriplesFilename ...")
+        }
       }
+      println(s"Done loading triples from $ntriplesFilename. Loaded a total of $triplesLoaded triples.")
       is.close
     }
   }

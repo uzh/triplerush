@@ -5,72 +5,181 @@ import com.signalcollect.triplerush.evaluation.SparqlDsl._
 import java.io.FileOutputStream
 import com.signalcollect.triplerush.Mapping
 import com.signalcollect.triplerush.QueryEngine
+import scala.concurrent.Await
+import scala.concurrent.duration.FiniteDuration
+import java.util.concurrent.TimeUnit
+import com.signalcollect.triplerush.PatternQuery
 
 object YagoUseCase extends App {
   val output = new FileOutputStream("results.txt")
   val qe = new QueryEngine
-  load("./yago/yagoSchema.nt")
+
+  val yago = "http://yago-knowledge.org/resource"
+  val rdf = "http://www.w3.org/2000/01/rdf-schema"
+  val owl = "http://www.w3.org/2002/07/owl"
+
+  Mapping.setAbbreviations(Map(
+    yago -> "yago:",
+    rdf -> "rdf:",
+    owl -> "owl:"))
+
+  //load("./yago/yagoSchema.nt")
   load("./yago/yagoTaxonomy.nt")
   load("./yago/yagoTypes.nt", onlyKnown = true)
   load("./yago/yagoFacts.nt", onlyKnown = true)
 
   def load(f: String, onlyKnown: Boolean = false) {
-    print(s"loading $f ...")
-    qe.load(f, bidirectionalPredicates = true, onlyKnown, Set("http://www.w3.org/2002/07/owl#disjointWith"))
-    println(" done")
+    qe.load(f, bidirectionalPredicates = false, onlyKnown, Set(
+      s"$owl#disjointWith",
+      s"$yago/hasGender",
+      //      s"$rdf#type",
+      //      s"$rdf#subClassOf",
+      s"$yago/hasWebsite"))
+    qe.awaitIdle
   }
 
-  val yago = "http://yago-knowledge.org/resource"
-  val rdf = "http://www.w3.org/2000/01/rdf-schema"
-  val owl = "http://www.w3.org/2002/07/owl"
-  //  val q = SAMPLE(1000000) ? "o1" ? "o2" ? "o3" ? "o4" ? "o5" ? "p1" ? "p2" ? "p3" ? "p4" ? "p5" WHERE ( //SAMPLE(10000000)
-  //    | - s"$yago/Elvis_Presley" - "p1" - "o1",
-  //    | - "o1" - "p2" - "o2",
-  //    | - "o2" - "p3" - "o3",
-  //    | - "o3" - "p4" - "o4",
-  //    | - "o4" - "p5" - "o5")
+  //  val q = SAMPLE(100000) ? "o1" ? "o2" ? "p1" ? "p2" WHERE ( //SAMPLE(10000000)
+  //    | - s"$yago/wordnet_president_110467179" - "p1" - "o1",
+  //    | - "o1" - "p2" - "o2")
 
-  val q = SAMPLE(100000) ? "o1" ? "o2" ? "p1" ? "p2" WHERE ( //SAMPLE(10000000)
-    | - s"$yago/wordnet_president_110467179" - "p1" - "o1",
-    | - "o1" - "p2" - "o2")
+  val queries: Map[Int, (String, Int) => PatternQuery] = Map(
+    1 -> {
+      case (entityName: String, tickets: Int) => SAMPLE(tickets) ? "o1" ? "p1" WHERE (
+        | - s"$yago/$entityName" - "p1" - "o1")
+    },
+    3 -> {
+      case (entityName: String, tickets: Int) => SAMPLE(tickets) ? "o1" ? "o2" ? "o3" ? "p1" ? "p2" ? "p3" WHERE (
+        | - s"$yago/$entityName" - "p1" - "o1",
+        | - "o1" - "p2" - "o2",
+        | - "o2" - "p3" - "o3")
+    },
+    5 -> {
+      case (entityName: String, tickets: Int) => SAMPLE(tickets) ? "o1" ? "o2" ? "o3" ? "o4" ? "o5" ? "p1" ? "p2" ? "p3" ? "p4" ? "p5" WHERE (
+        | - s"$yago/$entityName" - "p1" - "o1",
+        | - "o1" - "p2" - "o2",
+        | - "o2" - "p3" - "o3",
+        | - "o3" - "p4" - "o4",
+        | - "o4" - "p5" - "o5")
+    },
+    7 -> {
+      case (entityName: String, tickets: Int) => SAMPLE(tickets) ? "o1" ? "o2" ? "o3" ? "o4" ? "o5" ? "o6" ? "o7" ? "p1" ? "p2" ? "p3" ? "p4" ? "p5" ? "p6" ? "p7" WHERE (
+        | - s"$yago/$entityName" - "p1" - "o1",
+        | - "o1" - "p2" - "o2",
+        | - "o2" - "p3" - "o3",
+        | - "o3" - "p4" - "o4",
+        | - "o4" - "p5" - "o5",
+        | - "o5" - "p6" - "o6",
+        | - "o6" - "p7" - "o7")
+    },
+    9 -> {
+      case (entityName: String, tickets: Int) => SAMPLE(tickets) ? "o1" ? "o2" ? "o3" ? "o4" ? "o5" ? "o6" ? "o7" ? "o8" ? "o9" ? "p1" ? "p2" ? "p3" ? "p4" ? "p5" ? "p6" ? "p7" ? "p8" ? "p9" WHERE (
+        | - s"$yago/$entityName" - "p1" - "o1",
+        | - "o1" - "p2" - "o2",
+        | - "o2" - "p3" - "o3",
+        | - "o3" - "p4" - "o4",
+        | - "o4" - "p5" - "o5",
+        | - "o5" - "p6" - "o6",
+        | - "o6" - "p7" - "o7",
+        | - "o7" - "p8" - "o8",
+        | - "o8" - "p9" - "o9")
+    })
 
-  val result = qe.executeQuery(q)
-  //  result onSuccess {
-  //    case results =>
-  //      println("Result bindings:")
-  //      results foreach { result =>
-  //        println("\t" + result.bindings + " tickets = " + result.tickets)
-  //      }
-  //  } 
-  result onSuccess {
-    case (results, metadata) =>
-      //                   variable binding #paths
-      var bindingsStats = Map[Int, Map[Int, Long]]().withDefaultValue(Map[Int, Long]().withDefaultValue(0l))
-      output(s"Total # of result bindings ${results.length}\n")
-      for (result <- results) {
-        for (binding <- result.bindings.map) {
-          val variableId = binding._1
-          val valueId = binding._2
-          var currentStatsForVariable: Map[Int, Long] = bindingsStats(variableId)
-          var numberOfTicketsForValue = currentStatsForVariable(valueId)
-          numberOfTicketsForValue += result.tickets
-          currentStatsForVariable = currentStatsForVariable.updated(valueId, numberOfTicketsForValue)
-          bindingsStats = bindingsStats.updated(variableId, currentStatsForVariable)
+  var entityName = ""
+
+  while (entityName != "exit") {
+    println("Please enter an entity name:")
+    entityName = readLine
+
+    if (entityName != "exit") {
+      println("Please enter the sample size:")
+      val sampleSize = try {
+        val read = readLine.toInt
+        if (read >= 1) {
+          read
+        } else {
+          println("Invalid input, using 1000.")
+          1000
         }
+      } catch {
+        case whatever: Throwable =>
+          println("Invalid input, using 1000.")
+          1000
       }
-      for (variable <- bindingsStats.keys) {
-        val variableString = Mapping.getString(variable)
-        output(s"Stats for variable $variableString:\n")
-        val valueMap = bindingsStats(variable)
-        val totalTickets = valueMap.values.sum
-        for (value <- valueMap.toSeq.sortBy(_._2).map(_._1)) {
-          val valueString = Mapping.getString(value)
-          val ticketsForValue = valueMap(value)
-          output(s"\t$valueString: ${ticketsForValue.toDouble / totalTickets.toDouble}\n")
+      println("Please enter the path length:")
+      val pathLength = try {
+        val read = readLine.toInt
+        if (queries.keySet.contains(read)) {
+          read
+        } else {
+          println("Invalid input, using 1.")
+          1
         }
+      } catch {
+        case whatever: Throwable =>
+          println("Invalid input, using 1.")
+          1
       }
+      println("Please enter the number of bindings per variable:")
+      val topKBindings = try {
+        val read = readLine.toInt
+        if (read >= 1) {
+          read
+        } else {
+          println("Invalid input, using 10.")
+          10
+        }
+      } catch {
+        case whatever: Throwable =>
+          println("Invalid input, using 10.")
+          10
+      }
+
+      println("Executing query ...")
+
+      val resultFuture = qe.executeQuery(queries(pathLength)(entityName, sampleSize))
+      //  result onSuccess {
+      //    case results =>
+      //      println("Result bindings:")
+      //      results foreach { result =>
+      //        println("\t" + result.bindings + " tickets = " + result.tickets)
+      //      }
+      //  } 
+      val result = Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS))
+
+      println("Analyzing results ...")
+
+      result match {
+        case (patterns, metadata) =>
+          //                   variable binding #paths
+          var bindingsStats = Map[Int, Map[Int, Long]]().withDefaultValue(Map[Int, Long]().withDefaultValue(0l))
+          output(s"Total # of result bindings ${patterns.length}\n")
+          for (pattern <- patterns) {
+            for (binding <- pattern.bindings.map) {
+              val variableId = binding._1
+              val valueId = binding._2
+              var currentStatsForVariable: Map[Int, Long] = bindingsStats(variableId)
+              var numberOfTicketsForValue = currentStatsForVariable(valueId)
+              numberOfTicketsForValue += pattern.tickets
+              currentStatsForVariable = currentStatsForVariable.updated(valueId, numberOfTicketsForValue)
+              bindingsStats = bindingsStats.updated(variableId, currentStatsForVariable)
+            }
+          }
+          for (variable <- bindingsStats.keys) {
+            val variableString = Mapping.getString(variable)
+            output(s"Stats for variable $variableString:\n")
+            val valueMap = bindingsStats(variable)
+            val totalTickets = valueMap.values.sum
+            for (value <- valueMap.toSeq.sortBy(_._2)(Ordering[Long].reverse).map(_._1).take(topKBindings)) {
+              val valueString = Mapping.getString(value)
+              val ticketsForValue = valueMap(value)
+              output(s"\t$valueString: ${ticketsForValue.toDouble / totalTickets.toDouble}\n")
+            }
+          }
+      }
+    }
+    qe.awaitIdle
+    println("The query is done.")
   }
-  qe.awaitIdle
   qe.shutdown
   output.flush
   output.close
@@ -78,9 +187,4 @@ object YagoUseCase extends App {
     print(msg)
     output.write(msg.getBytes)
   }
-
-  //yagoFacts.nt //701
-  //yagoSchema.nt //0
-  //yagoSimpleTypes.nt //937
-  //yagoSimpleTaxonomy.nt //1.2
 }
