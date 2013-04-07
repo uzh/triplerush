@@ -3,7 +3,7 @@ Parallelized Triple Pattern Matcher
 
 How to Compile the Project
 --------------------------
-Ensure Java 7 required for Signal/Collect, verify using "java -version" on the command line.
+Ensure Java 7 is available on the system, verify with "java -version" on the command line.
 
 Ensure that the https://github.com/uzh/signal-collect project is placed in the same root folder as this project. 
 
