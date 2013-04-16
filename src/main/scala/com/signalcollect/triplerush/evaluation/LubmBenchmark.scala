@@ -26,7 +26,6 @@ import com.signalcollect.configuration._
 import com.signalcollect._
 import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
 import com.signalcollect.nodeprovisioning.Node
-import com.signalcollect.nodeprovisioning.local.LocalNode
 import com.typesafe.config.Config
 import com.signalcollect.nodeprovisioning.torque.TorqueHost
 import com.signalcollect.ExecutionConfiguration
