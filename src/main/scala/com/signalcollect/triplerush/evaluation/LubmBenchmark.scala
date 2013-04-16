@@ -46,8 +46,8 @@ import scala.collection.mutable.ArrayBuffer
  * Evaluation is set to execute on a 'Kraken'-node.
  */
 object LubmBenchmark extends App {
-  val jvmParameters = " -Xmx64000m" +
-    " -Xms64000m" +
+  val jvmParameters = " -Xmx60000m" +
+    " -Xms60000m" +
     " -Xmn8000m" +
     " -d64" +
     " -XX:+UnlockExperimentalVMOptions" +
@@ -67,9 +67,9 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  def evalName = "LUBM benchmarking -- V2."
+  def evalName = "LUBM benchmarking -- NEW WORKER."
   //  def evalName = "Local debugging."
-  val runs = 10
+  val runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
 

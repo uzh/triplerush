@@ -33,7 +33,8 @@ abstract class PatternVertex(
     // Build the hierarchical index on initialization.
     id.parentPatterns foreach { parentId =>
       graphEditor.addVertex(new IndexVertex(parentId))
-      graphEditor.addEdge(parentId, new StateForwarderEdge(id))
+      val idDelta = id.parentIdDelta(parentId)
+      graphEditor.addEdge(parentId, new PlaceholderEdge(idDelta))
     }
   }
 }

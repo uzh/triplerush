@@ -321,6 +321,10 @@ WHERE
   }
   qe.awaitIdle
   println("Finished loading LUBM1.")
+  
+  print("Optimizing edge representations...")
+  qe.prepareQueryExecution
+  println("done")
 
   def executeOnQueryEngine(q: PatternQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)
