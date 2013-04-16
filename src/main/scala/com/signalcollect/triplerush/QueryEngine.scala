@@ -43,7 +43,6 @@ case class QueryEngine() {
   g.awaitIdle
 
   def load(ntriplesFilename: String,
-    bidirectionalPredicates: Boolean = false,
     onlyTriplesAboutKnownEntities: Boolean = false,
     bannedPredicates: Set[String] = Set()) {
     g.modifyGraph(loadFile _, None)
@@ -64,11 +63,10 @@ case class QueryEngine() {
             val oId = Mapping.register(objectString)
             val tp = TriplePattern(sId, pId, oId)
             triplesLoaded += 1
-            graphEditor.addVertex(new TripleVertex(tp))
-            if (bidirectionalPredicates) {
-              val reverseTp = TriplePattern(oId, pId, sId)
-              triplesLoaded += 1
-              graphEditor.addVertex(new TripleVertex(reverseTp))
+            for (parentPattern <- tp.parentPatterns) {
+              val idDelta = tp.parentIdDelta(parentPattern)
+              graphEditor.addVertex(new BindingIndexVertex(parentPattern))
+              graphEditor.addEdge(parentPattern, new PlaceholderEdge(idDelta))
             }
           }
         }
@@ -82,6 +80,7 @@ case class QueryEngine() {
   }
 
   def executeQuery(q: PatternQuery): Future[(List[PatternQuery], Map[String, Any])] = {
+    require(queryExecutionPrepared)
     val p = promise[(List[PatternQuery], Map[String, Any])]
     if (!q.unmatched.isEmpty) {
       g.addVertex(new QueryVertex(q.queryId, p, q.tickets), blocking = true)
@@ -91,6 +90,19 @@ case class QueryEngine() {
       p success (List(), Map())
       p.future
     }
+  }
+
+  private var queryExecutionPrepared = false
+
+  def prepareQueryExecution {
+    g.awaitIdle
+    g.foreachVertex(v => v match {
+      case v: IndexVertex => v.optimizeEdgeRepresentation
+      case v: BindingIndexVertex => v.optimizeEdgeRepresentation
+      case other =>
+    })
+    g.awaitIdle
+    queryExecutionPrepared = true
   }
 
   def awaitIdle {

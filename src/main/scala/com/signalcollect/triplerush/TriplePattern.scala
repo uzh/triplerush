@@ -21,33 +21,67 @@
 package com.signalcollect.triplerush
 
 import scala.language.implicitConversions
+import com.signalcollect.triplerush.Expression._
 
-case class TriplePattern(s: Expression, p: Expression, o: Expression) {
-  implicit def int2expression(i: Int) = Expression(i)
+/**
+ * Pattern of 3 expressions (subject, predicate object).
+ * They are represented as Int, but can be converted to Expression implicitly and for free (value class).
+ */
+case class TriplePattern(s: Int, p: Int, o: Int) {
 
   override def toString = {
     s"(${s.toString},${p.toString},${o.toString})"
   }
 
-  // TODO: Matching is not good here, because it materializes Expression (see http://docs.scala-lang.org/overviews/core/value-classes.html)
+  def childPatternRecipe: Int => TriplePattern = {
+    this match {
+      case TriplePattern(*, *, *) =>
+        TriplePattern(_, *, *)
+      case TriplePattern(*, p, *) =>
+        TriplePattern(*, p, _)
+      case TriplePattern(*, *, o) =>
+        TriplePattern(_, *, o)
+      case TriplePattern(s, *, *) =>
+        TriplePattern(s, _, *)
+      case TriplePattern(*, p, o) =>
+        TriplePattern(_, p, o)
+      case TriplePattern(s, *, o) =>
+        TriplePattern(s, _, o)
+      case TriplePattern(s, p, *) =>
+        TriplePattern(s, p, _)
+    }
+  }
+
+  def parentIdDelta(parentPattern: TriplePattern): Int = {
+    if (parentPattern.s.isWildcard && !s.isWildcard) {
+      s
+    } else if (parentPattern.p.isWildcard && !p.isWildcard) {
+      p
+    } else if (parentPattern.o.isWildcard && !o.isWildcard) {
+      o
+    } else {
+      throw new Exception(s"$parentPattern is not a parent pattern of ")
+    }
+  }
+
   def parentPatterns: List[TriplePattern] = {
     this match {
-      case TriplePattern(Expression(0), Expression(0), Expression(0)) =>
+      case TriplePattern(*, *, *) =>
         List()
-      case TriplePattern(s, Expression(0), Expression(0)) =>
-        List(TriplePattern(0, 0, 0))
-      case TriplePattern(Expression(0), p, Expression(0)) =>
-        List() //  List(TriplePattern(0, 0, 0))
-      case TriplePattern(Expression(0), Expression(0), o) =>
-        List() // List(TriplePattern(0, 0, 0))
-      case TriplePattern(Expression(0), p, o) =>
-        List(TriplePattern(0, p, 0)) //List(TriplePattern(0, 0, o), TriplePattern(0, p, 0))
-      case TriplePattern(s, Expression(0), o) =>
-        List(TriplePattern(0, 0, o)) //List(TriplePattern(0, 0, o), TriplePattern(s, 0, 0))
-      case TriplePattern(s, p, Expression(0)) =>
-        List(TriplePattern(s, 0, 0)) //List(TriplePattern(0, p, 0), TriplePattern(s, 0, 0))
+      case TriplePattern(s, *, *) =>
+        List(TriplePattern(*, *, *))
+      case TriplePattern(*, p, *) =>
+        List()
+      case TriplePattern(*, *, o) =>
+        List()
+      case TriplePattern(*, p, o) =>
+        List(TriplePattern(*, p, *))
+      case TriplePattern(s, *, o) =>
+        List(TriplePattern(*, *, o))
+      case TriplePattern(s, p, *) =>
+        List(TriplePattern(s, *, *))
       case TriplePattern(s, p, o) =>
-        List(TriplePattern(0, p, o), TriplePattern(s, 0, o), TriplePattern(s, p, 0)) //List(TriplePattern(0, p, o), TriplePattern(s, 0, o), TriplePattern(s, p, 0))
+        List(TriplePattern(*, p, o), TriplePattern(s, *, o), TriplePattern(s, p, *))
     }
   }
 
@@ -57,10 +91,22 @@ case class TriplePattern(s: Expression, p: Expression, o: Expression) {
 
   /**
    * Returns the id of the index/triple vertex to which this pattern should be routed.
-   * Any variables (<0) should be converted to "unbound", which is represented by 0.
+   * Any variables (<0) should be converted to "unbound", which is represented by a wildcard.
    */
   def routingAddress = {
-    TriplePattern(s.toRoutingAddress, p.toRoutingAddress, o.toRoutingAddress)
+    if (isFullyBound) {
+      //Evenly load balance over all 3 index vertices for this triple.
+      val routingIndex = hashCode % 3 // 0 = subject, 1 = predicate, 2 = object
+      if (routingIndex == 0) {
+        TriplePattern(*, p.toRoutingAddress, o.toRoutingAddress)
+      } else if (routingIndex == 1) {
+        TriplePattern(s.toRoutingAddress, *, o.toRoutingAddress)
+      } else {
+        TriplePattern(s.toRoutingAddress, p.toRoutingAddress, *)
+      }
+    } else {
+      TriplePattern(s.toRoutingAddress, p.toRoutingAddress, o.toRoutingAddress)
+    }
   }
 
   /**
