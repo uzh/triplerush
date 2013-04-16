@@ -60,6 +60,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex(id) {
    * Binds the queries to the pattern of this vertex and routes them to their next destinations.
    */
   override def process(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
+    //TODO: Evaluate running the process function in parallel on all the queries.
     require(childDeltasOptimized != null)
     val nextPatternToMatch = query.unmatched.head
     if (nextPatternToMatch.isFullyBound) {
