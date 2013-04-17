@@ -37,7 +37,7 @@ case class PatternQuery(
   tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
   isComplete: Boolean = true // set to false as soon as there are not enough tickets to follow all edges
   ) {
-
+  
   def isSamplingQuery = queryId < 0
 
   override def toString = {

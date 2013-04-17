@@ -25,6 +25,7 @@ import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
 import scala.util.Sorting
 import com.signalcollect.examples.CompactIntSet
+import com.signalcollect.triplerush.Expression._
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -38,7 +39,25 @@ object SignalSet extends Enumeration with Serializable {
  * After graph loading, the `optimizeEdgeRepresentation` has to be called.
  * Query processing can only start once the edge representation has been optimized.
  */
-class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
+class IndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
+
+  /**
+   * Can be called anytime to compute the cardinalities.
+   */
+  def computeCardinality(graphEditor: GraphEditor[Any, Any]) {
+    require(childDeltasOptimized != null)
+    cardinality = 0
+    if (id == TriplePattern(*, *, *)) {
+      cardinality = Int.MaxValue //TODO: Add comment about why MaxValue
+    } else {
+      CompactIntSet.foreach(childDeltasOptimized, childDelta => {
+        val childPattern = childPatternCreator(childDelta)
+        graphEditor.sendSignal(CardinalityRequest(id), childPattern, None)
+      })
+    }
+  }
+
+  var cardinality = 0
 
   def optimizeEdgeRepresentation {
     childDeltasOptimized = CompactIntSet.create(childDeltas.toArray)
@@ -107,11 +126,19 @@ class IndexVertex(id: TriplePattern) extends PatternVertex(id) {
     })
   }
 
-  override def process(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
-    if (query.isSamplingQuery) {
-      processSamplingQuery(query, graphEditor)
-    } else {
-      processFullQuery(query, graphEditor)
+  override def process(message: Any, graphEditor: GraphEditor[Any, Any]) {
+    message match {
+      case query: PatternQuery =>
+        if (query.isSamplingQuery) {
+          processSamplingQuery(query, graphEditor)
+        } else {
+          processFullQuery(query, graphEditor)
+        }
+      case CardinalityRequest(requestor) =>
+        graphEditor.sendSignal(cardinality, requestor, None)
+      case cardinalityAnswer: Int =>
+        cardinality += cardinalityAnswer
     }
+
   }
 }

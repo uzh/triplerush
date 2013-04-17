@@ -25,8 +25,10 @@ import com.signalcollect.triplerush.Expression._
 import java.util.Arrays
 import scala.util.Sorting
 
-class BindingIndexVertex(id: TriplePattern) extends PatternVertex(id) {
-
+class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
+  /**
+   * Changes the edge representation from a List to a sorted Array.
+   */
   def optimizeEdgeRepresentation {
     childDeltasOptimized = childDeltas.toArray
     Arrays.sort(childDeltasOptimized)
@@ -34,6 +36,8 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex(id) {
   }
 
   override def edgeCount = edgeCounter
+
+  def cardinality = edgeCounter
 
   var edgeCounter = 0
 
@@ -59,7 +63,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex(id) {
   /**
    * Binds the queries to the pattern of this vertex and routes them to their next destinations.
    */
-  override def process(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
+  def bindQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
     //TODO: Evaluate running the process function in parallel on all the queries.
     require(childDeltasOptimized != null)
     val nextPatternToMatch = query.unmatched.head
@@ -86,6 +90,15 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex(id) {
           bindToTriplePattern(childPatternCreator(childDelta), averageTicketQuery, graphEditor)
         }
       }
+    }
+  }
+
+  override def process(message: Any, graphEditor: GraphEditor[Any, Any]) {
+    message match {
+      case query: PatternQuery =>
+        bindQuery(query, graphEditor)
+      case CardinalityRequest(requestor) =>
+        graphEditor.sendSignal(cardinality, requestor, None)
     }
   }
 
