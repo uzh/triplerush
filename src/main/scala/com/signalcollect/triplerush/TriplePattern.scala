@@ -33,6 +33,25 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     s"(${s.toString},${p.toString},${o.toString})"
   }
 
+  def variables: List[Int] = {
+    val sOpt = if (s.isVariable) Some(s) else None
+    val pOpt = if (p.isVariable) Some(p) else None
+    val oOpt = if (o.isVariable) Some(o) else None
+    (sOpt :: pOpt :: oOpt :: Nil).flatten
+  }
+
+  def contains(expression: Int): Boolean = {
+    if (s == expression) {
+      return true
+    } else if (p == expression) {
+      return true
+    } else if (o == expression) {
+      return true
+    } else {
+      return false
+    }
+  }
+
   def childPatternRecipe: Int => TriplePattern = {
     this match {
       case TriplePattern(*, *, *) =>
