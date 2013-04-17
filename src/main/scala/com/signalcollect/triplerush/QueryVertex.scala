@@ -59,9 +59,25 @@ class QueryVertex(
         cardinalities += forPattern -> cardinality
         if (cardinalities.size == expectedCardinalities) {
           // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
-          val sortedPatterns = cardinalities.toList sortBy (_._2) map (_._1)
-          val reorderedQuery = query.withUnmatchedPatterns(sortedPatterns)
-          graphEditor.sendSignal(reorderedQuery, sortedPatterns.head.routingAddress, None)
+          var sortedPatterns = cardinalities.toList sortBy (_._2)
+          val optimizedPatterns = ArrayBuffer[TriplePattern]()
+          while (!sortedPatterns.isEmpty) {
+            val nextPattern = sortedPatterns.head._1
+            optimizedPatterns.append(nextPattern)
+            sortedPatterns = sortedPatterns.tail map {
+              case (pattern, cardinalityEstimate) =>
+                var newCardinalityEstimate = cardinalityEstimate.toDouble
+                for (variable <- nextPattern.variables) {
+                  if (pattern.contains(variable)) {
+                    newCardinalityEstimate = newCardinalityEstimate / 10.0
+                  }
+                }
+                (pattern, newCardinalityEstimate.toInt)
+            }
+            sortedPatterns = sortedPatterns sortBy (_._2)
+          }
+          val reorderedQuery = query.withUnmatchedPatterns(optimizedPatterns.toList)
+          graphEditor.sendSignal(reorderedQuery, reorderedQuery.unmatched.head.routingAddress, None)
         }
     }
     true
