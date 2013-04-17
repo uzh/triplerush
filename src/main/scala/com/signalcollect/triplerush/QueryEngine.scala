@@ -83,8 +83,7 @@ case class QueryEngine() {
     require(queryExecutionPrepared)
     val p = promise[(List[PatternQuery], Map[String, Any])]
     if (!q.unmatched.isEmpty) {
-      g.addVertex(new QueryVertex(q.queryId, p, q.tickets), blocking = true)
-      g.sendSignal(q, q.unmatched.head.routingAddress, None)
+      g.addVertex(new QueryVertex(q, p))
       p.future
     } else {
       p success (List(), Map())
