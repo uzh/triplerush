@@ -25,21 +25,27 @@ import scala.concurrent.Promise
 import scala.collection.mutable.ArrayBuffer
 
 class QueryVertex(
-    id: Int,
-    val promise: Promise[(List[PatternQuery], Map[String, Any])],
-    val expectedTickets: Long) extends ProcessingVertex[Int, PatternQuery](id) {
+    val query: PatternQuery,
+    val promise: Promise[(List[PatternQuery], Map[String, Any])]) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
+
+  val expectedTickets: Long = query.tickets
+
   var receivedTickets: Long = 0
   var firstResultNanoTime = 0l
   var complete = true
 
-//  var numberOfFailedQueries = 0
-//  var numberOfSuccessfulQueries = 0
+  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    graphEditor.sendSignal(query, query.unmatched.head.routingAddress, None)
+  }
+
+  //  var numberOfFailedQueries = 0
+  //  var numberOfSuccessfulQueries = 0
 
   override def shouldProcess(query: PatternQuery): Boolean = {
     receivedTickets += query.tickets
     complete &&= query.isComplete
     if (query.unmatched.isEmpty) {
-//      numberOfSuccessfulQueries += 1
+      //      numberOfSuccessfulQueries += 1
       //println(s"Success: $query")
       // Query was matched successfully.
       if (firstResultNanoTime == 0) {
@@ -47,7 +53,7 @@ class QueryVertex(
       }
       true
     } else {
-//      numberOfFailedQueries += 1
+      //      numberOfFailedQueries += 1
       //println(s"Failure: $query")
       false
     }
@@ -57,8 +63,8 @@ class QueryVertex(
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
     promise success (state, Map("firstResultNanoTime" -> firstResultNanoTime))
-//    val totalQueries = (numberOfFailedQueries + numberOfSuccessfulQueries).toDouble
-//    println(s"Total # of queries = $totalQueries failed : ${((numberOfFailedQueries / totalQueries) * 100.0).round}%")
+    //    val totalQueries = (numberOfFailedQueries + numberOfSuccessfulQueries).toDouble
+    //    println(s"Total # of queries = $totalQueries failed : ${((numberOfFailedQueries / totalQueries) * 100.0).round}%")
     graphEditor.removeVertex(id)
   }
 
