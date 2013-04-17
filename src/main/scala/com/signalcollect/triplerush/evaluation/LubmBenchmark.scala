@@ -67,7 +67,7 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  def evalName = "LUBM benchmarking -- NEW WORKER."
+  def evalName = "LUBM benchmarking -- NEW WORKER AND INDEX AND WITH OPTIMIZER."
   //  def evalName = "Local debugging."
   val runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -265,6 +265,7 @@ object LubmBenchmark extends App {
           qe.load(file.getAbsolutePath)
         }
       }
+      qe.prepareQueryExecution
     }
 
     /**
