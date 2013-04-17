@@ -29,23 +29,31 @@ class QueryVertex(
     val promise: Promise[(List[PatternQuery], Map[String, Any])]) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
 
   val expectedTickets: Long = query.tickets
+  val expectedCardinalities = query.unmatched.size
 
   var receivedTickets: Long = 0
   var firstResultNanoTime = 0l
   var complete = true
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    graphEditor.sendSignal(query, query.unmatched.head.routingAddress, None)
+    query.unmatched foreach (triplePattern => {
+      val indexId = triplePattern.routingAddress
+      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), indexId, None)
+    })
   }
 
   var cardinalities: Map[TriplePattern, Int] = Map()
-  
-  override def deliverSignal(signal: Any, sourceId: Option[Any]): Boolean = {
+
+  override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
     signal match {
       case query: PatternQuery =>
         processQuery(query)
       case CardinalityReply(forPattern, cardinality) =>
         cardinalities += forPattern -> cardinality
+        if (cardinalities.size == expectedCardinalities) {
+          // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
+          graphEditor.sendSignal(query, query.unmatched.head.routingAddress, None)
+        }
     }
     true
   }
