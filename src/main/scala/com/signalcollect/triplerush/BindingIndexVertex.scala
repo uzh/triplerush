@@ -97,8 +97,8 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
     message match {
       case query: PatternQuery =>
         bindQuery(query, graphEditor)
-      case CardinalityRequest(requestor) =>
-        graphEditor.sendSignal(cardinality, requestor, None)
+      case CardinalityRequest(pattern, requestor) =>
+        graphEditor.sendSignal(CardinalityReply(pattern, cardinality), requestor, None)
     }
   }
 

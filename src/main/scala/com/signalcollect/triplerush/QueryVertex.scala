@@ -38,24 +38,35 @@ class QueryVertex(
     graphEditor.sendSignal(query, query.unmatched.head.routingAddress, None)
   }
 
+  var cardinalities: Map[TriplePattern, Int] = Map()
+  
+  override def deliverSignal(signal: Any, sourceId: Option[Any]): Boolean = {
+    signal match {
+      case query: PatternQuery =>
+        processQuery(query)
+      case CardinalityReply(forPattern, cardinality) =>
+        cardinalities += forPattern -> cardinality
+    }
+    true
+  }
+
   //  var numberOfFailedQueries = 0
   //  var numberOfSuccessfulQueries = 0
 
-  override def shouldProcess(query: PatternQuery): Boolean = {
+  def processQuery(query: PatternQuery) {
     receivedTickets += query.tickets
     complete &&= query.isComplete
     if (query.unmatched.isEmpty) {
-      //      numberOfSuccessfulQueries += 1
-      //println(s"Success: $query")
+      // numberOfSuccessfulQueries += 1
+      // println(s"Success: $query")
       // Query was matched successfully.
       if (firstResultNanoTime == 0) {
         firstResultNanoTime = System.nanoTime
       }
-      true
+      state = query :: state
     } else {
-      //      numberOfFailedQueries += 1
-      //println(s"Failure: $query")
-      false
+      // numberOfFailedQueries += 1
+      // println(s"Failure: $query")
     }
   }
 

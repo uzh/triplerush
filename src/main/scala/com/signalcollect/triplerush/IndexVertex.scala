@@ -52,7 +52,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
     } else {
       CompactIntSet.foreach(childDeltasOptimized, childDelta => {
         val childPattern = childPatternCreator(childDelta)
-        graphEditor.sendSignal(CardinalityRequest(id), childPattern, None)
+        graphEditor.sendSignal(CardinalityRequest(null, id), childPattern, None)
       })
     }
   }
@@ -134,10 +134,10 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
         } else {
           processFullQuery(query, graphEditor)
         }
-      case CardinalityRequest(requestor) =>
-        graphEditor.sendSignal(cardinality, requestor, None)
-      case cardinalityAnswer: Int =>
-        cardinality += cardinalityAnswer
+      case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
+        graphEditor.sendSignal(CardinalityReply(forPattern, cardinality), requestor, None)
+      case CardinalityReply(forPattern, patternCardinality) =>
+        cardinality += patternCardinality
     }
 
   }
