@@ -20,5 +20,6 @@
 
 package com.signalcollect.triplerush
 
-case class CardinalityRequest(requestor: AnyRef)
+case class CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef)
+case class CardinalityReply(forPattern: TriplePattern, cardinality: Int)
 
