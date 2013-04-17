@@ -67,6 +67,10 @@ case class PatternQuery(
     None
   }
 
+  def withUnmatchedPatterns(newUnmatched: List[TriplePattern]) = {
+    copy(unmatched = newUnmatched)
+  }
+  
   def withTickets(numberOfTickets: Long, complete: Boolean = true) = {
     copy(tickets = numberOfTickets, isComplete = complete)
   }
