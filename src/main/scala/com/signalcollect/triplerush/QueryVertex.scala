@@ -26,7 +26,8 @@ import scala.collection.mutable.ArrayBuffer
 
 class QueryVertex(
     val query: PatternQuery,
-    val promise: Promise[(List[PatternQuery], Map[String, Any])]) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
+    val promise: Promise[(List[PatternQuery], Map[String, Any])],
+    val optimize: Boolean = true) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
 
   val expectedTickets: Long = query.tickets
   val expectedCardinalities = query.unmatched.size
@@ -36,10 +37,16 @@ class QueryVertex(
   var complete = true
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    query.unmatched foreach (triplePattern => {
-      val indexId = triplePattern.routingAddress
-      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), indexId, None)
-    })
+    if (optimize && query.unmatched.size > 1) {
+      // Gather pattern cardinalities first.
+      query.unmatched foreach (triplePattern => {
+        val indexId = triplePattern.routingAddress
+        graphEditor.sendSignal(CardinalityRequest(triplePattern, id), indexId, None)
+      })
+    } else {
+      // Dispatch the query directly.
+      graphEditor.sendSignal(query, query.unmatched.head.routingAddress, None)
+    }
   }
 
   var cardinalities: Map[TriplePattern, Int] = Map()
@@ -52,7 +59,9 @@ class QueryVertex(
         cardinalities += forPattern -> cardinality
         if (cardinalities.size == expectedCardinalities) {
           // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
-          graphEditor.sendSignal(query, query.unmatched.head.routingAddress, None)
+          val sortedPatterns = cardinalities.toList sortBy (_._2) map (_._1)
+          val reorderedQuery = query.withUnmatchedPatterns(sortedPatterns)
+          graphEditor.sendSignal(reorderedQuery, sortedPatterns.head.routingAddress, None)
         }
     }
     true
