@@ -96,13 +96,25 @@ case class QueryEngine() {
 
   def prepareQueryExecution {
     g.awaitIdle
-    g.foreachVertex(v => v match {
-      case v: IndexVertex => v.optimizeEdgeRepresentation
-      case v: BindingIndexVertex => v.optimizeEdgeRepresentation
-      case other =>
-    })
+    g.foreachVertexWithGraphEditor(prepareVertex _)
     g.awaitIdle
+//    g.foreachVertex(v => v match {
+//      case v: IndexVertex => println(s"Id: ${v.id}, Card: ${v.cardinality}")
+//      case other => 
+//    })
+//    g.awaitIdle
     queryExecutionPrepared = true
+  }
+
+  def prepareVertex(graphEditor: GraphEditor[Any, Any])(v: Vertex[_, _]) {
+    v match {
+      case v: IndexVertex =>
+        v.optimizeEdgeRepresentation
+        v.computeCardinality(graphEditor)
+      case v: BindingIndexVertex =>
+        v.optimizeEdgeRepresentation
+      case other => throw new Exception(s"Only index vertices expected, but found vertex $other")
+    }
   }
 
   def awaitIdle {
