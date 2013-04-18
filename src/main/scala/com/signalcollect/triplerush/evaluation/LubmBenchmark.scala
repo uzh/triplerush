@@ -38,6 +38,7 @@ import scala.concurrent.duration.FiniteDuration
 import com.signalcollect.triplerush.Mapping
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ArrayBuffer
+import com.signalcollect.triplerush.QueryOptimizer
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -75,16 +76,18 @@ object LubmBenchmark extends App {
 
   for (run <- 1 to runs) {
     for (queryId <- 1 to 7) {
-      //for (tickets <- List(1000, 10000, 100000, 1000000)) {
-      //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
-      //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
-      //      }
-      evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue))
+      for (optimizer <- List(QueryOptimizer.None, QueryOptimizer.Greedy, QueryOptimizer.Clever)) {
+        //for (tickets <- List(1000, 10000, 100000, 1000000)) {
+        //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
+        //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
+        //      }
+        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer))
+      }
     }
   }
   evaluation.execute
 
-  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long)(): List[Map[String, String]] = {
+  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long, optimizer: QueryOptimizer.Value)(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
@@ -283,7 +286,7 @@ object LubmBenchmark extends App {
     }
 
     def executeOnQueryEngine(q: PatternQuery): (List[PatternQuery], Map[String, Any]) = {
-      val resultFuture = qe.executeQuery(q)
+      val resultFuture = qe.executeQuery(q, optimizer)
       val result = Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS))
       result
     }
@@ -323,13 +326,19 @@ object LubmBenchmark extends App {
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
       val timeToFirstResult = roundToMillisecondFraction(queryResult._2("firstResultNanoTime").asInstanceOf[Long] - startTime)
       runResult += s"queryId" -> queryId.toString
+      runResult += s"optimizer" -> optimizer.toString
       runResult += s"results" -> queryResult._1.length.toString
       runResult += s"samplingQuery" -> query.isSamplingQuery.toString
       runResult += s"tickets" -> query.tickets.toString
       runResult += s"executionTime" -> executionTime.toString
       runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
+      runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
+      runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
+      runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
       finalResults = runResult :: finalResults
     }
+
+    def bytesToGigabytes(bytes: Long): Double = ((bytes / 1073741824) * 10.0).round / 10.0
 
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {

@@ -24,10 +24,18 @@ import com.signalcollect._
 import scala.concurrent.Promise
 import scala.collection.mutable.ArrayBuffer
 
+object QueryOptimizer extends Enumeration with Serializable {
+
+  val None = Value // Execute patterns in order passed.
+  val Greedy = Value // Execute patterns in descending order of cardinalities.
+  val Clever = Value // Uses cardinalities and prefers patterns that contain variables that have been matched in a previous pattern.
+
+}
+
 class QueryVertex(
     val query: PatternQuery,
     val promise: Promise[(List[PatternQuery], Map[String, Any])],
-    val optimize: Boolean = true) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
+    val optimizer: QueryOptimizer.Value) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
 
   val expectedTickets: Long = query.tickets
   val expectedCardinalities = query.unmatched.size
@@ -37,7 +45,7 @@ class QueryVertex(
   var complete = true
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    if (optimize && query.unmatched.size > 1) {
+    if (optimizer != QueryOptimizer.None && query.unmatched.size > 1) {
       // Gather pattern cardinalities first.
       query.unmatched foreach (triplePattern => {
         val indexId = triplePattern.routingAddress
@@ -58,29 +66,39 @@ class QueryVertex(
       case CardinalityReply(forPattern, cardinality) =>
         cardinalities += forPattern -> cardinality
         if (cardinalities.size == expectedCardinalities) {
-          // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
-          var sortedPatterns = cardinalities.toList sortBy (_._2)
-          val optimizedPatterns = ArrayBuffer[TriplePattern]()
-          while (!sortedPatterns.isEmpty) {
-            val nextPattern = sortedPatterns.head._1
-            optimizedPatterns.append(nextPattern)
-            sortedPatterns = sortedPatterns.tail map {
-              case (pattern, cardinalityEstimate) =>
-                var newCardinalityEstimate = cardinalityEstimate.toDouble
-                for (variable <- nextPattern.variables) {
-                  if (pattern.contains(variable)) {
-                    newCardinalityEstimate = newCardinalityEstimate / 10.0
-                  }
-                }
-                (pattern, newCardinalityEstimate.toInt)
-            }
-            sortedPatterns = sortedPatterns sortBy (_._2)
-          }
-          val reorderedQuery = query.withUnmatchedPatterns(optimizedPatterns.toList)
+          val reorderedQuery = optimizeQuery
           graphEditor.sendSignal(reorderedQuery, reorderedQuery.unmatched.head.routingAddress, None)
         }
     }
     true
+  }
+
+  def optimizeQuery: PatternQuery = {
+    var sortedPatterns = cardinalities.toList sortBy (_._2)
+    optimizer match {
+      case QueryOptimizer.Greedy =>
+        // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
+        query.withUnmatchedPatterns(sortedPatterns map (_._1))
+      case QueryOptimizer.Clever =>
+        val optimizedPatterns = ArrayBuffer[TriplePattern]()
+        while (!sortedPatterns.isEmpty) {
+          val nextPattern = sortedPatterns.head._1
+          optimizedPatterns.append(nextPattern)
+          sortedPatterns = sortedPatterns.tail map {
+            case (pattern, cardinalityEstimate) =>
+              var newCardinalityEstimate = cardinalityEstimate.toDouble
+              for (variable <- nextPattern.variables) {
+                if (pattern.contains(variable)) {
+                  newCardinalityEstimate = newCardinalityEstimate / 10.0
+                }
+              }
+              (pattern, newCardinalityEstimate.toInt)
+          }
+          sortedPatterns = sortedPatterns sortBy (_._2)
+        }
+        query.withUnmatchedPatterns(optimizedPatterns.toList)
+    }
+
   }
 
   //  var numberOfFailedQueries = 0
