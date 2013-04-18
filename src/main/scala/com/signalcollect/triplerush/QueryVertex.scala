@@ -33,9 +33,9 @@ object QueryOptimizer extends Enumeration with Serializable {
 }
 
 class QueryVertex(
-    val query: PatternQuery,
-    val promise: Promise[(List[PatternQuery], Map[String, Any])],
-    val optimizer: QueryOptimizer.Value) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
+  val query: PatternQuery,
+  val promise: Promise[(List[PatternQuery], Map[String, Any])],
+  val optimizer: QueryOptimizer.Value) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
 
   val expectedTickets: Long = query.tickets
   val expectedCardinalities = query.unmatched.size
@@ -44,11 +44,15 @@ class QueryVertex(
   var firstResultNanoTime = 0l
   var complete = true
 
+  var optimizingStartTime = 0l
+  var optimizingDuration = 0l
+
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     if (optimizer != QueryOptimizer.None && query.unmatched.size > 1) {
       // Gather pattern cardinalities first.
       query.unmatched foreach (triplePattern => {
         val indexId = triplePattern.routingAddress
+        optimizingStartTime = System.nanoTime
         graphEditor.sendSignal(CardinalityRequest(triplePattern, id), indexId, None)
       })
     } else {
@@ -67,6 +71,9 @@ class QueryVertex(
         cardinalities += forPattern -> cardinality
         if (cardinalities.size == expectedCardinalities) {
           val reorderedQuery = optimizeQuery
+          if (optimizingStartTime != 0) {
+            optimizingDuration = System.nanoTime - optimizingStartTime
+          }
           graphEditor.sendSignal(reorderedQuery, reorderedQuery.unmatched.head.routingAddress, None)
         }
     }
@@ -124,7 +131,7 @@ class QueryVertex(
   override def scoreSignal: Double = if (expectedTickets == receivedTickets) 1 else 0
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
-    promise success (state, Map("firstResultNanoTime" -> firstResultNanoTime))
+    promise success (state, Map("firstResultNanoTime" -> firstResultNanoTime, "optimizingDuration" -> optimizingDuration))
     //    val totalQueries = (numberOfFailedQueries + numberOfSuccessfulQueries).toDouble
     //    println(s"Total # of queries = $totalQueries failed : ${((numberOfFailedQueries / totalQueries) * 100.0).round}%")
     graphEditor.removeVertex(id)
