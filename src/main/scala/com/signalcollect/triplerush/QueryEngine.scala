@@ -79,11 +79,11 @@ case class QueryEngine() {
     }
   }
 
-  def executeQuery(q: PatternQuery): Future[(List[PatternQuery], Map[String, Any])] = {
+  def executeQuery(q: PatternQuery, optimizer: QueryOptimizer.Value = QueryOptimizer.Greedy): Future[(List[PatternQuery], Map[String, Any])] = {
     require(queryExecutionPrepared)
     val p = promise[(List[PatternQuery], Map[String, Any])]
     if (!q.unmatched.isEmpty) {
-      g.addVertex(new QueryVertex(q, p))
+      g.addVertex(new QueryVertex(q, p, optimizer))
       p.future
     } else {
       p success (List(), Map())
