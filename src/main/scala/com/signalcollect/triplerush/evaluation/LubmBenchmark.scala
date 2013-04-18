@@ -86,7 +86,7 @@ object LubmBenchmark extends App {
         //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
         //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
         //      }
-        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer, loadNumber = 1))
+        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer, 1))
       }
     }
   }
@@ -279,10 +279,9 @@ object LubmBenchmark extends App {
 
     def loadLubmSmall(numberOfUniversities: Int = 1) {
       val lubm160FolderName = "lubm160"
-      val folder = new File(lubm160FolderName)
       for (university <- (0 until numberOfUniversities)) {
         for (subfile <- (0 to 14))
-          qe.load(s"University${university}_$subfile.nt")
+          qe.load(s"$lubm160FolderName/University${university}_$subfile.nt")
       }
       qe.prepareQueryExecution
     }
