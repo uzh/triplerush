@@ -30,8 +30,11 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
    * Changes the edge representation from a List to a sorted Array.
    */
   def optimizeEdgeRepresentation {
-    childDeltasOptimized = childDeltas.toArray
-    Arrays.sort(childDeltasOptimized)
+    val occupancyFraction = 0.8
+    childDeltasOptimized = new HashSet((edgeCount / occupancyFraction).ceil.toInt, occupancyFraction.toFloat)
+    for (childDelta <- childDeltas) {
+      childDeltasOptimized.add(childDelta)
+    }
     childDeltas = null
   }
 
@@ -43,8 +46,8 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
 
   var childDeltas = List[Int]()
 
-  var childDeltasOptimized: Array[Int] = null //TODO: Figure out if this is more elegant using ArrayBuffer
-
+  var childDeltasOptimized: HashSet = null 
+  
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
     childDeltas = List[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
     edgeCount
@@ -104,21 +107,14 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
 
   def patternExists(tp: TriplePattern): Boolean = {
     if (id.s == *) {
-      find(tp.s)
+      childDeltasOptimized.contains(tp.s)
     } else if (id.p == *) {
-      find(tp.p)
+      childDeltasOptimized.contains(tp.p)
     } else if (id.o == *) {
-      find(tp.o)
+      childDeltasOptimized.contains(tp.o)
     } else {
       throw new UnsupportedOperationException(s"The vertex with id $id should not be a BindingIndexVertex.")
     }
-  }
-
-  /**
-   * Checks if `toFind` is in `values` using binary search.
-   */
-  def find(toFind: Int): Boolean = {
-    Arrays.binarySearch(childDeltasOptimized, toFind) >= 0
   }
 
   def bindToTriplePattern(triplePattern: TriplePattern, query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
