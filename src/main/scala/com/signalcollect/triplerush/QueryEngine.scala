@@ -26,11 +26,12 @@ import scala.concurrent._
 import org.semanticweb.yars.nx.parser.NxParser
 import com.signalcollect._
 import com.signalcollect.configuration.ExecutionMode
-import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
+import com.signalcollect.factory.messagebus.ParallelBulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.Expression.int2Expression
 
 case class QueryEngine() {
-  private val g = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).build
+  //private val g = GraphBuilder.withMessageBusFactory(new ParallelBulkAkkaMessageBusFactory(1024)).build
+  private val g = GraphBuilder.build
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     signal match {
       case query: PatternQuery =>
@@ -43,7 +44,6 @@ case class QueryEngine() {
   g.awaitIdle
 
   def load(ntriplesFilename: String,
-    bidirectionalPredicates: Boolean = false,
     onlyTriplesAboutKnownEntities: Boolean = false,
     bannedPredicates: Set[String] = Set()) {
     g.modifyGraph(loadFile _, None)
@@ -64,11 +64,10 @@ case class QueryEngine() {
             val oId = Mapping.register(objectString)
             val tp = TriplePattern(sId, pId, oId)
             triplesLoaded += 1
-            graphEditor.addVertex(new TripleVertex(tp))
-            if (bidirectionalPredicates) {
-              val reverseTp = TriplePattern(oId, pId, sId)
-              triplesLoaded += 1
-              graphEditor.addVertex(new TripleVertex(reverseTp))
+            for (parentPattern <- tp.parentPatterns) {
+              val idDelta = tp.parentIdDelta(parentPattern)
+              graphEditor.addVertex(new BindingIndexVertex(parentPattern))
+              graphEditor.addEdge(parentPattern, new PlaceholderEdge(idDelta))
             }
           }
         }
@@ -81,15 +80,40 @@ case class QueryEngine() {
     }
   }
 
-  def executeQuery(q: PatternQuery): Future[(List[PatternQuery], Map[String, Any])] = {
+  def executeQuery(q: PatternQuery, optimizer: QueryOptimizer.Value = QueryOptimizer.Greedy): Future[(List[PatternQuery], Map[String, Any])] = {
+    require(queryExecutionPrepared)
     val p = promise[(List[PatternQuery], Map[String, Any])]
     if (!q.unmatched.isEmpty) {
-      g.addVertex(new QueryVertex(q.queryId, p, q.tickets), blocking = true)
-      g.sendSignal(q, q.unmatched.head.routingAddress, None)
+      g.addVertex(new QueryVertex(q, p, optimizer))
       p.future
     } else {
       p success (List(), Map())
       p.future
+    }
+  }
+
+  private var queryExecutionPrepared = false
+
+  def prepareQueryExecution {
+    g.awaitIdle
+    g.foreachVertexWithGraphEditor(prepareVertex _)
+    g.awaitIdle
+//    g.foreachVertex(v => v match {
+//      case v: IndexVertex => println(s"Id: ${v.id}, Card: ${v.cardinality}")
+//      case other => 
+//    })
+//    g.awaitIdle
+    queryExecutionPrepared = true
+  }
+
+  def prepareVertex(graphEditor: GraphEditor[Any, Any])(v: Vertex[_, _]) {
+    v match {
+      case v: IndexVertex =>
+        v.optimizeEdgeRepresentation
+        v.computeCardinality(graphEditor)
+      case v: BindingIndexVertex =>
+        v.optimizeEdgeRepresentation
+      case other => throw new Exception(s"Only index vertices expected, but found vertex $other")
     }
   }
 

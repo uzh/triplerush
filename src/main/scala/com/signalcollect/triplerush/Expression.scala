@@ -23,6 +23,7 @@ package com.signalcollect.triplerush
 import language.implicitConversions
 
 object Expression {
+  val * = 0
   implicit def int2Expression(i: Int) = Expression(i)
 }
 
@@ -33,6 +34,8 @@ object Expression {
  * Wildcards are represented by value == 0.
  */
 case class Expression(value: Int) extends AnyVal {
+  implicit def int2expression(i: Int) = Expression(i)
+  
   /**
    * Applies a binding from bindings, if one applies.
    */
@@ -45,7 +48,7 @@ case class Expression(value: Int) extends AnyVal {
       value
     }
   }
-  @inline def bindTo(constant: Expression): Option[Bindings] = {
+  @inline def bindTo(constant: Int): Option[Bindings] = {
     if (isVariable) {
       // This is a variable, return the new binding.
       Some(Bindings(Map(value -> constant.value)))
@@ -60,6 +63,6 @@ case class Expression(value: Int) extends AnyVal {
   @inline def isVariable = value < 0
   @inline def isConstant = value > 0
   @inline def isWildcard = value == 0
-  @inline def toRoutingAddress = Expression(math.max(value, 0))
+  @inline def toRoutingAddress = math.max(value, 0)
   @inline override def toString = Mapping.getString(value)
 }

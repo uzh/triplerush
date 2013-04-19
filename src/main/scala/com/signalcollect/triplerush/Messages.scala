@@ -20,21 +20,6 @@
 
 package com.signalcollect.triplerush
 
-import com.signalcollect._
+case class CardinalityRequest(forPattern: TriplePattern, requestor: Any)
+case class CardinalityReply(forPattern: TriplePattern, cardinality: Int)
 
-/**
- * Basic vertex that recursively builds the TripleRush index structure. 
- */
-abstract class PatternVertex[Signal](
-  id: TriplePattern)
-  extends ProcessingVertex[TriplePattern, Signal](id) {
-
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    // Build the hierarchical index on initialization.
-    id.parentPatterns foreach { parentId =>
-      graphEditor.addVertex(new IndexVertex(parentId))
-      val idDelta = id.parentIdDelta(parentId)
-      graphEditor.addEdge(parentId, new PlaceholderEdge(idDelta))
-    }
-  }
-}

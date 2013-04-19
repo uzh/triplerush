@@ -38,6 +38,8 @@ import scala.concurrent.duration.FiniteDuration
 import com.signalcollect.triplerush.Mapping
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
+import com.signalcollect.triplerush.QueryOptimizer
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -46,7 +48,7 @@ import scala.collection.mutable.ArrayBuffer
  * Evaluation is set to execute on a 'Kraken'-node.
  */
 object LubmBenchmark extends App {
-  val jvmParameters = " -Xmx64000m" +
+  val jvmHighThroughputGc = " -Xmx64000m" +
     " -Xms64000m" +
     " -Xmn8000m" +
     " -d64" +
@@ -58,33 +60,40 @@ object LubmBenchmark extends App {
     " -XX:ParallelGCThreads=20" +
     " -XX:ParallelCMSThreads=20" +
     " -XX:MaxInlineSize=1024"
-  //  val jvmParameters = " -Xmx64000m" +
-  //    " -Xms64000m"
+  val jvmParameters = " -Xmx64000m" +
+    " -Xms64000m"
+  val assemblyPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar"
+  val assemblyFile = new File(assemblyPath)
+  val copyName = assemblyPath.replace("-SNAPSHOT", (Random.nextInt%10000).toString)
+  assemblyFile.renameTo(new File(copyName))
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar", jvmParameters = jvmParameters, priority = TorquePriority.fast)
+    localJarPath = copyName, jvmParameters = jvmParameters, priority = TorquePriority.fast)
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  def evalName = "LUBM benchmarking -- V2."
+  def evalName = "LUBM benchmarking -- Limited loading and different jar name"
   //  def evalName = "Local debugging."
-  val runs = 10
+  val runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
 
   for (run <- 1 to runs) {
     for (queryId <- 1 to 7) {
-      //for (tickets <- List(1000, 10000, 100000, 1000000)) {
-      //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
-      //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
-      //      }
-      evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue))
+      for (optimizer <- List(QueryOptimizer.None, QueryOptimizer.Greedy, QueryOptimizer.Clever)) {
+        //for (tickets <- List(1000, 10000, 100000, 1000000)) {
+        //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
+        //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
+        //      }
+        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer, 1))
+      }
     }
   }
   evaluation.execute
 
-  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long)(): List[Map[String, String]] = {
+  //If loadNumber is -1, then the full data is loaded
+  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long, optimizer: QueryOptimizer.Value, loadNumber: Int = -1)(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
@@ -265,6 +274,16 @@ object LubmBenchmark extends App {
           qe.load(file.getAbsolutePath)
         }
       }
+      qe.prepareQueryExecution
+    }
+
+    def loadLubmSmall(numberOfUniversities: Int = 1) {
+      val lubm160FolderName = "lubm160"
+      for (university <- (0 until numberOfUniversities)) {
+        for (subfile <- (0 to 14))
+          qe.load(s"$lubm160FolderName/University${university}_$subfile.nt")
+      }
+      qe.prepareQueryExecution
     }
 
     /**
@@ -282,7 +301,7 @@ object LubmBenchmark extends App {
     }
 
     def executeOnQueryEngine(q: PatternQuery): (List[PatternQuery], Map[String, Any]) = {
-      val resultFuture = qe.executeQuery(q)
+      val resultFuture = qe.executeQuery(q, optimizer)
       val result = Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS))
       result
     }
@@ -321,18 +340,32 @@ object LubmBenchmark extends App {
       val finishTime = System.nanoTime
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
       val timeToFirstResult = roundToMillisecondFraction(queryResult._2("firstResultNanoTime").asInstanceOf[Long] - startTime)
+      val optimizingTime = roundToMillisecondFraction(queryResult._2("optimizingDuration").asInstanceOf[Long])
       runResult += s"queryId" -> queryId.toString
+      runResult += s"optimizer" -> optimizer.toString
       runResult += s"results" -> queryResult._1.length.toString
       runResult += s"samplingQuery" -> query.isSamplingQuery.toString
       runResult += s"tickets" -> query.tickets.toString
       runResult += s"executionTime" -> executionTime.toString
       runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
+      runResult += s"optimizingTime" -> optimizingTime.toString
+      runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
+      runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
+      runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
+      runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
+      runResult += s"loadNumber" -> loadNumber.toString
       finalResults = runResult :: finalResults
     }
 
+    def bytesToGigabytes(bytes: Long): Double = ((bytes / 1073741824.0) * 10.0).round / 10.0
+
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
-      loadLubm160
+      if (loadNumber == -1) { //Load full
+        loadLubm160
+      } else {
+        loadLubmSmall(loadNumber)
+      }
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
