@@ -36,7 +36,10 @@ case class QueryEngine() {
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     signal match {
       case query: PatternQuery =>
+        // TODO: Send only the number of tickets.
         graphEditor.sendSignal(query, query.queryId, None)
+      case CardinalityRequest(pattern, requestor) =>
+        graphEditor.sendSignal(CardinalityReply(pattern, 0), requestor, None)
       case other =>
         println(s"Failed signal delivery $other of type ${other.getClass}")
     }
@@ -99,11 +102,11 @@ case class QueryEngine() {
     g.awaitIdle
     g.foreachVertexWithGraphEditor(prepareVertex _)
     g.awaitIdle
-//    g.foreachVertex(v => v match {
-//      case v: IndexVertex => println(s"Id: ${v.id}, Card: ${v.cardinality}")
-//      case other => 
-//    })
-//    g.awaitIdle
+    //    g.foreachVertex(v => v match {
+    //      case v: IndexVertex => println(s"Id: ${v.id}, Card: ${v.cardinality}")
+    //      case other => 
+    //    })
+    //    g.awaitIdle
     queryExecutionPrepared = true
   }
 

@@ -46,8 +46,8 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
 
   var childDeltas = List[Int]()
 
-  var childDeltasOptimized: HashSet = null 
-  
+  var childDeltasOptimized: HashSet = null
+
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
     childDeltas = List[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
     edgeCount
@@ -71,10 +71,12 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
     require(childDeltasOptimized != null)
     val nextPatternToMatch = query.unmatched.head
     if (nextPatternToMatch.isFullyBound) {
-      // We are looking for a specific, fully bound triple pattern. This means that we have to do a binary search on the targetIds.
+      // We are looking for a specific, fully bound triple pattern.
       if (patternExists(nextPatternToMatch)) {
         bindToTriplePattern(nextPatternToMatch, query, graphEditor)
       } else {
+        // We could not bind and the query has failed.
+        // TODO: Send only the number of tickets.
         graphEditor.sendSignal(query, query.queryId, None)
       }
     } else {

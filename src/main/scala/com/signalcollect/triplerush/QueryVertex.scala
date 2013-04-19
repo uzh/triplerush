@@ -70,6 +70,7 @@ class QueryVertex(
       case CardinalityReply(forPattern, cardinality) =>
         cardinalities += forPattern -> cardinality
         if (cardinalities.size == expectedCardinalities) {
+          // TODO: Directly fail queries that contain a pattern with cardinality 0
           val reorderedQuery = optimizeQuery
           if (optimizingStartTime != 0) {
             optimizingDuration = System.nanoTime - optimizingStartTime

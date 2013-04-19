@@ -73,17 +73,16 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  def evalName = "LUBM benchmarking -- Local loading test"
+  def evalName = "LUBM benchmarking -- Hash set test"
   val runs = 1
-  val numberOfUniversities = 10
   val queryOptimizers = List(QueryOptimizer.None, QueryOptimizer.Greedy, QueryOptimizer.Clever)
-  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
+  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
 
   for (run <- 1 to runs) {
     for (queryId <- 1 to 7) {
       for (optimizer <- queryOptimizers) {
-        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer, numberOfUniversities))
+        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer, 160))
       }
     }
   }
@@ -263,11 +262,11 @@ object LubmBenchmark extends App {
     var baseResults = Map[String, String]()
     val qe = new QueryEngine()
 
-    def loadLubm(numberOfUniversities: Int = 160) {
+    def loadLubm {
       val lubm160FolderName = "lubm160"
-      for (university <- (0 until numberOfUniversities)) {
+      for (university <- (0 until loadNumber)) {
         for (subfile <- (0 to 99)) {
-          val potentialFileName = s"$lubm160FolderName/University${university}_$subfile.nt"
+          val potentialFileName = s"$lubm160FolderName/University${university}_${subfile}.nt"
           val potentialFile = new File(potentialFileName)
           if (potentialFile.exists) {
             qe.load(potentialFileName)
@@ -281,7 +280,7 @@ object LubmBenchmark extends App {
      * Returns the time in milliseconds it takes to execute the code in 'codeBlock'.
      */
     def measureTime(codeBlock: => Unit): Long = {
-      val startTime = System.currentTimeMillis
+      val startTime = System.currentTimeMillis // TODO: Use nanoseconds for measurements
       codeBlock
       val finishTime = System.currentTimeMillis
       finishTime - startTime
@@ -352,7 +351,7 @@ object LubmBenchmark extends App {
 
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
-      loadLubm(loadNumber)
+      loadLubm
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString

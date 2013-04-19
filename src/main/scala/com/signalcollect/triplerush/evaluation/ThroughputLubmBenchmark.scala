@@ -40,6 +40,8 @@ import com.signalcollect.triplerush.Mapping
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
+import language.postfixOps
+
 
 
 /**
