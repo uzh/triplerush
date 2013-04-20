@@ -96,7 +96,7 @@ object LubmBenchmark extends App {
 
   for (run <- 1 to runs) {
     for (queryId <- 1 to 7) {
-      for (optimizer <- List(QueryOptimizer.None, QueryOptimizer.Greedy, QueryOptimizer.Clever)) {
+      for (optimizer <- List(QueryOptimizer.None, QueryOptimizer.Clever)) {
         //for (tickets <- List(1000, 10000, 100000, 1000000)) {
         //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
         //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
@@ -311,7 +311,7 @@ object LubmBenchmark extends App {
     def executeOnQueryEngine(q: PatternQuery): (List[PatternQuery], Map[String, Any]) = {
       val resultFuture = qe.executeQuery(q, optimizer)
       try {
-        Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS)) // TODO handle exception
+        Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
       } catch {
         case t: Throwable =>
           println(s"Query $q timed out!")
@@ -353,6 +353,7 @@ object LubmBenchmark extends App {
       runResult += s"revision" -> revision
       runResult += s"queryId" -> queryId.toString
       runResult += s"optimizer" -> optimizer.toString
+      runResult += s"query" -> queryResult._2("optimizedQuery").toString
       runResult += s"exception" -> queryResult._2("exception").toString
       runResult += s"results" -> queryResult._1.length.toString
       runResult += s"samplingQuery" -> query.isSamplingQuery.toString
