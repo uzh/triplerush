@@ -34,7 +34,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
   def optimizeEdgeRepresentation {
     val childDeltasArray = childDeltas.toArray
     Arrays.sort(childDeltasArray)
-    childDeltasOptimized = childDeltasArray.par
+    childDeltasOptimized = childDeltasArray
     childDeltas = null
   }
 
@@ -46,7 +46,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
 
   var childDeltas = List[Int]()
 
-  var childDeltasOptimized: ParArray[Int] = null //TODO: Figure out if this is more elegant using ArrayBuffer
+  var childDeltasOptimized: Array[Int] = null //TODO: Figure out if this is more elegant using ArrayBuffer
 
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
     childDeltas = List[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
@@ -87,11 +87,12 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
   def bind(query: PatternQuery, edges: Int, graphEditor: GraphEditor[Any, Any]) {
     val avg = query.tickets / edges
     val complete = avg > 0
-    var extras = new AtomicLong(query.tickets % edges)
+    var extras = query.tickets % edges
     val averageTicketQuery = query.withTickets(avg, complete)
     val aboveAverageTicketQuery = query.withTickets(avg + 1, complete)
     for (childDelta <- childDeltasOptimized) {
-      if (extras.getAndDecrement > 0) {
+      if (extras > 0) {
+        extras -=1
         bindToTriplePattern(childPatternCreator(childDelta), aboveAverageTicketQuery, graphEditor)
       } else if (complete) {
         bindToTriplePattern(childPatternCreator(childDelta), averageTicketQuery, graphEditor)
