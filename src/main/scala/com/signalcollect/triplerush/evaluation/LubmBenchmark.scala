@@ -88,7 +88,7 @@ object LubmBenchmark extends App {
   }
   
   /*********/
-  def evalName = "LUBM benchmarking -- Testing latency with non-bulking message bus."
+  def evalName = "LUBM benchmarking -- Index vertices collect and signal right upon signal delivery."
   //  def evalName = "Local debugging."
   val runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
