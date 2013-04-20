@@ -29,11 +29,12 @@ import com.signalcollect.configuration.ExecutionMode
 import com.signalcollect.factory.messagebus.ParallelBulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.Expression.int2Expression
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
+import com.signalcollect.factory.messagebus.AkkaMessageBusFactory
 
 case class QueryEngine() {
 //  private val g = GraphBuilder.withMessageBusFactory(new ParallelBulkAkkaMessageBusFactory(1024)).build
-  private val g = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).build
-//  private val g = GraphBuilder.build
+//  private val g = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).build
+  private val g = GraphBuilder.withMessageBusFactory(AkkaMessageBusFactory).build
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     signal match {
       case query: PatternQuery =>
