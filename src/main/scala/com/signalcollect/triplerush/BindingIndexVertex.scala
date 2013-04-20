@@ -80,15 +80,11 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
     } else {
       // We need to bind the next pattern to all targetIds
       val edges = edgeCount
-      if (edges < 10) {
-        bindSequentially(query, edges, graphEditor)
-      } else {
-        bindInParallel(query, edges, graphEditor)
-      }
+      bind(query, edges, graphEditor)
     }
   }
 
-  def bindInParallel(query: PatternQuery, edges: Int, graphEditor: GraphEditor[Any, Any]) {
+  def bind(query: PatternQuery, edges: Int, graphEditor: GraphEditor[Any, Any]) {
     val avg = query.tickets / edges
     val complete = avg > 0
     var extras = new AtomicLong(query.tickets % edges)
@@ -97,22 +93,6 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
     for (childDelta <- childDeltasOptimized) {
       if (extras.getAndDecrement > 0) {
         bindToTriplePattern(childPatternCreator(childDelta), aboveAverageTicketQuery, graphEditor)
-      } else if (complete) {
-        bindToTriplePattern(childPatternCreator(childDelta), averageTicketQuery, graphEditor)
-      }
-    }
-  }
-
-  def bindSequentially(query: PatternQuery, edges: Int, graphEditor: GraphEditor[Any, Any]) {
-    val avg = query.tickets / edges
-    val complete = avg > 0
-    var extras = query.tickets % edges
-    val averageTicketQuery = query.withTickets(avg, complete)
-    val aboveAverageTicketQuery = query.withTickets(avg + 1, complete)
-    for (childDelta <- childDeltasOptimized) {
-      if (extras > 0) {
-        bindToTriplePattern(childPatternCreator(childDelta), aboveAverageTicketQuery, graphEditor)
-        extras -= 1
       } else if (complete) {
         bindToTriplePattern(childPatternCreator(childDelta), averageTicketQuery, graphEditor)
       }

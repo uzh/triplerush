@@ -32,8 +32,8 @@ import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 
 case class QueryEngine() {
 //  private val g = GraphBuilder.withMessageBusFactory(new ParallelBulkAkkaMessageBusFactory(1024)).build
-  private val g = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).build
-//  private val g = GraphBuilder.build
+//  private val g = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).build
+  private val g = GraphBuilder.build
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     signal match {
       case query: PatternQuery =>
@@ -89,7 +89,7 @@ case class QueryEngine() {
       g.addVertex(new QueryVertex(q, p, optimizer))
       p.future
     } else {
-      p success (List(), Map())
+      p success (List(), Map().withDefaultValue(""))
       p.future
     }
   }

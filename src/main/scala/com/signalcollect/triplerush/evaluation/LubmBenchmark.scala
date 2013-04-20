@@ -64,7 +64,7 @@ object LubmBenchmark extends App {
     " -Xms64000m"
   val assemblyPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
-  val copyName = assemblyPath.replace("-SNAPSHOT", (Random.nextInt%10000).toString)
+  val copyName = assemblyPath.replace("-SNAPSHOT", (Random.nextInt % 10000).toString)
   assemblyFile.renameTo(new File(copyName))
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
@@ -302,8 +302,13 @@ object LubmBenchmark extends App {
 
     def executeOnQueryEngine(q: PatternQuery): (List[PatternQuery], Map[String, Any]) = {
       val resultFuture = qe.executeQuery(q, optimizer)
-      val result = Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
-      result
+      try {
+        Await.result(resultFuture, new FiniteDuration(10, TimeUnit.SECONDS)) // TODO handle exception
+      } catch {
+        case t: Throwable =>
+          qe.shutdown
+          (List(), Map("exception" -> t).withDefaultValue(""))
+      }
     }
 
     /**
@@ -343,6 +348,7 @@ object LubmBenchmark extends App {
       val optimizingTime = roundToMillisecondFraction(queryResult._2("optimizingDuration").asInstanceOf[Long])
       runResult += s"queryId" -> queryId.toString
       runResult += s"optimizer" -> optimizer.toString
+      runResult += s"exception" -> queryResult._2("exception").toString
       runResult += s"results" -> queryResult._1.length.toString
       runResult += s"samplingQuery" -> query.isSamplingQuery.toString
       runResult += s"tickets" -> query.tickets.toString
