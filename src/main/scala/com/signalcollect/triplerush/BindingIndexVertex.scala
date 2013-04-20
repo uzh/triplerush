@@ -27,7 +27,7 @@ import scala.util.Sorting
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.parallel.mutable.ParArray
 
-class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
+class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
   /**
    * Changes the edge representation from a List to a sorted Array.
    */
@@ -92,7 +92,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
     val aboveAverageTicketQuery = query.withTickets(avg + 1, complete)
     for (childDelta <- childDeltasOptimized) {
       if (extras > 0) {
-        extras -=1
+        extras -= 1
         bindToTriplePattern(childPatternCreator(childDelta), aboveAverageTicketQuery, graphEditor)
       } else if (complete) {
         bindToTriplePattern(childPatternCreator(childDelta), averageTicketQuery, graphEditor)
@@ -100,13 +100,14 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
     }
   }
 
-  override def process(message: Any, graphEditor: GraphEditor[Any, Any]) {
-    message match {
+  override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
+    signal match {
       case query: PatternQuery =>
         bindQuery(query, graphEditor)
       case CardinalityRequest(pattern, requestor) =>
         graphEditor.sendSignal(CardinalityReply(pattern, cardinality), requestor, None)
     }
+    false
   }
 
   def patternExists(tp: TriplePattern): Boolean = {

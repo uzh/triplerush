@@ -39,7 +39,7 @@ object SignalSet extends Enumeration with Serializable {
  * After graph loading, the `optimizeEdgeRepresentation` has to be called.
  * Query processing can only start once the edge representation has been optimized.
  */
-class IndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
+class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
 
   /**
    * Can be called anytime to compute the cardinalities.
@@ -126,8 +126,8 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
     })
   }
 
-  override def process(message: Any, graphEditor: GraphEditor[Any, Any]) {
-    message match {
+  override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
+    signal match {
       case query: PatternQuery =>
         if (query.isSamplingQuery) {
           processSamplingQuery(query, graphEditor)
@@ -139,6 +139,6 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
       case CardinalityReply(forPattern, patternCardinality) =>
         cardinality += patternCardinality
     }
-
+    false
   }
 }

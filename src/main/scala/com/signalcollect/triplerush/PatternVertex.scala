@@ -25,9 +25,9 @@ import com.signalcollect._
 /**
  * Basic vertex that recursively builds the TripleRush index structure. 
  */
-abstract class PatternVertex[Signal](
+abstract class PatternVertex[Signal, State](
   id: TriplePattern)
-  extends ProcessingVertex[TriplePattern, Signal](id) {
+  extends BaseVertex[TriplePattern, Signal, State](id) {
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     // Build the hierarchical index on initialization.
