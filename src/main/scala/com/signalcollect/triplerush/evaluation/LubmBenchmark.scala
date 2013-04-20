@@ -93,7 +93,7 @@ object LubmBenchmark extends App {
   evaluation.execute
 
   //If loadNumber is -1, then the full data is loaded
-  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long, optimizer: QueryOptimizer.Value, loadNumber: Int = -1)(): List[Map[String, String]] = {
+  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long, optimizer: QueryOptimizer.Value, loadNumber: Int)(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
@@ -266,22 +266,16 @@ object LubmBenchmark extends App {
     var baseResults = Map[String, String]()
     val qe = new QueryEngine()
 
-    def loadLubm160 {
-      val lubm160FolderName = "lubm160"
-      val folder = new File(lubm160FolderName)
-      for (file <- folder.listFiles) {
-        if (file.getName.startsWith("University") && file.getName.endsWith(".nt")) {
-          qe.load(file.getAbsolutePath)
-        }
-      }
-      qe.prepareQueryExecution
-    }
-
-    def loadLubmSmall(numberOfUniversities: Int = 1) {
+    def loadLubm(numberOfUniversities: Int = 160) {
       val lubm160FolderName = "lubm160"
       for (university <- (0 until numberOfUniversities)) {
-        for (subfile <- (0 to 14))
-          qe.load(s"$lubm160FolderName/University${university}_$subfile.nt")
+        for (subfile <- (0 to 99)) {
+          val potentialFileName = s"$lubm160FolderName/University${university}_$subfile.nt"
+          val potentialFile = new File(potentialFileName)
+          if (potentialFile.exists) {
+            qe.load(potentialFileName)
+          }
+        }
       }
       qe.prepareQueryExecution
     }
@@ -367,11 +361,7 @@ object LubmBenchmark extends App {
 
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
-      if (loadNumber == -1) { //Load full
-        loadLubm160
-      } else {
-        loadLubmSmall(loadNumber)
-      }
+      loadLubm(loadNumber)
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
