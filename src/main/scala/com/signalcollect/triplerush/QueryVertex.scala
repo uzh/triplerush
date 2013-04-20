@@ -134,7 +134,7 @@ class QueryVertex(
   override def scoreSignal: Double = if (expectedTickets == receivedTickets) 1 else 0
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
-    promise success (state, Map("firstResultNanoTime" -> firstResultNanoTime, "optimizingDuration" -> optimizingDuration, "optimizedQuery" -> optimizedQuery.toString).withDefaultValue(""))
+    promise success (state, Map("firstResultNanoTime" -> firstResultNanoTime, "optimizingDuration" -> optimizingDuration, "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString)).withDefaultValue(""))
     //    val totalQueries = (numberOfFailedQueries + numberOfSuccessfulQueries).toDouble
     //    println(s"Total # of queries = $totalQueries failed : ${((numberOfFailedQueries / totalQueries) * 100.0).round}%")
     graphEditor.removeVertex(id)
