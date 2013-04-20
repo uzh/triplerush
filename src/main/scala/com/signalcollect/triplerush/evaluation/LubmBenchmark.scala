@@ -86,7 +86,7 @@ object LubmBenchmark extends App {
       case t: Throwable => "Unknown revision."
     }
   }
-  
+
   /*********/
   def evalName = "LUBM benchmarking -- Index vertices collect and signal right upon signal delivery."
   //  def evalName = "Local debugging."
@@ -320,18 +320,14 @@ object LubmBenchmark extends App {
     }
 
     /**
-     * Go to JVM JIT steady state by executing the full versions of other queries 10 times.
+     * Go to JVM JIT steady state by executing the query 100 times.
      */
     def jitSteadyState {
-      for (i <- 1 to 10) {
-        for (id <- 1 to 7) {
-          if (id != queryId) {
-            val queryIndex = queryId - 1
-            val query = fullQueries(queryIndex)
-            executeOnQueryEngine(query)
-            qe.awaitIdle
-          }
-        }
+      for (i <- 1 to 100) {
+        val queryIndex = queryId - 1
+        val query = fullQueries(queryIndex)
+        executeOnQueryEngine(query)
+        qe.awaitIdle
       }
     }
 
