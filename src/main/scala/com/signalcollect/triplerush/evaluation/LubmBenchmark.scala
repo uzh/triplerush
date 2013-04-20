@@ -92,7 +92,6 @@ object LubmBenchmark extends App {
   }
   evaluation.execute
 
-  //If loadNumber is -1, then the full data is loaded
   def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long, optimizer: QueryOptimizer.Value, loadNumber: Int)(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
@@ -297,10 +296,10 @@ object LubmBenchmark extends App {
     def executeOnQueryEngine(q: PatternQuery): (List[PatternQuery], Map[String, Any]) = {
       val resultFuture = qe.executeQuery(q, optimizer)
       try {
-        Await.result(resultFuture, new FiniteDuration(10, TimeUnit.SECONDS)) // TODO handle exception
+        Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS)) // TODO handle exception
       } catch {
         case t: Throwable =>
-          qe.shutdown
+          println(s"Query $q timed out!")
           (List(), Map("exception" -> t).withDefaultValue(""))
       }
     }
