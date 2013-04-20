@@ -41,8 +41,7 @@ case class PatternQuery(
   def isSamplingQuery = queryId < 0
 
   override def toString = {
-    //matched.mkString("\n") + unmatched.mkString("\n") +
-    bindings.toString
+    unmatched.mkString("\n") + bindings.toString
   }
 
   def bind(tp: TriplePattern): Option[PatternQuery] = {

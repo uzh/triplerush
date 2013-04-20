@@ -47,6 +47,8 @@ class QueryVertex(
   var optimizingStartTime = 0l
   var optimizingDuration = 0l
 
+  var optimizedQuery: PatternQuery = _
+  
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     if (optimizer != QueryOptimizer.None && query.unmatched.size > 1) {
       // Gather pattern cardinalities first.
@@ -58,6 +60,7 @@ class QueryVertex(
     } else {
       // Dispatch the query directly.
       graphEditor.sendSignal(query, query.unmatched.head.routingAddress, None)
+      optimizedQuery = query
     }
   }
 
@@ -70,11 +73,11 @@ class QueryVertex(
       case CardinalityReply(forPattern, cardinality) =>
         cardinalities += forPattern -> cardinality
         if (cardinalities.size == expectedCardinalities) {
-          val reorderedQuery = optimizeQuery
+          optimizedQuery = optimizeQuery
           if (optimizingStartTime != 0) {
             optimizingDuration = System.nanoTime - optimizingStartTime
           }
-          graphEditor.sendSignal(reorderedQuery, reorderedQuery.unmatched.head.routingAddress, None)
+          graphEditor.sendSignal(optimizedQuery, optimizedQuery.unmatched.head.routingAddress, None)
         }
     }
     true
@@ -131,7 +134,7 @@ class QueryVertex(
   override def scoreSignal: Double = if (expectedTickets == receivedTickets) 1 else 0
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
-    promise success (state, Map("firstResultNanoTime" -> firstResultNanoTime, "optimizingDuration" -> optimizingDuration).withDefaultValue(""))
+    promise success (state, Map("firstResultNanoTime" -> firstResultNanoTime, "optimizingDuration" -> optimizingDuration, "optimizedQuery" -> optimizedQuery.toString).withDefaultValue(""))
     //    val totalQueries = (numberOfFailedQueries + numberOfSuccessfulQueries).toDouble
     //    println(s"Total # of queries = $totalQueries failed : ${((numberOfFailedQueries / totalQueries) * 100.0).round}%")
     graphEditor.removeVertex(id)
