@@ -144,7 +144,21 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any](id) {
    * Checks if `toFind` is in `values` using binary search.
    */
   def find(toFind: Int): Boolean = {
-    Arrays.binarySearch(childDeltasOptimized, toFind) >= 0
+    //  Arrays.binarySearch(childDeltasOptimized, toFind) >= 0
+    var lower = 0
+    var upper = childDeltasOptimized.length - 1
+    while (lower <= upper) {
+      val mid = lower + (upper - lower) / 2
+      val midItem = childDeltasOptimized(mid)
+      if (midItem < toFind) {
+        lower = mid + 1
+      } else if (midItem > toFind) {
+        upper = mid - 1
+      } else {
+        return true
+      }
+    }
+    false
   }
 
   def bindToTriplePattern(triplePattern: TriplePattern, query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {

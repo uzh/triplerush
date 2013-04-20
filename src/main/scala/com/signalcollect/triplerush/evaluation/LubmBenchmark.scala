@@ -73,7 +73,7 @@ object LubmBenchmark extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   /*********/
-  def evalName = "LUBM benchmarking -- Limited loading and different jar name"
+  def evalName = "LUBM benchmarking -- Binary search. Full. BulkMessageBus. nonGC."
   //  def evalName = "Local debugging."
   val runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -86,7 +86,7 @@ object LubmBenchmark extends App {
         //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
         //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
         //      }
-        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer, 1))
+        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer, 160))
       }
     }
   }
@@ -302,7 +302,7 @@ object LubmBenchmark extends App {
 
     def executeOnQueryEngine(q: PatternQuery): (List[PatternQuery], Map[String, Any]) = {
       val resultFuture = qe.executeQuery(q, optimizer)
-      val result = Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS))
+      val result = Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
       result
     }
 
