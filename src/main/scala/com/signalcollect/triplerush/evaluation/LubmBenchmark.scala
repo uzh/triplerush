@@ -70,7 +70,7 @@ object LubmBenchmark extends App {
   assemblyFile.renameTo(new File(copyName))
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = copyName, jvmParameters = jvmParameters, priority = TorquePriority.fast)
+    localJarPath = copyName, jvmParameters = jvmParameters, priority = TorquePriority.superfast)
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
@@ -88,15 +88,15 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = "LUBM benchmarking -- Index vertices collect and signal right upon signal delivery."
+  def evalName = "LUBM benchmarking -- Larger batch of low-latency eval. Extended stats."
   //  def evalName = "Local debugging."
-  val runs = 1
+  val runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
 
   for (run <- 1 to runs) {
     for (queryId <- 1 to 7) {
-      for (optimizer <- List(QueryOptimizer.None, QueryOptimizer.Clever)) {
+      for (optimizer <- List(QueryOptimizer.None, QueryOptimizer.Greedy, QueryOptimizer.Clever)) {
         //for (tickets <- List(1000, 10000, 100000, 1000000)) {
         //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
         //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
