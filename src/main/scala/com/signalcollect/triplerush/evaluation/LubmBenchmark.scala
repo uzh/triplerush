@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import com.signalcollect.triplerush.QueryOptimizer
+import scala.sys.process._
+import scala.io.Source
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -72,8 +74,21 @@ object LubmBenchmark extends App {
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
+  def getRevision: String = {
+    try {
+      val gitLogPath = ".git/logs/HEAD"
+      val gitLog = new File(gitLogPath)
+      val lines = Source.fromFile(gitLogPath).getLines
+      val lastLine = lines.toList.last
+      val revision = lastLine.split(" ")(1)
+      revision
+    } catch {
+      case t: Throwable => "Unknown revision."
+    }
+  }
+  
   /*********/
-  def evalName = "LUBM benchmarking -- Binary search. Full. BulkMessageBus. nonGC."
+  def evalName = "LUBM benchmarking -- Different S/C scheduler."
   //  def evalName = "Local debugging."
   val runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -86,13 +101,13 @@ object LubmBenchmark extends App {
         //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
         //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
         //      }
-        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer, 160))
+        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer, 160, getRevision))
       }
     }
   }
   evaluation.execute
 
-  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long, optimizer: QueryOptimizer.Value, loadNumber: Int)(): List[Map[String, String]] = {
+  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long, optimizer: QueryOptimizer.Value, loadNumber: Int, revision: String)(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
@@ -339,6 +354,7 @@ object LubmBenchmark extends App {
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
       val timeToFirstResult = roundToMillisecondFraction(queryResult._2("firstResultNanoTime").asInstanceOf[Long] - startTime)
       val optimizingTime = roundToMillisecondFraction(queryResult._2("optimizingDuration").asInstanceOf[Long])
+      runResult += s"revision" -> revision
       runResult += s"queryId" -> queryId.toString
       runResult += s"optimizer" -> optimizer.toString
       runResult += s"exception" -> queryResult._2("exception").toString
