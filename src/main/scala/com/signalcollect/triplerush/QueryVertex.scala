@@ -23,12 +23,14 @@ package com.signalcollect.triplerush
 import com.signalcollect._
 import scala.concurrent.Promise
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent._
 
 object QueryOptimizer extends Enumeration with Serializable {
 
   val None = Value // Execute patterns in order passed.
   val Greedy = Value // Execute patterns in descending order of cardinalities.
   val Clever = Value // Uses cardinalities and prefers patterns that contain variables that have been matched in a previous pattern.
+  val Join = Value // Dispatches bounded queries to get join estimates.  
 
 }
 
@@ -48,6 +50,8 @@ class QueryVertex(
   var optimizingDuration = 0l
 
   var optimizedQuery: PatternQuery = _
+
+  var joinCardinalities: Map[List[TriplePattern], Int] = Map()
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     if (optimizer != QueryOptimizer.None && query.unmatched.size > 1) {
@@ -115,6 +119,29 @@ class QueryVertex(
           sortedPatterns = sortedPatterns sortBy (_._2)
         }
         query.withUnmatchedPatterns(optimizedPatterns.toList)
+      case QueryOptimizer.Join =>
+        var joinedPatterns: List[List[TriplePattern]] = List()
+        val queriesInDescendingCardinalityOrder = (sortedPatterns map (_._1)).toArray
+        val numberOfPatterns = query.unmatched.length
+        if (numberOfPatterns > 2) {
+          for (i <- 0 until numberOfPatterns) {
+            for (j <- i + 1 until numberOfPatterns) {
+              val joinedPattern = List(queriesInDescendingCardinalityOrder(i), queriesInDescendingCardinalityOrder(j))
+              joinedPatterns = joinedPattern :: joinedPatterns
+            }
+          }
+          val p = promise[(List[PatternQuery], Map[String, Any])]
+          if (!q.unmatched.isEmpty) {
+            g.addVertex(new QueryVertex(q, p, optimizer))
+            p.future
+          } else {
+            p success (List(), Map().withDefaultValue(""))
+            p.future
+          }
+        } else {
+          query.withUnmatchedPatterns(queriesInDescendingCardinalityOrder)
+        }
+
     }
   }
 
