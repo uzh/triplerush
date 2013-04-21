@@ -82,9 +82,11 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
 
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
     require(childDeltas != null)
-    edgeCounter += 1
     val placeholderEdge = e.asInstanceOf[PlaceholderEdge]
     val wasAdded = childDeltas.add(placeholderEdge.childDelta)
+    if (wasAdded) {
+      edgeCounter += 1
+    }
     wasAdded
   }
 
