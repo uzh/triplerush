@@ -107,7 +107,7 @@ class QueryVertex(
               var cardinalityEstimate = cardinalities(pattern).toDouble
               for (boundVariable <- boundVariables) {
                 if (pattern.contains(boundVariable)) {
-                  cardinalityEstimate = cardinalityEstimate / 10.0
+                  cardinalityEstimate = cardinalityEstimate / 100.0
                 }
               }
               (pattern, cardinalityEstimate.toInt)
