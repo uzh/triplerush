@@ -26,6 +26,7 @@ import com.signalcollect.GraphEditor
 import scala.util.Sorting
 import com.signalcollect.examples.CompactIntSet
 import com.signalcollect.triplerush.Expression._
+import scala.collection.mutable.TreeSet
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -68,21 +69,23 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
 
   var edgeCounter = 0
 
-  var childDeltas = List[Int]()
+  var childDeltas = TreeSet[Int]()
 
   var childDeltasOptimized: Array[Byte] = null //TODO: Figure out if this is more elegant using ArrayBuffer
 
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
-    childDeltas = List[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
-    edgeCount
+    childDeltas = TreeSet[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
+    val removed = edgeCount
+    edgeCounter = 0
+    removed
   }
 
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
     require(childDeltas != null)
     edgeCounter += 1
     val placeholderEdge = e.asInstanceOf[PlaceholderEdge]
-    childDeltas = placeholderEdge.childDelta :: childDeltas
-    true
+    val wasAdded = childDeltas.add(placeholderEdge.childDelta)
+    wasAdded
   }
 
   def processSamplingQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
@@ -139,6 +142,6 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
       case CardinalityReply(forPattern, patternCardinality) =>
         cardinality += patternCardinality
     }
-    false
+    true
   }
 }
