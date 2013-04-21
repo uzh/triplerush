@@ -26,6 +26,7 @@ import java.util.Arrays
 import scala.util.Sorting
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.parallel.mutable.ParArray
+import scala.collection.mutable.TreeSet
 
 class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
   /**
@@ -44,21 +45,23 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
 
   var edgeCounter = 0
 
-  var childDeltas = List[Int]()
+  var childDeltas = TreeSet[Int]()
 
   var childDeltasOptimized: Array[Int] = null //TODO: Figure out if this is more elegant using ArrayBuffer
 
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
-    childDeltas = List[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
-    edgeCount
+    childDeltas = TreeSet[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
+    val removed = edgeCount
+    edgeCounter = 0
+    removed
   }
 
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
     require(childDeltas != null)
     edgeCounter += 1
     val placeholderEdge = e.asInstanceOf[PlaceholderEdge]
-    childDeltas = placeholderEdge.childDelta :: childDeltas
-    true
+    val wasAdded = childDeltas.add(placeholderEdge.childDelta)
+    wasAdded
   }
 
   protected val childPatternCreator = id.childPatternRecipe
@@ -107,7 +110,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
       case CardinalityRequest(pattern, requestor) =>
         graphEditor.sendSignal(CardinalityReply(pattern, cardinality), requestor, None)
     }
-    false
+    true
   }
 
   def patternExists(tp: TriplePattern): Boolean = {
