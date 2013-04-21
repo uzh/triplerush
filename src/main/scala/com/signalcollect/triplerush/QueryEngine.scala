@@ -38,7 +38,7 @@ case class QueryEngine() {
   g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
     signal match {
       case query: PatternQuery =>
-        graphEditor.sendSignal(query, query.queryId, None)
+        graphEditor.sendSignal(query.tickets, query.queryId, None)
       case other =>
         println(s"Failed signal delivery $other of type ${other.getClass}")
     }

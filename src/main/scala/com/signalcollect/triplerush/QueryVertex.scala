@@ -33,9 +33,9 @@ object QueryOptimizer extends Enumeration with Serializable {
 }
 
 class QueryVertex(
-  val query: PatternQuery,
-  val promise: Promise[(List[PatternQuery], Map[String, Any])],
-  val optimizer: QueryOptimizer.Value) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
+    val query: PatternQuery,
+    val promise: Promise[(List[PatternQuery], Map[String, Any])],
+    val optimizer: QueryOptimizer.Value) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
 
   val expectedTickets: Long = query.tickets
   val expectedCardinalities = query.unmatched.size
@@ -48,7 +48,7 @@ class QueryVertex(
   var optimizingDuration = 0l
 
   var optimizedQuery: PatternQuery = _
-  
+
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     if (optimizer != QueryOptimizer.None && query.unmatched.size > 1) {
       // Gather pattern cardinalities first.
@@ -68,6 +68,8 @@ class QueryVertex(
 
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
     signal match {
+      case ticketsOfFailedQuery: Long =>
+        receivedTickets += ticketsOfFailedQuery
       case query: PatternQuery =>
         processQuery(query)
       case CardinalityReply(forPattern, cardinality) =>
@@ -117,18 +119,18 @@ class QueryVertex(
   def processQuery(query: PatternQuery) {
     receivedTickets += query.tickets
     complete &&= query.isComplete
-    if (query.unmatched.isEmpty) {
-      // numberOfSuccessfulQueries += 1
-      // println(s"Success: $query")
-      // Query was matched successfully.
-      if (firstResultNanoTime == 0) {
-        firstResultNanoTime = System.nanoTime
-      }
-      state = query :: state
-    } else {
-      // numberOfFailedQueries += 1
-      // println(s"Failure: $query")
+    //if (query.unmatched.isEmpty) {
+    // numberOfSuccessfulQueries += 1
+    // println(s"Success: $query")
+    // Query was matched successfully.
+    if (firstResultNanoTime == 0) {
+      firstResultNanoTime = System.nanoTime
     }
+    state = query :: state
+    //} else {
+    // numberOfFailedQueries += 1
+    // println(s"Failure: $query")
+    //}
   }
 
   override def scoreSignal: Double = if (expectedTickets == receivedTickets) 1 else 0
