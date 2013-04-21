@@ -92,29 +92,31 @@ class QueryVertex(
         // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
         query.withUnmatchedPatterns(sortedPatterns map (_._1))
       case QueryOptimizer.Clever =>
+        var boundVariables = Set[Int]() // The lower the score, the more constrained the variable.
         val optimizedPatterns = ArrayBuffer[TriplePattern]()
         while (!sortedPatterns.isEmpty) {
           val nextPattern = sortedPatterns.head._1
           optimizedPatterns.append(nextPattern)
+          val variablesInPattern = nextPattern.variables
+          for (variable <- variablesInPattern) {
+            boundVariables += variable
+          }
           sortedPatterns = sortedPatterns.tail map {
-            case (pattern, cardinalityEstimate) =>
-              var newCardinalityEstimate = cardinalityEstimate.toDouble
-              for (variable <- nextPattern.variables) {
-                if (pattern.contains(variable)) {
-                  newCardinalityEstimate = newCardinalityEstimate / 10.0
+            case (pattern, oldCardinalityEstimate) =>
+              // We don't care about the old estimate.
+              var cardinalityEstimate = cardinalities(pattern).toDouble
+              for (boundVariable <- boundVariables) {
+                if (pattern.contains(boundVariable)) {
+                  cardinalityEstimate = cardinalityEstimate / 10.0
                 }
               }
-              (pattern, newCardinalityEstimate.toInt)
+              (pattern, cardinalityEstimate.toInt)
           }
           sortedPatterns = sortedPatterns sortBy (_._2)
         }
         query.withUnmatchedPatterns(optimizedPatterns.toList)
     }
-
   }
-
-  //  var numberOfFailedQueries = 0
-  //  var numberOfSuccessfulQueries = 0
 
   def processQuery(query: PatternQuery) {
     receivedTickets += query.tickets
