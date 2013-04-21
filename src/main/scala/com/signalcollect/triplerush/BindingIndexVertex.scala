@@ -78,7 +78,8 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
       if (patternExists(nextPatternToMatch)) {
         bindToTriplePattern(nextPatternToMatch, query, graphEditor)
       } else {
-        graphEditor.sendSignal(query, query.queryId, None)
+        // Failed query
+        graphEditor.sendSignal(query.tickets, query.queryId, None)
       }
     } else {
       // We need to bind the next pattern to all targetIds
@@ -159,7 +160,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
       }
     } else {
       // Failed to bind, send to query vertex.
-      graphEditor.sendSignal(query, query.queryId, None)
+      graphEditor.sendSignal(query.tickets, query.queryId, None)
     }
   }
 
