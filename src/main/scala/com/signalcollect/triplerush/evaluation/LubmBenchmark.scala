@@ -88,15 +88,15 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = "LUBM benchmarking -- Larger batch of low-latency eval. Extended stats."
+  def evalName = "Clever heuristic tries harder to form paths."
   //  def evalName = "Local debugging."
-  val runs = 10
+  val runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
 
   for (run <- 1 to runs) {
     for (queryId <- 1 to 7) {
-      for (optimizer <- List(QueryOptimizer.None, QueryOptimizer.Greedy, QueryOptimizer.Clever)) {
+      for (optimizer <- List(QueryOptimizer.Clever)) {
         //for (tickets <- List(1000, 10000, 100000, 1000000)) {
         //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
         //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
