@@ -32,3 +32,5 @@ project/plugins/project/
 *.binary
 
 *.txt
+
+*.zip
