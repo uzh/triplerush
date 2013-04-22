@@ -28,3 +28,7 @@ project/plugins/project/
 *.nt
 
 .settings/org.scala-ide.sdt.core.prefs
+
+*.binary
+
+*.txt
