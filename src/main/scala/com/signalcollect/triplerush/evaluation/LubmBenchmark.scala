@@ -200,7 +200,7 @@ object LubmBenchmark extends App {
           val potentialFileName = s"$lubm160FolderName/University${university}_$subfile.nt"
           val potentialFile = new File(potentialFileName)
           if (potentialFile.exists) {
-            qe.load(potentialFileName)
+            qe.loadNtriples(potentialFileName)
           }
         }
       }

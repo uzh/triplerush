@@ -30,6 +30,8 @@ import com.signalcollect.factory.messagebus.ParallelBulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.Expression.int2Expression
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.factory.messagebus.AkkaMessageBusFactory
+import java.io.DataInputStream
+import java.io.EOFException
 
 case class QueryEngine() {
   //  private val g = GraphBuilder.withMessageBusFactory(new ParallelBulkAkkaMessageBusFactory(1024)).build
@@ -46,9 +48,7 @@ case class QueryEngine() {
   g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
   g.awaitIdle
 
-  def load(ntriplesFilename: String,
-    onlyTriplesAboutKnownEntities: Boolean = false,
-    bannedPredicates: Set[String] = Set()) {
+  def loadNtriples(ntriplesFilename: String) {
     g.modifyGraph(loadFile _, None)
     def loadFile(graphEditor: GraphEditor[Any, Any]) {
       val is = new FileInputStream(ntriplesFilename)
@@ -58,28 +58,57 @@ case class QueryEngine() {
       while (nxp.hasNext) {
         val triple = nxp.next
         val predicateString = triple(1).toString
-        if (!bannedPredicates.contains(predicateString)) {
-          val subjectString = triple(0).toString
-          val objectString = triple(2).toString
-          if (!onlyTriplesAboutKnownEntities || Mapping.existsMappingForString(subjectString) || Mapping.existsMappingForString(objectString)) {
-            val sId = Mapping.register(subjectString)
-            val pId = Mapping.register(predicateString)
-            val oId = Mapping.register(objectString)
-            val tp = TriplePattern(sId, pId, oId)
-            triplesLoaded += 1
-            for (parentPattern <- tp.parentPatterns) {
-              val idDelta = tp.parentIdDelta(parentPattern)
-              graphEditor.addVertex(new BindingIndexVertex(parentPattern))
-              graphEditor.addEdge(parentPattern, new PlaceholderEdge(idDelta))
-            }
-          }
-        }
+        val subjectString = triple(0).toString
+        val objectString = triple(2).toString
+        val sId = Mapping.register(subjectString)
+        val pId = Mapping.register(predicateString)
+        val oId = Mapping.register(objectString)
+        addTriple(sId, pId, oId, graphEditor)
+        triplesLoaded += 1
         if (triplesLoaded % 10000 == 0) {
           println(s"Loaded $triplesLoaded triples from file $ntriplesFilename ...")
         }
       }
       println(s"Done loading triples from $ntriplesFilename. Loaded a total of $triplesLoaded triples.")
       is.close
+    }
+  }
+
+  def loadBinary(binaryFilename: String) {
+    g.modifyGraph(loadFile _, None)
+    def loadFile(graphEditor: GraphEditor[Any, Any]) {
+      val is = new FileInputStream(binaryFilename)
+      val dis = new DataInputStream(is)
+      println(s"Reading triples from $binaryFilename ...")
+      var triplesLoaded = 0
+      try {
+        while (true) {
+          val sId = dis.readInt
+          val pId = dis.readInt
+          val oId = dis.readInt
+          addTriple(sId, pId, oId, graphEditor)
+          triplesLoaded += 1
+          if (triplesLoaded % 10000 == 0) {
+            println(s"Loaded $triplesLoaded triples from file $binaryFilename ...")
+          }
+        }
+      } catch {
+        case done: EOFException =>
+          println(s"Done loading triples from $binaryFilename. Loaded a total of $triplesLoaded triples.")
+          dis.close
+          is.close
+        case t: Throwable =>
+          throw t
+      }
+    }
+  }
+
+  protected def addTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Any, Any]) {
+    val tp = TriplePattern(sId, pId, oId)
+    for (parentPattern <- tp.parentPatterns) {
+      val idDelta = tp.parentIdDelta(parentPattern)
+      graphEditor.addVertex(new BindingIndexVertex(parentPattern))
+      graphEditor.addEdge(parentPattern, new PlaceholderEdge(idDelta))
     }
   }
 

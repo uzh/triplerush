@@ -48,7 +48,7 @@ object PatternQueriesExample extends App {
   for (fileNumber <- 0 to 14) {
     val filename = s"./lubm/university0_$fileNumber.nt"
     print(s"loding $filename ...")
-    qe.load(filename)
+    qe.loadNtriples(filename)
     println(" done")
   }
   qe.awaitIdle

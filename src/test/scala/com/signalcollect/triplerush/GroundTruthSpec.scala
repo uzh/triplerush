@@ -317,7 +317,7 @@ WHERE
   println("Loading LUBM1 ... ")
   for (fileNumber <- 0 to 14) {
     val filename = s"./lubm/university0_$fileNumber.nt"
-    qe.load(filename)
+    qe.loadNtriples(filename)
   }
   qe.awaitIdle
   println("Finished loading LUBM1.")

@@ -173,7 +173,7 @@ object ThroughputLubmBenchmark extends App {
       val folder = new File(lubm160FolderName)
       for (file <- folder.listFiles) {
         if (file.getName.startsWith("University") && file.getName.endsWith(".nt")) {
-          qe.load(file.getAbsolutePath)
+          qe.loadNtriples(file.getAbsolutePath)
         }
       }
     }
