@@ -185,96 +185,9 @@ object LubmBenchmark extends App {
         | - "X" - s"$ub#takesCourse" - "Z",
         | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
 
-    def boundedQueries(sampleSize: Long): List[PatternQuery] = List(
-      BOUNDED(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
-        | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
-        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
-        | - "X" - s"$ub#memberOf" - "Z",
-        | - "Z" - s"$rdf#type" - s"$ub#Department",
-        | - "Z" - s"$ub#subOrganizationOf" - "Y",
-        | - "Y" - s"$rdf#type" - s"$ub#University"),
-      BOUNDED(sampleSize) ? "X" ? "Y" WHERE (
-        | - "X" - s"$rdf#type" - s"$ub#Course",
-        | - "X" - s"$ub#name" - "Y"),
-      BOUNDED(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
-        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
-        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
-        | - "X" - s"$ub#memberOf" - "Z",
-        | - "Z" - s"$ub#subOrganizationOf" - "Y",
-        | - "Z" - s"$rdf#type" - s"$ub#Department",
-        | - "Y" - s"$rdf#type" - s"$ub#University"),
-      BOUNDED(sampleSize) ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-        | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-        | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
-        | - "X" - s"$ub#name" - "Y1",
-        | - "X" - s"$ub#emailAddress" - "Y2",
-        | - "X" - s"$ub#telephone" - "Y3"),
-      BOUNDED(sampleSize) ? "X" WHERE (
-        | - "X" - s"$ub#subOrganizationOf" - "http://www.Department0.University0.edu",
-        | - "X" - s"$rdf#type" - s"$ub#ResearchGroup"),
-      BOUNDED(sampleSize) ? "X" ? "Y" WHERE (
-        | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
-        | - "Y" - s"$rdf#type" - s"$ub#Department",
-        | - "X" - s"$ub#worksFor" - "Y",
-        | - "X" - s"$rdf#type" - s"$ub#FullProfessor"),
-      BOUNDED(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
-        | - "Y" - s"$rdf#type" - s"$ub#FullProfessor",
-        | - "Y" - s"$ub#teacherOf" - "Z",
-        | - "Z" - s"$rdf#type" - s"$ub#Course",
-        | - "X" - s"$ub#advisor" - "Y",
-        | - "X" - s"$ub#takesCourse" - "Z",
-        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
-
-    def samplingQueries(sampleSize: Long): List[PatternQuery] = List(
-      SAMPLE(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
-        | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
-        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
-        | - "X" - s"$ub#memberOf" - "Z",
-        | - "Z" - s"$rdf#type" - s"$ub#Department",
-        | - "Z" - s"$ub#subOrganizationOf" - "Y",
-        | - "Y" - s"$rdf#type" - s"$ub#University"),
-      SAMPLE(sampleSize) ? "X" ? "Y" WHERE (
-        | - "X" - s"$rdf#type" - s"$ub#Course",
-        | - "X" - s"$ub#name" - "Y"),
-      SAMPLE(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
-        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
-        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
-        | - "X" - s"$ub#memberOf" - "Z",
-        | - "Z" - s"$ub#subOrganizationOf" - "Y",
-        | - "Z" - s"$rdf#type" - s"$ub#Department",
-        | - "Y" - s"$rdf#type" - s"$ub#University"),
-      SAMPLE(sampleSize) ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-        | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-        | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
-        | - "X" - s"$ub#name" - "Y1",
-        | - "X" - s"$ub#emailAddress" - "Y2",
-        | - "X" - s"$ub#telephone" - "Y3"),
-      SAMPLE(sampleSize) ? "X" WHERE (
-        | - "X" - s"$ub#subOrganizationOf" - "http://www.Department0.University0.edu",
-        | - "X" - s"$rdf#type" - s"$ub#ResearchGroup"),
-      SAMPLE(sampleSize) ? "X" ? "Y" WHERE (
-        | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
-        | - "Y" - s"$rdf#type" - s"$ub#Department",
-        | - "X" - s"$ub#worksFor" - "Y",
-        | - "X" - s"$rdf#type" - s"$ub#FullProfessor"),
-      SAMPLE(sampleSize) ? "X" ? "Y" ? "Z" WHERE (
-        | - "Y" - s"$rdf#type" - s"$ub#FullProfessor",
-        | - "Y" - s"$ub#teacherOf" - "Z",
-        | - "Z" - s"$rdf#type" - s"$ub#Course",
-        | - "X" - s"$ub#advisor" - "Y",
-        | - "X" - s"$ub#takesCourse" - "Z",
-        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
-
     val queries = {
-      if (sampling) {
-        samplingQueries(tickets)
-      } else {
-        if (tickets == Long.MaxValue) {
-          fullQueries
-        } else {
-          boundedQueries(tickets)
-        }
-      }
+      require(!sampling && tickets == Long.MaxValue)
+      fullQueries
     }
 
     var baseResults = Map[String, String]()
