@@ -32,9 +32,9 @@ import collection.JavaConversions._
 import scala.io.Source
 
 object DictionaryEncoder extends App {
-  val toEncodeFolderName = "lubm10240"
-  val existingDictionaryPath: Option[String] = Some("./lubm160/dictionary.txt")
-  val newDictionaryPath = "./lubm10240/dictionary.txt"
+  val toEncodeFolderName = "lubm160"//"lubm10240"
+  val existingDictionaryPath: Option[String] = None //Some("./lubm160/dictionary.txt")
+  val newDictionaryPath = "./lubm160/dictionary.txt" //"./lubm10240/dictionary.txt"
   val dictionary = new HashMap[String, Int]()
   var highestUsedId = 0
   if (existingDictionaryPath.isDefined){
@@ -98,9 +98,9 @@ object DictionaryEncoder extends App {
         val pId = register(predicateString)
         val oId = register(objectString)
         textDos.writeChars(s"$sId $pId $oId\n")
-        binaryDos.write(sId)
-        binaryDos.write(pId)
-        binaryDos.write(oId)
+        binaryDos.writeInt(sId)
+        binaryDos.writeInt(pId)
+        binaryDos.writeInt(oId)
         triplesEncoded += 1
         if (triplesEncoded % 10000 == 0) {
           println(s"Loaded $triplesEncoded triples from file $path ...")
