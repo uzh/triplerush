@@ -42,6 +42,7 @@ import scala.util.Random
 import com.signalcollect.triplerush.QueryOptimizer
 import scala.sys.process._
 import scala.io.Source
+import com.signalcollect.triplerush.TriplePattern
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -146,13 +147,7 @@ object LubmBenchmark extends App {
      * Time TripleR: 3815 222 3126 2    1 2 603
      */
     def fullQueries: List[PatternQuery] = List(
-      SELECT ? "X" ? "Y" ? "Z" WHERE (
-        | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
-        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
-        | - "X" - s"$ub#memberOf" - "Z",
-        | - "Z" - s"$rdf#type" - s"$ub#Department",
-        | - "Z" - s"$ub#subOrganizationOf" - "Y",
-        | - "Y" - s"$rdf#type" - s"$ub#University"),
+    		PatternQuery(1, List(TriplePattern(-1,2,2009), TriplePattern(-1,18,-2), TriplePattern(-1,411,-3), TriplePattern(-3,2,7), TriplePattern(-3,9,-2), TriplePattern(-2,2,3))),
       SELECT ? "X" ? "Y" WHERE (
         | - "X" - s"$rdf#type" - s"$ub#Course",
         | - "X" - s"$ub#name" - "Y"),

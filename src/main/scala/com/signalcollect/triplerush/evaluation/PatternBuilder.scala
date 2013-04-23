@@ -24,21 +24,97 @@ import java.util.HashMap
 import collection.JavaConversions._
 import scala.io.Source
 import com.signalcollect.triplerush.TriplePattern
+import scala.io.Codec
+
+//    def fullQueries: List[PatternQuery] = List(
+//      SELECT ? "X" ? "Y" ? "Z" WHERE (
+//        | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
+//        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
+//        | - "X" - s"$ub#memberOf" - "Z",
+//        | - "Z" - s"$rdf#type" - s"$ub#Department",
+//        | - "Z" - s"$ub#subOrganizationOf" - "Y",
+//        | - "Y" - s"$rdf#type" - s"$ub#University"),
+//      SELECT ? "X" ? "Y" WHERE (
+//        | - "X" - s"$rdf#type" - s"$ub#Course",
+//        | - "X" - s"$ub#name" - "Y"),
+//      SELECT ? "X" ? "Y" ? "Z" WHERE (
+//        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
+//        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
+//        | - "X" - s"$ub#memberOf" - "Z",
+//        | - "Z" - s"$ub#subOrganizationOf" - "Y",
+//        | - "Z" - s"$rdf#type" - s"$ub#Department",
+//        | - "Y" - s"$rdf#type" - s"$ub#University"),
+//      SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
+//        | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
+//        | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
+//        | - "X" - s"$ub#name" - "Y1",
+//        | - "X" - s"$ub#emailAddress" - "Y2",
+//        | - "X" - s"$ub#telephone" - "Y3"),
+//      SELECT ? "X" WHERE (
+//        | - "X" - s"$ub#subOrganizationOf" - "http://www.Department0.University0.edu",
+//        | - "X" - s"$rdf#type" - s"$ub#ResearchGroup"),
+//      SELECT ? "X" ? "Y" WHERE (
+//        | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
+//        | - "Y" - s"$rdf#type" - s"$ub#Department",
+//        | - "X" - s"$ub#worksFor" - "Y",
+//        | - "X" - s"$rdf#type" - s"$ub#FullProfessor"),
+//      SELECT ? "X" ? "Y" ? "Z" WHERE (
+//        | - "Y" - s"$rdf#type" - s"$ub#FullProfessor",
+//        | - "Y" - s"$ub#teacherOf" - "Z",
+//        | - "Z" - s"$rdf#type" - s"$ub#Course",
+//        | - "X" - s"$ub#advisor" - "Y",
+//        | - "X" - s"$ub#takesCourse" - "Z",
+//        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
 
 case class TextTriplePattern(s: String, p: String, o: String)
 
+object LubmQueryBuilder extends App {
+  val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
+  val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
+
+  val builder = new PatternBuilder("./lubm160/dictionary.txt")
+  val lubmQuery1Patterns = builder.build(
+    List(
+      TextTriplePattern("?X", s"$rdf#type", s"$ub#GraduateStudent"),
+      TextTriplePattern("?X", s"$ub#undergraduateDegreeFrom", "?Y"),
+      TextTriplePattern("?X", s"$ub#memberOf", "?Z"),
+      TextTriplePattern("?Z", s"$rdf#type", s"$ub#Department"),
+      TextTriplePattern("?Z", s"$ub#subOrganizationOf", "?Y"),
+      TextTriplePattern("?Y", s"$rdf#type", s"$ub#University")))
+//  val lubmQuery2Patterns = builder.build(
+//    List(
+//      TextTriplePattern("?X", s"$ub#undergraduateDegreeFrom" - "?Y"),
+//      TextTriplePattern("?X", s"$rdf#type" - s"$ub#UndergraduateStudent")
+//    )
+//        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
+//        | - "X" - s"$ub#memberOf" - "Z",
+//        | - "Z" - s"$ub#subOrganizationOf" - "Y",
+//        | - "Z" - s"$rdf#type" - s"$ub#Department",
+//        | - "Y" - s"$rdf#type" - s"$ub#University"),    
+  println(lubmQuery1Patterns)
+}
+//
+//  final val ISO8859: Codec = new Codec(Charset forName "ISO-8859-1")
+//  final val UTF8: Codec    = new Codec(Charset forName "UTF-8")
+
 class PatternBuilder(val dictionaryPath: String) {
   val dictionary = new HashMap[String, Int]()
-  val dictionaryFile = Source.fromFile(dictionaryPath)
+  //implicit val codec = Codec.ISO8859
+  val dictionaryFile = Source.fromFile(dictionaryPath, "UTF-16")
+  var linesRead = 0
   for (line <- dictionaryFile.getLines) {
-    val entry = line.split(" -> ")
-    if (entry.length == 2) {
-      dictionary.put(entry(1), entry(0).toInt)
+    val entry = line.split(" ")
+    if (entry.length == 3) {
+      dictionary.put(entry(0), Integer.parseInt(entry(2)))
+      linesRead += 1
+      if (linesRead % 10000 == 0) {
+        println(s"$linesRead dictionary entries loaded.")
+      }
     } else if (entry.length != 0) {
       throw new Exception(s"Failed to parse line $line, was parsed to ${entry.toList}.")
     }
   }
-  
+
   def build(textPatterns: List[TextTriplePattern]): List[TriplePattern] = {
     var nextVariableId = -1
     var variables = Map[String, Int]()
@@ -54,19 +130,18 @@ class PatternBuilder(val dictionaryPath: String) {
             id
           }
         } else {
-          if (dictionary.containsKey(entry)){
+          if (dictionary.containsKey(entry)) {
             dictionary.get(entry)
           } else {
             Int.MaxValue
           }
         }
       }
-      
       val sId = getId(textPattern.s)
       val pId = getId(textPattern.p)
       val oId = getId(textPattern.o)
+      TriplePattern(sId, pId, oId)
     }
-    List()
   }
-  
+
 }
