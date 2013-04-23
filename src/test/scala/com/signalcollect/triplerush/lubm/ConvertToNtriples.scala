@@ -25,16 +25,15 @@ import scala.language.postfixOps
 import scala.sys.process._
 
 object ConvertToNtriples extends App {
-  val toRenameFolder = "lubm160"
-  val folder = new File(toRenameFolder)
+  val toConvertFolder = "/Volumes/MacOSX/Users/uba/uba1.7/lubm10240"
+  val folder = new File(toConvertFolder)
   for (file <- folder.listFiles) {
     if (file.getName.startsWith("University") && file.getName.endsWith(".owl")) {
-      //Runtime.getRuntime.exec(Array(s"""/usr/local/Cellar/raptor/2.0.8/bin/rapper ${file.getAbsolutePath} -e -o ntriples >> ${file.getAbsolutePath.replace(".owl", ".nt")}"""))
-      //Seq("/usr/local/Cellar/raptor/2.0.8/bin/rapper", file.getAbsolutePath, "-e", "-o", "ntriples", ">>", file.getAbsolutePath.replace(".owl", ".nt")) !!(ProcessLogger(println(_)))
-      Seq("/usr/local/Cellar/raptor/2.0.8/bin/rapper", file.getAbsolutePath, "-e", "-o", "ntriples") #>> new File(file.getAbsolutePath.replace(".owl", ".nt")) !! (ProcessLogger(println(_)))
-      //val command = s"/usr/local/Cellar/raptor/2.0.8/bin/rapper ${file.getAbsolutePath} -e -o ntriples >> ${file.getAbsolutePath.replace(".owl", ".nt")}"
-      //println(command)
-      //println(command !!(ProcessLogger(println(_))))
+      val nTriplesFileName = file.getAbsolutePath.replace(".owl", ".nt")
+      val nTriplesFile = new File(nTriplesFileName)
+      if (!nTriplesFile.exists) {
+        Seq("/usr/local/Cellar/raptor/2.0.8/bin/rapper", file.getAbsolutePath, "-e", "-o", "ntriples") #>> new File(nTriplesFileName) !! (ProcessLogger(println(_)))
+      }
     }
   }
 }
