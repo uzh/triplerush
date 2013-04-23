@@ -147,38 +147,14 @@ object LubmBenchmark extends App {
      * Time TripleR: 3815 222 3126 2    1 2 603
      */
     def fullQueries: List[PatternQuery] = List(
-    		PatternQuery(1, List(TriplePattern(-1,2,2009), TriplePattern(-1,18,-2), TriplePattern(-1,411,-3), TriplePattern(-3,2,7), TriplePattern(-3,9,-2), TriplePattern(-2,2,3))),
-      SELECT ? "X" ? "Y" WHERE (
-        | - "X" - s"$rdf#type" - s"$ub#Course",
-        | - "X" - s"$ub#name" - "Y"),
-      SELECT ? "X" ? "Y" ? "Z" WHERE (
-        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
-        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
-        | - "X" - s"$ub#memberOf" - "Z",
-        | - "Z" - s"$ub#subOrganizationOf" - "Y",
-        | - "Z" - s"$rdf#type" - s"$ub#Department",
-        | - "Y" - s"$rdf#type" - s"$ub#University"),
-      SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-        | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-        | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
-        | - "X" - s"$ub#name" - "Y1",
-        | - "X" - s"$ub#emailAddress" - "Y2",
-        | - "X" - s"$ub#telephone" - "Y3"),
-      SELECT ? "X" WHERE (
-        | - "X" - s"$ub#subOrganizationOf" - "http://www.Department0.University0.edu",
-        | - "X" - s"$rdf#type" - s"$ub#ResearchGroup"),
-      SELECT ? "X" ? "Y" WHERE (
-        | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
-        | - "Y" - s"$rdf#type" - s"$ub#Department",
-        | - "X" - s"$ub#worksFor" - "Y",
-        | - "X" - s"$rdf#type" - s"$ub#FullProfessor"),
-      SELECT ? "X" ? "Y" ? "Z" WHERE (
-        | - "Y" - s"$rdf#type" - s"$ub#FullProfessor",
-        | - "Y" - s"$ub#teacherOf" - "Z",
-        | - "Z" - s"$rdf#type" - s"$ub#Course",
-        | - "X" - s"$ub#advisor" - "Y",
-        | - "X" - s"$ub#takesCourse" - "Z",
-        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
+      PatternQuery(1, List(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3))),
+      PatternQuery(1, List(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3))),
+      PatternQuery(1, List(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2))),
+      PatternQuery(1, List(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3))),
+      PatternQuery(1, List(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4))),
+      PatternQuery(1, List(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571))),
+      PatternQuery(1, List(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11))),
+      PatternQuery(1, List(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409))))
 
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
@@ -192,10 +168,10 @@ object LubmBenchmark extends App {
       val lubm160FolderName = "lubm160"
       for (university <- (0 until numberOfUniversities)) {
         for (subfile <- (0 to 99)) {
-          val potentialFileName = s"$lubm160FolderName/University${university}_$subfile.nt"
+          val potentialFileName = s"$lubm160FolderName/University${university}_$subfile.binary"
           val potentialFile = new File(potentialFileName)
           if (potentialFile.exists) {
-            qe.loadNtriples(potentialFileName)
+            qe.loadBinary(potentialFileName)
           }
         }
       }

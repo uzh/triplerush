@@ -81,17 +81,83 @@ object LubmQueryBuilder extends App {
       TextTriplePattern("?Z", s"$rdf#type", s"$ub#Department"),
       TextTriplePattern("?Z", s"$ub#subOrganizationOf", "?Y"),
       TextTriplePattern("?Y", s"$rdf#type", s"$ub#University")))
-//  val lubmQuery2Patterns = builder.build(
-//    List(
-//      TextTriplePattern("?X", s"$ub#undergraduateDegreeFrom" - "?Y"),
-//      TextTriplePattern("?X", s"$rdf#type" - s"$ub#UndergraduateStudent")
-//    )
+  val lubmQuery2Patterns = builder.build(
+    List(
+      TextTriplePattern("?X", s"$rdf#type", s"$ub#Course"),
+      TextTriplePattern("?X", s"$ub#name", "?Y")))
+  val lubmQuery3Patterns = builder.build(
+    List(
+      TextTriplePattern("?X", s"$ub#undergraduateDegreeFrom", "?Y"),
+      TextTriplePattern("?X", s"$rdf#type", s"$ub#UndergraduateStudent"),
+      TextTriplePattern("?X", s"$ub#memberOf", "?Z"),
+      TextTriplePattern("?Z", s"$ub#subOrganizationOf", "?Y"),
+      TextTriplePattern("?Z", s"$rdf#type", s"$ub#Department"),
+      TextTriplePattern("?Y", s"$rdf#type", s"$ub#University")))
+  val lubmQuery4Patterns = builder.build(
+    List(
+      TextTriplePattern("?X", s"$ub#worksFor", "http://www.Department0.University0.edu"),
+      TextTriplePattern("?X", s"$rdf#type", s"$ub#FullProfessor"),
+      TextTriplePattern("?X", s"$ub#name", "?Y1"),
+      TextTriplePattern("?X", s"$ub#emailAddress", "?Y2"),
+      TextTriplePattern("?X", s"$ub#telephone", "?Y3")))
+  val lubmQuery5Patterns = builder.build(
+    List(
+      TextTriplePattern("?X", s"$ub#subOrganizationOf", "http://www.Department0.University0.edu"),
+      TextTriplePattern("?X", s"$rdf#type", s"$ub#ResearchGroup")))
+  val lubmQuery6Patterns = builder.build(
+    List(
+      TextTriplePattern("?Y", s"$ub#subOrganizationOf", "http://www.University0.edu"),
+      TextTriplePattern("?Y", s"$rdf#type", s"$ub#Department"),
+      TextTriplePattern("?X", s"$ub#worksFor", "?Y"),
+      TextTriplePattern("?X", s"$rdf#type", s"$ub#FullProfessor")))
+  val lubmQuery7Patterns = builder.build(
+    List(
+      TextTriplePattern("?Y", s"$rdf#type", s"$ub#FullProfessor"),
+      TextTriplePattern("?Y", s"$ub#teacherOf", "?Z"),
+      TextTriplePattern("?Z", s"$rdf#type", s"$ub#Course"),
+      TextTriplePattern("?X", s"$ub#advisor", "?Y"),
+      TextTriplePattern("?X", s"$ub#takesCourse", "?Z"),
+      TextTriplePattern("?X", s"$rdf#type", s"$ub#UndergraduateStudent")))
+      
+//            SELECT ? "X" ? "Y" WHERE (
+//        | - "X" - s"$rdf#type" - s"$ub#Course",
+//        | - "X" - s"$ub#name" - "Y"),
+//      SELECT ? "X" ? "Y" ? "Z" WHERE (
+//        | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
 //        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent",
 //        | - "X" - s"$ub#memberOf" - "Z",
 //        | - "Z" - s"$ub#subOrganizationOf" - "Y",
 //        | - "Z" - s"$rdf#type" - s"$ub#Department",
-//        | - "Y" - s"$rdf#type" - s"$ub#University"),    
+//        | - "Y" - s"$rdf#type" - s"$ub#University"),
+//      SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
+//        | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
+//        | - "X" - s"$rdf#type" - s"$ub#FullProfessor",
+//        | - "X" - s"$ub#name" - "Y1",
+//        | - "X" - s"$ub#emailAddress" - "Y2",
+//        | - "X" - s"$ub#telephone" - "Y3"),
+//      SELECT ? "X" WHERE (
+//        | - "X" - s"$ub#subOrganizationOf" - "http://www.Department0.University0.edu",
+//        | - "X" - s"$rdf#type" - s"$ub#ResearchGroup"),
+//      SELECT ? "X" ? "Y" WHERE (
+//        | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
+//        | - "Y" - s"$rdf#type" - s"$ub#Department",
+//        | - "X" - s"$ub#worksFor" - "Y",
+//        | - "X" - s"$rdf#type" - s"$ub#FullProfessor"),
+//      SELECT ? "X" ? "Y" ? "Z" WHERE (
+//        | - "Y" - s"$rdf#type" - s"$ub#FullProfessor",
+//        | - "Y" - s"$ub#teacherOf" - "Z",
+//        | - "Z" - s"$rdf#type" - s"$ub#Course",
+//        | - "X" - s"$ub#advisor" - "Y",
+//        | - "X" - s"$ub#takesCourse" - "Z",
+//        | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
+
   println(lubmQuery1Patterns)
+  println(lubmQuery2Patterns)
+  println(lubmQuery3Patterns)
+  println(lubmQuery4Patterns)
+  println(lubmQuery5Patterns)
+  println(lubmQuery6Patterns)
+  println(lubmQuery7Patterns)
 }
 //
 //  final val ISO8859: Codec = new Codec(Charset forName "ISO-8859-1")
