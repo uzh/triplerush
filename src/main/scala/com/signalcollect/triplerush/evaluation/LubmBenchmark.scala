@@ -65,8 +65,9 @@ object LubmBenchmark extends App {
     " -XX:+CMSIncrementalMode" +
     " -XX:ParallelGCThreads=20" +
     " -XX:ParallelCMSThreads=20" +
-    " -XX:-PrintCompilation" +
-    " -XX:-PrintGC" +
+    " -XX:+PrintCompilation" +
+    " -XX:+PrintGC" +
+    " -Dsun.io.serialization.extendedDebugInfo=true" +
     " -XX:MaxInlineSize=1024"
 
   val jvmParameters = " -Xmx64000m" +
@@ -119,7 +120,7 @@ object LubmBenchmark extends App {
       jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
       localJarPath = copyName,
       jvmParameters = jvmHighThroughputGc),
-    numberOfNodes = 6))
+    numberOfNodes = 1))
   /*********/
 
   for (run <- 1 to runs) {

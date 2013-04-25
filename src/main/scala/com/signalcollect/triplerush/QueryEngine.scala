@@ -44,6 +44,19 @@ case object UndeliverableSignalHandler {
   }
 }
 
+case object VertexPreparation {
+  def prepareVertex(graphEditor: GraphEditor[Any, Any])(v: Vertex[_, _]) {
+    v match {
+      case v: IndexVertex =>
+        v.optimizeEdgeRepresentation
+        v.computeCardinality(graphEditor)
+      case v: BindingIndexVertex =>
+        v.optimizeEdgeRepresentation
+      case other => throw new Exception(s"Only index vertices expected, but found vertex $other")
+    }
+  }
+}
+
 case object FileLoaders {
   def loadNtriplesFile(ntriplesFilename: String)(graphEditor: GraphEditor[Any, Any]) {
     val is = new FileInputStream(ntriplesFilename)
@@ -147,7 +160,7 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
     println("Preparing query execution and awaiting idle.")
     g.awaitIdle
     println("Prepared query execution and preparing vertices.")
-    g.foreachVertexWithGraphEditor(prepareVertex _)
+    g.foreachVertexWithGraphEditor(VertexPreparation.prepareVertex _)
     println("Done preparing vertices. Awaiting idle again")
     g.awaitIdle
     println("Done awaiting idle")
@@ -157,17 +170,6 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
     //    })
     //    g.awaitIdle
     queryExecutionPrepared = true
-  }
-
-  def prepareVertex(graphEditor: GraphEditor[Any, Any])(v: Vertex[_, _]) {
-    v match {
-      case v: IndexVertex =>
-        v.optimizeEdgeRepresentation
-        v.computeCardinality(graphEditor)
-      case v: BindingIndexVertex =>
-        v.optimizeEdgeRepresentation
-      case other => throw new Exception(s"Only index vertices expected, but found vertex $other")
-    }
   }
 
   def awaitIdle {
