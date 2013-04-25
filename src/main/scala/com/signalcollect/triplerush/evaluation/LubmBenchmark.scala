@@ -43,6 +43,8 @@ import com.signalcollect.triplerush.QueryOptimizer
 import scala.sys.process._
 import scala.io.Source
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
+import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -62,7 +64,10 @@ object LubmBenchmark extends App {
     " -XX:+CMSIncrementalMode" +
     " -XX:ParallelGCThreads=20" +
     " -XX:ParallelCMSThreads=20" +
+    " -XX:-PrintCompilation" +
+    " -XX:-PrintGC" +
     " -XX:MaxInlineSize=1024"
+
   val jvmParameters = " -Xmx64000m" +
     " -Xms64000m"
   val assemblyPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar"
@@ -88,11 +93,33 @@ object LubmBenchmark extends App {
     }
   }
 
+  //graphBuilder = new GraphBuilder[Int, Float]().
+  //                withConsole(false).
+  //                withWorkerFactory(DistributedWorker).
+  //                withMessageBusFactory(new BulkAkkaMessageBusFactory(10000, false)).
+  //                withAkkaMessageCompression(akkaCompression).
+  //                withHeartbeatInterval(100).
+  //                withNodeProvisioner(new TorqueNodeProvisioner(
+  //                  torqueHost = new TorqueHost(
+  //                    jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
+  //                    localJarPath = "./target/signal-collect-evaluation-assembly-2.0.0-SNAPSHOT.jar"),
+  //                  numberOfNodes = krakenNodes, jvmParameters = baseOptions + jvmParams)),
+  //              graphProvider = new WebGraphParserGzip(locationSplits, loggerFile, splitsToParse = splits, numberOfWorkers = krakenNodes * 24),
+  //              runConfiguration = ExecutionConfiguration.withExecutionMode(ExecutionMode.PureAsynchronous).withSignalThreshold(0.01)
+  //            ))
+
   /*********/
   def evalName = "Clever heuristic tries harder to form paths."
   //  def evalName = "Local debugging."
   val runs = 1
-  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
+  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
+  val graphBuilder = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false))
+//  .withNodeProvisioner(new TorqueNodeProvisioner(
+//    torqueHost = new TorqueHost(
+//      jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
+//      localJarPath = copyName,
+//      jvmParameters = jvmHighThroughputGc),
+//    numberOfNodes = 1))
   /*********/
 
   for (run <- 1 to runs) {
@@ -102,13 +129,29 @@ object LubmBenchmark extends App {
         //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
         //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
         //      }
-        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, Long.MaxValue, optimizer, 160, getRevision))
+        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
+          evalName,
+          queryId,
+          false,
+          Long.MaxValue,
+          optimizer,
+          160,
+          getRevision,
+          graphBuilder))
       }
     }
   }
   evaluation.execute
 
-  def lubmBenchmarkRun(description: String, queryId: Int, sampling: Boolean, tickets: Long, optimizer: QueryOptimizer.Value, loadNumber: Int, revision: String)(): List[Map[String, String]] = {
+  def lubmBenchmarkRun(
+    description: String,
+    queryId: Int,
+    sampling: Boolean,
+    tickets: Long,
+    optimizer: QueryOptimizer.Value,
+    loadNumber: Int,
+    revision: String,
+    graphBuilder: GraphBuilder[Any, Any])(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
@@ -162,7 +205,7 @@ object LubmBenchmark extends App {
     }
 
     var baseResults = Map[String, String]()
-    val qe = new QueryEngine()
+    val qe = new QueryEngine(graphBuilder)
 
     def loadLubm(numberOfUniversities: Int = 160) {
       val lubm160FolderName = "lubm160"

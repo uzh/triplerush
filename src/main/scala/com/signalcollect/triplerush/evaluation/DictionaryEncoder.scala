@@ -32,25 +32,51 @@ import collection.JavaConversions._
 import scala.io.Source
 
 object DictionaryEncoder extends App {
-  val toEncodeFolderName = "lubm160"//"lubm10240"
-  val existingDictionaryPath: Option[String] = None //Some("./lubm160/dictionary.txt")
-  val newDictionaryPath = "./lubm160/dictionary.txt" //"./lubm10240/dictionary.txt"
+  val toEncodeFolderName = "lubm10240" //"lubm160"
+  val existingDictionaryPath: Option[String] = Some("./lubm160/dictionary.txt")
+  val newDictionaryPath = "./lubm10240/dictionary.txt" //"./lubm160/dictionary.txt"
   val dictionary = new HashMap[String, Int]()
+  val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
+  val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
+  val abbreviations = Map(
+    ub -> "ub:",
+    rdf -> "rdf:",
+    "http://www" -> "www",
+    "Department" -> "D",
+    "University" -> "U",
+    ".edu/" -> "/",
+    "FullProfessor" -> "FP",
+    "AssociateProfessor" -> "ACP",
+    "AssistantProfessor" -> "ASP",
+    "Lecturer" -> "L",
+    "Undergraduate" -> "UG",
+    "Student" -> "S",
+    "Graduate" -> "G",
+    "ResearchGroup" -> "RG",
+    "Publication" -> "P",
+    "Course" -> "C",
+    "xxx-xxx-xxxx" -> "?",
+    "telephone" -> "tel",
+    "emailAddress" -> "email",
+    "publicationAuthor" -> "author",
+    "undergraduateDegreeFrom" -> "UGDF",
+    "subOrganizationOf" -> "subOrg")
   var highestUsedId = 0
-  if (existingDictionaryPath.isDefined){
-      val dictionaryFile = Source.fromFile(existingDictionaryPath.get)
-  for (line <- dictionaryFile.getLines) {
-    val entry = line.split(" -> ")
-    if (entry.length == 2) {
-      dictionary.put(entry(1), entry(0).toInt)
-    } else if (entry.length != 0) {
-      throw new Exception(s"Failed to parse line $line, was parsed to ${entry.toList}.")
+  if (existingDictionaryPath.isDefined) {
+    val dictionaryFile = Source.fromFile(existingDictionaryPath.get, "UTF-16")
+    for (line <- dictionaryFile.getLines) {
+      val entry = line.split(" ")
+      if (entry.length == 3) {
+        val abbreviatedEntry = abbreviate(entry(0))
+        val id = entry(2).toInt
+        highestUsedId = math.max(highestUsedId, id)
+        dictionary.put(abbreviatedEntry, id)
+      } else if (entry.length != 0) {
+        throw new Exception(s"Failed to parse line $line, was parsed to ${entry.toList}.")
+      }
     }
-  
-  }}
-    
+  }
   var nextId = highestUsedId + 1
-
   val originalExtension = ".nt"
   val textExtension = ".txt"
   val binaryExtension = ".binary"
@@ -68,12 +94,22 @@ object DictionaryEncoder extends App {
   dictionaryDos.close
   dictionaryOs.close
 
+  def abbreviate(s: String): String = {
+    val abbreviatedString = abbreviations.keys.foldLeft(s) {
+      case (intermediateString, expandedSequence) =>
+        intermediateString.replace(expandedSequence, abbreviations(expandedSequence))
+    }
+    abbreviatedString
+  }
+
   def register(entry: String): Int = {
-    if (dictionary.containsKey(entry)) {
-      dictionary.get(entry)
+    val abbreviatedEntry = abbreviate(entry)
+    val id = dictionary.get(abbreviatedEntry)
+    if (id != null && id != 0) {
+      id
     } else {
       val idForEntry = nextId
-      dictionary.put(entry, idForEntry)
+      dictionary.put(abbreviatedEntry, idForEntry)
       nextId += 1
       idForEntry
     }
@@ -81,12 +117,12 @@ object DictionaryEncoder extends App {
 
   def encodeFile(path: String) {
     val is = new FileInputStream(path)
-    val textOs = new FileOutputStream(path.replace(originalExtension, textExtension))
-    val textDos = new DataOutputStream(textOs)
+    //    val textOs = new FileOutputStream(path.replace(originalExtension, textExtension))
+    //    val textDos = new DataOutputStream(textOs)
     val binaryOs = new FileOutputStream(path.replace(originalExtension, binaryExtension))
     val binaryDos = new DataOutputStream(binaryOs)
     val nxp = new NxParser(is)
-    println(s"Reading triples from $path ...")
+    //    println(s"Reading triples from $path ...")
     var triplesEncoded = 0
     while (nxp.hasNext) {
       val triple = nxp.next
@@ -97,7 +133,7 @@ object DictionaryEncoder extends App {
         val sId = register(subjectString)
         val pId = register(predicateString)
         val oId = register(objectString)
-        textDos.writeChars(s"$sId $pId $oId\n")
+        //        textDos.writeChars(s"$sId $pId $oId\n")
         binaryDos.writeInt(sId)
         binaryDos.writeInt(pId)
         binaryDos.writeInt(oId)
@@ -110,8 +146,8 @@ object DictionaryEncoder extends App {
     println(s"Done loading triples from $path. Loaded a total of $triplesEncoded triples.")
     binaryDos.close
     binaryOs.close
-    textDos.close
-    textOs.close
+    //    textDos.close
+    //    textOs.close
     is.close
   }
 

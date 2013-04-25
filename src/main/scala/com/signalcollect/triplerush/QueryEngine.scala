@@ -33,11 +33,8 @@ import com.signalcollect.factory.messagebus.AkkaMessageBusFactory
 import java.io.DataInputStream
 import java.io.EOFException
 
-case class QueryEngine() {
-  //  private val g = GraphBuilder.withMessageBusFactory(new ParallelBulkAkkaMessageBusFactory(1024)).build
-  private val g = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).build
-  //  private val g = GraphBuilder.withMessageBusFactory(AkkaMessageBusFactory).build
-  g.setUndeliverableSignalHandler { (signal, id, sourceId, graphEditor) =>
+case object UndeliverableSignalHandler {
+  def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
       case query: PatternQuery =>
         graphEditor.sendSignal(query.tickets, query.queryId, None)
@@ -45,8 +42,24 @@ case class QueryEngine() {
         println(s"Failed signal delivery $other of type ${other.getClass}")
     }
   }
-  g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+}
+
+case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false))) {
+  println("Graph engine is initializing ...")
+  private val g = graphBuilder.build
+  print("Awaiting idle ... ")
   g.awaitIdle
+  println("Done")
+  print("Setting undeliverable signal handler ... ")
+  g.setUndeliverableSignalHandler(UndeliverableSignalHandler.handle _)
+  println("Done")
+  print("Starting continuous asynchronous mode ... ")
+  g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+  println("Done")
+  print("Awaiting idle ... ")
+  g.awaitIdle
+  println("Done")
+  println("Graph engine is fully initialized.")
 
   def loadNtriples(ntriplesFilename: String) {
     g.modifyGraph(loadFile _, None)
