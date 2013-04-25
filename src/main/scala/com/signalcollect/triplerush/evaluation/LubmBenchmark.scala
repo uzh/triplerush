@@ -109,17 +109,16 @@ object LubmBenchmark extends App {
   //            ))
 
   /*********/
-  def evalName = "Clever heuristic tries harder to form paths."
+  def evalName = "First distributed run."
   //  def evalName = "Local debugging."
   val runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
-  val graphBuilder = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false))
-//  .withNodeProvisioner(new TorqueNodeProvisioner(
-//    torqueHost = new TorqueHost(
-//      jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-//      localJarPath = copyName,
-//      jvmParameters = jvmHighThroughputGc),
-//    numberOfNodes = 1))
+  val graphBuilder = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).withNodeProvisioner(new TorqueNodeProvisioner(
+    torqueHost = new TorqueHost(
+      jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
+      localJarPath = copyName,
+      jvmParameters = jvmHighThroughputGc),
+    numberOfNodes = 6))
   /*********/
 
   for (run <- 1 to runs) {
@@ -218,6 +217,7 @@ object LubmBenchmark extends App {
           }
         }
       }
+      println("Query engine preparing query execution")
       qe.prepareQueryExecution
     }
 
@@ -300,11 +300,13 @@ object LubmBenchmark extends App {
 
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
+      println("Dispatching loading command to worker...")
       loadLubm(loadNumber)
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
 
+    println("Starting warm-up...")
     jitSteadyState
     cleanGarbage
     runEvaluation(queryId)
