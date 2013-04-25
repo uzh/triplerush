@@ -43,6 +43,7 @@ import com.signalcollect.triplerush.QueryOptimizer
 import scala.sys.process._
 import scala.io.Source
 import com.signalcollect.triplerush.TriplePattern
+import java.util.Date
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -89,7 +90,7 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = "Clever heuristic tries harder to form paths."
+  def evalName = "Encoding, run 2."
   //  def evalName = "Local debugging."
   val runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -148,13 +149,12 @@ object LubmBenchmark extends App {
      */
     def fullQueries: List[PatternQuery] = List(
       PatternQuery(1, List(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3))),
-      PatternQuery(1, List(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3))),
-      PatternQuery(1, List(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2))),
-      PatternQuery(1, List(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3))),
-      PatternQuery(1, List(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4))),
-      PatternQuery(1, List(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571))),
-      PatternQuery(1, List(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11))),
-      PatternQuery(1, List(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409))))
+      PatternQuery(2, List(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2))),
+      PatternQuery(3, List(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3))),
+      PatternQuery(4, List(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4))),
+      PatternQuery(5, List(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571))),
+      PatternQuery(6, List(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11))),
+      PatternQuery(7, List(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409))))
 
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
@@ -234,6 +234,7 @@ object LubmBenchmark extends App {
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
       val timeToFirstResult = roundToMillisecondFraction(queryResult._2("firstResultNanoTime").asInstanceOf[Long] - startTime)
       val optimizingTime = roundToMillisecondFraction(queryResult._2("optimizingDuration").asInstanceOf[Long])
+      var date: Date = new Date
       runResult += s"revision" -> revision
       runResult += s"queryId" -> queryId.toString
       runResult += s"optimizer" -> optimizer.toString
@@ -250,6 +251,7 @@ object LubmBenchmark extends App {
       runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
       runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
       runResult += s"loadNumber" -> loadNumber.toString
+      runResult += s"date"-> date.toString
       finalResults = runResult :: finalResults
     }
 
