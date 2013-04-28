@@ -60,7 +60,18 @@ object Mapping {
     string2Id(abbreviate(s))
   }
   def getString(id: Int): String = {
-    id2String(id)
+    val resultOption = id2String.get(id)
+    if (resultOption.isDefined) {
+      resultOption.get
+    } else {
+      if (id < 0) {
+        s"var$id"
+      } else if (id == 0) {
+        "*"
+      } else {
+        s"val$id"
+      }
+    }
   }
   def existsMappingForString(s: String): Boolean = {
     string2Id.contains(abbreviate(s))

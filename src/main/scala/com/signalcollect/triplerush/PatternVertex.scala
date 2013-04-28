@@ -31,6 +31,7 @@ abstract class PatternVertex[Signal, State](
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     // Build the hierarchical index on initialization.
+//    println(s"Added vertex $id, will add vertices ${id.parentPatterns}.")
     id.parentPatterns foreach { parentId =>
       graphEditor.addVertex(new IndexVertex(parentId))
       val idDelta = id.parentIdDelta(parentId)

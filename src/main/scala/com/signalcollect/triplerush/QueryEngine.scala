@@ -22,7 +22,6 @@ package com.signalcollect.triplerush
 
 import java.io.FileInputStream
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent._
 import org.semanticweb.yars.nx.parser.NxParser
 import com.signalcollect._
 import com.signalcollect.configuration.ExecutionMode
@@ -32,14 +31,27 @@ import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.factory.messagebus.AkkaMessageBusFactory
 import java.io.DataInputStream
 import java.io.EOFException
+import scala.concurrent.Future
+import scala.concurrent.promise
+import com.signalcollect.configuration.ActorSystemRegistry
+import akka.actor.Actor
+import akka.actor.ActorRef
+import akka.actor.PoisonPill
+import akka.actor.Props
+import akka.pattern.ask
+import akka.util.Timeout
+import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
+import scala.util.Random
 
 case object UndeliverableSignalHandler {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
       case query: PatternQuery =>
         graphEditor.sendSignal(query.tickets, query.queryId, None)
+      // TODO: Handle cardinality requests for index vertices that are not in the graph, reply with cardinality 0.
       case other =>
-        println(s"Failed signal delivery $other of type ${other.getClass}")
+        println(s"Failed signal delivery of $other of type ${other.getClass} to the vertex with id $targetId and sender id $sourceId.")
     }
   }
 }
@@ -54,6 +66,33 @@ case object VertexPreparation {
         v.optimizeEdgeRepresentation
       case other => throw new Exception(s"Only index vertices expected, but found vertex $other")
     }
+  }
+}
+
+case object RegisterQueryResultRecipient
+
+class ResultRecipientActor extends Actor {
+  var result: Any = _
+  var queryResultRecipient: ActorRef = _
+
+  def receive = {
+    case RegisterQueryResultRecipient =>
+      queryResultRecipient = sender
+      if (result != null) {
+        queryResultRecipient ! result
+        self ! PoisonPill
+      }
+    case result =>
+      if (result == null) {
+        throw new Exception("Query result cannot be null.")
+        self ! PoisonPill
+      } else {
+        this.result = result
+        if (queryResultRecipient != null) {
+          queryResultRecipient ! result
+          self ! PoisonPill
+        }
+      }
   }
 }
 
@@ -119,7 +158,16 @@ case object FileLoaders {
 
 case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false))) {
   println("Graph engine is initializing ...")
-  private val g = graphBuilder.build
+  private val g = graphBuilder.withKryoRegistrations(List(
+    "com.signalcollect.triplerush.PatternQuery",
+    "com.signalcollect.triplerush.TriplePattern",
+    "com.signalcollect.triplerush.BindingIndexVertex",
+    "com.signalcollect.triplerush.IndexVertex",
+    "com.signalcollect.triplerush.PlaceholderEdge",
+    "com.signalcollect.triplerush.CardinalityRequest",
+    "com.signalcollect.triplerush.CardinalityReply",
+    "com.signalcollect.triplerush.Bindings", 
+    "com.signalcollect.triplerush.Expression")).build
   print("Awaiting idle ... ")
   g.awaitIdle
   println("Done")
@@ -129,6 +177,8 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
   print("Starting continuous asynchronous mode ... ")
   g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
   println("Done")
+  val system = ActorSystemRegistry.retrieve("SignalCollect").get
+  implicit val executionContext = system.dispatcher
   print("Awaiting idle ... ")
   g.awaitIdle
   println("Done")
@@ -143,12 +193,15 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
   }
 
   def executeQuery(q: PatternQuery, optimizer: QueryOptimizer.Value = QueryOptimizer.Greedy): Future[(List[PatternQuery], Map[String, Any])] = {
-    require(queryExecutionPrepared)
-    val p = promise[(List[PatternQuery], Map[String, Any])]
+    assert(queryExecutionPrepared)
     if (!q.unmatched.isEmpty) {
-      g.addVertex(new QueryVertex(q, p, optimizer))
-      p.future
+      val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
+      g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer))
+      implicit val timeout = Timeout(Duration.create(7200, TimeUnit.SECONDS))
+      val resultFuture = resultRecipientActor ? RegisterQueryResultRecipient
+      resultFuture.asInstanceOf[Future[(List[PatternQuery], Map[String, Any])]]
     } else {
+      val p = promise[(List[PatternQuery], Map[String, Any])]
       p success (List(), Map().withDefaultValue(""))
       p.future
     }
@@ -164,11 +217,6 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
     println("Done preparing vertices. Awaiting idle again")
     g.awaitIdle
     println("Done awaiting idle")
-    //    g.foreachVertex(v => v match {
-    //      case v: IndexVertex => println(s"Id: ${v.id}, Card: ${v.cardinality}")
-    //      case other => 
-    //    })
-    //    g.awaitIdle
     queryExecutionPrepared = true
   }
 

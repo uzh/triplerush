@@ -57,7 +57,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   }
 
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
-    require(childDeltas != null)
+    assert(childDeltas != null)
     val placeholderEdge = e.asInstanceOf[PlaceholderEdge]
     val wasAdded = childDeltas.add(placeholderEdge.childDelta)
     if (wasAdded) {
@@ -73,7 +73,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
    */
   def bindQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
     //TODO: Evaluate running the process function in parallel on all the queries.
-    require(childDeltasOptimized != null)
+    assert(childDeltasOptimized != null)
     val nextPatternToMatch = query.unmatched.head
     if (nextPatternToMatch.isFullyBound) {
       // We are looking for a specific, fully bound triple pattern. This means that we have to do a binary search on the targetIds.

@@ -35,42 +35,19 @@ object DictionaryEncoder extends App {
   val toEncodeFolderName = "lubm10240" //"lubm160"
   val existingDictionaryPath: Option[String] = Some("./lubm160/dictionary.txt")
   val newDictionaryPath = "./lubm10240/dictionary.txt" //"./lubm160/dictionary.txt"
-  val dictionary = new HashMap[String, Int]()
+  val baseDictionary = new HashMap[String, Int]()
+  val universityDictionary = new HashMap[String, Int]()
   val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
   val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
-  val abbreviations = Map(
-    ub -> "ub:",
-    rdf -> "rdf:",
-    "http://www" -> "www",
-    "Department" -> "D",
-    "University" -> "U",
-    ".edu/" -> "/",
-    "FullProfessor" -> "FP",
-    "AssociateProfessor" -> "ACP",
-    "AssistantProfessor" -> "ASP",
-    "Lecturer" -> "L",
-    "Undergraduate" -> "UG",
-    "Student" -> "S",
-    "Graduate" -> "G",
-    "ResearchGroup" -> "RG",
-    "Publication" -> "P",
-    "Course" -> "C",
-    "xxx-xxx-xxxx" -> "?",
-    "telephone" -> "tel",
-    "emailAddress" -> "email",
-    "publicationAuthor" -> "author",
-    "undergraduateDegreeFrom" -> "UGDF",
-    "subOrganizationOf" -> "subOrg")
   var highestUsedId = 0
   if (existingDictionaryPath.isDefined) {
     val dictionaryFile = Source.fromFile(existingDictionaryPath.get, "UTF-16")
     for (line <- dictionaryFile.getLines) {
       val entry = line.split(" ")
       if (entry.length == 3) {
-        val abbreviatedEntry = abbreviate(entry(0))
         val id = entry(2).toInt
         highestUsedId = math.max(highestUsedId, id)
-        dictionary.put(abbreviatedEntry, id)
+        baseDictionary.put(entry(0), id)
       } else if (entry.length != 0) {
         throw new Exception(s"Failed to parse line $line, was parsed to ${entry.toList}.")
       }
@@ -81,49 +58,59 @@ object DictionaryEncoder extends App {
   val textExtension = ".txt"
   val binaryExtension = ".binary"
   val folder = new File(toEncodeFolderName)
-  for (file <- folder.listFiles) {
-    if (file.getName.startsWith("University") && file.getName.endsWith(originalExtension)) {
-      encodeFile(file.getAbsolutePath)
+  val initialTime = System.currentTimeMillis
+  for (university <- (0 until 10240)) {
+    val startTime = System.currentTimeMillis
+    print(s"Processing university ${university+1}/10240 ...")
+    for (subfile <- (0 to 99)) {
+      val potentialFileName = s"./lubm10240/University${university}_$subfile.nt"
+      val potentialFile = new File(potentialFileName)
+      if (potentialFile.exists) {
+        encodeFile(potentialFile.getAbsolutePath)
+      }
     }
+    universityDictionary.clear
+    println(s" Done.")
+    val endTime = System.currentTimeMillis
+    val uniProcessingTime = (endTime - startTime).toDouble / 1000
+    println(s"Processing took $uniProcessingTime seconds.")
+    val totalTimeSoFar = ((endTime - initialTime).toDouble / 1000) / 3600
+    println(s"Total elapsed time: $totalTimeSoFar hours.")
+    val estimatedTimePerUniversity = totalTimeSoFar / (university + 1).toDouble
+    val remainingUniversities = (10240 - (university + 1))
+    val estimatedRemaining = remainingUniversities * estimatedTimePerUniversity
+    println(s"Estimated remaining time for remaining unversities: $estimatedRemaining hours.")
   }
-  val dictionaryOs = new FileOutputStream(newDictionaryPath)
-  val dictionaryDos = new DataOutputStream(dictionaryOs)
-  for (entry <- dictionary) {
-    dictionaryDos.writeChars(s"${entry._1} -> ${entry._2}\n")
-  }
-  dictionaryDos.close
-  dictionaryOs.close
-
-  def abbreviate(s: String): String = {
-    val abbreviatedString = abbreviations.keys.foldLeft(s) {
-      case (intermediateString, expandedSequence) =>
-        intermediateString.replace(expandedSequence, abbreviations(expandedSequence))
-    }
-    abbreviatedString
-  }
+  //  val dictionaryOs = new FileOutputStream(newDictionaryPath)
+  //  val dictionaryDos = new DataOutputStream(dictionaryOs)
+  //  for (entry <- baseDictionary) {
+  //    dictionaryDos.writeChars(s"${entry._1} -> ${entry._2}\n")
+  //  }
+  //  dictionaryDos.close
+  //  dictionaryOs.close
 
   def register(entry: String): Int = {
-    val abbreviatedEntry = abbreviate(entry)
-    val id = dictionary.get(abbreviatedEntry)
+    val id = baseDictionary.get(entry)
     if (id != null && id != 0) {
       id
     } else {
-      val idForEntry = nextId
-      dictionary.put(abbreviatedEntry, idForEntry)
-      nextId += 1
-      idForEntry
+      val localId = universityDictionary.get(entry)
+      if (localId != null && localId != 0) {
+        localId
+      } else {
+        val idForEntry = nextId
+        universityDictionary.put(entry, idForEntry)
+        nextId += 1
+        idForEntry
+      }
     }
   }
 
   def encodeFile(path: String) {
     val is = new FileInputStream(path)
-    //    val textOs = new FileOutputStream(path.replace(originalExtension, textExtension))
-    //    val textDos = new DataOutputStream(textOs)
     val binaryOs = new FileOutputStream(path.replace(originalExtension, binaryExtension))
     val binaryDos = new DataOutputStream(binaryOs)
     val nxp = new NxParser(is)
-    //    println(s"Reading triples from $path ...")
-    var triplesEncoded = 0
     while (nxp.hasNext) {
       val triple = nxp.next
       val subjectString = triple(0).toString
@@ -133,21 +120,13 @@ object DictionaryEncoder extends App {
         val sId = register(subjectString)
         val pId = register(predicateString)
         val oId = register(objectString)
-        //        textDos.writeChars(s"$sId $pId $oId\n")
         binaryDos.writeInt(sId)
         binaryDos.writeInt(pId)
         binaryDos.writeInt(oId)
-        triplesEncoded += 1
-        if (triplesEncoded % 10000 == 0) {
-          println(s"Loaded $triplesEncoded triples from file $path ...")
-        }
       }
     }
-    println(s"Done loading triples from $path. Loaded a total of $triplesEncoded triples.")
     binaryDos.close
     binaryOs.close
-    //    textDos.close
-    //    textOs.close
     is.close
   }
 

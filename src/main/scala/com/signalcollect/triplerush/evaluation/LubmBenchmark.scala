@@ -65,8 +65,8 @@ object LubmBenchmark extends App {
     " -XX:+CMSIncrementalMode" +
     " -XX:ParallelGCThreads=20" +
     " -XX:ParallelCMSThreads=20" +
-    " -XX:+PrintCompilation" +
-    " -XX:+PrintGC" +
+    " -XX:-PrintCompilation" +
+    " -XX:-PrintGC" +
     " -Dsun.io.serialization.extendedDebugInfo=true" +
     " -XX:MaxInlineSize=1024"
 
@@ -253,8 +253,10 @@ object LubmBenchmark extends App {
       for (i <- 1 to 100) {
         val queryIndex = queryId - 1
         val query = fullQueries(queryIndex)
+        print(s"Warming up with query $query ...")
         executeOnQueryEngine(query)
         qe.awaitIdle
+        println(s" Done.")
       }
     }
 
@@ -294,7 +296,7 @@ object LubmBenchmark extends App {
       runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
       runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
       runResult += s"loadNumber" -> loadNumber.toString
-      runResult += s"date"-> date.toString
+      runResult += s"date" -> date.toString
       finalResults = runResult :: finalResults
     }
 
@@ -310,8 +312,10 @@ object LubmBenchmark extends App {
 
     println("Starting warm-up...")
     jitSteadyState
-    cleanGarbage
+    //cleanGarbage
+    println(s"Finished warm-up. Running evaluation for query $queryId.")
     runEvaluation(queryId)
+    println(s"Done running evaluation for query $queryId.")
     qe.awaitIdle
     qe.shutdown
     finalResults

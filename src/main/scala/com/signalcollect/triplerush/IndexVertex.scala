@@ -46,7 +46,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
    * Can be called anytime to compute the cardinalities.
    */
   def computeCardinality(graphEditor: GraphEditor[Any, Any]) {
-    require(childDeltasOptimized != null)
+    assert(childDeltasOptimized != null)
     cardinality = 0
     if (id == TriplePattern(*, *, *)) {
       cardinality = Int.MaxValue //TODO: Add comment about why MaxValue
@@ -81,7 +81,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
   }
 
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
-    require(childDeltas != null)
+    assert(childDeltas != null)
     val placeholderEdge = e.asInstanceOf[PlaceholderEdge]
     val wasAdded = childDeltas.add(placeholderEdge.childDelta)
     if (wasAdded) {
@@ -113,7 +113,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
   protected val childPatternCreator = id.childPatternRecipe
 
   def processFullQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
-    require(childDeltasOptimized != null)
+    assert(childDeltasOptimized != null)
     val targetIdCount = edgeCount
     val avg = query.tickets / targetIdCount
     val complete = avg > 0
