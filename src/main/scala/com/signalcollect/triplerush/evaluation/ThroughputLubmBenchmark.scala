@@ -20,28 +20,22 @@
 
 package com.signalcollect.triplerush.evaluation
 
-import com.signalcollect.triplerush.evaluation.SparqlDsl._
-import com.signalcollect.nodeprovisioning.torque._
-import com.signalcollect.configuration._
-import com.signalcollect._
-import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
-import com.signalcollect.nodeprovisioning.Node
-import com.typesafe.config.Config
-import com.signalcollect.nodeprovisioning.torque.TorqueHost
-import com.signalcollect.ExecutionConfiguration
 import java.io.File
-import com.signalcollect.triplerush.QueryEngine
-import com.signalcollect.triplerush.PatternQuery
 import scala.concurrent.Await
-import scala.concurrent.future
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.signalcollect.triplerush.Bindings
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.future
+import com.signalcollect.nodeprovisioning.torque.LocalHost
+import com.signalcollect.nodeprovisioning.torque.TorqueHost
+import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
+import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import com.signalcollect.triplerush.Mapping
-import java.util.concurrent.TimeUnit
-import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration._
-import language.postfixOps
-
+import com.signalcollect.triplerush.PatternQuery
+import com.signalcollect.triplerush.QueryEngine
+import com.signalcollect.triplerush.evaluation.SparqlDsl.SELECT
+import com.signalcollect.triplerush.evaluation.SparqlDsl.dsl2Query
+import com.signalcollect.triplerush.evaluation.SparqlDsl.{| => |}
+import com.signalcollect.triplerush.Mapping
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size

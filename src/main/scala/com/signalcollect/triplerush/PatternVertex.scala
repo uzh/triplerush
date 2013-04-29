@@ -20,7 +20,7 @@
 
 package com.signalcollect.triplerush
 
-import com.signalcollect._
+import com.signalcollect.GraphEditor
 
 /**
  * Basic vertex that recursively builds the TripleRush index structure. 

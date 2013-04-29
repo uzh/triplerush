@@ -20,32 +20,26 @@
 
 package com.signalcollect.triplerush.evaluation
 
-import com.signalcollect.triplerush.evaluation.SparqlDsl._
-import com.signalcollect.nodeprovisioning.torque._
-import com.signalcollect.configuration._
-import com.signalcollect._
-import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
-import com.signalcollect.nodeprovisioning.Node
-import com.typesafe.config.Config
-import com.signalcollect.nodeprovisioning.torque.TorqueHost
-import com.signalcollect.ExecutionConfiguration
 import java.io.File
-import com.signalcollect.triplerush.QueryEngine
-import com.signalcollect.triplerush.PatternQuery
-import scala.concurrent.Await
-import com.signalcollect.triplerush.Bindings
-import scala.concurrent.duration.FiniteDuration
-import com.signalcollect.triplerush.Mapping
-import java.util.concurrent.TimeUnit
-import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
-import com.signalcollect.triplerush.QueryOptimizer
-import scala.sys.process._
-import scala.io.Source
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
-import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import java.util.Date
+import java.util.concurrent.TimeUnit
+import scala.concurrent.Await
+import scala.concurrent.duration.FiniteDuration
+import scala.io.Source
+import scala.util.Random
+import com.signalcollect.GraphBuilder
+import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
+import com.signalcollect.nodeprovisioning.torque.LocalHost
+import com.signalcollect.nodeprovisioning.torque.TorqueHost
+import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
+import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
+import com.signalcollect.nodeprovisioning.torque.TorquePriority
+import com.signalcollect.triplerush.Mapping
+import com.signalcollect.triplerush.PatternQuery
+import com.signalcollect.triplerush.QueryEngine
+import com.signalcollect.triplerush.QueryOptimizer
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.Mapping
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -53,7 +47,7 @@ import java.util.Date
  *
  * Evaluation is set to execute on a 'Kraken'-node.
  */
-object LubmBenchmark extends App {
+object Lubm160Benchmark extends App {
   val jvmHighThroughputGc = " -Xmx64000m" +
     " -Xms64000m" +
     " -Xmn8000m" +
@@ -111,16 +105,19 @@ object LubmBenchmark extends App {
   //            ))
 
   /*********/
-  def evalName = "First distributed run."
+  def evalName = "Small experiment with distributed nodes."
   //  def evalName = "Local debugging."
   val runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
-  val graphBuilder = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).withNodeProvisioner(new TorqueNodeProvisioner(
+  val graphBuilder = GraphBuilder.withMessageBusFactory(
+      new BulkAkkaMessageBusFactory(1024, false)).
+      withConsole(true, 8080).
+      withNodeProvisioner(new TorqueNodeProvisioner(
     torqueHost = new TorqueHost(
       jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
       localJarPath = copyName,
       jvmParameters = jvmHighThroughputGc),
-    numberOfNodes = 1))
+    numberOfNodes = 10))
   /*********/
 
   for (run <- 1 to runs) {
@@ -136,7 +133,6 @@ object LubmBenchmark extends App {
           false,
           Long.MaxValue,
           optimizer,
-          160,
           getRevision,
           graphBuilder))
       }
@@ -150,7 +146,6 @@ object LubmBenchmark extends App {
     sampling: Boolean,
     tickets: Long,
     optimizer: QueryOptimizer.Value,
-    loadNumber: Int,
     revision: String,
     graphBuilder: GraphBuilder[Any, Any])(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
@@ -191,13 +186,28 @@ object LubmBenchmark extends App {
      * Time TripleR: 3815 222 3126 2    1 2 603
      */
     def fullQueries: List[PatternQuery] = List(
-      PatternQuery(1, List(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3))),
-      PatternQuery(2, List(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2))),
-      PatternQuery(3, List(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3))),
-      PatternQuery(4, List(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4))),
-      PatternQuery(5, List(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571))),
-      PatternQuery(6, List(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11))),
-      PatternQuery(7, List(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409))))
+      PatternQuery(queryId = 1,
+        unmatched = Array(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3)),
+        variables = Array(-1, -2, -3),
+        bindings = new Array(3)),
+      PatternQuery(2, Array(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2)),
+        variables = Array(-1, -2),
+        bindings = new Array(2)),
+      PatternQuery(3, Array(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3)),
+        variables = Array(-1, -2, -3),
+        bindings = new Array(3)),
+      PatternQuery(4, Array(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4)),
+        variables = Array(-1, -2, -3, -4),
+        bindings = new Array(4)),
+      PatternQuery(5, Array(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571)),
+        variables = Array(-1),
+        bindings = new Array(1)),
+      PatternQuery(6, Array(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11)),
+        variables = Array(-1, -2),
+        bindings = new Array(2)),
+      PatternQuery(7, Array(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409)),
+        variables = Array(-1, -2, -3),
+        bindings = new Array(3)))
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
       fullQueries
@@ -206,16 +216,10 @@ object LubmBenchmark extends App {
     var baseResults = Map[String, String]()
     val qe = new QueryEngine(graphBuilder)
 
-    def loadLubm(numberOfUniversities: Int = 160) {
-      val lubm160FolderName = "lubm160"
-      for (university <- (0 until numberOfUniversities)) {
-        for (subfile <- (0 to 99)) {
-          val potentialFileName = s"$lubm160FolderName/University${university}_$subfile.binary"
-          val potentialFile = new File(potentialFileName)
-          if (potentialFile.exists) {
-            qe.loadBinary(potentialFileName)
-          }
-        }
+    def loadSmallLubm {
+      val smallLubmFolderName = "lubm160-filtered-splits"
+      for (splitId <- 0 until 2880) {
+        qe.loadBinary(s"./$smallLubmFolderName/$splitId.filtered-split", Some(splitId))
       }
       println("Query engine preparing query execution")
       qe.prepareQueryExecution
@@ -295,7 +299,7 @@ object LubmBenchmark extends App {
       runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
       runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
       runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
-      runResult += s"loadNumber" -> loadNumber.toString
+      runResult += s"loadNumber" -> 160.toString
       runResult += s"date" -> date.toString
       finalResults = runResult :: finalResults
     }
@@ -305,7 +309,7 @@ object LubmBenchmark extends App {
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
       println("Dispatching loading command to worker...")
-      loadLubm(loadNumber)
+      loadSmallLubm
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString

@@ -31,45 +31,166 @@ object QueryIds {
 
 case class PatternQuery(
   queryId: Int,
-  unmatched: List[TriplePattern],
-  //matched: List[TriplePattern] = List(),
-  bindings: Bindings = Bindings(),
+  unmatched: Array[TriplePattern],
+  variables: Array[Int],
+  bindings: Array[Int],
   tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
   isComplete: Boolean = true // set to false as soon as there are not enough tickets to follow all edges
   ) {
-  
+
+  //  implicit def arrayToBindings(array: Array[(Int, Int)]) = Bindings(array)
+  implicit def int2expression(i: Int) = Expression(i)
+
   def isSamplingQuery = queryId < 0
 
   override def toString = {
     unmatched.mkString("\n") + bindings.toString
   }
 
-  def bind(tp: TriplePattern): Option[PatternQuery] = {
-    unmatched match {
-      case unmatchedHead :: unmatchedTail =>
-        val newBindingsOption = unmatchedHead.bindingsFor(tp)
-        if (newBindingsOption.isDefined) {
-          val newBindings = newBindingsOption.get
-          if (newBindings.isCompatible(bindings)) {
-            val newMatched = unmatchedHead.applyBindings(newBindings)
-            val updatedBindings = bindings.merge(newBindings)
-            val newQuery = copy(
-              unmatched = unmatchedTail map (_.applyBindings(newBindings)),
-              //matched = newMatched :: matched,
-              bindings = updatedBindings)
-            return Some(newQuery)
-          }
-        }
-      case other =>
-        return None
-    }
-    None
-  }
-
-  def withUnmatchedPatterns(newUnmatched: List[TriplePattern]) = {
-    copy(unmatched = newUnmatched)
+  def getBindingsMap: Map[Int, Int] = {
+    (variables.zip(bindings)).toMap
   }
   
+  /**
+   * Requires that the element occurs in the array.
+   */
+  protected def indexOf(item: Int, a: Array[Int]): Int = {
+    var i = 0
+    val maxIndex = a.length - 1
+    while (i < maxIndex) {
+      if (a(i) == item) {
+        return i
+      }
+      i += 1
+    }
+    maxIndex
+  }
+
+  /**
+   * Assumption: tp has all constants.
+   */
+  def bind(tp: TriplePattern): PatternQuery = {
+    if (unmatched.isEmpty) {
+      throw new Exception("Why bind when this query is done? Optimize this code.")
+    }
+    val patternToMatch = unmatched.head
+    if (patternToMatch.s == tp.s) { // Subject is compatible constant. No binding necessary. 
+      if (patternToMatch.p == tp.p) { // Predicate is compatible constant. No binding necessary. 
+        if (patternToMatch.o == tp.o) { // Object is compatible constant. No binding necessary. 
+          return PatternQuery(queryId, unmatched.slice(1, unmatched.length), variables, bindings, tickets, isComplete)
+        }
+        return bindObject(patternToMatch, tp)
+      }
+      return bindPredicate(patternToMatch, tp)
+    }
+    return bindSubject(patternToMatch, tp)
+  }
+
+  private def bindSubject(
+    patternToMatch: TriplePattern,
+    tp: TriplePattern,
+    newUnmatched: Array[TriplePattern] = unmatched.slice(1, unmatched.length),
+    newBindings: Array[Int] = bindings.clone): PatternQuery = {
+    // Subject is conflicting constant. No binding possible.
+    if (!patternToMatch.s.isVariable) return failedBinding
+
+    // Subject is a variable that needs to be bound to the constant in the triple pattern. 
+    // Bind value to variable.
+    val variable = patternToMatch.s
+    val boundValue = tp.s
+
+    if (isBindingIncompatible(patternToMatch.p, tp.p, variable, boundValue) || isBindingIncompatible(patternToMatch.o, tp.o, variable, boundValue)) return failedBinding
+
+    // No conflicts, we bind the value to the variable.
+    val variableIndex = indexOf(variable, variables)
+    newBindings(variableIndex) = boundValue
+
+    updateUnmatchedPatterns(variable, boundValue, newUnmatched)
+
+    bindPredicate(patternToMatch, tp, newUnmatched, newBindings)
+  }
+
+  private def bindPredicate(
+    patternToMatch: TriplePattern,
+    tp: TriplePattern,
+    newUnmatched: Array[TriplePattern] = unmatched.slice(1, unmatched.length),
+    newBindings: Array[Int] = bindings.clone): PatternQuery = {
+
+    if (patternToMatch.p == tp.p) { // Predicate is compatible constant. No binding necessary. 
+      return bindObject(patternToMatch, tp, newUnmatched, newBindings)
+    }
+
+    // Predicate is conflicting constant. No binding possible.
+    if (!patternToMatch.p.isVariable) return failedBinding
+
+    // Predicate is a variable that needs to be bound to the constant in the triple pattern. 
+    // Bind value to variable.
+    val variable = patternToMatch.p
+    val boundValue = tp.p
+
+    if (isBindingIncompatible(patternToMatch.o, tp.o, variable, boundValue)) return failedBinding
+
+    // No conflicts, we bind the value to the variable.
+    val variableIndex = indexOf(variable, variables)
+    newBindings(variableIndex) = boundValue
+
+    updateUnmatchedPatterns(variable, boundValue, newUnmatched)
+
+    bindObject(patternToMatch, tp, newUnmatched, newBindings)
+  }
+
+  private def bindObject(
+    patternToMatch: TriplePattern,
+    tp: TriplePattern,
+    newUnmatched: Array[TriplePattern] = unmatched.slice(1, unmatched.length),
+    newBindings: Array[Int] = bindings.clone): PatternQuery = {
+
+    if (patternToMatch.o == tp.o) { // Object is compatible constant. No binding necessary. 
+      return PatternQuery(queryId, newUnmatched, variables, newBindings, tickets, isComplete)
+    }
+
+    // Object is conflicting constant. No binding possible.
+    if (!patternToMatch.o.isVariable) return failedBinding
+
+    // Object is a variable that needs to be bound to the constant in the triple pattern. 
+    // Bind value to variable.
+    val variable = patternToMatch.o
+    val boundValue = tp.o
+
+    // No conflicts, we bind the value to the variable.
+    val variableIndex = indexOf(variable, variables)
+    newBindings(variableIndex) = boundValue
+
+    updateUnmatchedPatterns(variable, boundValue, newUnmatched)
+
+    PatternQuery(queryId, newUnmatched, variables, newBindings, tickets, isComplete)
+  }
+
+  // If the variable appears multiple times in the same pattern, then all the bindings have to be compatible.  
+  private def isBindingIncompatible(otherAttribute: Int, tpAttribute: Int, variable: Int, boundValue: Int) = (otherAttribute == variable && tpAttribute != boundValue)
+
+  private def failedBinding = null.asInstanceOf[PatternQuery]
+
+  // Updates an attribute with a new binding.
+  private def updatedAttribute(attribute: Int, variable: Int, boundValue: Int) = if (attribute == variable) boundValue else attribute
+
+  // Update all the other patterns with this new binding.
+  private def updateUnmatchedPatterns(variable: Int, boundValue: Int, newUnmatched: Array[TriplePattern]) {
+    var i = 0
+    while (i < newUnmatched.length) {
+      val oldPattern = newUnmatched(i)
+      val newS = updatedAttribute(oldPattern.s, variable, boundValue)
+      val newP = updatedAttribute(oldPattern.p, variable, boundValue)
+      val newO = updatedAttribute(oldPattern.o, variable, boundValue)
+      newUnmatched(i) = TriplePattern(newS, newP, newO)
+      i += 1
+    }
+  }
+
+  def withUnmatchedPatterns(newUnmatched: Array[TriplePattern]) = {
+    copy(unmatched = newUnmatched)
+  }
+
   def withTickets(numberOfTickets: Long, complete: Boolean = true) = {
     copy(tickets = numberOfTickets, isComplete = complete)
   }

@@ -20,13 +20,13 @@
 
 package com.signalcollect.triplerush
 
-import com.signalcollect._
-import com.signalcollect.triplerush.Expression._
 import java.util.Arrays
-import scala.util.Sorting
-import java.util.concurrent.atomic.AtomicLong
-import scala.collection.parallel.mutable.ParArray
+
 import scala.collection.mutable.TreeSet
+
+import com.signalcollect.Edge
+import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.Expression.{* => *}
 
 class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
   /**
@@ -150,9 +150,8 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   }
 
   def bindToTriplePattern(triplePattern: TriplePattern, query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
-    val boundQueryOption = query.bind(triplePattern)
-    if (boundQueryOption.isDefined) {
-      val boundQuery = boundQueryOption.get
+    val boundQuery = query.bind(triplePattern)
+    if (boundQuery != null) {
       if (boundQuery.unmatched.isEmpty) {
         // Query successful, send to query vertex.
         graphEditor.sendSignal(boundQuery, boundQuery.queryId, None)

@@ -20,16 +20,15 @@
 
 package com.signalcollect.triplerush.evaluation
 
-import java.io.File
-import org.semanticweb.yars.nx.parser.NxParser
-import com.signalcollect.triplerush.Mapping
-import java.io.FileInputStream
-import com.signalcollect.triplerush.TriplePattern
-import java.io.FileOutputStream
 import java.io.DataOutputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.util.HashMap
-import collection.JavaConversions._
+
 import scala.io.Source
+
+import org.semanticweb.yars.nx.parser.NxParser
 
 object DictionaryEncoder extends App {
   val toEncodeFolderName = "lubm10240" //"lubm160"

@@ -34,3 +34,4 @@ project/plugins/project/
 *.txt
 
 *.zip
+binary-split/0.filtered-split

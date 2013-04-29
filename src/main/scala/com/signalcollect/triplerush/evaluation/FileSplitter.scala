@@ -35,8 +35,8 @@ import java.io.EOFException
 
 object FileSplitter extends App {
   val modulos = (args map (_.toInt)).toSet
-  val toSplitFolderName = "lubm10240"
-  val destinationFolderName = "lubm10240-splits"
+  val toSplitFolderName = s"lubm160"
+  val destinationFolderName = "lubm160-splits"
   val splits = 2880
   val fileOutputStreams = {
     (0 until splits).toArray map { splitId =>
@@ -60,11 +60,11 @@ object FileSplitter extends App {
   val folder = new File(toSplitFolderName)
   val initialTime = System.currentTimeMillis
   var totalTriplesSplit = 0
-  for (university <- (0 until 10240)) {
+  for (university <- (0 until 160)) {
     val startTime = System.currentTimeMillis
-    print(s"Processing university ${university + 1}/10240 ...")
+    print(s"Processing university ${university + 1}/160 ...")
     for (subfile <- (0 to 99)) {
-      val potentialFileName = s"./lubm10240/University${university}_$subfile.binary"
+      val potentialFileName = s"./lubm160/University${university}_$subfile.binary"
       val potentialFile = new File(potentialFileName)
       if (potentialFile.exists) {
         val triplesSplit = splitFile(potentialFile.getAbsolutePath)
@@ -78,7 +78,7 @@ object FileSplitter extends App {
     val totalTimeSoFar = ((endTime - initialTime).toDouble / 1000) / 3600
     println(s"Total elapsed time: $totalTimeSoFar hours.")
     val estimatedTimePerUniversity = totalTimeSoFar / (university + 1).toDouble
-    val remainingUniversities = (10240 - (university + 1))
+    val remainingUniversities = (160 - (university + 1))
     val estimatedRemaining = remainingUniversities * estimatedTimePerUniversity
     val estimatedRemainingRounded = estimatedRemaining.floor
     println(s"Estimated remaining time for remaining universities: ${estimatedRemainingRounded} hours and ${((estimatedRemaining - estimatedRemainingRounded) * 60).floor} minutes.")

@@ -20,13 +20,12 @@
 
 package com.signalcollect.triplerush
 
-import scala.util.Random
+import scala.collection.mutable.TreeSet
+
 import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
-import scala.util.Sorting
 import com.signalcollect.examples.CompactIntSet
-import com.signalcollect.triplerush.Expression._
-import scala.collection.mutable.TreeSet
+import com.signalcollect.triplerush.Expression.{* => *}
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value

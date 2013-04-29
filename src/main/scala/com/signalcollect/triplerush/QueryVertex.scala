@@ -20,10 +20,14 @@
 
 package com.signalcollect.triplerush
 
-import com.signalcollect._
-import scala.concurrent.Promise
+import scala.Array.canBuildFrom
 import scala.collection.mutable.ArrayBuffer
+
+import com.signalcollect.GraphEditor
+import com.signalcollect.ProcessingVertex
+
 import akka.actor.ActorRef
+import akka.actor.actorRef2Scala
 
 object QueryOptimizer extends Enumeration with Serializable {
 
@@ -90,7 +94,7 @@ class QueryVertex(
   }
 
   def optimizeQuery: PatternQuery = {
-    var sortedPatterns = cardinalities.toList sortBy (_._2)
+    var sortedPatterns = cardinalities.toArray sortBy (_._2)
     optimizer match {
       case QueryOptimizer.Greedy =>
         // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
@@ -118,7 +122,7 @@ class QueryVertex(
           }
           sortedPatterns = sortedPatterns sortBy (_._2)
         }
-        query.withUnmatchedPatterns(optimizedPatterns.toList)
+        query.withUnmatchedPatterns(optimizedPatterns.toArray)
     }
   }
 

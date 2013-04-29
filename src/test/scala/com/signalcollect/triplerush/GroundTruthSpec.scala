@@ -20,24 +20,20 @@
 
 package com.signalcollect.triplerush
 
-import org.specs2.runner.JUnitRunner
-import org.junit.runner.RunWith
-import org.specs2.mutable.SpecificationWithJUnit
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.util.FileManager
-import com.hp.hpl.jena.rdf.model.Model
-import scala.io.Source
-import scala.io.Codec
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
-import scala.concurrent.Await
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
-import scala.collection.immutable.SortedMap
 import scala.collection.immutable.TreeMap
+import scala.concurrent.Await
+import scala.concurrent.duration.FiniteDuration
+import scala.io.Source
+import org.junit.runner.RunWith
 import org.specs2.matcher.MatchResult
-import com.signalcollect.triplerush.evaluation.PatternQueryParser
-import com.signalcollect.triplerush.evaluation.SparqlDsl._
+import org.specs2.mutable.SpecificationWithJUnit
+import com.signalcollect.GraphBuilder
+import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
+import com.signalcollect.triplerush.evaluation.SparqlDsl.SELECT
+import com.signalcollect.triplerush.evaluation.SparqlDsl.dsl2Query
+import com.signalcollect.triplerush.evaluation.SparqlDsl.{ | => | }
+import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
@@ -307,12 +303,14 @@ WHERE
     }
   }
 
-  def toQuery(s: String): PatternQuery = PatternQueryParser.build(s) match {
-    case Left(q) => q
-    case Right(error) => throw new Exception(error)
-  }
+  //  def toQuery(s: String): PatternQuery = PatternQueryParser.build(s) match {
+  //    case Left(q) => q
+  //    case Right(error) => throw new Exception(error)
+  //  }
 
-  val qe = new QueryEngine
+  val qe = new QueryEngine(graphBuilder = GraphBuilder.
+    withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).
+    withMessageSerialization(false))
 
   println("Loading LUBM1 ... ")
   for (fileNumber <- 0 to 14) {
@@ -321,7 +319,7 @@ WHERE
   }
   qe.awaitIdle
   println("Finished loading LUBM1.")
-  
+
   print("Optimizing edge representations...")
   qe.prepareQueryExecution
   println("done")
@@ -329,8 +327,8 @@ WHERE
   def executeOnQueryEngine(q: PatternQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
-    val bindings = result._1 map (_.bindings.map map (entry => (Mapping.getString(entry._1), Mapping.getString(entry._2))))
-    val sortedBindings = bindings map (unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
+    val bindings: List[Map[String, String]] = result._1 map (_.getBindingsMap map (entry => (Mapping.getString(entry._1), Mapping.getString(entry._2))))
+    val sortedBindings: List[TreeMap[String, String]] = bindings map (unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
     val sortedBindingList = (sortedBindings sortBy (map => map.values)).toList
     sortedBindingList
   }
@@ -342,11 +340,11 @@ WHERE
     if (enabledQueries.contains(queryId) && (dslEnabled && !sparql || sparqlEnabled && sparql)) {
       val referenceResult = referenceResults(queryId)
       val query: PatternQuery = {
-        if (sparql) {
-          toQuery(sparqlQueries(queryId - 1))
-        } else {
-          dslQueries(queryId - 1)
-        }
+        //        if (sparql) {
+        //          toQuery(sparqlQueries(queryId - 1))
+        //        } else {
+        dslQueries(queryId - 1)
+        //        }
       }
       val ourResult = executeOnQueryEngine(query)
       ourResult === referenceResult
@@ -387,12 +385,5 @@ WHERE
       solution.sortBy(map => map.values)
     }
   }
-
-  //  val debug = SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-  //    | - "X" - s"$ub#telephone" - "Y3",
-  //    | - "X" - s"$ub#emailAddress" - "Y2",
-  //    | - "X" - s"$ub#name" - "Y1",
-  //    | - "X" - s"$rdf#type" - s"$ub#Professor",
-  //    | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu")
 
 }

@@ -22,6 +22,10 @@ package com.signalcollect.triplerush.evaluation
 
 import com.signalcollect.triplerush._
 import scala.language.implicitConversions
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.PatternQuery
+import com.signalcollect.triplerush.Mapping
 
 object SparqlDsl extends App {
   object | {
@@ -55,8 +59,8 @@ object SparqlDsl extends App {
   }
   case class DslQuery(isSamplingQuery: Boolean, tickets: Long, variables: List[String], dslTriplePatterns: List[DslTriplePattern])
   implicit def dsl2Query(q: DslQuery): PatternQuery = {
-    q.variables foreach (Mapping.register(_, isVariable = true))
-    val queryId =  if (q.isSamplingQuery) QueryIds.nextSamplingQueryId  else QueryIds.nextFullQueryId
-    PatternQuery(queryId, q.dslTriplePatterns map (_.toTriplePattern), tickets = q.tickets)
+    val variableIds = q.variables map (Mapping.register(_, isVariable = true))
+    val queryId = if (q.isSamplingQuery) QueryIds.nextSamplingQueryId else QueryIds.nextFullQueryId
+    PatternQuery(queryId, q.dslTriplePatterns map (_.toTriplePattern) toArray, variables = variableIds.toArray, bindings = new Array[Int](variableIds.length), tickets = q.tickets)
   }
 }

@@ -20,36 +20,37 @@
 
 package com.signalcollect.triplerush
 
-import java.io.FileInputStream
-import scala.collection.mutable.ArrayBuffer
-import org.semanticweb.yars.nx.parser.NxParser
-import com.signalcollect._
-import com.signalcollect.configuration.ExecutionMode
-import com.signalcollect.factory.messagebus.ParallelBulkAkkaMessageBusFactory
-import com.signalcollect.triplerush.Expression.int2Expression
-import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
-import com.signalcollect.factory.messagebus.AkkaMessageBusFactory
 import java.io.DataInputStream
 import java.io.EOFException
+import java.io.FileInputStream
+import java.util.concurrent.TimeUnit
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.concurrent.promise
+import scala.util.Random
+import org.semanticweb.yars.nx.parser.NxParser
+import com.signalcollect.ExecutionConfiguration
+import com.signalcollect.GraphBuilder
+import com.signalcollect.GraphEditor
+import com.signalcollect.Vertex
 import com.signalcollect.configuration.ActorSystemRegistry
+import com.signalcollect.configuration.ExecutionMode
 import akka.actor.Actor
 import akka.actor.ActorRef
 import akka.actor.PoisonPill
 import akka.actor.Props
+import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.util.Timeout
-import scala.concurrent.duration.Duration
-import java.util.concurrent.TimeUnit
-import scala.util.Random
+import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 
 case object UndeliverableSignalHandler {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
       case query: PatternQuery =>
         graphEditor.sendSignal(query.tickets, query.queryId, None)
-      // TODO: Handle cardinality requests for index vertices that are not in the graph, reply with cardinality 0.
+      case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
+        graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
       case other =>
         println(s"Failed signal delivery of $other of type ${other.getClass} to the vertex with id $targetId and sender id $sourceId.")
     }
@@ -96,6 +97,40 @@ class ResultRecipientActor extends Actor {
   }
 }
 
+case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEditor[Any, Any] => Unit] {
+
+  val is = new FileInputStream(binaryFilename)
+  val dis = new DataInputStream(is)
+
+  protected def readNextTriplePattern: TriplePattern = {
+    try {
+      val sId = dis.readInt
+      val pId = dis.readInt
+      val oId = dis.readInt
+      TriplePattern(sId, pId, oId)
+    } catch {
+      case done: EOFException =>
+        dis.close
+        is.close
+        null.asInstanceOf[TriplePattern]
+      case t: Throwable =>
+        println(t)
+        throw t
+    }
+  }
+
+  var nextTriplePattern: TriplePattern = readNextTriplePattern
+
+  def hasNext = nextTriplePattern != null
+
+  def next: GraphEditor[Any, Any] => Unit = {
+    val patternCopy = nextTriplePattern
+    val loader: GraphEditor[Any, Any] => Unit = FileLoaders.addTriple(patternCopy, _)
+    nextTriplePattern = readNextTriplePattern
+    loader
+  }
+}
+
 case object FileLoaders {
   def loadNtriplesFile(ntriplesFilename: String)(graphEditor: GraphEditor[Any, Any]) {
     val is = new FileInputStream(ntriplesFilename)
@@ -110,7 +145,7 @@ case object FileLoaders {
       val sId = Mapping.register(subjectString)
       val pId = Mapping.register(predicateString)
       val oId = Mapping.register(objectString)
-      addTriple(sId, pId, oId, graphEditor)
+      addTriple(TriplePattern(sId, pId, oId), graphEditor)
       triplesLoaded += 1
       if (triplesLoaded % 10000 == 0) {
         println(s"Loaded $triplesLoaded triples from file $ntriplesFilename ...")
@@ -120,34 +155,7 @@ case object FileLoaders {
     is.close
   }
 
-  def loadBinaryFile(binaryFilename: String)(graphEditor: GraphEditor[Any, Any]) {
-    val is = new FileInputStream(binaryFilename)
-    val dis = new DataInputStream(is)
-    println(s"Reading triples from $binaryFilename ...")
-    var triplesLoaded = 0
-    try {
-      while (true) {
-        val sId = dis.readInt
-        val pId = dis.readInt
-        val oId = dis.readInt
-        addTriple(sId, pId, oId, graphEditor)
-        triplesLoaded += 1
-        if (triplesLoaded % 10000 == 0) {
-          println(s"Loaded $triplesLoaded triples from file $binaryFilename ...")
-        }
-      }
-    } catch {
-      case done: EOFException =>
-        println(s"Done loading triples from $binaryFilename. Loaded a total of $triplesLoaded triples.")
-        dis.close
-        is.close
-      case t: Throwable =>
-        throw t
-    }
-  }
-
-  protected def addTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Any, Any]) {
-    val tp = TriplePattern(sId, pId, oId)
+  def addTriple(tp: TriplePattern, graphEditor: GraphEditor[Any, Any]) {
     for (parentPattern <- tp.parentPatterns) {
       val idDelta = tp.parentIdDelta(parentPattern)
       graphEditor.addVertex(new BindingIndexVertex(parentPattern))
@@ -165,17 +173,12 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
     "com.signalcollect.triplerush.IndexVertex",
     "com.signalcollect.triplerush.PlaceholderEdge",
     "com.signalcollect.triplerush.CardinalityRequest",
-    "com.signalcollect.triplerush.CardinalityReply",
-    "com.signalcollect.triplerush.Bindings", 
-    "com.signalcollect.triplerush.Expression")).build
+    "com.signalcollect.triplerush.CardinalityReply")).build
   print("Awaiting idle ... ")
   g.awaitIdle
   println("Done")
   print("Setting undeliverable signal handler ... ")
   g.setUndeliverableSignalHandler(UndeliverableSignalHandler.handle _)
-  println("Done")
-  print("Starting continuous asynchronous mode ... ")
-  g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
   println("Done")
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
@@ -184,15 +187,30 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
   println("Done")
   println("Graph engine is fully initialized.")
 
-  def loadNtriples(ntriplesFilename: String) {
-    g.modifyGraph(FileLoaders.loadNtriplesFile(ntriplesFilename) _, None)
+  def loadNtriples(ntriplesFilename: String, placementHint: Option[Any] = None) {
+    g.modifyGraph(FileLoaders.loadNtriplesFile(ntriplesFilename) _, placementHint)
   }
 
-  def loadBinary(binaryFilename: String) {
-    g.modifyGraph(FileLoaders.loadBinaryFile(binaryFilename) _, None)
+  def loadBinary(binaryFilename: String, placementHint: Option[Any] = None) {
+    g.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
   }
 
-  def executeQuery(q: PatternQuery, optimizer: QueryOptimizer.Value = QueryOptimizer.Greedy): Future[(List[PatternQuery], Map[String, Any])] = {
+  /**
+   * Slow, only use for debugging purposes.
+   */
+  def loadTriple(s: String, p: String, o: String) {
+    val sId = Mapping.register(s)
+    val pId = Mapping.register(p)
+    val oId = Mapping.register(o)
+    val tp = TriplePattern(sId, pId, oId)
+    for (parentPattern <- tp.parentPatterns) {
+      val idDelta = tp.parentIdDelta(parentPattern)
+      g.addVertex(new BindingIndexVertex(parentPattern))
+      g.addEdge(parentPattern, new PlaceholderEdge(idDelta))
+    }
+  }
+
+  def executeQuery(q: PatternQuery, optimizer: QueryOptimizer.Value = QueryOptimizer.Clever): Future[(List[PatternQuery], Map[String, Any])] = {
     assert(queryExecutionPrepared)
     if (!q.unmatched.isEmpty) {
       val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
@@ -210,6 +228,9 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
   private var queryExecutionPrepared = false
 
   def prepareQueryExecution {
+    print("Starting continuous asynchronous mode ... ")
+    g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+    println("Done")
     println("Preparing query execution and awaiting idle.")
     g.awaitIdle
     println("Prepared query execution and preparing vertices.")
