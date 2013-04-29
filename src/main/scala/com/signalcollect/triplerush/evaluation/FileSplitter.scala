@@ -97,7 +97,19 @@ object FileSplitter extends App {
         val pId = dis.readInt
         val oId = dis.readInt
         val pattern = TriplePattern(sId, pId, oId)
-        val patternSplit = math.abs(pattern.hashCode) % splits
+        val patternSplit = {
+          val potentiallyNegativeSplitId = pattern.hashCode % splits
+          if (potentiallyNegativeSplitId >= 0) {
+            potentiallyNegativeSplitId
+          } else {
+            if (potentiallyNegativeSplitId == Int.MinValue) {
+              // Special case,-Int.MinValue == Int.MinValue
+              0
+            } else {
+              -potentiallyNegativeSplitId
+            }
+          }
+        }
         if (modulos.contains(patternSplit % 4)) {
           val splitStream = dataOutputStreams(patternSplit)
           splitStream.writeInt(sId)
