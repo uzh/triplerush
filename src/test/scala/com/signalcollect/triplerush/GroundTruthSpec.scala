@@ -34,6 +34,7 @@ import com.signalcollect.triplerush.evaluation.SparqlDsl.SELECT
 import com.signalcollect.triplerush.evaluation.SparqlDsl.dsl2Query
 import com.signalcollect.triplerush.evaluation.SparqlDsl.{ | => | }
 import org.specs2.runner.JUnitRunner
+import com.signalcollect.triplerush.evaluation.SparqlDsl.DslQuery
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
@@ -324,10 +325,10 @@ WHERE
   qe.prepareQueryExecution
   println("done")
 
-  def executeOnQueryEngine(q: PatternQuery): List[Bindings] = {
+  def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
-    val bindings: List[Map[String, String]] = result._1 map (_.getBindingsMap map (entry => (Mapping.getString(entry._1), Mapping.getString(entry._2))))
+    val bindings: List[Map[String, String]] = result.queries.toList map (_.getBindings.toMap map (entry => (q.getString(entry._1), q.getString(entry._2))))
     val sortedBindings: List[TreeMap[String, String]] = bindings map (unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
     val sortedBindingList = (sortedBindings sortBy (map => map.values)).toList
     sortedBindingList
@@ -339,14 +340,7 @@ WHERE
   def runTest(queryId: Int, sparql: Boolean = false): MatchResult[Any] = {
     if (enabledQueries.contains(queryId) && (dslEnabled && !sparql || sparqlEnabled && sparql)) {
       val referenceResult = referenceResults(queryId)
-      val query: PatternQuery = {
-        //        if (sparql) {
-        //          toQuery(sparqlQueries(queryId - 1))
-        //        } else {
-        dslQueries(queryId - 1)
-        //        }
-      }
-      val ourResult = executeOnQueryEngine(query)
+      val ourResult = executeOnQueryEngine(dslQueries(queryId - 1))
       ourResult === referenceResult
     } else {
       "Test was not enabled" === "Test was not enabled"

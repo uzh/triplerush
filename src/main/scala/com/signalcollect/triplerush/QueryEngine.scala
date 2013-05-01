@@ -83,16 +83,11 @@ class ResultRecipientActor extends Actor {
         queryResultRecipient ! result
         self ! PoisonPill
       }
-    case result =>
-      if (result == null) {
-        throw new Exception("Query result cannot be null.")
+    case result: QueryResult =>
+      this.result = result
+      if (queryResultRecipient != null) {
+        queryResultRecipient ! result
         self ! PoisonPill
-      } else {
-        this.result = result
-        if (queryResultRecipient != null) {
-          queryResultRecipient ! result
-          self ! PoisonPill
-        }
       }
   }
 }
@@ -194,7 +189,11 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
     "com.signalcollect.triplerush.IndexVertex",
     "com.signalcollect.triplerush.PlaceholderEdge",
     "com.signalcollect.triplerush.CardinalityRequest",
-    "com.signalcollect.triplerush.CardinalityReply")).build
+    "com.signalcollect.triplerush.CardinalityReply",
+    "com.signalcollect.triplerush.QueryVertex",
+    "com.signalcollect.triplerush.QueryOptimizer",
+    "com.signalcollect.triplerush.QueryResult",
+    "akka.actor.RepointableActorRef")).build
   print("Awaiting idle ... ")
   g.awaitIdle
   println("Done")
@@ -231,17 +230,17 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
     }
   }
 
-  def executeQuery(q: PatternQuery, optimizer: QueryOptimizer.Value = QueryOptimizer.Clever): Future[(List[PatternQuery], Map[String, Any])] = {
+  def executeQuery(q: PatternQuery, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
     assert(queryExecutionPrepared)
     if (!q.unmatched.isEmpty) {
       val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
       g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer))
       implicit val timeout = Timeout(Duration.create(7200, TimeUnit.SECONDS))
       val resultFuture = resultRecipientActor ? RegisterQueryResultRecipient
-      resultFuture.asInstanceOf[Future[(List[PatternQuery], Map[String, Any])]]
+      resultFuture.asInstanceOf[Future[QueryResult]]
     } else {
-      val p = promise[(List[PatternQuery], Map[String, Any])]
-      p success (List(), Map().withDefaultValue(""))
+      val p = promise[QueryResult]
+      p success (QueryResult(Array(), Array()))
       p.future
     }
   }

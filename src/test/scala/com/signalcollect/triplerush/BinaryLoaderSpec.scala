@@ -21,20 +21,18 @@
 package com.signalcollect.triplerush
 
 import java.util.concurrent.TimeUnit
-
 import scala.concurrent.Await
 import scala.concurrent.duration.FiniteDuration
-
 import org.junit.runner.RunWith
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.After
-
 import com.signalcollect.GraphBuilder
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.evaluation.SparqlDsl.|
 import com.signalcollect.triplerush.evaluation.SparqlDsl.SELECT
 import com.signalcollect.triplerush.evaluation.SparqlDsl.dsl2Query
+import com.signalcollect.triplerush.PatternQuery
 
 @RunWith(classOf[JUnitRunner])
 class BinaryLoaderSpec extends SpecificationWithJUnit {
@@ -73,7 +71,7 @@ class BinaryLoaderSpec extends SpecificationWithJUnit {
   def executeOnQueryEngine(q: PatternQuery) = {
     val resultFuture = qe.executeQuery(q)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
-    result._1
+    result.queries
   }
 
 }

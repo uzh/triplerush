@@ -22,37 +22,43 @@ package com.signalcollect.triplerush
 
 import scala.Array.canBuildFrom
 import scala.collection.mutable.ArrayBuffer
-
 import com.signalcollect.GraphEditor
 import com.signalcollect.ProcessingVertex
-
 import akka.actor.ActorRef
 import akka.actor.actorRef2Scala
+import com.signalcollect.Vertex
+import com.signalcollect.Edge
 
-object QueryOptimizer extends Enumeration with Serializable {
+case class QueryResult(
+  queries: Array[PatternQuery],
+  stats: Array[(Any, Any)])
 
-  val None = Value // Execute patterns in order passed.
-  val Greedy = Value // Execute patterns in descending order of cardinalities.
-  val Clever = Value // Uses cardinalities and prefers patterns that contain variables that have been matched in a previous pattern.
-
+case object QueryOptimizer {
+  val None = 0 // Execute patterns in order passed.
+  val Greedy = 1 // Execute patterns in descending order of cardinalities.
+  val Clever = 2 // Uses cardinalities and prefers patterns that contain variables that have been matched in a previous pattern.
 }
 
 class QueryVertex(
-    val query: PatternQuery,
-    val resultRecipient: ActorRef,
-    val optimizer: QueryOptimizer.Value) extends ProcessingVertex[Int, PatternQuery](query.queryId) {
+  val query: PatternQuery,
+  val resultRecipient: ActorRef,
+  val optimizer: Int) extends Vertex[Int, List[PatternQuery]] {
 
-  val expectedTickets: Long = query.tickets
-  val expectedCardinalities = query.unmatched.size
+  @transient val id = query.queryId
 
-  var receivedTickets: Long = 0
-  var firstResultNanoTime = 0l
-  var complete = true
+  @transient var state: List[PatternQuery] = List[PatternQuery]()
 
-  var optimizingStartTime = 0l
-  var optimizingDuration = 0l
+  @transient val expectedTickets: Long = query.tickets
+  @transient val expectedCardinalities = query.unmatched.size
 
-  var optimizedQuery: PatternQuery = _
+  @transient var receivedTickets: Long = 0
+  @transient var firstResultNanoTime = 0l
+  @transient var complete = true
+
+  @transient var optimizingStartTime = 0l
+  @transient var optimizingDuration = 0l
+
+  @transient var optimizedQuery: PatternQuery = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     if (optimizer != QueryOptimizer.None && query.unmatched.size > 1) {
@@ -69,19 +75,19 @@ class QueryVertex(
     }
   }
 
-  var cardinalities: Map[TriplePattern, Int] = Map()
+  @transient var cardinalities: Map[TriplePattern, Int] = Map()
 
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
     signal match {
       case ticketsOfFailedQuery: Long =>
         receivedTickets += ticketsOfFailedQuery
-//        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
+      //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
       case query: PatternQuery =>
         processQuery(query)
-//        println(s"Query vertex $id received bindings ${query.bindings}. Now at $receivedTickets/$expectedTickets")
+      //        println(s"Query vertex $id received bindings ${query.bindings}. Now at $receivedTickets/$expectedTickets")
       case CardinalityReply(forPattern, cardinality) =>
         cardinalities += forPattern -> cardinality
-//        println(s"Query vertex $id received cardinalities $forPattern -> $cardinality")
+        //        println(s"Query vertex $id received cardinalities $forPattern -> $cardinality")
         if (cardinalities.size == expectedCardinalities) {
           optimizedQuery = optimizeQuery
           if (optimizingStartTime != 0) {
@@ -146,12 +152,22 @@ class QueryVertex(
   override def scoreSignal: Double = if (expectedTickets == receivedTickets) 1 else 0
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
-    resultRecipient ! (state, Map("firstResultNanoTime" -> firstResultNanoTime, "optimizingDuration" -> optimizingDuration, "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString)).withDefaultValue(""))
+    resultRecipient ! QueryResult(state.toArray, Array("firstResultNanoTime" -> firstResultNanoTime, "optimizingDuration" -> optimizingDuration, "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString)))
     //    val totalQueries = (numberOfFailedQueries + numberOfSuccessfulQueries).toDouble
     //    println(s"Total # of queries = $totalQueries failed : ${((numberOfFailedQueries / totalQueries) * 100.0).round}%")
     graphEditor.removeVertex(id)
   }
 
-  def process(item: PatternQuery, graphEditor: GraphEditor[Any, Any]) {}
+  def setState(s: List[PatternQuery]) {
+    state = s
+  }
 
+  def scoreCollect = 0 // Because signals are collected upon delivery.
+  def edgeCount = 0
+  override def toString = s"${this.getClass.getName}(state=$state)"
+  def executeCollectOperation(graphEditor: GraphEditor[Any, Any]) {}
+  def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
+  override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
+  override def removeEdge(targetId: Any, graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
+  override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = 0
 }

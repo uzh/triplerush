@@ -21,9 +21,7 @@
 package com.signalcollect.triplerush
 
 import java.util.Arrays
-
 import scala.collection.mutable.TreeSet
-
 import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.Expression.{* => *}

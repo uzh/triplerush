@@ -41,6 +41,7 @@ import com.signalcollect.triplerush.QueryOptimizer
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
+import com.signalcollect.triplerush.QueryResult
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -92,7 +93,7 @@ object Lubm160Benchmark extends App {
   }
 
   /*********/
-  def evalName = "Distributed experiment with 10 nodes only, staged loading."
+  def evalName = "Distributed experiment with 10 and efficient serialization."
   //  def evalName = "Local debugging."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
@@ -122,7 +123,7 @@ object Lubm160Benchmark extends App {
     queryId: Int,
     sampling: Boolean,
     tickets: Long,
-    optimizer: QueryOptimizer.Value,
+    optimizer: Int,
     revision: String)(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
@@ -164,25 +165,18 @@ object Lubm160Benchmark extends App {
     def fullQueries: List[PatternQuery] = List(
       PatternQuery(queryId = 1,
         unmatched = Array(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3)),
-        variables = Array(-1, -2, -3),
         bindings = new Array(3)),
       PatternQuery(2, Array(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2)),
-        variables = Array(-1, -2),
         bindings = new Array(2)),
       PatternQuery(3, Array(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3)),
-        variables = Array(-1, -2, -3),
         bindings = new Array(3)),
       PatternQuery(4, Array(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4)),
-        variables = Array(-1, -2, -3, -4),
         bindings = new Array(4)),
       PatternQuery(5, Array(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571)),
-        variables = Array(-1),
         bindings = new Array(1)),
       PatternQuery(6, Array(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11)),
-        variables = Array(-1, -2),
         bindings = new Array(2)),
       PatternQuery(7, Array(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409)),
-        variables = Array(-1, -2, -3),
         bindings = new Array(3)))
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
@@ -230,14 +224,14 @@ object Lubm160Benchmark extends App {
       ((nanoseconds / 100000.0).round) / 10.0
     }
 
-    def executeOnQueryEngine(q: PatternQuery): (List[PatternQuery], Map[String, Any]) = {
+    def executeOnQueryEngine(q: PatternQuery): QueryResult = {
       val resultFuture = qe.executeQuery(q, optimizer)
       try {
         Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
       } catch {
         case t: Throwable =>
           println(s"Query $q timed out!")
-          (List(), Map("exception" -> t).withDefaultValue(""))
+          QueryResult(Array(), Array("exception" -> t))
       }
     }
 
@@ -271,16 +265,17 @@ object Lubm160Benchmark extends App {
       val query = queries(queryIndex)
       val startTime = System.nanoTime
       val queryResult = executeOnQueryEngine(query)
+      val queryStats = queryResult.stats.toMap.withDefaultValue("")
       val finishTime = System.nanoTime
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
-      val timeToFirstResult = roundToMillisecondFraction(queryResult._2("firstResultNanoTime").asInstanceOf[Long] - startTime)
-      val optimizingTime = roundToMillisecondFraction(queryResult._2("optimizingDuration").asInstanceOf[Long])
+      val timeToFirstResult = roundToMillisecondFraction(queryStats("firstResultNanoTime").asInstanceOf[Long] - startTime)
+      val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
       runResult += s"revision" -> revision
       runResult += s"queryId" -> queryId.toString
       runResult += s"optimizer" -> optimizer.toString
-      runResult += s"query" -> queryResult._2("optimizedQuery").toString
-      runResult += s"exception" -> queryResult._2("exception").toString
-      runResult += s"results" -> queryResult._1.length.toString
+      runResult += s"query" -> queryStats("optimizedQuery").toString
+      runResult += s"exception" -> queryStats("exception").toString
+      runResult += s"results" -> queryResult.queries.length.toString
       runResult += s"samplingQuery" -> query.isSamplingQuery.toString
       runResult += s"tickets" -> query.tickets.toString
       runResult += s"executionTime" -> executionTime.toString

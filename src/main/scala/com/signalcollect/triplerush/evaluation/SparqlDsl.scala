@@ -26,6 +26,7 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.PatternQuery
 import com.signalcollect.triplerush.Mapping
+import com.signalcollect.triplerush.QueryIds
 
 object SparqlDsl extends App {
   object | {
@@ -38,29 +39,53 @@ object SparqlDsl extends App {
     def -(o: String) = DslTriplePattern(s, p, o)
   }
   case class DslTriplePattern(s: String, p: String, o: String) {
-    def toTriplePattern: TriplePattern = {
-      TriplePattern(Mapping.register(s), Mapping.register(p), Mapping.register(o))
+    def toTriplePattern(variableToId: Map[String, Int]): TriplePattern = {
+      def getId(s: String): Int = {
+        if (variableToId.contains(s)) {
+          variableToId(s)
+        } else {
+          Mapping.register(s)
+        }
+      }
+      TriplePattern(getId(s), getId(p), getId(o))
     }
   }
   object SELECT {
-    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery = false, Long.MaxValue, List(s))
+    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery = false, Long.MaxValue, Map(s -> -1), Map(-1 -> s))
   }
   case class SAMPLE(tickets: Long) {
-    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery = true, tickets, List(s))
+    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery = true, tickets, Map(s -> -1), Map(-1 -> s))
   }
   case class BOUNDED(tickets: Long) {
-    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery = false, tickets, List(s))
+    def ?(s: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery = false, tickets, Map(s -> -1), Map(-1 -> s))
   }
-  case class DslVariableDeclaration(isSamplingQuery: Boolean, tickets: Long, variables: List[String]) {
-    def ?(variableName: String): DslVariableDeclaration = DslVariableDeclaration(isSamplingQuery, tickets, variableName :: variables)
+  case class DslVariableDeclaration(isSamplingQuery: Boolean, tickets: Long, variableToId: Map[String, Int], idToVariable: Map[Int, String]) {
+    def ?(variableName: String): DslVariableDeclaration = {
+      var vToI = variableToId
+      var iToV = idToVariable
+      if (!variableToId.contains(variableName)) {
+        val nextId = variableToId.values.min - 1
+        vToI += variableName -> nextId
+        iToV += nextId -> variableName
+      }
+      DslVariableDeclaration(isSamplingQuery, tickets, vToI, iToV)
+    }
     def WHERE(triplePatterns: DslTriplePattern*): DslQuery = {
-      DslQuery(isSamplingQuery, tickets, variables, triplePatterns.toList)
+      DslQuery(isSamplingQuery, tickets, variableToId, idToVariable, triplePatterns.toList)
     }
   }
-  case class DslQuery(isSamplingQuery: Boolean, tickets: Long, variables: List[String], dslTriplePatterns: List[DslTriplePattern])
+  case class DslQuery(isSamplingQuery: Boolean, tickets: Long, variableToId: Map[String, Int], idToVariable: Map[Int, String], dslTriplePatterns: List[DslTriplePattern]) {
+    def getString(id: Int): String = {
+      if (id < 0) {
+        idToVariable(id)
+      } else {
+        Mapping.getString(id)
+      }
+    }
+  }
+
   implicit def dsl2Query(q: DslQuery): PatternQuery = {
-    val variableIds = q.variables map (Mapping.register(_, isVariable = true))
     val queryId = if (q.isSamplingQuery) QueryIds.nextSamplingQueryId else QueryIds.nextFullQueryId
-    PatternQuery(queryId, q.dslTriplePatterns map (_.toTriplePattern) toArray, variables = variableIds.toArray, bindings = new Array[Int](variableIds.length), tickets = q.tickets)
+    PatternQuery(queryId, q.dslTriplePatterns map (_.toTriplePattern(q.variableToId)) toArray, bindings = new Array[Int](q.variableToId.size), tickets = q.tickets)
   }
 }
