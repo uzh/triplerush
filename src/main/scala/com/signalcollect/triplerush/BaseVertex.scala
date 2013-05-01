@@ -26,7 +26,7 @@ abstract class BaseVertex[Id, SignalType, State](
   val id: Id)
     extends Vertex[Id, State] {
 
-  var state: State = _
+  @transient var state: State = _
 
   def setState(s: State) {
     state = s

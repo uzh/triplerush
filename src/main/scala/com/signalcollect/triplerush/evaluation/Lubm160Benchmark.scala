@@ -40,6 +40,7 @@ import com.signalcollect.triplerush.QueryEngine
 import com.signalcollect.triplerush.QueryOptimizer
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Mapping
+import akka.event.Logging
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -48,8 +49,8 @@ import com.signalcollect.triplerush.Mapping
  * Evaluation is set to execute on a 'Kraken'-node.
  */
 object Lubm160Benchmark extends App {
-  val jvmHighThroughputGc = " -Xmx64000m" +
-    " -Xms64000m" +
+  def jvmHighThroughputGc = " -Xmx60000m" +
+    " -Xms60000m" +
     " -Xmn8000m" +
     " -d64" +
     " -XX:+UnlockExperimentalVMOptions" +
@@ -64,15 +65,16 @@ object Lubm160Benchmark extends App {
     " -Dsun.io.serialization.extendedDebugInfo=true" +
     " -XX:MaxInlineSize=1024"
 
-  val jvmParameters = " -Xmx64000m" +
-    " -Xms64000m"
-  val assemblyPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar"
+  def jvmParameters = " -Xmx60000m" +
+    " -Xms60000m"
+  def assemblyPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
-  val copyName = assemblyPath.replace("-SNAPSHOT", (Random.nextInt % 10000).toString)
-  assemblyFile.renameTo(new File(copyName))
+  //  val jobId = Random.nextInt % 10000
+  //  def copyName = assemblyPath.replace("-SNAPSHOT", jobId.toString)
+  //  assemblyFile.renameTo(new File(assemblyPath))
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = copyName, jvmParameters = jvmParameters, priority = TorquePriority.superfast)
+    localJarPath = assemblyPath, jvmParameters = jvmHighThroughputGc, priority = TorquePriority.superfast)
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
@@ -89,39 +91,15 @@ object Lubm160Benchmark extends App {
     }
   }
 
-  //graphBuilder = new GraphBuilder[Int, Float]().
-  //                withConsole(false).
-  //                withWorkerFactory(DistributedWorker).
-  //                withMessageBusFactory(new BulkAkkaMessageBusFactory(10000, false)).
-  //                withAkkaMessageCompression(akkaCompression).
-  //                withHeartbeatInterval(100).
-  //                withNodeProvisioner(new TorqueNodeProvisioner(
-  //                  torqueHost = new TorqueHost(
-  //                    jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-  //                    localJarPath = "./target/signal-collect-evaluation-assembly-2.0.0-SNAPSHOT.jar"),
-  //                  numberOfNodes = krakenNodes, jvmParameters = baseOptions + jvmParams)),
-  //              graphProvider = new WebGraphParserGzip(locationSplits, loggerFile, splitsToParse = splits, numberOfWorkers = krakenNodes * 24),
-  //              runConfiguration = ExecutionConfiguration.withExecutionMode(ExecutionMode.PureAsynchronous).withSignalThreshold(0.01)
-  //            ))
-
   /*********/
-  def evalName = "Small experiment with distributed nodes."
+  def evalName = "Distributed experiment with 10 nodes only, staged loading."
   //  def evalName = "Local debugging."
-  val runs = 1
+  def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
-  val graphBuilder = GraphBuilder.withMessageBusFactory(
-      new BulkAkkaMessageBusFactory(1024, false)).
-      withConsole(true, 8080).
-      withNodeProvisioner(new TorqueNodeProvisioner(
-    torqueHost = new TorqueHost(
-      jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-      localJarPath = copyName,
-      jvmParameters = jvmHighThroughputGc),
-    numberOfNodes = 10))
   /*********/
 
   for (run <- 1 to runs) {
-    for (queryId <- 1 to 7) {
+    for (queryId <- 1 to 1) {
       for (optimizer <- List(QueryOptimizer.Clever)) {
         //for (tickets <- List(1000, 10000, 100000, 1000000)) {
         //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
@@ -133,8 +111,7 @@ object Lubm160Benchmark extends App {
           false,
           Long.MaxValue,
           optimizer,
-          getRevision,
-          graphBuilder))
+          getRevision))
       }
     }
   }
@@ -146,8 +123,7 @@ object Lubm160Benchmark extends App {
     sampling: Boolean,
     tickets: Long,
     optimizer: QueryOptimizer.Value,
-    revision: String,
-    graphBuilder: GraphBuilder[Any, Any])(): List[Map[String, String]] = {
+    revision: String)(): List[Map[String, String]] = {
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
@@ -214,12 +190,27 @@ object Lubm160Benchmark extends App {
     }
 
     var baseResults = Map[String, String]()
-    val qe = new QueryEngine(graphBuilder)
+    val qe = new QueryEngine(GraphBuilder.withMessageBusFactory(
+      new BulkAkkaMessageBusFactory(1024, false)).
+      withMessageSerialization(false).
+      //      withLoggingLevel(Logging.DebugLevel).
+      //      withConsole(true, 8080).
+      withNodeProvisioner(new TorqueNodeProvisioner(
+        torqueHost = new TorqueHost(
+          jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
+          localJarPath = assemblyPath,
+          jvmParameters = jvmHighThroughputGc),
+        numberOfNodes = 10)))
 
     def loadSmallLubm {
       val smallLubmFolderName = "lubm160-filtered-splits"
       for (splitId <- 0 until 2880) {
         qe.loadBinary(s"./$smallLubmFolderName/$splitId.filtered-split", Some(splitId))
+        if (splitId % 288 == 287) {
+          println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
+          qe.awaitIdle
+          println(s"Continuing graph loading..")
+        }
       }
       println("Query engine preparing query execution")
       qe.prepareQueryExecution

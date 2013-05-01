@@ -20,12 +20,11 @@
 
 package com.signalcollect.triplerush
 
-import scala.collection.mutable.TreeSet
-
 import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
 import com.signalcollect.examples.CompactIntSet
-import com.signalcollect.triplerush.Expression.{* => *}
+import com.signalcollect.triplerush.Expression.{ * => * }
+import scala.collection.mutable.TreeSet
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -57,7 +56,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
     }
   }
 
-  var cardinality = 0
+  @transient var cardinality = 0
 
   def optimizeEdgeRepresentation {
     childDeltasOptimized = CompactIntSet.create(childDeltas.toArray)
@@ -66,11 +65,11 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
 
   override def edgeCount = edgeCounter
 
-  var edgeCounter = 0
+  @transient var edgeCounter = 0
 
-  var childDeltas = TreeSet[Int]()
+  @transient var childDeltas: TreeSet[Int] = TreeSet[Int]()
 
-  var childDeltasOptimized: Array[Byte] = null //TODO: Figure out if this is more elegant using ArrayBuffer
+  @transient var childDeltasOptimized: Array[Byte] = _
 
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
     childDeltas = TreeSet[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
@@ -109,7 +108,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
     //    }
   }
 
-  protected val childPatternCreator = id.childPatternRecipe
+  @transient protected val childPatternCreator = id.childPatternRecipe
 
   def processFullQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
     assert(childDeltasOptimized != null)

@@ -97,10 +97,15 @@ class ResultRecipientActor extends Actor {
   }
 }
 
+/**
+ * Only works if the file contains at least one triple.
+ */
 case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEditor[Any, Any] => Unit] {
 
-  val is = new FileInputStream(binaryFilename)
-  val dis = new DataInputStream(is)
+  var is: FileInputStream = _
+  var dis: DataInputStream = _
+
+  var isInitialized = false
 
   protected def readNextTriplePattern: TriplePattern = {
     try {
@@ -119,11 +124,27 @@ case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEdito
     }
   }
 
-  var nextTriplePattern: TriplePattern = readNextTriplePattern
+  var nextTriplePattern: TriplePattern = null
 
-  def hasNext = nextTriplePattern != null
+  def initialize {
+    is = new FileInputStream(binaryFilename)
+    dis = new DataInputStream(is)
+    nextTriplePattern = readNextTriplePattern
+    isInitialized = true
+  }
+
+  def hasNext = {
+    if (!isInitialized) {
+      true
+    } else {
+      nextTriplePattern != null
+    }
+  }
 
   def next: GraphEditor[Any, Any] => Unit = {
+    if (!isInitialized) {
+      initialize
+    }
     val patternCopy = nextTriplePattern
     val loader: GraphEditor[Any, Any] => Unit = FileLoaders.addTriple(patternCopy, _)
     nextTriplePattern = readNextTriplePattern
@@ -228,6 +249,9 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
   private var queryExecutionPrepared = false
 
   def prepareQueryExecution {
+    print("Waiting for graph loading to finish ... ")
+    g.awaitIdle
+    println("Done")
     print("Starting continuous asynchronous mode ... ")
     g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
     println("Done")

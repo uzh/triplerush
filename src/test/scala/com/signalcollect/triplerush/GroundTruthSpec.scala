@@ -310,7 +310,7 @@ WHERE
 
   val qe = new QueryEngine(graphBuilder = GraphBuilder.
     withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).
-    withMessageSerialization(false))
+    withMessageSerialization(true))
 
   println("Loading LUBM1 ... ")
   for (fileNumber <- 0 to 14) {

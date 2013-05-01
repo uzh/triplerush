@@ -43,11 +43,11 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
 
   def cardinality = edgeCounter
 
-  var edgeCounter = 0
+  @transient var edgeCounter = 0
 
-  var childDeltas = TreeSet[Int]()
+  @transient var childDeltas = TreeSet[Int]()
 
-  var childDeltasOptimized: Array[Int] = null //TODO: Figure out if this is more elegant using ArrayBuffer
+  @transient var childDeltasOptimized: Array[Int] = _
 
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
     childDeltas = TreeSet[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
@@ -66,7 +66,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
     wasAdded
   }
 
-  protected val childPatternCreator = id.childPatternRecipe
+  @transient protected val childPatternCreator = id.childPatternRecipe
 
   /**
    * Binds the queries to the pattern of this vertex and routes them to their next destinations.
