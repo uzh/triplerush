@@ -24,7 +24,7 @@ import java.util.Arrays
 import scala.collection.mutable.TreeSet
 import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.Expression.{* => *}
+import com.signalcollect.triplerush.Expression.{ * => * }
 
 class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
   /**
@@ -37,15 +37,23 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
     childDeltas = null
   }
 
+  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    super.afterInitialization(graphEditor)
+    childDeltas = TreeSet[Int]()
+    childPatternCreator = id.childPatternRecipe
+  }
+
   override def edgeCount = edgeCounter
 
   def cardinality = edgeCounter
 
-  @transient var edgeCounter = 0
+  @transient var edgeCounter: Int = _
 
-  @transient var childDeltas = TreeSet[Int]()
+  @transient var childDeltas: TreeSet[Int] = _
 
   @transient var childDeltasOptimized: Array[Int] = _
+  
+  @transient var childPatternCreator: Int => TriplePattern = _
 
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
     childDeltas = TreeSet[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
@@ -63,8 +71,6 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
     }
     wasAdded
   }
-
-  @transient protected val childPatternCreator = id.childPatternRecipe
 
   /**
    * Binds the queries to the pattern of this vertex and routes them to their next destinations.

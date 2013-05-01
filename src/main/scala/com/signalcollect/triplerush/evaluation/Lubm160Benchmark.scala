@@ -93,34 +93,34 @@ object Lubm160Benchmark extends App {
   }
 
   /*********/
-  def evalName = "Distributed experiment with 10 and efficient serialization."
+  def evalName = "Distributed experiment on LUBM10240 with 10 nodes and efficient serialization."
   //  def evalName = "Local debugging."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
   for (run <- 1 to runs) {
-    for (queryId <- 1 to 1) {
-      for (optimizer <- List(QueryOptimizer.Clever)) {
-        //for (tickets <- List(1000, 10000, 100000, 1000000)) {
-        //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
-        //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
-        //      }
-        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
-          evalName,
-          queryId,
-          false,
-          Long.MaxValue,
-          optimizer,
-          getRevision))
-      }
+    // for (queryId <- 1 to 1) {
+    for (optimizer <- List(QueryOptimizer.Clever)) {
+      //for (tickets <- List(1000, 10000, 100000, 1000000)) {
+      //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
+      //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
+      //      }
+      evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
+        evalName,
+        //queryId,
+        false,
+        Long.MaxValue,
+        optimizer,
+        getRevision))
     }
+    //  }
   }
   evaluation.execute
 
   def lubmBenchmarkRun(
     description: String,
-    queryId: Int,
+    //queryId: Int,
     sampling: Boolean,
     tickets: Long,
     optimizer: Int,
@@ -187,7 +187,8 @@ object Lubm160Benchmark extends App {
     val qe = new QueryEngine(GraphBuilder.withMessageBusFactory(
       new BulkAkkaMessageBusFactory(1024, false)).
       withMessageSerialization(false).
-      //      withLoggingLevel(Logging.DebugLevel).
+      withAkkaMessageCompression(true).
+      //            withLoggingLevel(Logging.DebugLevel).
       //      withConsole(true, 8080).
       withNodeProvisioner(new TorqueNodeProvisioner(
         torqueHost = new TorqueHost(
@@ -200,7 +201,21 @@ object Lubm160Benchmark extends App {
       val smallLubmFolderName = "lubm160-filtered-splits"
       for (splitId <- 0 until 2880) {
         qe.loadBinary(s"./$smallLubmFolderName/$splitId.filtered-split", Some(splitId))
-        if (splitId % 288 == 287) {
+        if (splitId % 240 == 239) {
+          println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
+          qe.awaitIdle
+          println(s"Continuing graph loading..")
+        }
+      }
+      println("Query engine preparing query execution")
+      qe.prepareQueryExecution
+    }
+    
+    def loadLargeLubm {
+      val largeLubmFolderName = "/home/torque/tmp/lubm10240-filtered-splits"
+      for (splitId <- 0 until 2880) {
+        qe.loadBinary(s"$largeLubmFolderName/$splitId.filtered-split", Some(splitId))
+        if (splitId % 240 == 239) {
           println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
           qe.awaitIdle
           println(s"Continuing graph loading..")
@@ -231,7 +246,7 @@ object Lubm160Benchmark extends App {
       } catch {
         case t: Throwable =>
           println(s"Query $q timed out!")
-          QueryResult(Array(), Array("exception" -> t))
+          QueryResult(Array(), Array("exception"), Array(t))
       }
     }
 
@@ -239,13 +254,15 @@ object Lubm160Benchmark extends App {
      * Go to JVM JIT steady state by executing the query 100 times.
      */
     def jitSteadyState {
-      for (i <- 1 to 100) {
-        val queryIndex = queryId - 1
-        val query = fullQueries(queryIndex)
-        print(s"Warming up with query $query ...")
-        executeOnQueryEngine(query)
-        qe.awaitIdle
-        println(s" Done.")
+      for (i <- 1 to 5) {
+        for (queryId <- 1 to 7) {
+          val queryIndex = queryId - 1
+          val query = fullQueries(queryIndex)
+          print(s"Warming up with query $query ...")
+          executeOnQueryEngine(query)
+          qe.awaitIdle
+          println(s" Done.")
+        }
       }
     }
 
@@ -265,7 +282,7 @@ object Lubm160Benchmark extends App {
       val query = queries(queryIndex)
       val startTime = System.nanoTime
       val queryResult = executeOnQueryEngine(query)
-      val queryStats = queryResult.stats.toMap.withDefaultValue("")
+      val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
       val finishTime = System.nanoTime
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
       val timeToFirstResult = roundToMillisecondFraction(queryStats("firstResultNanoTime").asInstanceOf[Long] - startTime)
@@ -295,7 +312,8 @@ object Lubm160Benchmark extends App {
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
       println("Dispatching loading command to worker...")
-      loadSmallLubm
+      //loadSmallLubm
+      loadLargeLubm
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
@@ -303,10 +321,15 @@ object Lubm160Benchmark extends App {
     println("Starting warm-up...")
     jitSteadyState
     //cleanGarbage
-    println(s"Finished warm-up. Running evaluation for query $queryId.")
-    runEvaluation(queryId)
-    println(s"Done running evaluation for query $queryId.")
-    qe.awaitIdle
+    println(s"Finished warm-up.")
+    for (queryId <- 1 to 7) {
+      println(s"Running evaluation for query $queryId.")
+      runEvaluation(queryId)
+      println(s"Done running evaluation for query $queryId. Awaiting idle")
+      qe.awaitIdle
+      println("Idle")
+    }
+
     qe.shutdown
     finalResults
   }

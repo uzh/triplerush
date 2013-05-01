@@ -56,20 +56,28 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
     }
   }
 
-  @transient var cardinality = 0
+  @transient var cardinality: Int = _
 
+  @transient var edgeCounter: Int = _
+
+  @transient var childDeltas: TreeSet[Int] = _
+
+  @transient var childDeltasOptimized: Array[Byte] = _
+  
+  @transient var childPatternCreator: Int => TriplePattern = _
+  
   def optimizeEdgeRepresentation {
     childDeltasOptimized = CompactIntSet.create(childDeltas.toArray)
     childDeltas = null
   }
 
+  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    super.afterInitialization(graphEditor)
+    childDeltas = TreeSet[Int]()
+    childPatternCreator = id.childPatternRecipe
+  }
+
   override def edgeCount = edgeCounter
-
-  @transient var edgeCounter = 0
-
-  @transient var childDeltas: TreeSet[Int] = TreeSet[Int]()
-
-  @transient var childDeltasOptimized: Array[Byte] = _
 
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
     childDeltas = TreeSet[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
@@ -107,8 +115,6 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
     //      binIndex += 1
     //    }
   }
-
-  @transient protected val childPatternCreator = id.childPatternRecipe
 
   def processFullQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
     assert(childDeltasOptimized != null)

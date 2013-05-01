@@ -31,8 +31,13 @@ import com.signalcollect.Edge
 
 case class QueryResult(
   queries: Array[PatternQuery],
-  stats: Array[(Any, Any)])
+  statKeys: Array[Any],
+  statVariables: Array[Any])
 
+case class QueryDone(
+  statKeys: Array[Any],
+  statVariables: Array[Any])
+  
 case object QueryOptimizer {
   val None = 0 // Execute patterns in order passed.
   val Greedy = 1 // Execute patterns in descending order of cardinalities.
@@ -44,12 +49,12 @@ class QueryVertex(
   val resultRecipient: ActorRef,
   val optimizer: Int) extends Vertex[Int, List[PatternQuery]] {
 
-  @transient val id = query.queryId
+  val id = query.queryId
 
-  @transient var state: List[PatternQuery] = List[PatternQuery]()
+  @transient var state: List[PatternQuery] = _
 
-  @transient val expectedTickets: Long = query.tickets
-  @transient val expectedCardinalities = query.unmatched.size
+  val expectedTickets = query.tickets
+  val expectedCardinalities = query.unmatched.size
 
   @transient var receivedTickets: Long = 0
   @transient var firstResultNanoTime = 0l
@@ -61,6 +66,8 @@ class QueryVertex(
   @transient var optimizedQuery: PatternQuery = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    state = List[PatternQuery]()
+    cardinalities = Map()
     if (optimizer != QueryOptimizer.None && query.unmatched.size > 1) {
       // Gather pattern cardinalities first.
       query.unmatched foreach (triplePattern => {
@@ -68,6 +75,7 @@ class QueryVertex(
         optimizingStartTime = System.nanoTime
         graphEditor.sendSignal(CardinalityRequest(triplePattern, id), indexId, None)
       })
+      optimizedQuery = query
     } else {
       // Dispatch the query directly.
       graphEditor.sendSignal(query, query.unmatched.head.routingAddress, None)
@@ -75,7 +83,7 @@ class QueryVertex(
     }
   }
 
-  @transient var cardinalities: Map[TriplePattern, Int] = Map()
+  @transient var cardinalities: Map[TriplePattern, Int] = _
 
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
     signal match {
@@ -148,7 +156,7 @@ class QueryVertex(
     if (firstResultNanoTime == 0) {
       firstResultNanoTime = System.nanoTime
     }
-    state = query :: state
+    resultRecipient ! query
     //} else {
     // numberOfFailedQueries += 1
     // println(s"Failure: $query")
@@ -158,7 +166,10 @@ class QueryVertex(
   override def scoreSignal: Double = if (expectedTickets == receivedTickets) 1 else 0
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
-    resultRecipient ! QueryResult(state.toArray, Array("firstResultNanoTime" -> firstResultNanoTime, "optimizingDuration" -> optimizingDuration, "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString)))
+    val stats = Map[Any, Any]("firstResultNanoTime" -> firstResultNanoTime, "optimizingDuration" -> optimizingDuration, "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
+    val statsKeys: Array[Any] = stats.keys.toArray
+    val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
+    resultRecipient ! QueryDone(statsKeys, statsValues)
     //    val totalQueries = (numberOfFailedQueries + numberOfSuccessfulQueries).toDouble
     //    println(s"Total # of queries = $totalQueries failed : ${((numberOfFailedQueries / totalQueries) * 100.0).round}%")
     graphEditor.removeVertex(id)

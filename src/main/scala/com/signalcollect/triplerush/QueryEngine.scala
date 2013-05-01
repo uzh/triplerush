@@ -44,7 +44,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 
-case object UndeliverableSignalHandler {
+case class UndeliverableSignalHandler() {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
       case query: PatternQuery =>
@@ -57,7 +57,7 @@ case object UndeliverableSignalHandler {
   }
 }
 
-case object VertexPreparation {
+case class VertexPreparation() {
   def prepareVertex(graphEditor: GraphEditor[Any, Any])(v: Vertex[_, _]) {
     v match {
       case v: IndexVertex =>
@@ -73,22 +73,27 @@ case object VertexPreparation {
 case object RegisterQueryResultRecipient
 
 class ResultRecipientActor extends Actor {
-  var result: Any = _
+  var queryDone: QueryDone = _
   var queryResultRecipient: ActorRef = _
+
+  var queries = List[PatternQuery]()
 
   def receive = {
     case RegisterQueryResultRecipient =>
       queryResultRecipient = sender
-      if (result != null) {
-        queryResultRecipient ! result
+      if (queryDone != null) {
+        queryResultRecipient ! QueryResult(queries.toArray, queryDone.statKeys, queryDone.statVariables)
         self ! PoisonPill
       }
-    case result: QueryResult =>
-      this.result = result
+    case queryDone: QueryDone =>
+      this.queryDone = queryDone
       if (queryResultRecipient != null) {
-        queryResultRecipient ! result
+        queryResultRecipient ! QueryResult(queries.toArray, queryDone.statKeys, queryDone.statVariables)
         self ! PoisonPill
       }
+
+    case result: PatternQuery =>
+      queries = result :: queries
   }
 }
 
@@ -193,12 +198,13 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
     "com.signalcollect.triplerush.QueryVertex",
     "com.signalcollect.triplerush.QueryOptimizer",
     "com.signalcollect.triplerush.QueryResult",
+    "com.signalcollect.triplerush.QueryDone",
     "akka.actor.RepointableActorRef")).build
   print("Awaiting idle ... ")
   g.awaitIdle
   println("Done")
   print("Setting undeliverable signal handler ... ")
-  g.setUndeliverableSignalHandler(UndeliverableSignalHandler.handle _)
+  g.setUndeliverableSignalHandler(UndeliverableSignalHandler().handle _)
   println("Done")
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
@@ -240,7 +246,7 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
       resultFuture.asInstanceOf[Future[QueryResult]]
     } else {
       val p = promise[QueryResult]
-      p success (QueryResult(Array(), Array()))
+      p success (QueryResult(Array(), Array(), Array()))
       p.future
     }
   }
@@ -257,7 +263,7 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
     println("Preparing query execution and awaiting idle.")
     g.awaitIdle
     println("Prepared query execution and preparing vertices.")
-    g.foreachVertexWithGraphEditor(VertexPreparation.prepareVertex _)
+    g.foreachVertexWithGraphEditor(VertexPreparation().prepareVertex _)
     println("Done preparing vertices. Awaiting idle again")
     g.awaitIdle
     println("Done awaiting idle")
