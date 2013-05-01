@@ -119,10 +119,16 @@ class QueryVertex(
             case (pattern, oldCardinalityEstimate) =>
               // We don't care about the old estimate.
               var cardinalityEstimate = cardinalities(pattern).toDouble
-              for (boundVariable <- boundVariables) {
-                if (pattern.contains(boundVariable)) {
+              var foundUnbound = false
+              for (variable <- pattern.variables) {
+                if (boundVariables.contains(variable)) {
                   cardinalityEstimate = cardinalityEstimate / 100.0
+                } else {
+                  foundUnbound = true
                 }
+              }
+              if (!foundUnbound) {
+                cardinalityEstimate = 1.0 + cardinalityEstimate / 100000000
               }
               (pattern, cardinalityEstimate.toInt)
           }
