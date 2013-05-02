@@ -82,13 +82,13 @@ class ResultRecipientActor extends Actor {
     case RegisterQueryResultRecipient =>
       queryResultRecipient = sender
       if (queryDone != null) {
-        queryResultRecipient ! QueryResult(queries.toArray, queryDone.statKeys, queryDone.statVariables)
+        queryResultRecipient ! QueryResult(queries, queryDone.statKeys, queryDone.statVariables)
         self ! PoisonPill
       }
     case queryDone: QueryDone =>
       this.queryDone = queryDone
       if (queryResultRecipient != null) {
-        queryResultRecipient ! QueryResult(queries.toArray, queryDone.statKeys, queryDone.statVariables)
+        queryResultRecipient ! QueryResult(queries, queryDone.statKeys, queryDone.statVariables)
         self ! PoisonPill
       }
 
@@ -246,7 +246,7 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
       resultFuture.asInstanceOf[Future[QueryResult]]
     } else {
       val p = promise[QueryResult]
-      p success (QueryResult(Array(), Array(), Array()))
+      p success (QueryResult(List(), Array(), Array()))
       p.future
     }
   }

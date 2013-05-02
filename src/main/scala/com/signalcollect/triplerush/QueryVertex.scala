@@ -30,7 +30,7 @@ import com.signalcollect.Vertex
 import com.signalcollect.Edge
 
 case class QueryResult(
-  queries: Array[PatternQuery],
+  queries: List[PatternQuery],
   statKeys: Array[Any],
   statVariables: Array[Any])
 

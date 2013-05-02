@@ -50,8 +50,8 @@ import com.signalcollect.triplerush.QueryResult
  * Evaluation is set to execute on a 'Kraken'-node.
  */
 object Lubm160Benchmark extends App {
-  def jvmHighThroughputGc = " -Xmx60000m" +
-    " -Xms60000m" +
+  def jvmHighThroughputGc = " -Xmx64000m" +
+    " -Xms64000m" +
     " -Xmn8000m" +
     " -d64" +
     " -XX:+UnlockExperimentalVMOptions" +
@@ -66,8 +66,8 @@ object Lubm160Benchmark extends App {
     " -Dsun.io.serialization.extendedDebugInfo=true" +
     " -XX:MaxInlineSize=1024"
 
-  def jvmParameters = " -Xmx60000m" +
-    " -Xms60000m"
+  def jvmParameters = " -Xmx64000m" +
+    " -Xms64000m"
   def assemblyPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
   //  val jobId = Random.nextInt % 10000
@@ -194,14 +194,15 @@ object Lubm160Benchmark extends App {
         torqueHost = new TorqueHost(
           jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
           localJarPath = assemblyPath,
-          jvmParameters = jvmHighThroughputGc),
+          jvmParameters = jvmHighThroughputGc,
+          priority = TorquePriority.fast),
         numberOfNodes = 10)))
 
     def loadSmallLubm {
       val smallLubmFolderName = "lubm160-filtered-splits"
       for (splitId <- 0 until 2880) {
         qe.loadBinary(s"./$smallLubmFolderName/$splitId.filtered-split", Some(splitId))
-        if (splitId % 240 == 239) {
+        if (splitId % 288 == 279) {
           println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
           qe.awaitIdle
           println(s"Continuing graph loading..")
@@ -210,12 +211,12 @@ object Lubm160Benchmark extends App {
       println("Query engine preparing query execution")
       qe.prepareQueryExecution
     }
-    
+
     def loadLargeLubm {
       val largeLubmFolderName = "/home/torque/tmp/lubm10240-filtered-splits"
       for (splitId <- 0 until 2880) {
         qe.loadBinary(s"$largeLubmFolderName/$splitId.filtered-split", Some(splitId))
-        if (splitId % 240 == 239) {
+        if (splitId % 288 == 279) {
           println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
           qe.awaitIdle
           println(s"Continuing graph loading..")
@@ -246,7 +247,7 @@ object Lubm160Benchmark extends App {
       } catch {
         case t: Throwable =>
           println(s"Query $q timed out!")
-          QueryResult(Array(), Array("exception"), Array(t))
+          QueryResult(List(), Array("exception"), Array(t))
       }
     }
 
