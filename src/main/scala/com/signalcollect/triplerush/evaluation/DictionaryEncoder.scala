@@ -90,11 +90,11 @@ object DictionaryEncoder extends App {
 
   def register(entry: String): Int = {
     val id = baseDictionary.get(entry)
-    if (id != null && id != 0) {
+    if (id != 0) {
       id
     } else {
       val localId = universityDictionary.get(entry)
-      if (localId != null && localId != 0) {
+      if (localId != 0) {
         localId
       } else {
         val idForEntry = nextId

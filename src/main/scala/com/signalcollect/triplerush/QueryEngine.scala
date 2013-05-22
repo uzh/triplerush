@@ -199,6 +199,10 @@ case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withM
     "com.signalcollect.triplerush.QueryOptimizer",
     "com.signalcollect.triplerush.QueryResult",
     "com.signalcollect.triplerush.QueryDone",
+    "com.signalcollect.triplerush.TriplePattern",
+    "com.signalcollect.triplerush.PatternQuery",
+    "Array[com.signalcollect.triplerush.TriplePattern]",
+    "Array[com.signalcollect.triplerush.PatternQuery]",
     "akka.actor.RepointableActorRef")).build
   print("Awaiting idle ... ")
   g.awaitIdle

@@ -21,12 +21,14 @@
 package com.signalcollect.triplerush.evaluation
 
 import com.signalcollect.triplerush._
-import scala.language.implicitConversions
+import language.implicitConversions
+import language.postfixOps
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.PatternQuery
 import com.signalcollect.triplerush.Mapping
 import com.signalcollect.triplerush.QueryIds
+
 
 object SparqlDsl extends App {
   object | {

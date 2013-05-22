@@ -21,18 +21,14 @@
 package com.signalcollect.triplerush
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.Await
-import scala.concurrent.duration.FiniteDuration
+import concurrent.Await
+import concurrent.duration.FiniteDuration
 import org.junit.runner.RunWith
 import org.specs2.mutable.SpecificationWithJUnit
-import org.specs2.runner.JUnitRunner
-import org.specs2.specification.After
 import com.signalcollect.GraphBuilder
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
-import com.signalcollect.triplerush.evaluation.SparqlDsl.|
-import com.signalcollect.triplerush.evaluation.SparqlDsl.SELECT
-import com.signalcollect.triplerush.evaluation.SparqlDsl.dsl2Query
-import com.signalcollect.triplerush.PatternQuery
+import com.signalcollect.triplerush.evaluation.SparqlDsl._
+import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class SmallIntegrationSpec extends SpecificationWithJUnit {
