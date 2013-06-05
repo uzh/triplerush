@@ -185,25 +185,28 @@ case object FileLoaders {
   }
 }
 
-case class QueryEngine(graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false))) {
+case class QueryEngine(
+    graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)),
+    console: Boolean = false) {
   println("Graph engine is initializing ...")
-  private val g = graphBuilder.withKryoRegistrations(List(
-    "com.signalcollect.triplerush.PatternQuery",
-    "com.signalcollect.triplerush.TriplePattern",
-    "com.signalcollect.triplerush.BindingIndexVertex",
-    "com.signalcollect.triplerush.IndexVertex",
-    "com.signalcollect.triplerush.PlaceholderEdge",
-    "com.signalcollect.triplerush.CardinalityRequest",
-    "com.signalcollect.triplerush.CardinalityReply",
-    "com.signalcollect.triplerush.QueryVertex",
-    "com.signalcollect.triplerush.QueryOptimizer",
-    "com.signalcollect.triplerush.QueryResult",
-    "com.signalcollect.triplerush.QueryDone",
-    "com.signalcollect.triplerush.TriplePattern",
-    "com.signalcollect.triplerush.PatternQuery",
-    "Array[com.signalcollect.triplerush.TriplePattern]",
-    "Array[com.signalcollect.triplerush.PatternQuery]",
-    "akka.actor.RepointableActorRef")).build
+  private val g = graphBuilder.withConsole(console).
+    withKryoRegistrations(List(
+      "com.signalcollect.triplerush.PatternQuery",
+      "com.signalcollect.triplerush.TriplePattern",
+      "com.signalcollect.triplerush.BindingIndexVertex",
+      "com.signalcollect.triplerush.IndexVertex",
+      "com.signalcollect.triplerush.PlaceholderEdge",
+      "com.signalcollect.triplerush.CardinalityRequest",
+      "com.signalcollect.triplerush.CardinalityReply",
+      "com.signalcollect.triplerush.QueryVertex",
+      "com.signalcollect.triplerush.QueryOptimizer",
+      "com.signalcollect.triplerush.QueryResult",
+      "com.signalcollect.triplerush.QueryDone",
+      "com.signalcollect.triplerush.TriplePattern",
+      "com.signalcollect.triplerush.PatternQuery",
+      "Array[com.signalcollect.triplerush.TriplePattern]",
+      "Array[com.signalcollect.triplerush.PatternQuery]",
+      "akka.actor.RepointableActorRef")).build
   print("Awaiting idle ... ")
   g.awaitIdle
   println("Done")

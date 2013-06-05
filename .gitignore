@@ -35,3 +35,5 @@ project/plugins/project/
 
 *.zip
 binary-split/0.filtered-split
+
+*.snapshot

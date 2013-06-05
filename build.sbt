@@ -12,6 +12,8 @@ scalaVersion := "2.10.1"
 
 scalacOptions ++= Seq("-optimize")
 
+EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
+
 EclipseKeys.withSource := true
 
 test in assembly := {}

@@ -25,6 +25,7 @@ import com.signalcollect.GraphEditor
 import com.signalcollect.examples.CompactIntSet
 import com.signalcollect.triplerush.Expression.{ * => * }
 import scala.collection.mutable.TreeSet
+import com.signalcollect.interfaces.Inspectable
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -38,7 +39,24 @@ object SignalSet extends Enumeration with Serializable {
  * After graph loading, the `optimizeEdgeRepresentation` has to be called.
  * Query processing can only start once the edge representation has been optimized.
  */
-class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
+class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with Inspectable[TriplePattern, Any] {
+
+  override def targetIds: Traversable[TriplePattern] = {
+    if (childDeltas != null) {
+      childDeltas map (childPatternCreator)
+    } else {
+      // TODO: Give CompactIntSet a nicer API
+      var childDeltasTemp = List[Int]()
+      CompactIntSet.foreach(childDeltasOptimized, childDelta => childDeltasTemp = childDelta :: childDeltasTemp)
+      childDeltasTemp map (childPatternCreator)
+    }
+  }
+
+  override def expose: Map[String, Any] = {
+    var extraInfo: Map[String, Any] = Map("outDegree" -> edgeCount)
+    extraInfo ++= targetIds take 10 map { targetId => "outEdge sample" -> targetId }
+    extraInfo
+  }
 
   /**
    * Can be called anytime to compute the cardinalities.
@@ -63,9 +81,9 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
   @transient var childDeltas: TreeSet[Int] = _
 
   @transient var childDeltasOptimized: Array[Byte] = _
-  
+
   @transient var childPatternCreator: Int => TriplePattern = _
-  
+
   def optimizeEdgeRepresentation {
     childDeltasOptimized = CompactIntSet.create(childDeltas.toArray)
     childDeltas = null

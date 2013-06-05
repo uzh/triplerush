@@ -22,11 +22,26 @@ package com.signalcollect.triplerush
 
 import java.util.Arrays
 import scala.collection.mutable.TreeSet
-import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.Expression.{ * => * }
+import com.signalcollect.interfaces.Inspectable
+import com.signalcollect.DefaultEdge
+import com.signalcollect.Edge
 
-class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) {
+class TripleIndexEdge(override val sourceId: TriplePattern, override val targetId: TriplePattern) extends DefaultEdge[TriplePattern](targetId) {
+  def signal = Unit
+}
+
+class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with Inspectable[TriplePattern, Any] {
+
+  override def targetIds: Traversable[TriplePattern] = {
+    if (childDeltas != null) {
+      childDeltas map (childPatternCreator)
+    } else {
+      childDeltasOptimized map (childPatternCreator)
+    }
+  }
+
   /**
    * Changes the edge representation from a List to a sorted Array.
    */
@@ -52,7 +67,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   @transient var childDeltas: TreeSet[Int] = _
 
   @transient var childDeltasOptimized: Array[Int] = _
-  
+
   @transient var childPatternCreator: Int => TriplePattern = _
 
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
