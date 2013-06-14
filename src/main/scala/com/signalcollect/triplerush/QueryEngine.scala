@@ -43,6 +43,7 @@ import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.util.Timeout
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
+import com.signalcollect.triplerush.Expression._
 
 case class UndeliverableSignalHandler() {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
@@ -213,6 +214,10 @@ case class QueryEngine(
   print("Setting undeliverable signal handler ... ")
   g.setUndeliverableSignalHandler(UndeliverableSignalHandler().handle _)
   println("Done")
+  print("Adding rot index vertex ...")
+  g.addVertex(new IndexVertex(TriplePattern(*, *, *)))
+  println("Done")
+  
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
   print("Awaiting idle ... ")

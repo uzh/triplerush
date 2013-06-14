@@ -21,18 +21,22 @@
 package com.signalcollect.triplerush
 
 import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.Expression._
 
 /**
  * Basic vertex that recursively builds the TripleRush index structure.
  */
 abstract class PatternVertex[Signal, State](
   id: TriplePattern)
-  extends BaseVertex[TriplePattern, Signal, State](id) {
+    extends BaseVertex[TriplePattern, Signal, State](id) {
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     // Build the hierarchical index on initialization.
     id.parentPatterns foreach { parentId =>
-      graphEditor.addVertex(new IndexVertex(parentId))
+      if (parentId != TriplePattern(*, *, *)) {
+        // The root is added initially, no need to add again.
+        graphEditor.addVertex(new IndexVertex(parentId))
+      }
       val idDelta = id.parentIdDelta(parentId)
       graphEditor.addEdge(parentId, new PlaceholderEdge(idDelta))
     }
