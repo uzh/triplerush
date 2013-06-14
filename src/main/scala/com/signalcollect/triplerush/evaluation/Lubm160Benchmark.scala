@@ -93,10 +93,11 @@ object Lubm160Benchmark extends App {
   }
 
   /*********/
-  def evalName = "Distributed experiment on LUBM10240 with 10 nodes and efficient serialization."
+  def evalName = "LUBM 160 eval."
   //  def evalName = "Local debugging."
   def runs = 1
-  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
+  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
+  //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
   for (run <- 1 to runs) {
@@ -152,32 +153,32 @@ object Lubm160Benchmark extends App {
       "undergraduateDegreeFrom" -> "UGDF",
       "subOrganizationOf" -> "subOrg"))
 
-    /**
-     * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf
-     * Result sizes from: http://research.microsoft.com/pubs/183717/Trinity.RDF.pdf
-     *            L1   L2       L3 L4 L5 L6  L7
-     * LUBM-160   397  173040   0  10 10 125 7125
-     * LUBM-10240 2502 11016920 0  10 10 125 450721
-     *
-     * Times Trinity: 281 132 110  5    4 9 630
-     * Time TripleR: 3815 222 3126 2    1 2 603
-     */
-    def fullQueries: List[PatternQuery] = List(
-      PatternQuery(queryId = 1,
-        unmatched = Array(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3)),
-        bindings = new Array(3)),
-      PatternQuery(2, Array(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2)),
-        bindings = new Array(2)),
-      PatternQuery(3, Array(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3)),
-        bindings = new Array(3)),
-      PatternQuery(4, Array(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4)),
-        bindings = new Array(4)),
-      PatternQuery(5, Array(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571)),
-        bindings = new Array(1)),
-      PatternQuery(6, Array(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11)),
-        bindings = new Array(2)),
-      PatternQuery(7, Array(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409)),
-        bindings = new Array(3)))
+      /**
+       * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf
+       * Result sizes from: http://research.microsoft.com/pubs/183717/Trinity.RDF.pdf
+       *            L1   L2       L3 L4 L5 L6  L7
+       * LUBM-160   397  173040   0  10 10 125 7125
+       * LUBM-10240 2502 11016920 0  10 10 125 450721
+       *
+       * Times Trinity: 281 132 110  5    4 9 630
+       * Time TripleR: 3815 222 3126 2    1 2 603
+       */
+      def fullQueries: List[PatternQuery] = List(
+        PatternQuery(queryId = 1,
+          unmatched = Array(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3)),
+          bindings = new Array(3)),
+        PatternQuery(2, Array(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2)),
+          bindings = new Array(2)),
+        PatternQuery(3, Array(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3)),
+          bindings = new Array(3)),
+        PatternQuery(4, Array(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4)),
+          bindings = new Array(4)),
+        PatternQuery(5, Array(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571)),
+          bindings = new Array(1)),
+        PatternQuery(6, Array(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11)),
+          bindings = new Array(2)),
+        PatternQuery(7, Array(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409)),
+          bindings = new Array(3)))
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
       fullQueries
@@ -187,134 +188,136 @@ object Lubm160Benchmark extends App {
     val qe = new QueryEngine(GraphBuilder.withMessageBusFactory(
       new BulkAkkaMessageBusFactory(1024, false)).
       withMessageSerialization(false).
-      withAkkaMessageCompression(true).
+      withAkkaMessageCompression(true))
       //            withLoggingLevel(Logging.DebugLevel).
       //      withConsole(true, 8080).
-      withNodeProvisioner(new TorqueNodeProvisioner(
-        torqueHost = new TorqueHost(
-          jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-          localJarPath = assemblyPath,
-          jvmParameters = jvmHighThroughputGc,
-          priority = TorquePriority.fast),
-        numberOfNodes = 10)))
+      //      withNodeProvisioner(new TorqueNodeProvisioner(
+      //        torqueHost = new TorqueHost(
+      //          jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
+      //          localJarPath = assemblyPath,
+      //          jvmParameters = jvmHighThroughputGc,
+      //          priority = TorquePriority.fast),
+      //        numberOfNodes = 10)))
 
-    def loadSmallLubm {
-      val smallLubmFolderName = "lubm160-filtered-splits"
-      for (splitId <- 0 until 2880) {
-        qe.loadBinary(s"./$smallLubmFolderName/$splitId.filtered-split", Some(splitId))
-        if (splitId % 288 == 279) {
-          println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
-          qe.awaitIdle
-          println(s"Continuing graph loading..")
+      def loadSmallLubm {
+        val smallLubmFolderName = "lubm160-filtered-splits"
+        for (splitId <- 0 until 2880) {
+          qe.loadBinary(s"./$smallLubmFolderName/$splitId.filtered-split", Some(splitId))
+          if (splitId % 288 == 279) {
+            println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
+            qe.awaitIdle
+            println(s"Continuing graph loading...")
+          }
+        }
+        println("Query engine preparing query execution.")
+        qe.prepareQueryExecution
+        println("Query engine ready.")
+      }
+
+      def loadLargeLubm {
+        val largeLubmFolderName = "/home/torque/tmp/lubm10240-filtered-splits"
+        for (splitId <- 0 until 2880) {
+          qe.loadBinary(s"$largeLubmFolderName/$splitId.filtered-split", Some(splitId))
+          if (splitId % 288 == 279) {
+            println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
+            qe.awaitIdle
+            println(s"Continuing graph loading..")
+          }
+        }
+        println("Query engine preparing query execution")
+        qe.prepareQueryExecution
+      }
+
+      /**
+       * Returns the time in milliseconds it takes to execute the code in 'codeBlock'.
+       */
+      def measureTime(codeBlock: => Unit): Long = {
+        val startTime = System.currentTimeMillis
+        codeBlock
+        val finishTime = System.currentTimeMillis
+        finishTime - startTime
+      }
+
+      def roundToMillisecondFraction(nanoseconds: Long): Double = {
+        ((nanoseconds / 100000.0).round) / 10.0
+      }
+
+      def executeOnQueryEngine(q: PatternQuery): QueryResult = {
+        val resultFuture = qe.executeQuery(q, optimizer)
+        try {
+          Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
+        } catch {
+          case t: Throwable =>
+            println(s"Query $q timed out!")
+            QueryResult(List(), Array("exception"), Array(t))
         }
       }
-      println("Query engine preparing query execution")
-      qe.prepareQueryExecution
-    }
 
-    def loadLargeLubm {
-      val largeLubmFolderName = "/home/torque/tmp/lubm10240-filtered-splits"
-      for (splitId <- 0 until 2880) {
-        qe.loadBinary(s"$largeLubmFolderName/$splitId.filtered-split", Some(splitId))
-        if (splitId % 288 == 279) {
-          println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
-          qe.awaitIdle
-          println(s"Continuing graph loading..")
+      /**
+       * Go to JVM JIT steady state by executing the query 100 times.
+       */
+      def jitSteadyState {
+        for (i <- 1 to 5) {
+          for (queryId <- 1 to 7) {
+            val queryIndex = queryId - 1
+            val query = fullQueries(queryIndex)
+            print(s"Warming up with query $query ...")
+            executeOnQueryEngine(query)
+            qe.awaitIdle
+            println(s" Done.")
+          }
         }
       }
-      println("Query engine preparing query execution")
-      qe.prepareQueryExecution
-    }
 
-    /**
-     * Returns the time in milliseconds it takes to execute the code in 'codeBlock'.
-     */
-    def measureTime(codeBlock: => Unit): Long = {
-      val startTime = System.currentTimeMillis
-      codeBlock
-      val finishTime = System.currentTimeMillis
-      finishTime - startTime
-    }
-
-    def roundToMillisecondFraction(nanoseconds: Long): Double = {
-      ((nanoseconds / 100000.0).round) / 10.0
-    }
-
-    def executeOnQueryEngine(q: PatternQuery): QueryResult = {
-      val resultFuture = qe.executeQuery(q, optimizer)
-      try {
-        Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
-      } catch {
-        case t: Throwable =>
-          println(s"Query $q timed out!")
-          QueryResult(List(), Array("exception"), Array(t))
-      }
-    }
-
-    /**
-     * Go to JVM JIT steady state by executing the query 100 times.
-     */
-    def jitSteadyState {
-      for (i <- 1 to 5) {
-        for (queryId <- 1 to 7) {
-          val queryIndex = queryId - 1
-          val query = fullQueries(queryIndex)
-          print(s"Warming up with query $query ...")
-          executeOnQueryEngine(query)
-          qe.awaitIdle
-          println(s" Done.")
+      def cleanGarbage {
+        for (i <- 1 to 10) {
+          System.gc
+          Thread.sleep(100)
         }
+        Thread.sleep(10000)
       }
-    }
-
-    def cleanGarbage {
-      for (i <- 1 to 10) {
-        System.gc
-        Thread.sleep(100)
-      }
-      Thread.sleep(10000)
-    }
 
     var finalResults = List[Map[String, String]]()
-    def runEvaluation(queryId: Int) {
-      var runResult = baseResults
-      var date: Date = new Date
-      val queryIndex = queryId - 1
-      val query = queries(queryIndex)
-      val startTime = System.nanoTime
-      val queryResult = executeOnQueryEngine(query)
-      val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
-      val finishTime = System.nanoTime
-      val executionTime = roundToMillisecondFraction(finishTime - startTime)
-      val timeToFirstResult = roundToMillisecondFraction(queryStats("firstResultNanoTime").asInstanceOf[Long] - startTime)
-      val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
-      runResult += s"revision" -> revision
-      runResult += s"queryId" -> queryId.toString
-      runResult += s"optimizer" -> optimizer.toString
-      runResult += s"query" -> queryStats("optimizedQuery").toString
-      runResult += s"exception" -> queryStats("exception").toString
-      runResult += s"results" -> queryResult.queries.length.toString
-      runResult += s"samplingQuery" -> query.isSamplingQuery.toString
-      runResult += s"tickets" -> query.tickets.toString
-      runResult += s"executionTime" -> executionTime.toString
-      runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
-      runResult += s"optimizingTime" -> optimizingTime.toString
-      runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
-      runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
-      runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
-      runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
-      runResult += s"loadNumber" -> 160.toString
-      runResult += s"date" -> date.toString
-      finalResults = runResult :: finalResults
-    }
+      def runEvaluation(queryId: Int) {
+        var runResult = baseResults
+        var date: Date = new Date
+        val queryIndex = queryId - 1
+        val query = queries(queryIndex)
+        val startTime = System.nanoTime
+        val queryResult = executeOnQueryEngine(query)
+        val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
+        val finishTime = System.nanoTime
+        val executionTime = roundToMillisecondFraction(finishTime - startTime)
+        val timeToFirstResult = roundToMillisecondFraction(queryStats("firstResultNanoTime").asInstanceOf[Long] - startTime)
+        val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
+        runResult += s"revision" -> revision
+        runResult += s"queryId" -> queryId.toString
+        runResult += s"optimizer" -> optimizer.toString
+        runResult += s"queryCopyCount" -> queryStats("queryCopyCount").toString
+        runResult += s"query" -> queryStats("optimizedQuery").toString
+        runResult += s"exception" -> queryStats("exception").toString
+        runResult += s"results" -> queryResult.queries.length.toString
+        runResult += s"samplingQuery" -> query.isSamplingQuery.toString
+        runResult += s"tickets" -> query.tickets.toString
+        runResult += s"executionTime" -> executionTime.toString
+        runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
+        runResult += s"optimizingTime" -> optimizingTime.toString
+        runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
+        runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
+        runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
+        runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
+        runResult += s"loadNumber" -> 160.toString
+        runResult += s"date" -> date.toString
+        finalResults = runResult :: finalResults
+      }
 
-    def bytesToGigabytes(bytes: Long): Double = ((bytes / 1073741824.0) * 10.0).round / 10.0
+      def bytesToGigabytes(bytes: Long): Double = ((bytes / 1073741824.0) * 10.0).round / 10.0
 
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
       println("Dispatching loading command to worker...")
-      //loadSmallLubm
-      loadLargeLubm
+      loadSmallLubm
+      //loadLargeLubm
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
