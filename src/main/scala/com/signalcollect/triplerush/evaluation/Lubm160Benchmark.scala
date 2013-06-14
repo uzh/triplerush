@@ -68,7 +68,7 @@ object Lubm160Benchmark extends App {
 
   def jvmParameters = " -Xmx64000m" +
     " -Xms64000m"
-  def assemblyPath = "./target/triplerush-assembly-1.0-SNAPSHOT.jar"
+  def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
   //  val jobId = Random.nextInt % 10000
   //  def copyName = assemblyPath.replace("-SNAPSHOT", jobId.toString)
