@@ -56,6 +56,7 @@ class QueryVertex(
   val expectedTickets = query.tickets
   val expectedCardinalities = query.unmatched.size
 
+  @transient var queryCopyCount: Long = 0
   @transient var receivedTickets: Long = 0
   @transient var firstResultNanoTime = 0l
   @transient var complete = true
@@ -88,6 +89,7 @@ class QueryVertex(
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
     signal match {
       case ticketsOfFailedQuery: Long =>
+        queryCopyCount += 1
         receivedTickets += ticketsOfFailedQuery
       //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
       case query: PatternQuery =>
@@ -147,6 +149,7 @@ class QueryVertex(
   }
 
   def processQuery(query: PatternQuery) {
+    queryCopyCount += 1
     receivedTickets += query.tickets
     complete &&= query.isComplete
     //if (query.unmatched.isEmpty) {
@@ -166,7 +169,11 @@ class QueryVertex(
   override def scoreSignal: Double = if (expectedTickets == receivedTickets) 1 else 0
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
-    val stats = Map[Any, Any]("firstResultNanoTime" -> firstResultNanoTime, "optimizingDuration" -> optimizingDuration, "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
+    val stats = Map[Any, Any](
+        "firstResultNanoTime" -> firstResultNanoTime,
+        "optimizingDuration" -> optimizingDuration,
+        "queryCopyCount" -> queryCopyCount,
+        "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
     val statsKeys: Array[Any] = stats.keys.toArray
     val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
     resultRecipient ! QueryDone(statsKeys, statsValues)
