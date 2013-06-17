@@ -34,37 +34,15 @@ import java.io.DataInputStream
 import java.io.EOFException
 import scala.collection.mutable.HashSet
 
-object DuplicateFilter extends App {
+object DuplicateFilter extends FileTransformation {
 
-  val modulos = (args map (_.toInt)).toSet
-  val toSplitFolderName = "lubm10240-splits"
-  val destinationFolderName = "lubm10240-filtered-splits"
-  val splits = 2880
-  val folder = new File(toSplitFolderName)
-  val initialTime = System.currentTimeMillis
-  var totalTriplesAfterFilter = 0
-  for (split <- (0 until splits)) {
-    val startTime = System.currentTimeMillis
-    print(s"Processing split $split/$splits ...")
-    val triplesAfterFilter = filterSplit(split)
-    totalTriplesAfterFilter += triplesAfterFilter
-    println(s" Done.")
-    val endTime = System.currentTimeMillis
-    val uniProcessingTime = (endTime - startTime).toDouble / 1000
-    println(s"Processing took $uniProcessingTime seconds.")
-    val totalTimeSoFar = ((endTime - initialTime).toDouble / 1000) / 3600
-    val totalTimeSoFarRounded = totalTimeSoFar.floor
-    println(s"Total elapsed time: $totalTimeSoFarRounded hours and ${((totalTimeSoFar - totalTimeSoFarRounded) * 60).floor.toInt} minutes.")
-    val estimatedTimePerSplit = totalTimeSoFar / (split + 1).toDouble
-    val remainingSplits = (splits - (split + 1))
-    val estimatedRemaining = remainingSplits * estimatedTimePerSplit
-    val estimatedRemainingRounded = estimatedRemaining.floor
-    println(s"Estimated remaining time for remaining splits: ${estimatedRemainingRounded.toInt} hours and ${((estimatedRemaining - estimatedRemainingRounded) * 60).floor.toInt} minutes.")
-    println(s"# triples after filtering so far: $totalTriplesAfterFilter")
-  }
-
-  def filterSplit(split: Int): Int = {
-    val is = new FileInputStream(s"./$toSplitFolderName/$split.split")
+  def nameOfTransformation = "filtered"
+  def sourceFolder = "lubm10-binary"
+  override def destinationFolder = sourceFolder.replace("binary", nameOfTransformation)
+  override def shouldTransformFile(f: File) = f.getName.endsWith(".binary")
+  override def fileInDestinationFolder(fileName: String) = destinationFolder + "/" + fileName.replace(".owl", ".nt")
+  override def transform(sourceFile: File, targetFile: File) {
+    val is = new FileInputStream(sourceFile)
     val dis = new DataInputStream(is)
     val tripleSet = HashSet[TriplePattern]()
     try {
@@ -82,7 +60,7 @@ object DuplicateFilter extends App {
       case t: Throwable =>
         throw t
     }
-    val splitFileOutputStream = new FileOutputStream(s"./$destinationFolderName/$split.filtered-split")
+    val splitFileOutputStream = new FileOutputStream(targetFile)
     val splitDataOutputStream = new DataOutputStream(splitFileOutputStream)
     for (triplePattern <- tripleSet) {
       splitDataOutputStream.writeInt(triplePattern.s)

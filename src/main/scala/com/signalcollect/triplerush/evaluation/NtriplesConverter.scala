@@ -28,24 +28,19 @@ import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import java.nio.file.{ Files, Path, Paths }
 
-object LubmGenerator extends KrakenExecutable with App {
+object NtriplesConverter extends FileTransformation with App {
 
-  override def remoteRun {
-    val universities = 10
-    import FileOperations._
-
-    // Generate raw LUBM files.
-    s"java -cp uba.jar edu.lehigh.swat.bench.uba.Generator -univ $universities -onto http://swat.cse.lehigh.edu/onto/univ-bench.owl" !! (ProcessLogger(println(_)))
-
-    // Create new directory and move files there.
-    val targetFolder = createFolder(s"./lubm$universities")
-    println("Moving OWL files ...")
-    for (owlFile <- filesIn("./").filter(_.getName.endsWith("owl"))) {
-      println(s"Moving file ${owlFile.getName} ...")
-      move(owlFile, targetFolder)
+  def nameOfTransformation = "nt"
+  def sourceFolder = "lubm10"
+  
+  override def shouldTransformFile(f: File) = f.getName.endsWith(".owl")
+  override def fileInDestinationFolder(fileName: String) = destinationFolder + "/" + fileName.replace(".owl", ".nt")
+  // Convert the OWL files to ntriples format.
+  def transform(sourceFile: File, targetFile: File) {
+    if (!targetFile.exists) {
+      Seq("/usr/local/Cellar/raptor/2.0.8/bin/rapper", sourceFile.getAbsolutePath, "-e", "-o", "ntriples") #>> targetFile !! (ProcessLogger(println(_)))
     }
-    move(new File("./log.txt"), targetFolder)
-    println("All LUBM files have been copied.")
   }
+
 }
 
