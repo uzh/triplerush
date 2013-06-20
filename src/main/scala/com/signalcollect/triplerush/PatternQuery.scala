@@ -48,8 +48,8 @@ case class PatternQuery(
     unmatched.mkString("\n") + bindings.toString
   }
 
-  def getBindings: Array[(Int, Int)] = {
-    ((-1 to -bindings.length by -1).zip(bindings)).toArray
+  def getBindings: IndexedSeq[(Int, Int)] = {
+    ((-1 to -bindings.length by -1).zip(bindings))
   }
 
   /**
@@ -78,14 +78,14 @@ case class PatternQuery(
     newUnmatched: Array[TriplePattern] = unmatched.slice(1, unmatched.length),
     newBindings: Array[Int] = bindings.clone): PatternQuery = {
     // Subject is conflicting constant. No binding possible.
-    if (!patternToMatch.s.isVariable) return failedBinding
+    if (!patternToMatch.s.isVariable) return Constants.failedBinding
 
     // Subject is a variable that needs to be bound to the constant in the triple pattern. 
     // Bind value to variable.
     val variable = patternToMatch.s
     val boundValue = tp.s
 
-    if (isBindingIncompatible(patternToMatch.p, tp.p, variable, boundValue) || isBindingIncompatible(patternToMatch.o, tp.o, variable, boundValue)) return failedBinding
+    if (isBindingIncompatible(patternToMatch.p, tp.p, variable, boundValue) || isBindingIncompatible(patternToMatch.o, tp.o, variable, boundValue)) return Constants.failedBinding
 
     // No conflicts, we bind the value to the variable.
     val variableIndex = -(variable + 1)
@@ -107,14 +107,14 @@ case class PatternQuery(
     }
 
     // Predicate is conflicting constant. No binding possible.
-    if (!patternToMatch.p.isVariable) return failedBinding
+    if (!patternToMatch.p.isVariable) return Constants.failedBinding
 
     // Predicate is a variable that needs to be bound to the constant in the triple pattern. 
     // Bind value to variable.
     val variable = patternToMatch.p
     val boundValue = tp.p
 
-    if (isBindingIncompatible(patternToMatch.o, tp.o, variable, boundValue)) return failedBinding
+    if (isBindingIncompatible(patternToMatch.o, tp.o, variable, boundValue)) return Constants.failedBinding
 
     // No conflicts, we bind the value to the variable.
     val variableIndex = -(variable + 1)
@@ -136,7 +136,7 @@ case class PatternQuery(
     }
 
     // Object is conflicting constant. No binding possible.
-    if (!patternToMatch.o.isVariable) return failedBinding
+    if (!patternToMatch.o.isVariable) return Constants.failedBinding
 
     // Object is a variable that needs to be bound to the constant in the triple pattern. 
     // Bind value to variable.
@@ -154,8 +154,6 @@ case class PatternQuery(
 
   // If the variable appears multiple times in the same pattern, then all the bindings have to be compatible.  
   private def isBindingIncompatible(otherAttribute: Int, tpAttribute: Int, variable: Int, boundValue: Int) = (otherAttribute == variable && tpAttribute != boundValue)
-
-  private def failedBinding = null.asInstanceOf[PatternQuery]
 
   // Updates an attribute with a new binding.
   private def updatedAttribute(attribute: Int, variable: Int, boundValue: Int) = if (attribute == variable) boundValue else attribute
@@ -180,4 +178,8 @@ case class PatternQuery(
   def withTickets(numberOfTickets: Long, complete: Boolean = true) = {
     copy(tickets = numberOfTickets, isComplete = complete)
   }
+}
+
+object Constants {
+    val failedBinding = null.asInstanceOf[PatternQuery]
 }
