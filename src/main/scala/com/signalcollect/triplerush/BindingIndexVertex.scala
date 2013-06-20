@@ -90,7 +90,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   /**
    * Binds the queries to the pattern of this vertex and routes them to their next destinations.
    */
-  def bindQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
+  def bindQuery(query: QueryParticle, graphEditor: GraphEditor[Any, Any]) {
     //TODO: Evaluate running the process function in parallel on all the queries.
     assert(childDeltasOptimized != null)
     val nextPatternToMatch = query.unmatched.head
@@ -109,7 +109,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
     }
   }
 
-  def bind(query: PatternQuery, edges: Int, graphEditor: GraphEditor[Any, Any]) {
+  def bind(query: QueryParticle, edges: Int, graphEditor: GraphEditor[Any, Any]) {
     val avg = query.tickets / edges
     val complete = avg > 0
     var extras = query.tickets % edges
@@ -127,7 +127,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
 
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
     signal match {
-      case query: PatternQuery =>
+      case query: QueryParticle =>
         bindQuery(query, graphEditor)
       case CardinalityRequest(pattern, requestor) =>
         graphEditor.sendSignal(CardinalityReply(pattern, cardinality), requestor, None)
@@ -168,7 +168,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
     false
   }
 
-  def bindToTriplePattern(triplePattern: TriplePattern, query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
+  def bindToTriplePattern(triplePattern: TriplePattern, query: QueryParticle, graphEditor: GraphEditor[Any, Any]) {
     val boundQuery = query.bind(triplePattern)
     if (boundQuery != null) {
       if (boundQuery.unmatched.isEmpty) {

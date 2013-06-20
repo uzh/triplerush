@@ -48,7 +48,7 @@ import com.signalcollect.triplerush.Expression._
 case class UndeliverableSignalHandler() {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
-      case query: PatternQuery =>
+      case query: QueryParticle =>
         graphEditor.sendSignal(query.tickets, query.queryId, None)
       case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
@@ -77,7 +77,7 @@ class ResultRecipientActor extends Actor {
   var queryDone: QueryDone = _
   var queryResultRecipient: ActorRef = _
 
-  var queries = List[PatternQuery]()
+  var queries = List[QueryParticle]()
 
   def receive = {
     case RegisterQueryResultRecipient =>
@@ -93,7 +93,7 @@ class ResultRecipientActor extends Actor {
         self ! PoisonPill
       }
 
-    case result: PatternQuery =>
+    case result: QueryParticle =>
       queries = result :: queries
   }
 }
@@ -248,7 +248,7 @@ case class QueryEngine(
     }
   }
 
-  def executeQuery(q: PatternQuery, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
+  def executeQuery(q: QueryParticle, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
     assert(queryExecutionPrepared)
     if (!q.unmatched.isEmpty) {
       val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)

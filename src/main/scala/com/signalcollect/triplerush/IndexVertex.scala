@@ -114,7 +114,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
     wasAdded
   }
 
-  def processSamplingQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
+  def processSamplingQuery(query: QueryParticle, graphEditor: GraphEditor[Any, Any]) {
     throw new UnsupportedOperationException("Sampling queries are currently unsupported.")
     //    val targetIdCount = targetIds.length
     //    val bins = new Array[Long](targetIdCount)
@@ -134,7 +134,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
     //    }
   }
 
-  def processFullQuery(query: PatternQuery, graphEditor: GraphEditor[Any, Any]) {
+  def processFullQuery(query: QueryParticle, graphEditor: GraphEditor[Any, Any]) {
     assert(childDeltasOptimized != null)
     val targetIdCount = edgeCount
     val avg = query.tickets / targetIdCount
@@ -155,7 +155,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
 
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
     signal match {
-      case query: PatternQuery =>
+      case query: QueryParticle =>
         if (query.isSamplingQuery) {
           processSamplingQuery(query, graphEditor)
         } else {

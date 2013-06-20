@@ -30,7 +30,7 @@ import com.signalcollect.Vertex
 import com.signalcollect.Edge
 
 case class QueryResult(
-  queries: List[PatternQuery],
+  queries: List[QueryParticle],
   statKeys: Array[Any],
   statVariables: Array[Any])
 
@@ -45,13 +45,13 @@ case object QueryOptimizer {
 }
 
 class QueryVertex(
-  val query: PatternQuery,
+  val query: QueryParticle,
   val resultRecipient: ActorRef,
-  val optimizer: Int) extends Vertex[Int, List[PatternQuery]] {
+  val optimizer: Int) extends Vertex[Int, List[QueryParticle]] {
 
   val id = query.queryId
 
-  @transient var state: List[PatternQuery] = _
+  @transient var state: List[QueryParticle] = _
 
   val expectedTickets = query.tickets
   val expectedCardinalities = query.unmatched.size
@@ -64,10 +64,10 @@ class QueryVertex(
   @transient var optimizingStartTime = 0l
   @transient var optimizingDuration = 0l
 
-  @transient var optimizedQuery: PatternQuery = _
+  @transient var optimizedQuery: QueryParticle = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    state = List[PatternQuery]()
+    state = List[QueryParticle]()
     cardinalities = Map()
     if (optimizer != QueryOptimizer.None && query.unmatched.size > 1) {
       // Gather pattern cardinalities first.
@@ -92,7 +92,7 @@ class QueryVertex(
         queryCopyCount += 1
         receivedTickets += ticketsOfFailedQuery
       //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
-      case query: PatternQuery =>
+      case query: QueryParticle =>
         processQuery(query)
       //        println(s"Query vertex $id received bindings ${query.bindings}. Now at $receivedTickets/$expectedTickets")
       case CardinalityReply(forPattern, cardinality) =>
@@ -109,7 +109,7 @@ class QueryVertex(
     true
   }
 
-  def optimizeQuery: PatternQuery = {
+  def optimizeQuery: QueryParticle = {
     var sortedPatterns = cardinalities.toArray sortBy (_._2)
     optimizer match {
       case QueryOptimizer.Greedy =>
@@ -148,7 +148,7 @@ class QueryVertex(
     }
   }
 
-  def processQuery(query: PatternQuery) {
+  def processQuery(query: QueryParticle) {
     queryCopyCount += 1
     receivedTickets += query.tickets
     complete &&= query.isComplete
@@ -182,7 +182,7 @@ class QueryVertex(
     graphEditor.removeVertex(id)
   }
 
-  def setState(s: List[PatternQuery]) {
+  def setState(s: List[QueryParticle]) {
     state = s
   }
 

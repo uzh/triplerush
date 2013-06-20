@@ -35,7 +35,7 @@ import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
 import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import com.signalcollect.triplerush.Mapping
-import com.signalcollect.triplerush.PatternQuery
+import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.QueryEngine
 import com.signalcollect.triplerush.QueryOptimizer
 import com.signalcollect.triplerush.TriplePattern
@@ -211,21 +211,21 @@ object DbpsbBenchmark extends App {
        * }
        *
        */
-      def fullQueries: List[PatternQuery] = List(
-        PatternQuery(queryId = 1,
+      def fullQueries: List[QueryParticle] = List(
+        QueryParticle(queryId = 1,
           unmatched = Array(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3)),
           bindings = new Array(3)),
-        PatternQuery(2, Array(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2)),
+        QueryParticle(2, Array(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2)),
           bindings = new Array(2)),
-        PatternQuery(3, Array(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3)),
+        QueryParticle(3, Array(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3)),
           bindings = new Array(3)),
-        PatternQuery(4, Array(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4)),
+        QueryParticle(4, Array(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4)),
           bindings = new Array(4)),
-        PatternQuery(5, Array(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571)),
+        QueryParticle(5, Array(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571)),
           bindings = new Array(1)),
-        PatternQuery(6, Array(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11)),
+        QueryParticle(6, Array(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11)),
           bindings = new Array(2)),
-        PatternQuery(7, Array(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409)),
+        QueryParticle(7, Array(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409)),
           bindings = new Array(3)))
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
@@ -290,7 +290,7 @@ object DbpsbBenchmark extends App {
         ((nanoseconds / 100000.0).round) / 10.0
       }
 
-      def executeOnQueryEngine(q: PatternQuery): QueryResult = {
+      def executeOnQueryEngine(q: QueryParticle): QueryResult = {
         val resultFuture = qe.executeQuery(q, optimizer)
         try {
           Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception

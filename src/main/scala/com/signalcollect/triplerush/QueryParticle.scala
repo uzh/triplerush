@@ -30,12 +30,17 @@ object QueryIds {
   def nextSamplingQueryId = minSamplingQueryId.decrementAndGet
 }
 
-case class PatternQuery(
-  queryId: Int,
-  unmatched: Array[TriplePattern],
+/**
+ * Partially matched query that gets copied and sent along index vertices and bound in binding index vertices.
+ * 
+ * //TODO: Encode completeness with the sign of the tickets field.
+ */
+case class QueryParticle(
+  queryId: Int, 
+  unmatched: Array[TriplePattern], 
   //  variables: Array[Int],
   bindings: Array[Int],
-  tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
+  tickets: Long = Long.MaxValue,  // normal queries have a lot of ticke, 
   isComplete: Boolean = true // set to false as soon as there are not enough tickets to follow all edges
   ) {
 
@@ -55,7 +60,7 @@ case class PatternQuery(
   /**
    * Assumption: tp has all constants.
    */
-  def bind(tp: TriplePattern): PatternQuery = {
+  def bind(tp: TriplePattern): QueryParticle = {
     if (unmatched.isEmpty) {
       throw new Exception("Why bind when this query is done? Optimize this code.")
     }
@@ -63,7 +68,7 @@ case class PatternQuery(
     if (patternToMatch.s == tp.s) { // Subject is compatible constant. No binding necessary. 
       if (patternToMatch.p == tp.p) { // Predicate is compatible constant. No binding necessary. 
         if (patternToMatch.o == tp.o) { // Object is compatible constant. No binding necessary. 
-          return PatternQuery(queryId, unmatched.slice(1, unmatched.length), bindings, tickets, isComplete)
+          return QueryParticle(queryId, unmatched.slice(1, unmatched.length), bindings, tickets, isComplete)
         }
         return bindObject(patternToMatch, tp)
       }
@@ -73,10 +78,10 @@ case class PatternQuery(
   }
 
   private def bindSubject(
-    patternToMatch: TriplePattern,
-    tp: TriplePattern,
-    newUnmatched: Array[TriplePattern] = unmatched.slice(1, unmatched.length),
-    newBindings: Array[Int] = bindings.clone): PatternQuery = {
+    patternToMatch: TriplePattern, 
+    tp: TriplePattern, 
+    newUnmatched: Array[TriplePattern] = unmatched.slice(1, unmatched.length), 
+    newBindings: Array[Int] = bindings.clone): QueryParticle = {
     // Subject is conflicting constant. No binding possible.
     if (!patternToMatch.s.isVariable) return Constants.failedBinding
 
@@ -97,10 +102,10 @@ case class PatternQuery(
   }
 
   private def bindPredicate(
-    patternToMatch: TriplePattern,
-    tp: TriplePattern,
-    newUnmatched: Array[TriplePattern] = unmatched.slice(1, unmatched.length),
-    newBindings: Array[Int] = bindings.clone): PatternQuery = {
+    patternToMatch: TriplePattern, 
+    tp: TriplePattern, 
+    newUnmatched: Array[TriplePattern] = unmatched.slice(1, unmatched.length), 
+    newBindings: Array[Int] = bindings.clone): QueryParticle = {
 
     if (patternToMatch.p == tp.p) { // Predicate is compatible constant. No binding necessary. 
       return bindObject(patternToMatch, tp, newUnmatched, newBindings)
@@ -126,13 +131,13 @@ case class PatternQuery(
   }
 
   private def bindObject(
-    patternToMatch: TriplePattern,
-    tp: TriplePattern,
-    newUnmatched: Array[TriplePattern] = unmatched.slice(1, unmatched.length),
-    newBindings: Array[Int] = bindings.clone): PatternQuery = {
+    patternToMatch: TriplePattern, 
+    tp: TriplePattern, 
+    newUnmatched: Array[TriplePattern] = unmatched.slice(1, unmatched.length), 
+    newBindings: Array[Int] = bindings.clone): QueryParticle = {
 
     if (patternToMatch.o == tp.o) { // Object is compatible constant. No binding necessary. 
-      return PatternQuery(queryId, newUnmatched, newBindings, tickets, isComplete)
+      return QueryParticle(queryId, newUnmatched, newBindings, tickets, isComplete)
     }
 
     // Object is conflicting constant. No binding possible.
@@ -149,7 +154,7 @@ case class PatternQuery(
 
     updateUnmatchedPatterns(variable, boundValue, newUnmatched)
 
-    PatternQuery(queryId, newUnmatched, newBindings, tickets, isComplete)
+    QueryParticle(queryId, newUnmatched, newBindings, tickets, isComplete)
   }
 
   // If the variable appears multiple times in the same pattern, then all the bindings have to be compatible.  
@@ -181,5 +186,5 @@ case class PatternQuery(
 }
 
 object Constants {
-    val failedBinding = null.asInstanceOf[PatternQuery]
+    val failedBinding = null.asInstanceOf[QueryParticle]
 }

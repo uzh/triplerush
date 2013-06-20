@@ -66,7 +66,7 @@ class BinaryLoaderSpec extends SpecificationWithJUnit {
   qe.prepareQueryExecution
   println("done")
 
-  def executeOnQueryEngine(q: PatternQuery) = {
+  def executeOnQueryEngine(q: QueryParticle) = {
     val resultFuture = qe.executeQuery(q)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
     result.queries

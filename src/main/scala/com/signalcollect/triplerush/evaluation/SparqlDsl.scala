@@ -25,7 +25,7 @@ import language.implicitConversions
 import language.postfixOps
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryIds
-import com.signalcollect.triplerush.PatternQuery
+import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.Mapping
 import com.signalcollect.triplerush.QueryIds
 
@@ -86,8 +86,8 @@ object SparqlDsl extends App {
     }
   }
 
-  implicit def dsl2Query(q: DslQuery): PatternQuery = {
+  implicit def dsl2Query(q: DslQuery): QueryParticle = {
     val queryId = if (q.isSamplingQuery) QueryIds.nextSamplingQueryId else QueryIds.nextFullQueryId
-    PatternQuery(queryId, q.dslTriplePatterns map (_.toTriplePattern(q.variableToId)) toArray, bindings = new Array[Int](q.variableToId.size), tickets = q.tickets)
+    QueryParticle(queryId, q.dslTriplePatterns map (_.toTriplePattern(q.variableToId)) toArray, bindings = new Array[Int](q.variableToId.size), tickets = q.tickets)
   }
 }
