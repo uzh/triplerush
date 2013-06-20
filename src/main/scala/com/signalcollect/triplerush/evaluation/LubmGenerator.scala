@@ -28,10 +28,12 @@ import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import java.nio.file.{ Files, Path, Paths }
 
-object LubmGenerator extends KrakenExecutable with App {
+object LubmGenerator extends KrakenExecutable {
+  runOnKraken(Generator.generate(args(0).toInt) _)
+}
 
-  override def remoteRun {
-    val universities = 10
+object Generator {
+  def generate (universities: Int)() {
     import FileOperations._
 
     // Generate raw LUBM files.
@@ -48,4 +50,3 @@ object LubmGenerator extends KrakenExecutable with App {
     println("All LUBM files have been copied.")
   }
 }
-

@@ -46,17 +46,20 @@ abstract class FileTransformation extends KrakenExecutable {
   def nameOfTransformation: String
   def sourceFolder: String
   def destinationFolder = sourceFolder + "-" + nameOfTransformation
-  def fileInDestinationFolder(fileName: String) = destinationFolder + "/" + fileName + "-" + nameOfTransformation
+  def extensionTransformer(fileName: String): String
+  
   def shouldTransformFile(f: File) = true
-  lazy val source = new File(sourceFolder)
-  lazy val target = new File(destinationFolder)
 
-  def remoteRun {
+  def remoteRun(srcFolder: String, dstFolder: String)() {
+
+    def fileInDestinationFolder(fileName: String) = dstFolder + "/" + extensionTransformer(fileName)
+    lazy val target = new File(dstFolder)
+
     if (!target.exists) {
       target.mkdir
     }
 
-    val files = filesIn(sourceFolder).filter(shouldTransformFile)
+    val files = filesIn(srcFolder).filter(shouldTransformFile)
     println("Starting file transformations...")
     if (parallel) {
       for (file <- files.par) {
@@ -68,7 +71,7 @@ abstract class FileTransformation extends KrakenExecutable {
       }
     }
     println("All files have been transformed.")
-    
+
       def callTransform(file: File) {
         println(s"Transforming file ${file.getName}")
         transform(file, new File(fileInDestinationFolder(file.getName)))
@@ -76,6 +79,7 @@ abstract class FileTransformation extends KrakenExecutable {
 
   }
 
+  runOnKraken(remoteRun(sourceFolder, destinationFolder) _)
   def transform(sourceFile: File, targetFile: File)
 
 }

@@ -31,12 +31,12 @@ import scala.io.Source
 
 import org.semanticweb.yars.nx.parser.NxParser
 
-object DictionaryEncoder extends KrakenExecutable with Serializable {
+object DictionaryEncoderWithBase extends KrakenExecutable with Serializable {
   runOnKraken(Encoder.encode(args(0)) _)
 }
 
-object Encoder {
-  def encode(sourceFolderBaseName: String)(){
+object BaseEncoder {
+  def encode(sourceFolderBaseName: String)() {
     import FileOperations._
 
     val sourceFolderName = s"./${sourceFolderBaseName}-nt"
@@ -46,10 +46,11 @@ object Encoder {
     val target = new File(targetFolderName)
     var nextId = 0
     val dictionaryPath = s"$targetFolderName/dictionary.txt"
+    val baseDictionaryPath = "./dictionary.txt"
     val dictionary = new HashMap[String, Int]()
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
-      
+
       def register(entry: String): Int = {
         val id = dictionary.get(entry)
         if (id != 0) {
@@ -85,6 +86,20 @@ object Encoder {
         binaryOs.close
         is.close
       }
+
+    println("Reading base dictionary ...")
+    val dictionaryFile = Source.fromFile(baseDictionaryPath, "UTF-16")
+    for (line <- dictionaryFile.getLines) {
+      val entry = line.split(" ")
+      if (entry.length == 3) {
+        val id = entry(2).toInt
+        nextId = math.max(nextId, id + 1)
+        dictionary.put(entry(0), id)
+      } else if (entry.length != 0) {
+        throw new Exception(s"Failed to parse line $line, was parsed to ${entry.toList}.")
+      }
+    }
+
     println("Encoding files ...")
 
     val sourceFiles = filesIn(sourceFolderName)
@@ -95,7 +110,7 @@ object Encoder {
       encodeFile(src, trg)
     }
 
-    println(s"${sourceFiles.length} files have been encoded, ${nextId + 1} unique ids.")
+    println(s"${sourceFiles.length} files have been encoded, dictionary contains ${nextId + 1} entries.")
 
     println("Writing dictionary.")
     val dictionaryOs = new FileOutputStream(dictionaryPath)

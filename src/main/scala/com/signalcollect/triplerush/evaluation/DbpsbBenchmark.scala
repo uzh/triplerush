@@ -49,7 +49,7 @@ import com.signalcollect.triplerush.QueryResult
  *
  * Evaluation is set to execute on a 'Kraken'-node.
  */
-object Lubm160Benchmark extends App {
+object DbpsbBenchmark extends App {
   def jvmHighThroughputGc = " -Xmx64000m" +
     " -Xms64000m" +
     " -Xmn8000m" +
@@ -93,7 +93,7 @@ object Lubm160Benchmark extends App {
   }
 
   /*********/
-  def evalName = "LUBM 160 eval."
+  def evalName = "DBPSB eval."
   //  def evalName = "Local debugging."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -126,42 +126,90 @@ object Lubm160Benchmark extends App {
     tickets: Long,
     optimizer: Int,
     revision: String)(): List[Map[String, String]] = {
-    val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
-    val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
-    Mapping.setAbbreviations(Map(
-      ub -> "ub:",
-      rdf -> "rdf:",
-      "http://www" -> "www",
-      "Department" -> "D",
-      "University" -> "U",
-      ".edu/" -> "/",
-      "FullProfessor" -> "FP",
-      "AssociateProfessor" -> "ACP",
-      "AssistantProfessor" -> "ASP",
-      "Lecturer" -> "L",
-      "Undergraduate" -> "UG",
-      "Student" -> "S",
-      "Graduate" -> "G",
-      "ResearchGroup" -> "RG",
-      "Publication" -> "P",
-      "Course" -> "C",
-      "xxx-xxx-xxxx" -> "?",
-      "telephone" -> "tel",
-      "emailAddress" -> "email",
-      "publicationAuthor" -> "author",
-      "undergraduateDegreeFrom" -> "UGDF",
-      "subOrganizationOf" -> "subOrg"))
 
       /**
-       * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf
-       * Result sizes from: http://research.microsoft.com/pubs/183717/Trinity.RDF.pdf
-       *            L1   L2       L3 L4 L5 L6  L7
-       * LUBM-160   397  173040   0  10 10 125 7125
-       * LUBM-10240 2502 11016920 0  10 10 125 450721
+       * Queries from Trinity.RDF paper
        *
-       * Times Trinity: 281 132 110  5    4 9 630
-       * Time TripleR: 3815 222 3126 2    1 2 603
+       * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+       * SELECT ?title
+       * WHERE {
+       *    ?game <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:First-person_shooters> .
+       *    ?game foaf:name ?title .
+       * }
+       *
+       * SELECT ?var
+       * WHERE {
+       * 	?var3 <http://xmlns.com/foaf/0.1/homepage> ?var2 .
+       * 	?var3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?var .
+       * }
+       *
+       *
+       * PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+       * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+       * SELECT ?name ?description ?musician WHERE {
+       *      ?musician <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:German_musicians> .
+       *      ?musician foaf:name ?name .
+       *      ?musician rdfs:comment ?description .
+       * }
+       *
+       * PREFIX dbo: <http://dbpedia.org/ontology/>
+       * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+       * SELECT ?name ?birth ?death ?person WHERE {
+       * ?person dbo:birthPlace <http://dbpedia.org/resource/Berlin> .
+       * ?person dbo:birthDate ?birth .
+       * ?person foaf:name ?name .
+       * ?person dbo:deathDate ?death .
+       * }
+       *
+       *
+       * PREFIX dbo: <http://dbpedia.org/ontology/>
+       * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+       * SELECT ?manufacturer ?name ?car
+       * WHERE {
+       * ?car <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:Luxury_vehicles> .
+       * ?car foaf:name ?name .
+       * ?car dbo:manufacturer ?man .
+       * ?man foaf:name ?manufacturer
+       * }
+       *
+       *
+       * PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+       * PREFIX dbpprop:<http://dbpedia.org/property/>
+       * SELECT ?var0 ?var1 ?var2 ?var3 where
+       * {
+       * ?var6 rdf:type ?var.
+       * ?var6 dbpprop:name ?var0.
+       * ?var6 dbpprop:pages ?var1.
+       * ?var6 dbpprop:isbn ?var2.
+       * ?var6 dbpprop:author ?var3.
+       * }
+       *
+       * PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+       * PREFIX dbpprop:<http://dbpedia.org/property/>
+       * SELECT ?var where
+       * {
+       * ?var6 rdf:type ?var.
+       * ?var6 dbpprop:name ?var0.
+       * ?var6 dbpprop:pages ?var1.
+       * ?var6 dbpprop:isbn ?var2.
+       * ?var6 dbpprop:author ?var3.
+       * }
+       *
+       * PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+       * PREFIX dbpedia2: <http://dbpedia.org/property/>
+       * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+       * SELECT ?player WHERE {
+       * ?s foaf:page ?player .
+       * ?s rdf:type <http://dbpedia.org/ontology/SoccerPlayer> .
+       * ?s dbpedia2:position ?position .
+       * ?s <http://dbpedia.org/property/clubs> ?club .
+       * ?club <http://dbpedia.org/ontology/capacity> ?cap .
+       * ?s <http://dbpedia.org/ontology/birthPlace> ?place .
+       * ?place <http://dbpedia.org/property/population> ?pop .
+       * ?s <http://dbpedia.org/ontology/number> ?tricot .
+       * }
+       *
        */
       def fullQueries: List[PatternQuery] = List(
         PatternQuery(queryId = 1,

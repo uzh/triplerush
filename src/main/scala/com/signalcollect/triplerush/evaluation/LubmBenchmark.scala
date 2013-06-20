@@ -49,7 +49,7 @@ import com.signalcollect.triplerush.QueryResult
  *
  * Evaluation is set to execute on a 'Kraken'-node.
  */
-object YagoBenchmark extends App {
+object LubmBenchmark extends App {
   def jvmHighThroughputGc = " -Xmx64000m" +
     " -Xms64000m" +
     " -Xmn8000m" +
@@ -93,7 +93,7 @@ object YagoBenchmark extends App {
   }
 
   /*********/
-  def evalName = "Yago eval."
+  def evalName = s"LUBM ${args(2)} eval."
   //  def evalName = "Local debugging."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -113,7 +113,8 @@ object YagoBenchmark extends App {
         false,
         Long.MaxValue,
         optimizer,
-        getRevision))
+        getRevision,
+        args(2).toInt))
     }
     //  }
   }
@@ -125,43 +126,44 @@ object YagoBenchmark extends App {
     sampling: Boolean,
     tickets: Long,
     optimizer: Int,
-    revision: String)(): List[Map[String, String]] = {
+    revision: String,
+    universities: Int)(): List[Map[String, String]] = {
+//    val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
+//    val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
+//
+//    Mapping.setAbbreviations(Map(
+//      ub -> "ub:",
+//      rdf -> "rdf:",
+//      "http://www" -> "www",
+//      "Department" -> "D",
+//      "University" -> "U",
+//      ".edu/" -> "/",
+//      "FullProfessor" -> "FP",
+//      "AssociateProfessor" -> "ACP",
+//      "AssistantProfessor" -> "ASP",
+//      "Lecturer" -> "L",
+//      "Undergraduate" -> "UG",
+//      "Student" -> "S",
+//      "Graduate" -> "G",
+//      "ResearchGroup" -> "RG",
+//      "Publication" -> "P",
+//      "Course" -> "C",
+//      "xxx-xxx-xxxx" -> "?",
+//      "telephone" -> "tel",
+//      "emailAddress" -> "email",
+//      "publicationAuthor" -> "author",
+//      "undergraduateDegreeFrom" -> "UGDF",
+//      "subOrganizationOf" -> "subOrg"))
 
       /**
-       * Queries from: https://domino.mpi-inf.mpg.de/intranet/ag5/ag5publ.nsf/0/AD3DBAFA6FB90DD2C1257593002FF3DF/$file/rdf3x.pdf
-       * 
-       * Yago Dataset. We grouped the queries thematically into three groups. The first
-	   * group consists of oriented facts, e.g.: "scientists from Switzerland with a
-       * doctoral advisor from Germany" (A1). The second group is relationship oriented,
-       * e.g. "two actors from England playing together in the same movie" (B1). The
-       * third group examines relationships with unknown predicates, e.g. "two scientists
-       * related to the same city" (C1).
-       * A1: select ?gn ?fn where f ?gn <givenNameOf> ?p. ?fn <familyNameOf> ?p.
-       * ?p <type> "scientist"; <bornInLocation> ?city; <hasDoctoralAdvisor> ?a. ?a
-       * <bornInLocation> ?city2. ?city <locatedIn> "Switzerland". ?city2 <locatedIn>
-       * "Germany". g
-       * A2: select ?n where f ?a <isCalled> ?n; <type> "actor"; <livesIn> ?city;
-       * <actedIn> ?m1; <directed> ?m2. ?city <locatedIn> ?s. ?s <locatedIn>
-       * "United States". ?m1 <type> "movie"; <producedInCountry> "Germany". ?m2
-       * 51<type> "movie"; <producedInCountry> "Canada". g
-       * A3: select distinct ?n ?co where f ?p <isCalled> ?n. f ?p <type> "actor" g
-       * union f ?p <type> "athlete" g ?p <bornInLocation> ?c. ?c <locatedIn> ?s. ?s
-       * <locatedIn> ?co. ?p <type> ?t. Filter(?t reaches "politician" via <subClassOf>)
-       * g
-       * B1: select distinct ?n1 ?n2 where f ?a1 <isCalled> ?n1; <livesIn> ?c1;
-       * <actedIn> ?movie. ?a2 <isCalled> ?n2; <livesIn> ?c2; <actedIn> ?movie. ?c1
-       * <locatedIn> "England". ?c2 <locatedIn> "England". Filter (?a1 != ?a2) g
-       * B2: select ?n1 ?n2 where f ?p1 <isCalled> ?n1; <bornInLocation> ?city;
-       * <isMarriedTo> ?p2. ?p2 <isCalled> ?n2; <bornInLocation> ?city. g
-       * B3: select distinct ?n1 ?n2 where f ?n1 <familyNameOf> ?p1. ?n2 <family-
-       * NameOf> ?p2. ?p1 <type> "scientist"; <hasWonPrize> ?award; <bornInLoca-
-       * tion> ?city. ?p2 <type> "scientist"; <hasWonPrize> ?award; <bornInLocation>
-       * ?city. Filter (?p1 != ?p2) g
-       * C1: select distinct ?n1 ?n2 where f?n1 <familyNameOf> ?p1. ?n2 <family-
-       * NameOf> ?p2. ?p1 <type> "scientist"; [] ?city. ?p2 <type> "scientist"; [] ?city.
-       * ?city <type> <site> Filter (?p1 != ?p2) g
-       * C2: select distinct ?n where f ?p <isCalled> ?n; [] ?c1. [] ?c2. ?c1 <type>
-       * <village>; <isCalled> "London". ?c2 <type> <site>; <isCalled> "Paris". g
+       * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf
+       * Result sizes from: http://research.microsoft.com/pubs/183717/Trinity.RDF.pdf
+       *            L1   L2       L3 L4 L5 L6  L7
+       * LUBM-160   397  173040   0  10 10 125 7125
+       * LUBM-10240 2502 11016920 0  10 10 125 450721
+       *
+       * Times Trinity: 281 132 110  5    4 9 630
+       * Time TripleR: 3815 222 3126 2    1 2 603
        */
       def fullQueries: List[PatternQuery] = List(
         PatternQuery(queryId = 1,
@@ -199,10 +201,10 @@ object YagoBenchmark extends App {
       //          priority = TorquePriority.fast),
       //        numberOfNodes = 10)))
 
-      def loadSmallLubm {
-        val smallLubmFolderName = "lubm160-filtered-splits"
+      def loadLubm {
+        val lubmFolderName = s"lubm$universities-filtered-splits"
         for (splitId <- 0 until 2880) {
-          qe.loadBinary(s"./$smallLubmFolderName/$splitId.filtered-split", Some(splitId))
+          qe.loadBinary(s"./$lubmFolderName/$splitId.filtered-split", Some(splitId))
           if (splitId % 288 == 279) {
             println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
             qe.awaitIdle
@@ -212,20 +214,6 @@ object YagoBenchmark extends App {
         println("Query engine preparing query execution.")
         qe.prepareQueryExecution
         println("Query engine ready.")
-      }
-
-      def loadLargeLubm {
-        val largeLubmFolderName = "/home/torque/tmp/lubm10240-filtered-splits"
-        for (splitId <- 0 until 2880) {
-          qe.loadBinary(s"$largeLubmFolderName/$splitId.filtered-split", Some(splitId))
-          if (splitId % 288 == 279) {
-            println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
-            qe.awaitIdle
-            println(s"Continuing graph loading..")
-          }
-        }
-        println("Query engine preparing query execution")
-        qe.prepareQueryExecution
       }
 
       /**
@@ -308,6 +296,7 @@ object YagoBenchmark extends App {
         runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
         runResult += s"loadNumber" -> 160.toString
         runResult += s"date" -> date.toString
+        runResult += s"dataSet" -> s"lubm$universities"
         finalResults = runResult :: finalResults
       }
 
@@ -316,8 +305,7 @@ object YagoBenchmark extends App {
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
       println("Dispatching loading command to worker...")
-      loadSmallLubm
-      //loadLargeLubm
+      loadLubm
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString

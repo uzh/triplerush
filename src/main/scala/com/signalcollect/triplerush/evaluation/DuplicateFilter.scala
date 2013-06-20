@@ -34,13 +34,13 @@ import java.io.DataInputStream
 import java.io.EOFException
 import scala.collection.mutable.HashSet
 
-object DuplicateFilter extends FileTransformation {
+object DuplicateFilter extends FileTransformation with Serializable {
 
   def nameOfTransformation = "filtered"
-  def sourceFolder = "lubm10-binary"
+  def sourceFolder = s"${args(0)}-binary-splits"
   override def destinationFolder = sourceFolder.replace("binary", nameOfTransformation)
-  override def shouldTransformFile(f: File) = f.getName.endsWith(".binary")
-  override def fileInDestinationFolder(fileName: String) = destinationFolder + "/" + fileName.replace(".owl", ".nt")
+  override def shouldTransformFile(f: File) = f.getName.endsWith(".split")
+  override def extensionTransformer(fileName: String) = fileName.replace(".split", ".filtered-split")
   override def transform(sourceFile: File, targetFile: File) {
     val is = new FileInputStream(sourceFile)
     val dis = new DataInputStream(is)
@@ -69,7 +69,7 @@ object DuplicateFilter extends FileTransformation {
     }
     splitDataOutputStream.close
     splitFileOutputStream.close
-    tripleSet.size
+    println(tripleSet.size)
   }
 
 }

@@ -37,30 +37,31 @@ import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
 import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 
-abstract class KrakenExecutable {
+trait KrakenExecutable extends App {
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, priority = TorquePriority.superfast)
+    localJarPath = assemblyPath, priority = TorquePriority.fast)
   var evaluation = new Evaluation(
     evaluationName = s"Kraken executable",
     executionHost = kraken)
 
-  def prepare {}
+  def runOnKraken(f: () => Unit) {
+    evaluation = evaluation.addEvaluationRun(Wrapper.wrapFunctionToReturnEmptyList(f))
+    evaluation.execute
+  }
+}
 
-  def remoteRun
-
-  private def runOnKraken(f: () => Unit) = {
+/**
+ * On separate object to circumvent serialization issues.
+ */
+object Wrapper {
+  def wrapFunctionToReturnEmptyList(f: () => Unit) = {
       def wrappedF: List[Map[String, String]] = {
         f()
         List()
       }
-    evaluation = evaluation.addEvaluationRun(wrappedF _)
+    wrappedF _
   }
 
-  prepare
-
-  runOnKraken(remoteRun _)
-
-  evaluation.execute
 }

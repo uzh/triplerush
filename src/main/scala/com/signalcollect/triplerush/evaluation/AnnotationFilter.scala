@@ -27,19 +27,28 @@ import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
 import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import java.nio.file.{ Files, Path, Paths }
+import scala.io.Source
+import java.io.FileOutputStream
+import java.io.DataOutputStream
+import java.io.OutputStreamWriter
 
-object NtriplesConverter extends FileTransformation with Serializable {
+/**
+ * Removes annotations from ntriple files.
+ */
+object AnnotationFilter extends KrakenExecutable {
+  runOnKraken(Filter.filter(args(0)) _)
+}
 
-  def nameOfTransformation = "nt"
-  def sourceFolder = s"./${args(0)}"
-  
-  override def shouldTransformFile(f: File) = f.getName.endsWith(".owl")
-  override def extensionTransformer(fileName: String) = fileName.replace(".owl", ".nt")
-  // Convert the OWL files to ntriples format.
-  def transform(sourceFile: File, targetFile: File) {
-    if (!targetFile.exists) {
-      Seq("/usr/bin/rapper", sourceFile.getAbsolutePath, "-e", "-o", "ntriples") #>> targetFile !! (ProcessLogger(println(_)))
+object Filter {
+  def filter(fileName: String)() {
+    import FileOperations._
+    val ntriplesLines = Source.fromFile(fileName).getLines
+    val filtered = new FileOutputStream(fileName + "-filtered")
+    val writer = new OutputStreamWriter(filtered, "UTF8")
+    for (line <- ntriplesLines) {
+      writer.write(line.replace("^^<http://dbpedia.org/datatype/brake horsepower>", "") + "\n")
     }
+    writer.close
+    filtered.close
   }
-
 }

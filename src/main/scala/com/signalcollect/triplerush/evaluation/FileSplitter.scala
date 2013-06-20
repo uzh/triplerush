@@ -38,31 +38,33 @@ import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 
 object FileSplitter extends App {
-  val parallelism = 4
-  val folder = "./lubm10"
-  val splits = 2880
+
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
     localJarPath = assemblyPath, priority = TorquePriority.superfast)
   var evaluation = new Evaluation(
-    evaluationName = s"Splitting $folder",
+    evaluationName = s"File splitter",
     executionHost = kraken)
 
-  for (modulo <- 0 until parallelism) {
-    evaluation = evaluation.addEvaluationRun(splitNtriples(modulo, parallelism, folder))
+  for (modulo <- 0 until 4) { // Has to match parallelism variable inside splitting function.
+    evaluation = evaluation.addEvaluationRun(splitNtriples(modulo, args(0)))
   }
 
   evaluation.execute
 
-  def splitNtriples(mod: Int, par: Int, sourceFolder: String)(): List[Map[String, String]] = {
+  def splitNtriples(mod: Int, baseSourceFolderName: String)(): List[Map[String, String]] = {
     import FileOperations._
-
+    println("Modulo is: " + mod)
+    val splits = 2880
+    val parallelism = 4
+    val sourceFolder = s"./$baseSourceFolderName-binary"
     val destinationFolder = sourceFolder + "-splits"
+    createFolder(destinationFolder)
 
     val fileOutputStreams = {
       (0 until splits).toArray map { splitId =>
-        if (mod == splitId % par) {
+        if (mod == splitId % parallelism) {
           val binaryOs = new FileOutputStream(s"$destinationFolder/$splitId.split")
           binaryOs
         } else {
@@ -86,23 +88,11 @@ object FileSplitter extends App {
     var filesProcessed = 0
 
     for (file <- files) {
-      val startTime = System.currentTimeMillis
       filesProcessed += 1
       print(s"Processing file ${filesProcessed}/$fileCount ...")
       val triplesSplit = splitFile(file.getAbsolutePath)
       totalTriplesSplit += triplesSplit
-
       println(s" Done.")
-      val endTime = System.currentTimeMillis
-      val fileProcessingTime = (endTime - startTime).toDouble / 1000
-      println(s"Processing took $fileProcessingTime seconds.")
-      val totalTimeSoFar = ((endTime - initialTime).toDouble / 1000) / 3600
-      println(s"Total elapsed time: $totalTimeSoFar hours.")
-      val estimatedTimePerFile = totalTimeSoFar / (filesProcessed).toDouble
-      val remainingFiles = fileCount - filesProcessed
-      val estimatedRemaining = remainingFiles * estimatedTimePerFile
-      val estimatedRemainingRounded = estimatedRemaining.floor
-      println(s"Estimated remaining time for remaining files: ${estimatedRemainingRounded} hours and ${((estimatedRemaining - estimatedRemainingRounded) * 60).floor} minutes.")
       println(s"Triples processed so far: $totalTriplesSplit")
     }
     dataOutputStreams.foreach { s => if (s != null) s.close }
@@ -131,7 +121,7 @@ object FileSplitter extends App {
                 }
               }
             }
-            if (mod == patternSplit % par) {
+            if (mod == patternSplit % parallelism) {
               val splitStream = dataOutputStreams(patternSplit)
               splitStream.writeInt(sId)
               splitStream.writeInt(pId)
@@ -148,6 +138,6 @@ object FileSplitter extends App {
         }
         triplesSplit
       }
-      List()
+    List()
   }
 }
