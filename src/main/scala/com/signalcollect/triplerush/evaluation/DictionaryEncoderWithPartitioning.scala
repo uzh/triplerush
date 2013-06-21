@@ -30,11 +30,11 @@ import scala.io.Source
 import org.semanticweb.yars.nx.parser.NxParser
 import java.io.OutputStreamWriter
 
-object DictionaryEncoderWithBase extends KrakenExecutable with Serializable {
-  runOnKraken(BaseEncoder.encode(args(0)) _)
+object DictionaryEncoderWithPartitioning extends KrakenExecutable with Serializable {
+  runOnKraken(PartitioningEncoder.encode(args(0)) _)
 }
 
-object BaseEncoder {
+object PartitioningEncoder {
   def encode(sourceFolderBaseName: String)() {
     import FileOperations._
 
@@ -44,25 +44,28 @@ object BaseEncoder {
     val source = new File(sourceFolderName)
     val target = new File(targetFolderName)
     var nextId = 0
+    var universityId = 0
     val dictionaryPath = s"$targetFolderName/dictionary.txt"
-    val baseDictionaryPath = "./dictionary.txt"
     val dictionary = new HashMap[String, Int]()
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
-      def register(entry: String): Int = {
+      def register(entry: String, university: Int): Int = {
         val id = dictionary.get(entry)
         if (id != 0) {
           id
         } else {
-          val idForEntry = nextId
+          val idForEntry = nextId | (university << 23)
           dictionary.put(entry, idForEntry)
           nextId += 1
+          assert(nextId < 8000000)
           idForEntry
         }
       }
 
       def encodeFile(source: File, target: File) {
+        universityId = source.getName.split("University")(1).split("_")(0).toInt
+        assert(universityId < 256)
         val is = new FileInputStream(source)
         val binaryOs = new FileOutputStream(target)
         val binaryDos = new DataOutputStream(binaryOs)
@@ -73,9 +76,9 @@ object BaseEncoder {
           if (!subjectString.startsWith("file:///Users")) {
             val predicateString = triple(1).toString
             val objectString = triple(2).toString
-            val sId = register(subjectString)
-            val pId = register(predicateString)
-            val oId = register(objectString)
+            val sId = register(subjectString, universityId)
+            val pId = register(predicateString, universityId)
+            val oId = register(objectString, universityId)
             binaryDos.writeInt(sId)
             binaryDos.writeInt(pId)
             binaryDos.writeInt(oId)
@@ -85,21 +88,6 @@ object BaseEncoder {
         binaryOs.close
         is.close
       }
-
-    println("Reading base dictionary ...")
-    val dictionaryFile = Source.fromFile(baseDictionaryPath)
-    for (line <- dictionaryFile.getLines) {
-      val entry = line.split(" ")
-      if (entry.length == 3) {
-        val id = entry(2).toInt
-        nextId = math.max(nextId, id + 1)
-        dictionary.put(entry(0), id)
-        println("Added entry " + entry(0))
-      } else if (entry.length != 0) {
-        throw new Exception(s"Failed to parse line $line, was parsed to ${entry.toList}.")
-      }
-    }
-
     println("Encoding files ...")
 
     val sourceFiles = filesIn(sourceFolderName).
@@ -112,7 +100,7 @@ object BaseEncoder {
       encodeFile(src, trg)
     }
 
-    println(s"${sourceFiles.length} files have been encoded, dictionary contains ${nextId + 1} entries.")
+    println(s"${sourceFiles.length} files have been encoded, ${nextId + 1} unique ids.")
 
     println("Writing dictionary.")
     val dictionaryOs = new FileOutputStream(dictionaryPath)

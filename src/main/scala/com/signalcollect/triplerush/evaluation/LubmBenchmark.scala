@@ -139,6 +139,109 @@ object LubmBenchmark extends App {
        * Times Trinity: 281 132 110  5    4 9 630
        * Time TripleR: 3815 222 3126 2    1 2 603
        */
+
+    
+
+    
+    
+    
+      /**
+       * PREFIX ub: \\
+       * $~~~~~~~~~$<http://swat.cse.lehigh.edu/onto/univ-bench.owl>\\
+       * PREFIX rdf: \\
+       * $~~~~~~~~~$<http://www.w3.org/1999/02/22-rdf-syntax-ns>
+       *
+       * L1: SELECT ?X ?Y ?Z WHERE \{\\
+       * $~~~~~~$?X rdf:type ub:GraduateStudent.\\
+       * $~~~~~~$?X ub:undergraduateDegreeFrom ?Y.\\
+       * $~~~~~~$?X ub:memberOf ?Z.\\
+       * $~~~~~~$?Z rdf:type ub:Department.\\
+       * $~~~~~~$?Z ub:subOrganizationOf ?Y.\\
+       * $~~~~~~$?Y rdf:type ub:University.\\
+       * \}
+       
+       * *
+       * L2: SELECT ?X ?Y WHERE \{\\
+       * $~~~~~~$?X rdf:type ub:Course.\\
+       * $~~~~~~$?X ub:name ?Y.\\
+       * \}
+       *
+       *
+       * L3: SELECT ?X ?Y ?Z WHERE \{\\
+       * $~~~~~~$?X ub:undergraduateDegreeFrom ?Y.\\
+       * $~~~~~~$?X rdf:type ub:UndergraduateStudent.\\
+       * $~~~~~~$?X ub:memberOf ?Z.\\
+       * $~~~~~~$?Z ub:subOrganizationOf ?Y.\\
+       * $~~~~~~$?Z rdf:type ub:Department.\\
+       * $~~~~~~$?Y rdf:type ub:University.\\
+       * \}
+       *
+       */
+
+    
+    
+     /** 
+       * 
+       * L4: SELECT ?X ?Y1 ?Y2 ?Y3 WHERE \{\\
+       * $~~~~~~$?X ub:worksFor \\
+       * $~~~~~~~~~$<http://www.Department0.University0.edu>.\\
+       * $~~~~~~$?X rdf:type ub:FullProfessor.\\
+       * $~~~~~~$?X ub:name ?Y1.\\
+       * $~~~~~~$?X ub:emailAddress ?Y2.\\
+       * $~~~~~~$?X ub:telephone ?Y3.\\
+       * \}
+       *
+       *
+       * L5: SELECT ?X WHERE \{\\
+       * $~~~~~~$?X ub:subOrganizationOf \\
+       * $~~~~~~~~~$<http://www.Department0.University0.edu>.\\
+       * $~~~~~~$?X rdf:type ub:ResearchGroup.\\
+       * \}
+       */
+//    
+//         rdf:type -> 1
+//    ub:GraduateStudent -> 2013
+//    ub:undergraduateDegreeFrom -> 22
+//    ub:memberOf -> 415
+//    ub:Department -> 11
+//    ub:subOrganizationOf -> 13
+//    ub:University -> 7
+//    ub:Course -> 3067
+//    ub:name -> 8
+//    ub:UndergraduateStudent -> 413
+//    ub:worksFor -> 27
+//    http://www.Department0.University0.edu -> 10
+//    ub:FullProfessor -> 15
+//    ub:emailAddress -> 28
+//    ub:telephone -> 30
+//    ub:ResearchGroup -> 2575
+//    http://www.University0.edu -> 6
+//    ub:teacherOf -> 17
+//    ub:advisor -> 430
+//    ub:takesCourse -> 417
+//    
+//    
+    /**   *
+       * L6: SELECT ?X ?Y WHERE \{\\
+       * $~~~~~~$?Y ub:subOrganizationOf \\
+       * $~~~~~~~~~$<http://www.University0.edu>.\\
+       * $~~~~~~$?Y rdf:type ub:Department.\\
+       * $~~~~~~$?X ub:worksFor ?Y.\\
+       * $~~~~~~$?X rdf:type ub:FullProfessor. \\
+       * \}
+       *
+       *
+       * L7: SELECT ?X ?Y ?Z WHERE \{\\
+       * $~~~~~~$?Y rdf:type ub:FullProfessor.\\
+       * $~~~~~~$?Y ub:teacherOf ?Z.\\
+       * $~~~~~~$?Z rdf:type ub:Course.\\
+       * $~~~~~~$?X ub:advisor ?Y.\\
+       * $~~~~~~$?X ub:takesCourse ?Z.\\
+       * $~~~~~~$?X rdf:type ub:UndergraduateStudent. \\
+       * \}
+       *
+       */
+
       def fullQueries: List[QueryParticle] = List(
         QueryParticle(queryId = 1,
           unmatched = Array(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3)),
