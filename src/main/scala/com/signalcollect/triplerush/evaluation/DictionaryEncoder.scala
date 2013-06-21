@@ -26,17 +26,16 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.HashMap
 import collection.JavaConversions._
-
 import scala.io.Source
-
 import org.semanticweb.yars.nx.parser.NxParser
+import java.io.OutputStreamWriter
 
 object DictionaryEncoder extends KrakenExecutable with Serializable {
   runOnKraken(Encoder.encode(args(0)) _)
 }
 
 object Encoder {
-  def encode(sourceFolderBaseName: String)(){
+  def encode(sourceFolderBaseName: String)() {
     import FileOperations._
 
     val sourceFolderName = s"./${sourceFolderBaseName}-nt"
@@ -49,7 +48,7 @@ object Encoder {
     val dictionary = new HashMap[String, Int]()
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
-      
+
       def register(entry: String): Int = {
         val id = dictionary.get(entry)
         if (id != 0) {
@@ -87,7 +86,9 @@ object Encoder {
       }
     println("Encoding files ...")
 
-    val sourceFiles = filesIn(sourceFolderName)
+    val sourceFiles = filesIn(sourceFolderName).
+      filter(_.getName.endsWith(".nt")).
+      sorted
 
     for (src <- sourceFiles) {
       val trg = new File(targetFolderName + "/" + src.getName.replace(".nt", ".binary"))
@@ -99,11 +100,11 @@ object Encoder {
 
     println("Writing dictionary.")
     val dictionaryOs = new FileOutputStream(dictionaryPath)
-    val dictionaryDos = new DataOutputStream(dictionaryOs)
+    val writer = new OutputStreamWriter(dictionaryOs, "UTF8")
     for (entry <- dictionary) {
-      dictionaryDos.writeChars(s"${entry._1} -> ${entry._2}\n")
+      writer.write(s"${entry._1} -> ${entry._2}\n")
     }
-    dictionaryDos.close
+    writer.close
     dictionaryOs.close
 
   }

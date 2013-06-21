@@ -128,32 +128,6 @@ object LubmBenchmark extends App {
     optimizer: Int,
     revision: String,
     universities: Int)(): List[Map[String, String]] = {
-//    val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
-//    val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
-//
-//    Mapping.setAbbreviations(Map(
-//      ub -> "ub:",
-//      rdf -> "rdf:",
-//      "http://www" -> "www",
-//      "Department" -> "D",
-//      "University" -> "U",
-//      ".edu/" -> "/",
-//      "FullProfessor" -> "FP",
-//      "AssociateProfessor" -> "ACP",
-//      "AssistantProfessor" -> "ASP",
-//      "Lecturer" -> "L",
-//      "Undergraduate" -> "UG",
-//      "Student" -> "S",
-//      "Graduate" -> "G",
-//      "ResearchGroup" -> "RG",
-//      "Publication" -> "P",
-//      "Course" -> "C",
-//      "xxx-xxx-xxxx" -> "?",
-//      "telephone" -> "tel",
-//      "emailAddress" -> "email",
-//      "publicationAuthor" -> "author",
-//      "undergraduateDegreeFrom" -> "UGDF",
-//      "subOrganizationOf" -> "subOrg"))
 
       /**
        * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf

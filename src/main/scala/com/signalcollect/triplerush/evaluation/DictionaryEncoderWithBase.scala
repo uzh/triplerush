@@ -26,10 +26,9 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.HashMap
 import collection.JavaConversions._
-
 import scala.io.Source
-
 import org.semanticweb.yars.nx.parser.NxParser
+import java.io.OutputStreamWriter
 
 object DictionaryEncoderWithBase extends KrakenExecutable with Serializable {
   runOnKraken(Encoder.encode(args(0)) _)
@@ -88,7 +87,7 @@ object BaseEncoder {
       }
 
     println("Reading base dictionary ...")
-    val dictionaryFile = Source.fromFile(baseDictionaryPath, "UTF-16")
+    val dictionaryFile = Source.fromFile(baseDictionaryPath)
     for (line <- dictionaryFile.getLines) {
       val entry = line.split(" ")
       if (entry.length == 3) {
@@ -102,7 +101,9 @@ object BaseEncoder {
 
     println("Encoding files ...")
 
-    val sourceFiles = filesIn(sourceFolderName)
+    val sourceFiles = filesIn(sourceFolderName).
+      filter(_.getName.endsWith(".nt")).
+      sorted
 
     for (src <- sourceFiles) {
       val trg = new File(targetFolderName + "/" + src.getName.replace(".nt", ".binary"))
@@ -114,11 +115,11 @@ object BaseEncoder {
 
     println("Writing dictionary.")
     val dictionaryOs = new FileOutputStream(dictionaryPath)
-    val dictionaryDos = new DataOutputStream(dictionaryOs)
+    val writer = new OutputStreamWriter(dictionaryOs, "UTF8")
     for (entry <- dictionary) {
-      dictionaryDos.writeChars(s"${entry._1} -> ${entry._2}\n")
+      writer.write(s"${entry._1} -> ${entry._2}\n")
     }
-    dictionaryDos.close
+    writer.close
     dictionaryOs.close
 
   }
