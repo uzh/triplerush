@@ -192,7 +192,7 @@ case class QueryEngine(
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
     withKryoRegistrations(List(
-      "com.signalcollect.triplerush.PatternQuery",
+      "com.signalcollect.triplerush.QueryParticle",
       "com.signalcollect.triplerush.TriplePattern",
       "com.signalcollect.triplerush.BindingIndexVertex",
       "com.signalcollect.triplerush.IndexVertex",
