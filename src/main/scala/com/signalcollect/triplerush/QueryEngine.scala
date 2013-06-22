@@ -204,9 +204,8 @@ case class QueryEngine(
       "com.signalcollect.triplerush.QueryResult",
       "com.signalcollect.triplerush.QueryDone",
       "com.signalcollect.triplerush.TriplePattern",
-      "com.signalcollect.triplerush.PatternQuery",
       "Array[com.signalcollect.triplerush.TriplePattern]",
-      "Array[com.signalcollect.triplerush.PatternQuery]",
+      "Array[com.signalcollect.triplerush.QueryParticle]",
       "akka.actor.RepointableActorRef")).build
   print("Awaiting idle ... ")
   g.awaitIdle
