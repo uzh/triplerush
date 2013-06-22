@@ -207,7 +207,7 @@ object LubmBenchmark extends App {
           ),
           new Array(2)),
         QueryParticle(7, Array(
-          TriplePattern(y, m("rdf:type"), m("")), // ?Y rdf:type ub:FullProfessor
+          TriplePattern(y, m("rdf:type"), m("ub:FullProfessor")), // ?Y rdf:type ub:FullProfessor
           TriplePattern(y, m("ub:teacherOf"), z), // ?Y ub:teacherOf ?Z
           TriplePattern(z, m("rdf:type"), m("ub:Course")), // ?Z rdf:type ub:Course
           TriplePattern(x, m("ub:advisor"), y), // ?X ub:advisor ?Y
