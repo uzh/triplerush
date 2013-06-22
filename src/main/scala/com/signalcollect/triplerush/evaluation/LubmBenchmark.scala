@@ -129,135 +129,92 @@ object LubmBenchmark extends App {
     revision: String,
     universities: Int)(): List[Map[String, String]] = {
 
-      /**
-       * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf
-       * Result sizes from: http://research.microsoft.com/pubs/183717/Trinity.RDF.pdf
-       *            L1   L2       L3 L4 L5 L6  L7
-       * LUBM-160   397  173040   0  10 10 125 7125
-       * LUBM-10240 2502 11016920 0  10 10 125 450721
-       *
-       * Times Trinity: 281 132 110  5    4 9 630
-       * Time TripleR: 3815 222 3126 2    1 2 603
-       */
-
-    
-
-    
-    
-    
-      /**
-       * PREFIX ub: \\
-       * $~~~~~~~~~$<http://swat.cse.lehigh.edu/onto/univ-bench.owl>\\
-       * PREFIX rdf: \\
-       * $~~~~~~~~~$<http://www.w3.org/1999/02/22-rdf-syntax-ns>
-       *
-       * L1: SELECT ?X ?Y ?Z WHERE \{\\
-       * $~~~~~~$?X rdf:type ub:GraduateStudent.\\
-       * $~~~~~~$?X ub:undergraduateDegreeFrom ?Y.\\
-       * $~~~~~~$?X ub:memberOf ?Z.\\
-       * $~~~~~~$?Z rdf:type ub:Department.\\
-       * $~~~~~~$?Z ub:subOrganizationOf ?Y.\\
-       * $~~~~~~$?Y rdf:type ub:University.\\
-       * \}
-       
-       * *
-       * L2: SELECT ?X ?Y WHERE \{\\
-       * $~~~~~~$?X rdf:type ub:Course.\\
-       * $~~~~~~$?X ub:name ?Y.\\
-       * \}
-       *
-       *
-       * L3: SELECT ?X ?Y ?Z WHERE \{\\
-       * $~~~~~~$?X ub:undergraduateDegreeFrom ?Y.\\
-       * $~~~~~~$?X rdf:type ub:UndergraduateStudent.\\
-       * $~~~~~~$?X ub:memberOf ?Z.\\
-       * $~~~~~~$?Z ub:subOrganizationOf ?Y.\\
-       * $~~~~~~$?Z rdf:type ub:Department.\\
-       * $~~~~~~$?Y rdf:type ub:University.\\
-       * \}
-       *
-       */
-
-    
-    
-     /** 
-       * 
-       * L4: SELECT ?X ?Y1 ?Y2 ?Y3 WHERE \{\\
-       * $~~~~~~$?X ub:worksFor \\
-       * $~~~~~~~~~$<http://www.Department0.University0.edu>.\\
-       * $~~~~~~$?X rdf:type ub:FullProfessor.\\
-       * $~~~~~~$?X ub:name ?Y1.\\
-       * $~~~~~~$?X ub:emailAddress ?Y2.\\
-       * $~~~~~~$?X ub:telephone ?Y3.\\
-       * \}
-       *
-       *
-       * L5: SELECT ?X WHERE \{\\
-       * $~~~~~~$?X ub:subOrganizationOf \\
-       * $~~~~~~~~~$<http://www.Department0.University0.edu>.\\
-       * $~~~~~~$?X rdf:type ub:ResearchGroup.\\
-       * \}
-       */
-//    
-//         rdf:type -> 1
-//    ub:GraduateStudent -> 2013
-//    ub:undergraduateDegreeFrom -> 22
-//    ub:memberOf -> 415
-//    ub:Department -> 11
-//    ub:subOrganizationOf -> 13
-//    ub:University -> 7
-//    ub:Course -> 3067
-//    ub:name -> 8
-//    ub:UndergraduateStudent -> 413
-//    ub:worksFor -> 27
-//    http://www.Department0.University0.edu -> 10
-//    ub:FullProfessor -> 15
-//    ub:emailAddress -> 28
-//    ub:telephone -> 30
-//    ub:ResearchGroup -> 2575
-//    http://www.University0.edu -> 6
-//    ub:teacherOf -> 17
-//    ub:advisor -> 430
-//    ub:takesCourse -> 417
-//    
-//    
-    /**   *
-       * L6: SELECT ?X ?Y WHERE \{\\
-       * $~~~~~~$?Y ub:subOrganizationOf \\
-       * $~~~~~~~~~$<http://www.University0.edu>.\\
-       * $~~~~~~$?Y rdf:type ub:Department.\\
-       * $~~~~~~$?X ub:worksFor ?Y.\\
-       * $~~~~~~$?X rdf:type ub:FullProfessor. \\
-       * \}
-       *
-       *
-       * L7: SELECT ?X ?Y ?Z WHERE \{\\
-       * $~~~~~~$?Y rdf:type ub:FullProfessor.\\
-       * $~~~~~~$?Y ub:teacherOf ?Z.\\
-       * $~~~~~~$?Z rdf:type ub:Course.\\
-       * $~~~~~~$?X ub:advisor ?Y.\\
-       * $~~~~~~$?X ub:takesCourse ?Z.\\
-       * $~~~~~~$?X rdf:type ub:UndergraduateStudent. \\
-       * \}
-       *
-       */
-
+    /**
+     * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf
+     * Result sizes from: http://research.microsoft.com/pubs/183717/Trinity.RDF.pdf
+     *            L1   L2       L3 L4 L5 L6  L7
+     * LUBM-160   397  173040   0  10 10 125 7125
+     * LUBM-10240 2502 11016920 0  10 10 125 450721
+     *
+     * Times Trinity: 281 132 110  5    4 9 630
+     * Time TripleR: 3815 222 3126 2    1 2 603
+     */
+    val x = -1
+    val y = -2
+    val z = -3
+    val m = Map(
+      "rdf:type" -> 1,
+      "ub:GraduateStudent" -> 2013,
+      "ub:undergraduateDegreeFrom" -> 22,
+      "ub:memberOf" -> 415,
+      "ub:Department" -> 11,
+      "ub:subOrganizationOf" -> 13,
+      "ub:University" -> 7,
+      "ub:Course" -> 3067,
+      "ub:name" -> 8,
+      "ub:UndergraduateStudent" -> 413,
+      "ub:worksFor" -> 27,
+      "http://www.Department0.University0.edu" -> 10,
+      "ub:FullProfessor" -> 15,
+      "ub:emailAddress" -> 28,
+      "ub:telephone" -> 30,
+      "ub:ResearchGroup" -> 2575,
+      "http://www.University0.edu" -> 6,
+      "ub:teacherOf" -> 17,
+      "ub:advisor" -> 430,
+      "ub:takesCourse" -> 417)
       def fullQueries: List[QueryParticle] = List(
-        QueryParticle(queryId = 1,
-          unmatched = Array(TriplePattern(-1, 2, 2009), TriplePattern(-1, 18, -2), TriplePattern(-1, 411, -3), TriplePattern(-3, 2, 7), TriplePattern(-3, 9, -2), TriplePattern(-2, 2, 3)),
-          bindings = new Array(3)),
-        QueryParticle(2, Array(TriplePattern(-1, 2, 3063), TriplePattern(-1, 4, -2)),
-          bindings = new Array(2)),
-        QueryParticle(3, Array(TriplePattern(-1, 18, -2), TriplePattern(-1, 2, 409), TriplePattern(-1, 411, -3), TriplePattern(-3, 9, -2), TriplePattern(-3, 2, 7), TriplePattern(-2, 2, 3)),
-          bindings = new Array(3)),
-        QueryParticle(4, Array(TriplePattern(-1, 23, 6), TriplePattern(-1, 2, 11), TriplePattern(-1, 4, -2), TriplePattern(-1, 24, -3), TriplePattern(-1, 26, -4)),
-          bindings = new Array(4)),
-        QueryParticle(5, Array(TriplePattern(-1, 9, 6), TriplePattern(-1, 2, 2571)),
-          bindings = new Array(1)),
-        QueryParticle(6, Array(TriplePattern(-1, 9, 1), TriplePattern(-1, 2, 7), TriplePattern(-2, 23, -1), TriplePattern(-2, 2, 11)),
-          bindings = new Array(2)),
-        QueryParticle(7, Array(TriplePattern(-1, 2, 11), TriplePattern(-1, 13, -2), TriplePattern(-2, 2, 3063), TriplePattern(-3, 426, -1), TriplePattern(-3, 413, -2), TriplePattern(-3, 2, 409)),
-          bindings = new Array(3)))
+        QueryParticle(1, Array(
+          TriplePattern(x, m("rdf:type"), m("ub:GraduateStudent")), // ?X rdf:type ub:GraduateStudent
+          TriplePattern(x, m("ub:undergraduateDegreeFrom"), y), // ?X ub:undergraduateDegreeFrom ?Y
+          TriplePattern(x, m("ub:memberOf"), z), // ?X ub:memberOf ?Z
+          TriplePattern(z, m("rdf:type"), m("rdf:type ub:Department")), // ?Z rdf:type ub:Department
+          TriplePattern(z, m("ub:subOrganizationOf"), y), // ?Z ub:subOrganizationOf ?Y
+          TriplePattern(y, m("rdf:type"), m("ub:University")) // ?Y rdf:type ub:University
+          ),
+          new Array(3)),
+        QueryParticle(2, Array(
+          TriplePattern(x, m("rdf:type"), m("ub:Course")), // ?X rdf:type ub:Course
+          TriplePattern(x, m("ub:name"), y)), // ?X ub:name ?Y
+          new Array(2)),
+        QueryParticle(3, Array(
+          TriplePattern(x, m("ub:undergraduateDegreeFrom"), y), // ?X ub:undergraduateDegreeFrom ?Y
+          TriplePattern(x, m("rdf:type"), m("ub:UndergraduateStudent")), // ?X rdf:type ub:UndergraduateStudent
+          TriplePattern(x, m("ub:memberOf"), z), // ?X ub:memberOf ?Z
+          TriplePattern(z, m("ub:subOrganizationOf"), y), // ?Z ub:subOrganizationOf ?Y
+          TriplePattern(z, m("rdf:type"), m("ub:Department")), // ?Z rdf:type ub:Department
+          TriplePattern(y, m("rdf:type"), m("ub:University")) // ?Y rdf:type ub:University
+          ),
+          new Array(3)),
+        QueryParticle(4, Array(
+          TriplePattern(x, m("ub:worksFor"), m("http://www.Department0.University0.edu")), // ?X ub:worksFor http://www.Department0.University0.edu
+          TriplePattern(x, m("rdf:type"), m("ub:FullProfessor")), // ?X rdf:type ub:FullProfessor
+          TriplePattern(x, m("ub:name"), -2), // ?X ub:name ?Y1
+          TriplePattern(x, m("ub:emailAddress"), -3), // ?X ub:emailAddress ?Y2
+          TriplePattern(x, m("ub:telephone"), -4) // ?X ub:telephone ?Y3
+          ),
+          new Array(4)),
+        QueryParticle(5, Array(
+          TriplePattern(x, m("ub:subOrganizationOf"), m("http://www.Department0.University0.edu")), // ?X ub:subOrganizationOf http://www.Department0.University0.edu
+          TriplePattern(x, m("rdf:type"), m("ub:ResearchGroup")) // ?X rdf:type ub:ResearchGroup
+          ),
+          new Array(1)),
+        QueryParticle(6, Array(
+          TriplePattern(y, m("ub:subOrganizationOf"), m("http://www.University0.edu")), // ?Y ub:subOrganizationOf http://www.University0.edu
+          TriplePattern(y, m("rdf:type"), m("ub:Department")), //?Y rdf:type ub:Department
+          TriplePattern(x, m("ub:worksFor"), y), // ?X ub:worksFor ?Y
+          TriplePattern(x, m("rdf:type"), m("ub:FullProfessor")) // ?X rdf:type ub:FullProfessor
+          ),
+          new Array(2)),
+        QueryParticle(7, Array(
+          TriplePattern(y, m("rdf:type"), m("")), // ?Y rdf:type ub:FullProfessor
+          TriplePattern(y, m("ub:teacherOf"), z), // ?Y ub:teacherOf ?Z
+          TriplePattern(z, m("rdf:type"), m("ub:Course")), // ?Z rdf:type ub:Course
+          TriplePattern(x, m("ub:advisor"), y), // ?X ub:advisor ?Y
+          TriplePattern(x, m("ub:takesCourse"), z), // ?X ub:takesCourse ?Z
+          TriplePattern(x, m("rdf:type"), m("ub:UndergraduateStudent")) // ?X rdf:type ub:UndergraduateStudent
+          ),
+          new Array(3)))
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
       fullQueries
