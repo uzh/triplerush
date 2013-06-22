@@ -168,7 +168,7 @@ object LubmBenchmark extends App {
           TriplePattern(x, m("rdf:type"), m("ub:GraduateStudent")), // ?X rdf:type ub:GraduateStudent
           TriplePattern(x, m("ub:undergraduateDegreeFrom"), y), // ?X ub:undergraduateDegreeFrom ?Y
           TriplePattern(x, m("ub:memberOf"), z), // ?X ub:memberOf ?Z
-          TriplePattern(z, m("rdf:type"), m("rdf:type ub:Department")), // ?Z rdf:type ub:Department
+          TriplePattern(z, m("rdf:type"), m("ub:Department")), // ?Z rdf:type ub:Department
           TriplePattern(z, m("ub:subOrganizationOf"), y), // ?Z ub:subOrganizationOf ?Y
           TriplePattern(y, m("rdf:type"), m("ub:University")) // ?Y rdf:type ub:University
           ),
