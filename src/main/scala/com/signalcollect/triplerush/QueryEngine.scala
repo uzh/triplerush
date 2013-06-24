@@ -213,7 +213,7 @@ case class QueryEngine(
   print("Setting undeliverable signal handler ... ")
   g.setUndeliverableSignalHandler(UndeliverableSignalHandler().handle _)
   println("Done")
-  print("Adding rot index vertex ...")
+  print("Adding root index vertex ...")
   g.addVertex(new IndexVertex(TriplePattern(*, *, *)))
   println("Done")
   
