@@ -131,6 +131,7 @@ object DbpsbBenchmark extends App {
       /**
        * Queries from Trinity.RDF paper
        *
+       * 
        * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
        * SELECT ?title
        * WHERE {
@@ -162,6 +163,22 @@ object DbpsbBenchmark extends App {
        * ?person dbo:deathDate ?death .
        * }
        *
+       * http://www.w3.org/2004/02/skos/core#subject -> 1
+       * http://dbpedia.org/resource/Category:First-person_shooters -> 47406
+       * http://xmlns.com/foaf/0.1/name -> 41
+       * http://xmlns.com/foaf/0.1/homepage -> 653
+       * http://www.w3.org/1999/02/22-rdf-syntax-ns#type -> 16
+       * http://dbpedia.org/resource/Category:German_musicians -> 187543
+       * http://www.w3.org/2000/01/rdf-schema#comment -> 27
+       * http://dbpedia.org/ontology/birthPlace -> 1132
+       * http://dbpedia.org/resource/Berlin -> 19706
+       * http://dbpedia.org/ontology/birthDate -> 436
+       * http://dbpedia.org/ontology/deathDate -> 1177
+       * http://dbpedia.org/ontology/manufacturer -> 11736
+       * http://www.w3.org/1999/02/22-rdf-syntax-ns#type -> 16
+       * http://dbpedia.org/property/name -> 30
+       * http://dbpedia.org/property/pages -> 37409
+       * http://dbpedia.org/property/isbn -> 3385
        *
        * PREFIX dbo: <http://dbpedia.org/ontology/>
        * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
