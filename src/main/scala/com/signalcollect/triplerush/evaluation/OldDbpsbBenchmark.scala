@@ -49,7 +49,7 @@ import com.signalcollect.triplerush.QueryResult
  *
  * Evaluation is set to execute on a 'Kraken'-node.
  */
-object DbpsbBenchmark extends App {
+object OldDbpsbBenchmark extends App {
   def jvmHighThroughputGc = " -Xmx64000m" +
     " -Xms64000m" +
     " -Xmn8000m" +
@@ -93,7 +93,7 @@ object DbpsbBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM ${args(2)} eval."
+  def evalName = "DBPSB eval."
   //  def evalName = "Local debugging."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -107,154 +107,155 @@ object DbpsbBenchmark extends App {
       //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
       //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
       //      }
-      evaluation = evaluation.addEvaluationRun(dbpsbBenchmarkRun(
+      evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
         evalName,
         //queryId,
         false,
         Long.MaxValue,
         optimizer,
-        getRevision,
-        args(2).toInt))
+        getRevision))
     }
     //  }
   }
   evaluation.execute
 
-  def dbpsbBenchmarkRun(
+  def lubmBenchmarkRun(
     description: String,
     //queryId: Int,
     sampling: Boolean,
     tickets: Long,
     optimizer: Int,
-    revision: String,
-    universities: Int)(): List[Map[String, String]] = {
-
-    /**
-     * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf
-     * Result sizes from: http://research.microsoft.com/pubs/183717/Trinity.RDF.pdf
-     *            L1   L2       L3 L4 L5 L6  L7
-     * LUBM-160   397  173040   0  10 10 125 7125
-     * LUBM-10240 2502 11016920 0  10 10 125 450721
-     *
-     * Times Trinity: 281 132 110  5    4 9 630
-     * Time TripleR: 3815 222 3126 2    1 2 603
-     */
-    val game = -1
-    val title = -2
-
-    val var3 = -1
-    val var2 = -2
-    val var1 = -3
-
-    val musician = -1
-    val name = -2
-    val vdescription = -3
-
-    val person = -1
-    val birth = -2
-    val pname = -3
-    val death = -4
-
-    val car = -1
-    val man = -3
-    val manufacturer = -4
-
-    val bvar6 = -1
-    val bvar = -2
-    val bvar0 = -3
-    val bvar1 = -4
-    val bvar2 = -5
-    val bvar3 = -6
-
-    val s = -1
-    val player = -2
-    val position = -3
-    val club = -4
-    val cap = -5
-    val place = -6
-    val pop = -7
-    val tricot = -8
-
-    val m = Map(
-      "http://www.w3.org/2004/02/skos/core#subject" -> 1,
-      "http://dbpedia.org/resource/Category:First-person_shooters" -> 47406,
-      "foaf:name" -> 41,
-      "foaf:homepage" -> 653,
-      "rdf#type" -> 16,
-      "http://dbpedia.org/resource/Category:German_musicians" -> 187543,
-      "rdfs#comment" -> 27,
-      "dbo:birthPlace" -> 1132,
-      "http://dbpedia.org/resource/Berlin" -> 19706,
-      "dbo:birthDate" -> 436,
-      "dbo:deathDate" -> 1177,
-      "http://dbpedia.org/resource/Category:Luxury_vehicles" -> 322352,
-      "dbo:manufacturer" -> 11736,
-      "dbprop:name" -> 30,
-      "dbprop:pages" -> 37409,
-      "dbprop:isbn" -> 3385,
-      "dbprop:author" -> 3371,
-      "foaf:page" -> 39,
-      "dbo:SoccerPlayer" -> 1723,
-      "dbprop:position" -> 397,
-      "dbprop:clubs" -> 1709,
-      "dbo:capacity" -> 6306,
-      "dbprop:population" -> 966,
-      "dbo:number" -> 411)
+    revision: String)(): List[Map[String, String]] = {
 
     /**
      * Queries from Trinity.RDF paper
      *
+     *
+     * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+     * SELECT ?title
+     * WHERE {
+     *    ?game <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:First-person_shooters> .
+     *    ?game foaf:name ?title .
+     * }
+     * -----
+     * SELECT ?var
+     * WHERE {
+     * 	?var3 <http://xmlns.com/foaf/0.1/homepage> ?var2 .
+     * 	?var3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?var .
+     * }
+     * ------
+     *
+     * PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+     * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+     * SELECT ?name ?description ?musician WHERE {
+     *      ?musician <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:German_musicians> .
+     *      ?musician foaf:name ?name .
+     *      ?musician rdfs:comment ?description .
+     * }
+     * -------
+     * PREFIX dbo: <http://dbpedia.org/ontology/>
+     * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+     * SELECT ?name ?birth ?death ?person WHERE {
+     * ?person dbo:birthPlace <http://dbpedia.org/resource/Berlin> .
+     * ?person dbo:birthDate ?birth .
+     * ?person foaf:name ?name .
+     * ?person dbo:deathDate ?death .
+     * }
+     * -----
+     *
+     * PREFIX dbo: <http://dbpedia.org/ontology/>
+     * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+     * SELECT ?manufacturer ?name ?car
+     * WHERE {
+     * ?car <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:Luxury_vehicles> .
+     * ?car foaf:name ?name .
+     * ?car dbo:manufacturer ?man .
+     * ?man foaf:name ?manufacturer
+     * }
+     *
+     * ---------
+     * PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+     * PREFIX dbpprop:<http://dbpedia.org/property/>
+     * SELECT ?var0 ?var1 ?var2 ?var3 where
+     * {
+     * ?var6 rdf:type ?var.
+     * ?var6 dbpprop:name ?var0.
+     * ?var6 dbpprop:pages ?var1.
+     * ?var6 dbpprop:isbn ?var2.
+     * ?var6 dbpprop:author ?var3.
+     * }
+     * -----
+     * PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+     * PREFIX dbpprop:<http://dbpedia.org/property/>
+     * SELECT ?var where
+     * {
+     * ?var6 rdf:type ?var.
+     * ?var6 dbpprop:name ?var0.
+     * ?var6 dbpprop:pages ?var1.
+     * ?var6 dbpprop:isbn ?var2.
+     * ?var6 dbpprop:author ?var3.
+     * }
+     * -----
+     *
+     * PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+     * PREFIX dbpedia2: <http://dbpedia.org/property/>
+     * PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+     * SELECT ?player WHERE {
+     * ?s foaf:page ?player .
+     * ?s rdf:type <http://dbpedia.org/ontology/SoccerPlayer> .
+     * ?s dbpedia2:position ?position .
+     * ?s <http://dbpedia.org/property/clubs> ?club .
+     * ?club <http://dbpedia.org/ontology/capacity> ?cap .
+     * ?s <http://dbpedia.org/ontology/birthPlace> ?place .
+     * ?place <http://dbpedia.org/property/population> ?pop .
+     * ?s <http://dbpedia.org/ontology/number> ?tricot .
+     * }
+     *
+     * http://www.w3.org/2004/02/skos/core#subject -> 1
+     * http://dbpedia.org/resource/Category:First-person_shooters -> 47406
+     * http://xmlns.com/foaf/0.1/name -> 41
+     * http://xmlns.com/foaf/0.1/homepage -> 653
+     * http://www.w3.org/1999/02/22-rdf-syntax-ns#type -> 16
+     * http://dbpedia.org/resource/Category:German_musicians -> 187543
+     * http://www.w3.org/2000/01/rdf-schema#comment -> 27
+     * http://dbpedia.org/ontology/birthPlace -> 1132
+     * http://dbpedia.org/resource/Berlin -> 19706
+     * http://dbpedia.org/ontology/birthDate -> 436
+     * http://dbpedia.org/ontology/deathDate -> 1177
+     * http://dbpedia.org/resource/Category:Luxury_vehicles -> 322352
+     * http://dbpedia.org/ontology/manufacturer -> 11736
+     * http://www.w3.org/1999/02/22-rdf-syntax-ns#type -> 16
+     * http://dbpedia.org/property/name -> 30
+     * http://dbpedia.org/property/pages -> 37409
+     * http://dbpedia.org/property/isbn -> 3385
+     * http://dbpedia.org/property/author -> 3371
+     * http://xmlns.com/foaf/0.1/page -> 39
+     * http://dbpedia.org/ontology/SoccerPlayer -> 1723
+     * http://dbpedia.org/property/position -> 397
+     * http://dbpedia.org/property/clubs -> 1709
+     * http://dbpedia.org/ontology/capacity -> 6306
+     * http://dbpedia.org/property/population -> 966
+     * http://dbpedia.org/ontology/number -> 411
      */
     def fullQueries: List[QueryParticle] = List(
-      QueryParticle(1, Array(
-        TriplePattern(game, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:First-person_shooters")), //?game <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:First-person_shooters> .
-        TriplePattern(game, m("foaf:name"), title)), //?game foaf:name ?title .
-        new Array(2)),
-      QueryParticle(2, Array(
-        TriplePattern(var3, m("foaf:homepage"), var2), //	?var3 <http://xmlns.com/foaf/0.1/homepage> ?var2 .
-        TriplePattern(var3, m("rdf#type"), var1)), //?var3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?var 
-        new Array(3)),
-      QueryParticle(3, Array(
-        TriplePattern(musician, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:German_musicians")), //?musician <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:German_musicians> .
-        TriplePattern(musician, m("foaf:name"), name), //?musician foaf:name ?name .
-        TriplePattern(musician, m("rdfs:comment"), vdescription)), //?musician rdfs:comment ?description
-        new Array(3)),
-      QueryParticle(4, Array(
-        TriplePattern(person, m("dbo:birthPlace"), m("http://dbpedia.org/resource/Berlin")),
-        TriplePattern(person, m("dbo:birthDate"), birth),
-        TriplePattern(person, m("foaf:name"), pname),
-        TriplePattern(person, m("dbo:deathDate"), death)),
-        new Array(4)),
-      QueryParticle(5, Array(
-        TriplePattern(car, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:Luxury_vehicles")),
-        TriplePattern(car, m("foaf:name"), name),
-        TriplePattern(car, m("dbo:manufacturer"), man),
-        TriplePattern(man, m("foaf:name"), manufacturer)),
-        new Array(4)),
-      QueryParticle(6, Array(
-        TriplePattern(bvar6, m("rdf:type"), bvar),
-        TriplePattern(bvar6, m("dbpprop:name"), bvar0),
-        TriplePattern(bvar6, m("dbpprop:pages"), bvar1),
-        TriplePattern(bvar6, m("dbpprop:isbn"), bvar2),
-        TriplePattern(bvar6, m("dbpprop:author"), bvar3)),
-        new Array(6)),
-      QueryParticle(7, Array(
-        TriplePattern(bvar6, m("rdf:type"), bvar),
-        TriplePattern(bvar6, m("dbpprop:name"), bvar0),
-        TriplePattern(bvar6, m("dbpprop:pages"), bvar1),
-        TriplePattern(bvar6, m("dbpprop:isbn"), bvar2),
-        TriplePattern(bvar6, m("dbpprop:author"), bvar3)),
-        new Array(6)),
-      QueryParticle(8, Array(
-        TriplePattern(s, m("foaf:page"), player),
-        TriplePattern(s, m("rdf:type"), m("dbo:SoccerPlayer")),
-        TriplePattern(s, m("dbprop:position"), position),
-        TriplePattern(s, m("dbprop:clubs"), club),
-        TriplePattern(club, m("dbo:capacity"), cap),
-        TriplePattern(s, m("dbo:birthPlace"), place),
-        TriplePattern(place, m("dbprop:population"), pop),
-        TriplePattern(s, m("dbo:number"), tricot)),
-        new Array(8)))
+      QueryParticle(queryId = 1,
+        unmatched = Array(TriplePattern(-1, 1, 47406), TriplePattern(-1, 41, -2)),
+        bindings = new Array(2)),
+      QueryParticle(2, Array(TriplePattern(-1, 653, -2), TriplePattern(-1, 16, -3)),
+        bindings = new Array(3)),
+      QueryParticle(3, Array(TriplePattern(-1, 1, 187543), TriplePattern(-1, 41, -2), TriplePattern(-1, 27, -3)),
+        bindings = new Array(3)),
+      QueryParticle(4, Array(TriplePattern(-1, 1132, 19706), TriplePattern(-1, 436, -2), TriplePattern(-1, 41, -3), TriplePattern(-1, 1177, -4)),
+        bindings = new Array(4)),
+      QueryParticle(5, Array(TriplePattern(-1, 1, 322352), TriplePattern(-1, 41, -2), TriplePattern(-1, 11736, -3), TriplePattern(-3, 41, -4)),
+        bindings = new Array(4)),
+      QueryParticle(6, Array(TriplePattern(-1, 16, -2), TriplePattern(-1, 30, -3), TriplePattern(-1, 37409, -4), TriplePattern(-1, 3385, -5), TriplePattern(-1, 3371, -6)),
+        bindings = new Array(6)),
+      QueryParticle(7, Array(TriplePattern(-1, 16, -2), TriplePattern(-1, 30, -3), TriplePattern(-1, 37409, -4), TriplePattern(-1, 3385, -5), TriplePattern(-1, 3371, -6)),
+        bindings = new Array(6)),
+      QueryParticle(8, Array(TriplePattern(-1, 39, -2), TriplePattern(-1, 16, 1723), TriplePattern(-1, 397, -3), TriplePattern(-1, 1709, -4), TriplePattern(-4, 6306, -5), TriplePattern(-1, 1132, -6), TriplePattern(-6, 966, -7), TriplePattern(-1, 411, -8)),
+        bindings = new Array(8)))
+
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
       fullQueries
@@ -275,10 +276,10 @@ object DbpsbBenchmark extends App {
     //          priority = TorquePriority.fast),
     //        numberOfNodes = 10)))
 
-    def loadDbpsb {
-      val lubmFolderName = s"lubm$universities-filtered-splits"
+    def loadSmallLubm {
+      val smallLubmFolderName = "lubm160-filtered-splits"
       for (splitId <- 0 until 2880) {
-        qe.loadBinary(s"./$lubmFolderName/$splitId.filtered-split", Some(splitId))
+        qe.loadBinary(s"./$smallLubmFolderName/$splitId.filtered-split", Some(splitId))
         if (splitId % 288 == 279) {
           println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
           qe.awaitIdle
@@ -288,6 +289,20 @@ object DbpsbBenchmark extends App {
       println("Query engine preparing query execution.")
       qe.prepareQueryExecution
       println("Query engine ready.")
+    }
+
+    def loadLargeLubm {
+      val largeLubmFolderName = "/home/torque/tmp/lubm10240-filtered-splits"
+      for (splitId <- 0 until 2880) {
+        qe.loadBinary(s"$largeLubmFolderName/$splitId.filtered-split", Some(splitId))
+        if (splitId % 288 == 279) {
+          println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
+          qe.awaitIdle
+          println(s"Continuing graph loading..")
+        }
+      }
+      println("Query engine preparing query execution")
+      qe.prepareQueryExecution
     }
 
     /**
@@ -320,7 +335,7 @@ object DbpsbBenchmark extends App {
      */
     def jitSteadyState {
       for (i <- 1 to 5) {
-        for (queryId <- 1 to 8) {
+        for (queryId <- 1 to 7) {
           val queryIndex = queryId - 1
           val query = fullQueries(queryIndex)
           print(s"Warming up with query $query ...")
@@ -370,7 +385,6 @@ object DbpsbBenchmark extends App {
       runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
       runResult += s"loadNumber" -> 160.toString
       runResult += s"date" -> date.toString
-      runResult += s"dataSet" -> s"lubm$universities"
       finalResults = runResult :: finalResults
     }
 
@@ -379,7 +393,8 @@ object DbpsbBenchmark extends App {
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
       println("Dispatching loading command to worker...")
-      loadDbpsb
+      loadSmallLubm
+      //loadLargeLubm
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
@@ -388,7 +403,7 @@ object DbpsbBenchmark extends App {
     jitSteadyState
     //cleanGarbage
     println(s"Finished warm-up.")
-    for (queryId <- 1 to 8) {
+    for (queryId <- 1 to 7) {
       println(s"Running evaluation for query $queryId.")
       runEvaluation(queryId)
       println(s"Done running evaluation for query $queryId. Awaiting idle")
