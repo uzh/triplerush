@@ -94,7 +94,7 @@ object DbpsbBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM ${args(2)} eval."
+  def evalName = s"DBPSB 10 eval."
   //  def evalName = "Local debugging."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -114,8 +114,7 @@ object DbpsbBenchmark extends App {
         false,
         Long.MaxValue,
         optimizer,
-        getRevision,
-        args(2).toInt))
+        getRevision))
     }
     //  }
   }
@@ -127,18 +126,13 @@ object DbpsbBenchmark extends App {
     sampling: Boolean,
     tickets: Long,
     optimizer: Int,
-    revision: String,
-    universities: Int)(): List[Map[String, String]] = {
+    revision: String)(): List[Map[String, String]] = {
 
     /**
-     * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf
-     * Result sizes from: http://research.microsoft.com/pubs/183717/Trinity.RDF.pdf
-     *            L1   L2       L3 L4 L5 L6  L7
-     * LUBM-160   397  173040   0  10 10 125 7125
-     * LUBM-10240 2502 11016920 0  10 10 125 450721
+     * Queries from: Trinity.RDF
      *
-     * Times Trinity: 281 132 110  5    4 9 630
-     * Time TripleR: 3815 222 3126 2    1 2 603
+     * Times Trinity: 7   220 5 7 8 21 13 28
+     * Times TripleR: 
      */
     val game = -1
     val title = -2
@@ -174,7 +168,7 @@ object DbpsbBenchmark extends App {
     val cap = -5
     val place = -6
     val pop = -7
-    val tricot = -8
+    val tricot = -8  
 
     val m = Map(
       "http://www.w3.org/2004/02/skos/core#subject" -> 1,
@@ -212,13 +206,13 @@ object DbpsbBenchmark extends App {
         TriplePattern(game, m("foaf:name"), title)), //?game foaf:name ?title .
         new Array(2)),
       QuerySpecification(2, Array(
-        TriplePattern(var3, m("foaf:homepage"), var2), //	?var3 <http://xmlns.com/foaf/0.1/homepage> ?var2 .
+        TriplePattern(var3, m("foaf:homepage"), var2), //?var3 <http://xmlns.com/foaf/0.1/homepage> ?var2 .
         TriplePattern(var3, m("rdf#type"), var1)), //?var3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?var 
         new Array(3)),
       QuerySpecification(3, Array(
         TriplePattern(musician, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:German_musicians")), //?musician <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:German_musicians> .
         TriplePattern(musician, m("foaf:name"), name), //?musician foaf:name ?name .
-        TriplePattern(musician, m("rdfs:comment"), vdescription)), //?musician rdfs:comment ?description
+        TriplePattern(musician, m("rdfs#comment"), vdescription)), //?musician rdfs:comment ?description
         new Array(3)),
       QuerySpecification(4, Array(
         TriplePattern(person, m("dbo:birthPlace"), m("http://dbpedia.org/resource/Berlin")),
@@ -233,22 +227,22 @@ object DbpsbBenchmark extends App {
         TriplePattern(man, m("foaf:name"), manufacturer)),
         new Array(4)),
       QuerySpecification(6, Array(
-        TriplePattern(bvar6, m("rdf:type"), bvar),
-        TriplePattern(bvar6, m("dbpprop:name"), bvar0),
-        TriplePattern(bvar6, m("dbpprop:pages"), bvar1),
-        TriplePattern(bvar6, m("dbpprop:isbn"), bvar2),
-        TriplePattern(bvar6, m("dbpprop:author"), bvar3)),
+        TriplePattern(bvar6, m("rdf#type"), bvar),
+        TriplePattern(bvar6, m("dbprop:name"), bvar0),
+        TriplePattern(bvar6, m("dbprop:pages"), bvar1),
+        TriplePattern(bvar6, m("dbprop:isbn"), bvar2),
+        TriplePattern(bvar6, m("dbprop:author"), bvar3)),
         new Array(6)),
       QuerySpecification(7, Array(
-        TriplePattern(bvar6, m("rdf:type"), bvar),
-        TriplePattern(bvar6, m("dbpprop:name"), bvar0),
-        TriplePattern(bvar6, m("dbpprop:pages"), bvar1),
-        TriplePattern(bvar6, m("dbpprop:isbn"), bvar2),
-        TriplePattern(bvar6, m("dbpprop:author"), bvar3)),
+        TriplePattern(bvar6, m("rdf#type"), bvar),
+        TriplePattern(bvar6, m("dbprop:name"), bvar0),
+        TriplePattern(bvar6, m("dbprop:pages"), bvar1),
+        TriplePattern(bvar6, m("dbprop:isbn"), bvar2),
+        TriplePattern(bvar6, m("dbprop:author"), bvar3)),
         new Array(6)),
       QuerySpecification(8, Array(
         TriplePattern(s, m("foaf:page"), player),
-        TriplePattern(s, m("rdf:type"), m("dbo:SoccerPlayer")),
+        TriplePattern(s, m("rdf#type"), m("dbo:SoccerPlayer")),
         TriplePattern(s, m("dbprop:position"), position),
         TriplePattern(s, m("dbprop:clubs"), club),
         TriplePattern(club, m("dbo:capacity"), cap),
@@ -277,9 +271,9 @@ object DbpsbBenchmark extends App {
     //        numberOfNodes = 10)))
 
     def loadDbpsb {
-      val lubmFolderName = s"lubm$universities-filtered-splits"
+      val dbpsbFolderName = s"dbpsb10-filtered-splits"
       for (splitId <- 0 until 2880) {
-        qe.loadBinary(s"./$lubmFolderName/$splitId.filtered-split", Some(splitId))
+        qe.loadBinary(s"./$dbpsbFolderName/$splitId.filtered-split", Some(splitId))
         if (splitId % 288 == 279) {
           println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
           qe.awaitIdle
@@ -367,9 +361,9 @@ object DbpsbBenchmark extends App {
       runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
       runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
       runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
-      runResult += s"loadNumber" -> 160.toString
+      runResult += s"loadNumber" -> 10.toString
       runResult += s"date" -> date.toString
-      runResult += s"dataSet" -> s"lubm$universities"
+      runResult += s"dataSet" -> s"dbpsb10"
       finalResults = runResult :: finalResults
     }
 
