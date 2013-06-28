@@ -69,16 +69,14 @@ object Encoder {
         while (nxp.hasNext) {
           val triple = nxp.next
           val subjectString = triple(0).toString
-          if (!subjectString.startsWith("file:///Users")) {
-            val predicateString = triple(1).toString
-            val objectString = triple(2).toString
-            val sId = register(subjectString)
-            val pId = register(predicateString)
-            val oId = register(objectString)
-            binaryDos.writeInt(sId)
-            binaryDos.writeInt(pId)
-            binaryDos.writeInt(oId)
-          }
+          val predicateString = triple(1).toString
+          val objectString = triple(2).toString
+          val sId = register(subjectString)
+          val pId = register(predicateString)
+          val oId = register(objectString)
+          binaryDos.writeInt(sId)
+          binaryDos.writeInt(pId)
+          binaryDos.writeInt(oId)
         }
         binaryDos.close
         binaryOs.close

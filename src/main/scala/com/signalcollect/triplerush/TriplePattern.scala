@@ -25,6 +25,8 @@ import scala.Option.option2Iterable
 /**
  * Pattern of 3 expressions (subject, predicate object).
  * They are represented as Int, but can be converted to Expression implicitly and for free (value class).
+ *
+ * TODO: Use AnyVal of Array[Int] as representation.
  */
 case class TriplePattern(s: Int, p: Int, o: Int) {
 
@@ -126,36 +128,5 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
       TriplePattern(s.toRoutingAddress, p.toRoutingAddress, o.toRoutingAddress)
     }
   }
-//
-//  /**
-//   * Applies bindings to this pattern.
-//   */
-//  def applyBindings(bindings: Bindings): TriplePattern = {
-//    TriplePattern(s.applyBindings(bindings), p.applyBindings(bindings), o.applyBindings(bindings))
-//  }
-//
-//  /**
-//   * Returns if this pattern can be bound to a triple.
-//   * If it can be bound, then the necessary bindings are returned.
-//   */
-//  def bindingsFor(tp: TriplePattern): Option[Bindings] = {
-//    val sBindings = s.bindTo(tp.s)
-//    if (sBindings.isDefined) {
-//      val pBindings = p.bindTo(tp.p)
-//      if (pBindings.isDefined && pBindings.get.isCompatible(sBindings.get)) {
-//        val spBindings = sBindings.get.merge(pBindings.get)
-//        val oBindings = o.bindTo(tp.o)
-//        if (oBindings.isDefined && oBindings.get.isCompatible(spBindings)) {
-//          val spoBindings = spBindings.merge(oBindings.get)
-//          Some(spoBindings)
-//        } else {
-//          None
-//        }
-//      } else {
-//        None
-//      }
-//    } else {
-//      None
-//    }
-//  }
+
 }

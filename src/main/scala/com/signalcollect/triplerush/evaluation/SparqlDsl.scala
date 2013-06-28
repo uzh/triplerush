@@ -86,8 +86,8 @@ object SparqlDsl extends App {
     }
   }
 
-  implicit def dsl2Query(q: DslQuery): QueryParticle = {
+  implicit def dsl2Query(q: DslQuery): QuerySpecification = {
     val queryId = if (q.isSamplingQuery) QueryIds.nextSamplingQueryId else QueryIds.nextFullQueryId
-    QueryParticle(queryId, q.dslTriplePatterns map (_.toTriplePattern(q.variableToId)) toArray, bindings = new Array[Int](q.variableToId.size), tickets = q.tickets)
+    QuerySpecification(queryId, q.dslTriplePatterns map (_.toTriplePattern(q.variableToId)) toArray, bindings = new Array[Int](q.variableToId.size))
   }
 }

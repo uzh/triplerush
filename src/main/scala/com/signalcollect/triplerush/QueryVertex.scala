@@ -37,7 +37,7 @@ case class QueryResult(
 case class QueryDone(
   statKeys: Array[Any],
   statVariables: Array[Any])
-  
+
 case object QueryOptimizer {
   val None = 0 // Execute patterns in order passed.
   val Greedy = 1 // Execute patterns in descending order of cardinalities.
@@ -45,16 +45,16 @@ case object QueryOptimizer {
 }
 
 class QueryVertex(
-  val query: QueryParticle,
-  val resultRecipient: ActorRef,
-  val optimizer: Int) extends Vertex[Int, List[QueryParticle]] {
+    val query: QuerySpecification,
+    val resultRecipient: ActorRef,
+    val optimizer: Int) extends Vertex[Int, List[QueryParticle]] {
 
   val id = query.queryId
 
   @transient var state: List[QueryParticle] = _
 
-  val expectedTickets = query.tickets
-  val expectedCardinalities = query.unmatched.size
+  val expectedTickets = Long.MaxValue
+  val numberOfPatterns = query.unmatched.length
 
   @transient var queryCopyCount: Long = 0
   @transient var receivedTickets: Long = 0
@@ -64,12 +64,12 @@ class QueryVertex(
   @transient var optimizingStartTime = 0l
   @transient var optimizingDuration = 0l
 
-  @transient var optimizedQuery: QueryParticle = _
+  @transient var optimizedQuery: QuerySpecification = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     state = List[QueryParticle]()
     cardinalities = Map()
-    if (optimizer != QueryOptimizer.None && query.unmatched.size > 1) {
+    if (optimizer != QueryOptimizer.None && numberOfPatterns > 1) {
       // Gather pattern cardinalities first.
       query.unmatched foreach (triplePattern => {
         val indexId = triplePattern.routingAddress
@@ -79,7 +79,7 @@ class QueryVertex(
       optimizedQuery = query
     } else {
       // Dispatch the query directly.
-      graphEditor.sendSignal(query, query.unmatched.head.routingAddress, None)
+      graphEditor.sendSignal(query.toParticle, query.unmatched.head.routingAddress, None)
       optimizedQuery = query
     }
   }
@@ -90,7 +90,7 @@ class QueryVertex(
     signal match {
       case ticketsOfFailedQuery: Long =>
         queryCopyCount += 1
-        receivedTickets += ticketsOfFailedQuery
+        processTickets(ticketsOfFailedQuery)
       //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
       case query: QueryParticle =>
         processQuery(query)
@@ -98,18 +98,18 @@ class QueryVertex(
       case CardinalityReply(forPattern, cardinality) =>
         cardinalities += forPattern -> cardinality
         //        println(s"Query vertex $id received cardinalities $forPattern -> $cardinality")
-        if (cardinalities.size == expectedCardinalities) {
+        if (cardinalities.size == numberOfPatterns) {
           optimizedQuery = optimizeQuery
           if (optimizingStartTime != 0) {
             optimizingDuration = System.nanoTime - optimizingStartTime
           }
-          graphEditor.sendSignal(optimizedQuery, optimizedQuery.unmatched.head.routingAddress, None)
+          graphEditor.sendSignal(optimizedQuery.toParticle, optimizedQuery.unmatched.head.routingAddress, None)
         }
     }
     true
   }
 
-  def optimizeQuery: QueryParticle = {
+  def optimizeQuery: QuerySpecification = {
     var sortedPatterns = cardinalities.toArray sortBy (_._2)
     optimizer match {
       case QueryOptimizer.Greedy =>
@@ -150,8 +150,7 @@ class QueryVertex(
 
   def processQuery(query: QueryParticle) {
     queryCopyCount += 1
-    receivedTickets += query.tickets
-    complete &&= query.isComplete
+    processTickets(query.tickets)
     //if (query.unmatched.isEmpty) {
     // numberOfSuccessfulQueries += 1
     // println(s"Success: $query")
@@ -166,14 +165,21 @@ class QueryVertex(
     //}
   }
 
+  def processTickets(t: Long) {
+    receivedTickets += math.abs(t)
+    if (t < 0) {
+      complete = false
+    }
+  }
+
   override def scoreSignal: Double = if (expectedTickets == receivedTickets) 1 else 0
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
     val stats = Map[Any, Any](
-        "firstResultNanoTime" -> firstResultNanoTime,
-        "optimizingDuration" -> optimizingDuration,
-        "queryCopyCount" -> queryCopyCount,
-        "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
+      "firstResultNanoTime" -> firstResultNanoTime,
+      "optimizingDuration" -> optimizingDuration,
+      "queryCopyCount" -> queryCopyCount,
+      "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
     val statsKeys: Array[Any] = stats.keys.toArray
     val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
     resultRecipient ! QueryDone(statsKeys, statsValues)

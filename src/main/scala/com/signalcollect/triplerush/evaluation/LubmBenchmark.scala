@@ -42,6 +42,7 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
 import com.signalcollect.triplerush.QueryResult
+import com.signalcollect.triplerush.QuerySpecification
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -93,30 +94,32 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM ${args(2)} eval."
+  def evalName = s"LUBM trial run with Array particles & System.arraycopy"
   //  def evalName = "Local debugging."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
-  for (run <- 1 to runs) {
-    // for (queryId <- 1 to 1) {
-    for (optimizer <- List(QueryOptimizer.Clever)) {
-      //for (tickets <- List(1000, 10000, 100000, 1000000)) {
-      //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
-      //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
-      //      }
-      evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
-        evalName,
-        //queryId,
-        false,
-        Long.MaxValue,
-        optimizer,
-        getRevision,
-        args(2).toInt))
+  for (unis <- List(160)) {
+    for (run <- 1 to runs) {
+      // for (queryId <- 1 to 1) {
+      for (optimizer <- List(QueryOptimizer.Clever)) {
+        //for (tickets <- List(1000, 10000, 100000, 1000000)) {
+        //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
+        //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
+        //      }
+        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
+          evalName,
+          //queryId,
+          false,
+          Long.MaxValue,
+          optimizer,
+          getRevision,
+          unis))
+      }
+      //  }
     }
-    //  }
   }
   evaluation.execute
 
@@ -163,8 +166,8 @@ object LubmBenchmark extends App {
       "ub:teacherOf" -> 17,
       "ub:advisor" -> 430,
       "ub:takesCourse" -> 417)
-      def fullQueries: List[QueryParticle] = List(
-        QueryParticle(1, Array(
+      def fullQueries: List[QuerySpecification] = List(
+        QuerySpecification(1, Array(
           TriplePattern(x, m("rdf:type"), m("ub:GraduateStudent")), // ?X rdf:type ub:GraduateStudent
           TriplePattern(x, m("ub:undergraduateDegreeFrom"), y), // ?X ub:undergraduateDegreeFrom ?Y
           TriplePattern(x, m("ub:memberOf"), z), // ?X ub:memberOf ?Z
@@ -173,11 +176,11 @@ object LubmBenchmark extends App {
           TriplePattern(y, m("rdf:type"), m("ub:University")) // ?Y rdf:type ub:University
           ),
           new Array(3)),
-        QueryParticle(2, Array(
+        QuerySpecification(2, Array(
           TriplePattern(x, m("rdf:type"), m("ub:Course")), // ?X rdf:type ub:Course
           TriplePattern(x, m("ub:name"), y)), // ?X ub:name ?Y
           new Array(2)),
-        QueryParticle(3, Array(
+        QuerySpecification(3, Array(
           TriplePattern(x, m("ub:undergraduateDegreeFrom"), y), // ?X ub:undergraduateDegreeFrom ?Y
           TriplePattern(x, m("rdf:type"), m("ub:UndergraduateStudent")), // ?X rdf:type ub:UndergraduateStudent
           TriplePattern(x, m("ub:memberOf"), z), // ?X ub:memberOf ?Z
@@ -186,7 +189,7 @@ object LubmBenchmark extends App {
           TriplePattern(y, m("rdf:type"), m("ub:University")) // ?Y rdf:type ub:University
           ),
           new Array(3)),
-        QueryParticle(4, Array(
+        QuerySpecification(4, Array(
           TriplePattern(x, m("ub:worksFor"), m("http://www.Department0.University0.edu")), // ?X ub:worksFor http://www.Department0.University0.edu
           TriplePattern(x, m("rdf:type"), m("ub:FullProfessor")), // ?X rdf:type ub:FullProfessor
           TriplePattern(x, m("ub:name"), -2), // ?X ub:name ?Y1
@@ -194,19 +197,19 @@ object LubmBenchmark extends App {
           TriplePattern(x, m("ub:telephone"), -4) // ?X ub:telephone ?Y3
           ),
           new Array(4)),
-        QueryParticle(5, Array(
+        QuerySpecification(5, Array(
           TriplePattern(x, m("ub:subOrganizationOf"), m("http://www.Department0.University0.edu")), // ?X ub:subOrganizationOf http://www.Department0.University0.edu
           TriplePattern(x, m("rdf:type"), m("ub:ResearchGroup")) // ?X rdf:type ub:ResearchGroup
           ),
           new Array(1)),
-        QueryParticle(6, Array(
+        QuerySpecification(6, Array(
           TriplePattern(y, m("ub:subOrganizationOf"), m("http://www.University0.edu")), // ?Y ub:subOrganizationOf http://www.University0.edu
           TriplePattern(y, m("rdf:type"), m("ub:Department")), //?Y rdf:type ub:Department
           TriplePattern(x, m("ub:worksFor"), y), // ?X ub:worksFor ?Y
           TriplePattern(x, m("rdf:type"), m("ub:FullProfessor")) // ?X rdf:type ub:FullProfessor
           ),
           new Array(2)),
-        QueryParticle(7, Array(
+        QuerySpecification(7, Array(
           TriplePattern(y, m("rdf:type"), m("ub:FullProfessor")), // ?Y rdf:type ub:FullProfessor
           TriplePattern(y, m("ub:teacherOf"), z), // ?Y ub:teacherOf ?Z
           TriplePattern(z, m("rdf:type"), m("ub:Course")), // ?Z rdf:type ub:Course
@@ -264,7 +267,7 @@ object LubmBenchmark extends App {
         ((nanoseconds / 100000.0).round) / 10.0
       }
 
-      def executeOnQueryEngine(q: QueryParticle): QueryResult = {
+      def executeOnQueryEngine(q: QuerySpecification): QueryResult = {
         val resultFuture = qe.executeQuery(q, optimizer)
         try {
           Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
@@ -319,8 +322,6 @@ object LubmBenchmark extends App {
         runResult += s"query" -> queryStats("optimizedQuery").toString
         runResult += s"exception" -> queryStats("exception").toString
         runResult += s"results" -> queryResult.queries.length.toString
-        runResult += s"samplingQuery" -> query.isSamplingQuery.toString
-        runResult += s"tickets" -> query.tickets.toString
         runResult += s"executionTime" -> executionTime.toString
         runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
         runResult += s"optimizingTime" -> optimizingTime.toString
@@ -328,7 +329,7 @@ object LubmBenchmark extends App {
         runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
         runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
         runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
-        runResult += s"loadNumber" -> 160.toString
+        runResult += s"loadNumber" -> universities.toString
         runResult += s"date" -> date.toString
         runResult += s"dataSet" -> s"lubm$universities"
         finalResults = runResult :: finalResults
@@ -346,7 +347,7 @@ object LubmBenchmark extends App {
 
     println("Starting warm-up...")
     jitSteadyState
-    //cleanGarbage
+    cleanGarbage
     println(s"Finished warm-up.")
     for (queryId <- 1 to 7) {
       println(s"Running evaluation for query $queryId.")

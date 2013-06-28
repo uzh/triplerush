@@ -44,6 +44,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.Expression._
+import akka.event.Logging
 
 case class UndeliverableSignalHandler() {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
@@ -93,8 +94,9 @@ class ResultRecipientActor extends Actor {
         self ! PoisonPill
       }
 
-    case result: QueryParticle =>
-      queries = result :: queries
+    case query: QueryParticle =>
+      // TODO: Send only bindings instead of full particles. 
+      queries = query :: queries
   }
 }
 
@@ -187,7 +189,9 @@ case object FileLoaders {
 }
 
 case class QueryEngine(
-    graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)),
+    graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.
+      withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)),
+    //.withLoggingLevel(Logging.DebugLevel)
     console: Boolean = false) {
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
@@ -216,7 +220,7 @@ case class QueryEngine(
   print("Adding root index vertex ...")
   g.addVertex(new IndexVertex(TriplePattern(*, *, *)))
   println("Done")
-  
+
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
   print("Awaiting idle ... ")
@@ -247,7 +251,7 @@ case class QueryEngine(
     }
   }
 
-  def executeQuery(q: QueryParticle, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
+  def executeQuery(q: QuerySpecification, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
     assert(queryExecutionPrepared)
     if (!q.unmatched.isEmpty) {
       val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
