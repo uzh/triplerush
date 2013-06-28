@@ -42,6 +42,7 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
 import com.signalcollect.triplerush.QueryResult
+import com.signalcollect.triplerush.QuerySpecification
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -205,47 +206,47 @@ object DbpsbBenchmark extends App {
      * Queries from Trinity.RDF paper
      *
      */
-    def fullQueries: List[QueryParticle] = List(
-      QueryParticle(1, Array(
+    def fullQueries: List[QuerySpecification] = List(
+      QuerySpecification(1, Array(
         TriplePattern(game, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:First-person_shooters")), //?game <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:First-person_shooters> .
         TriplePattern(game, m("foaf:name"), title)), //?game foaf:name ?title .
         new Array(2)),
-      QueryParticle(2, Array(
+      QuerySpecification(2, Array(
         TriplePattern(var3, m("foaf:homepage"), var2), //	?var3 <http://xmlns.com/foaf/0.1/homepage> ?var2 .
         TriplePattern(var3, m("rdf#type"), var1)), //?var3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?var 
         new Array(3)),
-      QueryParticle(3, Array(
+      QuerySpecification(3, Array(
         TriplePattern(musician, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:German_musicians")), //?musician <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:German_musicians> .
         TriplePattern(musician, m("foaf:name"), name), //?musician foaf:name ?name .
         TriplePattern(musician, m("rdfs:comment"), vdescription)), //?musician rdfs:comment ?description
         new Array(3)),
-      QueryParticle(4, Array(
+      QuerySpecification(4, Array(
         TriplePattern(person, m("dbo:birthPlace"), m("http://dbpedia.org/resource/Berlin")),
         TriplePattern(person, m("dbo:birthDate"), birth),
         TriplePattern(person, m("foaf:name"), pname),
         TriplePattern(person, m("dbo:deathDate"), death)),
         new Array(4)),
-      QueryParticle(5, Array(
+      QuerySpecification(5, Array(
         TriplePattern(car, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:Luxury_vehicles")),
         TriplePattern(car, m("foaf:name"), name),
         TriplePattern(car, m("dbo:manufacturer"), man),
         TriplePattern(man, m("foaf:name"), manufacturer)),
         new Array(4)),
-      QueryParticle(6, Array(
+      QuerySpecification(6, Array(
         TriplePattern(bvar6, m("rdf:type"), bvar),
         TriplePattern(bvar6, m("dbpprop:name"), bvar0),
         TriplePattern(bvar6, m("dbpprop:pages"), bvar1),
         TriplePattern(bvar6, m("dbpprop:isbn"), bvar2),
         TriplePattern(bvar6, m("dbpprop:author"), bvar3)),
         new Array(6)),
-      QueryParticle(7, Array(
+      QuerySpecification(7, Array(
         TriplePattern(bvar6, m("rdf:type"), bvar),
         TriplePattern(bvar6, m("dbpprop:name"), bvar0),
         TriplePattern(bvar6, m("dbpprop:pages"), bvar1),
         TriplePattern(bvar6, m("dbpprop:isbn"), bvar2),
         TriplePattern(bvar6, m("dbpprop:author"), bvar3)),
         new Array(6)),
-      QueryParticle(8, Array(
+      QuerySpecification(8, Array(
         TriplePattern(s, m("foaf:page"), player),
         TriplePattern(s, m("rdf:type"), m("dbo:SoccerPlayer")),
         TriplePattern(s, m("dbprop:position"), position),
@@ -304,7 +305,7 @@ object DbpsbBenchmark extends App {
       ((nanoseconds / 100000.0).round) / 10.0
     }
 
-    def executeOnQueryEngine(q: QueryParticle): QueryResult = {
+    def executeOnQueryEngine(q: QuerySpecification): QueryResult = {
       val resultFuture = qe.executeQuery(q, optimizer)
       try {
         Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
@@ -359,8 +360,6 @@ object DbpsbBenchmark extends App {
       runResult += s"query" -> queryStats("optimizedQuery").toString
       runResult += s"exception" -> queryStats("exception").toString
       runResult += s"results" -> queryResult.queries.length.toString
-      runResult += s"samplingQuery" -> query.isSamplingQuery.toString
-      runResult += s"tickets" -> query.tickets.toString
       runResult += s"executionTime" -> executionTime.toString
       runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
       runResult += s"optimizingTime" -> optimizingTime.toString
