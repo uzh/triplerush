@@ -93,7 +93,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   def bindQuery(query: QueryParticle, graphEditor: GraphEditor[Any, Any]) {
     //TODO: Evaluate running the process function in parallel on all the queries.
     assert(childDeltasOptimized != null)
-    val nextPatternToMatch = query.unmatched.head
+    val nextPatternToMatch = query.lastPattern
     if (nextPatternToMatch.isFullyBound) {
       // We are looking for a specific, fully bound triple pattern. This means that we have to do a binary search on the targetIds.
       if (patternExists(nextPatternToMatch)) {
@@ -110,11 +110,11 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   }
 
   def bind(query: QueryParticle, edges: Int, graphEditor: GraphEditor[Any, Any]) {
-    val avg = query.tickets / edges
-    val complete = avg > 0
-    var extras = query.tickets % edges
-    val averageTicketQuery = query.withTickets(avg, complete)
-    val aboveAverageTicketQuery = query.withTickets(avg + 1, complete)
+    val avg = math.abs(query.tickets) / edges
+    val complete = avg > 0 && query.tickets > 0
+    var extras = math.abs(query.tickets) % edges
+    val averageTicketQuery = query.copyWithTickets(avg, complete)
+    val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
     for (childDelta <- childDeltasOptimized) {
       if (extras > 0) {
         extras -= 1
@@ -171,12 +171,12 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   def bindToTriplePattern(triplePattern: TriplePattern, query: QueryParticle, graphEditor: GraphEditor[Any, Any]) {
     val boundQuery = query.bind(triplePattern)
     if (boundQuery != null) {
-      if (boundQuery.unmatched.isEmpty) {
+      if (boundQuery.isResult) {
         // Query successful, send to query vertex.
         graphEditor.sendSignal(boundQuery, boundQuery.queryId, None)
       } else {
         // Query not complete yet, route onwards.
-        graphEditor.sendSignal(boundQuery, boundQuery.unmatched.head.routingAddress, None)
+        graphEditor.sendSignal(boundQuery, boundQuery.lastPattern.routingAddress, None)
       }
     } else {
       // Failed to bind, send to query vertex.

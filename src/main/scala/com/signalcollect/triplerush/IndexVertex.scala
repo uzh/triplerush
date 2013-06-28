@@ -114,34 +114,13 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
     wasAdded
   }
 
-  def processSamplingQuery(query: QueryParticle, graphEditor: GraphEditor[Any, Any]) {
-    throw new UnsupportedOperationException("Sampling queries are currently unsupported.")
-    //    val targetIdCount = targetIds.length
-    //    val bins = new Array[Long](targetIdCount)
-    //    for (i <- 1l to query.tickets) {
-    //      val randomIndex = Random.nextInt(targetIdCount)
-    //      bins(randomIndex) += 1
-    //    }
-    //    val complete: Boolean = bins forall (_ > 0)
-    //    var binIndex = 0
-    //    for (targetId <- targetIds) {
-    //      val ticketsForEdge = bins(binIndex)
-    //      if (ticketsForEdge > 0) {
-    //        val ticketEquippedQuery = query.withTickets(ticketsForEdge, complete)
-    //        graphEditor.sendSignal(ticketEquippedQuery, targetId, None)
-    //      }
-    //      binIndex += 1
-    //    }
-  }
-
   def processFullQuery(query: QueryParticle, graphEditor: GraphEditor[Any, Any]) {
-    assert(childDeltasOptimized != null)
     val targetIdCount = edgeCount
-    val avg = query.tickets / targetIdCount
-    val complete = avg > 0
-    var extras = query.tickets % targetIdCount
-    val averageTicketQuery = query.withTickets(avg, complete)
-    val aboveAverageTicketQuery = query.withTickets(avg + 1, complete)
+    val avg = math.abs(query.tickets) / targetIdCount
+    val complete = avg > 0 && query.tickets > 0
+    var extras = math.abs(query.tickets) % targetIdCount
+    val averageTicketQuery = query.copyWithTickets(avg, complete)
+    val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
     CompactIntSet.foreach(childDeltasOptimized, childDelta => {
       val targetId = childPatternCreator(childDelta)
       if (extras > 0) {
@@ -156,11 +135,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
     signal match {
       case query: QueryParticle =>
-        if (query.isSamplingQuery) {
-          processSamplingQuery(query, graphEditor)
-        } else {
-          processFullQuery(query, graphEditor)
-        }
+        processFullQuery(query, graphEditor)
       case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, cardinality), requestor, None)
       case CardinalityReply(forPattern, patternCardinality) =>

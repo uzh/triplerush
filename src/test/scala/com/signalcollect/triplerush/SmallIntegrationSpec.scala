@@ -69,7 +69,7 @@ class SmallIntegrationSpec extends SpecificationWithJUnit {
   qe.prepareQueryExecution
   println("done")
 
-  def executeOnQueryEngine(q: QueryParticle) = {
+  def executeOnQueryEngine(q: QuerySpecification) = {
     val resultFuture = qe.executeQuery(q)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
     result.queries

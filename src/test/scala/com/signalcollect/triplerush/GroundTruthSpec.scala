@@ -180,6 +180,9 @@ WHERE
   "LUBM Query 1" should {
     val queryId = 1
     s"DSL-match the reference results $queryId" in {
+//      print("Press any key to continue ...")
+//      readLine
+//      println(" Running.")
       runTest(queryId, sparql = false)
     }
     s"SPARQL-match the reference results $queryId" in {
@@ -323,7 +326,7 @@ WHERE
 
   print("Optimizing edge representations...")
   qe.prepareQueryExecution
-  println("done")
+  println(" Done.")
 
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)

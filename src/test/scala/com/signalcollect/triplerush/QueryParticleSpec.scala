@@ -29,47 +29,42 @@ import com.signalcollect.GraphBuilder
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.evaluation.SparqlDsl.SELECT
 import com.signalcollect.triplerush.evaluation.SparqlDsl.dsl2Query
-import com.signalcollect.triplerush.evaluation.SparqlDsl.{| => |}
+import com.signalcollect.triplerush.evaluation.SparqlDsl.{ | => | }
 import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
-class BinaryLoaderSpec extends SpecificationWithJUnit {
+class QueryParticleSpec extends SpecificationWithJUnit {
 
   sequential
 
-  val dslQueries = List(
-    // Query 1
-    SELECT ? "X" WHERE (
-      | - "X" - "takesCourse" - "Department0.University0.GraduateCourse0",
-      | - "X" - "type" - s"GraduateStudent"))
+  "QueryParticle" should {
+    val specialInts = List(Int.MinValue, Int.MaxValue, 0, -1, 10)
+    val specialLongs = specialInts.map(_.toLong) ++
+      List(Long.MinValue, Long.MaxValue)
 
-  "Small query 1" should {
-    val queryId = 1
-    s"DSL-match the reference results $queryId" in {
-      val query = dslQueries(queryId - 1)
-      val result = executeOnQueryEngine(query)
-      result.length === 0
+    "correctly encode the id" in {
+        def testIdEncoding(queryId: Int) {
+          val qp = QuerySpecification(queryId, Array(
+            TriplePattern(-1, 1, 2),
+            TriplePattern(-1, 3, -2)),
+            new Array(2)).toParticle
+          qp.queryId === queryId
+        }
+      specialInts foreach (testIdEncoding(_))
     }
 
-  }
+    "correctly encode the number of tickets" in {
+        def testTicketEncoding(tickets: Long) {
+          val qp = QuerySpecification(10, Array(
+            TriplePattern(-1, 1, 2),
+            TriplePattern(-1, 3, -2)),
+            new Array(2)).toParticle
+          qp.writeTickets(tickets)
+          qp.tickets === tickets
+        }
+      specialLongs foreach (testTicketEncoding(_))
+    }
 
-  val qe = new QueryEngine(graphBuilder = GraphBuilder.
-    withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false))
-    .withConsole(true, 8080))
-
-  println("Loading small dataset ... ")
-  qe.loadBinary("./binary-split/0.filtered-split", Some(0))
-  qe.awaitIdle
-  println("Finished loading.")
-
-  print("Optimizing edge representations...")
-  qe.prepareQueryExecution
-  println("done")
-
-  def executeOnQueryEngine(q: QuerySpecification) = {
-    val resultFuture = qe.executeQuery(q)
-    val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
-    result.queries
   }
 
 }
