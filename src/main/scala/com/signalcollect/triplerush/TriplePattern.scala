@@ -105,7 +105,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     }
   }
 
-  def isFullyBound: Boolean = {
+  @inline def isFullyBound: Boolean = {
     s.isConstant && p.isConstant && o.isConstant
   }
 
@@ -115,8 +115,8 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
    */
   def routingAddress = {
     if (isFullyBound) {
-      //Evenly load balance over all 3 index vertices for this triple.
-      val routingIndex = hashCode % 3 // 0 = subject, 1 = predicate, 2 = object
+      //Load balance over all 3 index vertices for this triple.
+      val routingIndex = ((s + p + o) & 0xEFFFFFFF) % 3 // 0 = subject, 1 = predicate, 2 = object
       if (routingIndex == 0) {
         TriplePattern(*, p.toRoutingAddress, o.toRoutingAddress)
       } else if (routingIndex == 1) {
