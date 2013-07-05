@@ -31,6 +31,7 @@ import com.signalcollect.triplerush.evaluation.SparqlDsl.SELECT
 import com.signalcollect.triplerush.evaluation.SparqlDsl.dsl2Query
 import com.signalcollect.triplerush.evaluation.SparqlDsl.{ | => | }
 import org.specs2.runner.JUnitRunner
+import com.signalcollect.triplerush.QueryParticle._
 
 @RunWith(classOf[JUnitRunner])
 class QueryParticleSpec extends SpecificationWithJUnit {
@@ -43,24 +44,24 @@ class QueryParticleSpec extends SpecificationWithJUnit {
       List(Long.MinValue, Long.MaxValue)
 
     "correctly encode the id" in {
-        def testIdEncoding(queryId: Int) {
-          val qp = QuerySpecification(queryId, Array(
+        def testIdEncoding(queryPatternId: Int) {
+          val qp = QuerySpecification(queryPatternId, Array(
             TriplePattern(-1, 1, 2),
             TriplePattern(-1, 3, -2)),
             new Array(2)).toParticle
-          qp.queryId === queryId
+          queryId(qp) === queryPatternId
         }
       specialInts foreach (testIdEncoding(_))
     }
 
     "correctly encode the number of tickets" in {
-        def testTicketEncoding(tickets: Long) {
+        def testTicketEncoding(numberOftickets: Long) {
           val qp = QuerySpecification(10, Array(
             TriplePattern(-1, 1, 2),
             TriplePattern(-1, 3, -2)),
             new Array(2)).toParticle
-          qp.writeTickets(tickets)
-          qp.tickets === tickets
+          writeTickets(qp, numberOftickets)
+          tickets(qp) === numberOftickets
         }
       specialLongs foreach (testTicketEncoding(_))
     }

@@ -35,7 +35,6 @@ import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
 import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import com.signalcollect.triplerush.Mapping
-import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.QueryEngine
 import com.signalcollect.triplerush.QueryOptimizer
 import com.signalcollect.triplerush.TriplePattern
@@ -45,15 +44,12 @@ import com.signalcollect.triplerush.QueryResult
 import com.signalcollect.triplerush.QuerySpecification
 
 /**
- * Runs a PageRank algorithm on a graph of a fixed size
- * for different numbers of worker threads.
- *
- * Evaluation is set to execute on a 'Kraken'-node.
+ * Local profiling of DBPSB benchmark on part of data.
  */
-object LubmBenchmark extends App {
-  def jvmHighThroughputGc = " -Xmx64000m" +
-    " -Xms64000m" +
-    " -Xmn8000m" +
+object LocalDbpsbProfiling extends App {
+  def jvmHighThroughputGc = " -Xmx3000m" +
+    " -Xms3000m" +
+    " -Xmn400m" +
     " -d64" +
     " -XX:+UnlockExperimentalVMOptions" +
     " -XX:+UseConcMarkSweepGC" +
@@ -67,18 +63,10 @@ object LubmBenchmark extends App {
     " -Dsun.io.serialization.extendedDebugInfo=true" +
     " -XX:MaxInlineSize=1024"
 
-  def jvmParameters = " -Xmx64000m" +
-    " -Xms64000m"
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
-  //  val jobId = Random.nextInt % 10000
-  //  def copyName = assemblyPath.replace("-SNAPSHOT", jobId.toString)
-  //  assemblyFile.renameTo(new File(assemblyPath))
-  val kraken = new TorqueHost(
-    jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmHighThroughputGc, priority = TorquePriority.superfast)
   val localHost = new LocalHost
-  val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
+  //  val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   def getRevision: String = {
     try {
@@ -94,130 +82,152 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM trial run with primitive array particles"
-  //  def evalName = "Local debugging."
+  def evalName = s"DBPSB Profiling"
   def runs = 1
-  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
-  //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
+  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost) //.addResultHandler(googleDocs)
   /*********/
 
-  for (unis <- List(160)) {
-    for (run <- 1 to runs) {
-      // for (queryId <- 1 to 1) {
-      for (optimizer <- List(QueryOptimizer.Clever)) {
-        //for (tickets <- List(1000, 10000, 100000, 1000000)) {
-        //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
-        //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
-        //      }
-        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
-          evalName,
-          //queryId,
-          false,
-          Long.MaxValue,
-          optimizer,
-          getRevision,
-          unis))
-      }
-      //  }
+  for (run <- 1 to runs) {
+    for (optimizer <- List(QueryOptimizer.Clever)) {
+      evaluation = evaluation.addEvaluationRun(dbpsbBenchmarkRun(
+        evalName,
+        false,
+        Long.MaxValue,
+        optimizer,
+        getRevision))
     }
   }
   evaluation.execute
 
-  def lubmBenchmarkRun(
+  def dbpsbBenchmarkRun(
     description: String,
-    //queryId: Int,
     sampling: Boolean,
     tickets: Long,
     optimizer: Int,
-    revision: String,
-    universities: Int)(): List[Map[String, String]] = {
+    revision: String)(): List[Map[String, String]] = {
 
     /**
-     * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf
-     * Result sizes from: http://research.microsoft.com/pubs/183717/Trinity.RDF.pdf
-     *            L1   L2       L3 L4 L5 L6  L7
-     * LUBM-160   397  173040   0  10 10 125 7125
-     * LUBM-10240 2502 11016920 0  10 10 125 450721
+     * Queries from: Trinity.RDF
      *
-     * Times Trinity: 281 132 110  5    4 9 630
-     * Time TripleR: 3815 222 3126 2    1 2 603
+     * Times Trinity: 7   220 5 7 8 21 13 28
+     * Times TripleR:
      */
-    val x = -1
-    val y = -2
-    val z = -3
+    val game = -1
+    val title = -2
+
+    val var3 = -1
+    val var2 = -2
+    val var1 = -3
+
+    val musician = -1
+    val name = -2
+    val vdescription = -3
+
+    val person = -1
+    val birth = -2
+    val pname = -3
+    val death = -4
+
+    val car = -1
+    val man = -3
+    val manufacturer = -4
+
+    val bvar6 = -1
+    val bvar = -2
+    val bvar0 = -3
+    val bvar1 = -4
+    val bvar2 = -5
+    val bvar3 = -6
+
+    val s = -1
+    val player = -2
+    val position = -3
+    val club = -4
+    val cap = -5
+    val place = -6
+    val pop = -7
+    val tricot = -8
+
     val m = Map(
-      "rdf:type" -> 1,
-      "ub:GraduateStudent" -> 2013,
-      "ub:undergraduateDegreeFrom" -> 22,
-      "ub:memberOf" -> 415,
-      "ub:Department" -> 11,
-      "ub:subOrganizationOf" -> 13,
-      "ub:University" -> 7,
-      "ub:Course" -> 3067,
-      "ub:name" -> 8,
-      "ub:UndergraduateStudent" -> 413,
-      "ub:worksFor" -> 27,
-      "http://www.Department0.University0.edu" -> 10,
-      "ub:FullProfessor" -> 15,
-      "ub:emailAddress" -> 28,
-      "ub:telephone" -> 30,
-      "ub:ResearchGroup" -> 2575,
-      "http://www.University0.edu" -> 6,
-      "ub:teacherOf" -> 17,
-      "ub:advisor" -> 430,
-      "ub:takesCourse" -> 417)
+      "http://www.w3.org/2004/02/skos/core#subject" -> 1,
+      "http://dbpedia.org/resource/Category:First-person_shooters" -> 47406,
+      "foaf:name" -> 41,
+      "foaf:homepage" -> 653,
+      "rdf#type" -> 16,
+      "http://dbpedia.org/resource/Category:German_musicians" -> 187543,
+      "rdfs#comment" -> 27,
+      "dbo:birthPlace" -> 1132,
+      "http://dbpedia.org/resource/Berlin" -> 19706,
+      "dbo:birthDate" -> 436,
+      "dbo:deathDate" -> 1177,
+      "http://dbpedia.org/resource/Category:Luxury_vehicles" -> 322352,
+      "dbo:manufacturer" -> 11736,
+      "dbprop:name" -> 30,
+      "dbprop:pages" -> 37409,
+      "dbprop:isbn" -> 3385,
+      "dbprop:author" -> 3371,
+      "foaf:page" -> 39,
+      "dbo:SoccerPlayer" -> 1723,
+      "dbprop:position" -> 397,
+      "dbprop:clubs" -> 1709,
+      "dbo:capacity" -> 6306,
+      "dbprop:population" -> 966,
+      "dbo:number" -> 411)
+
+      /**
+       * Queries from Trinity.RDF paper
+       *
+       */
       def fullQueries: List[QuerySpecification] = List(
         QuerySpecification(1, Array(
-          TriplePattern(x, m("rdf:type"), m("ub:GraduateStudent")), // ?X rdf:type ub:GraduateStudent
-          TriplePattern(x, m("ub:undergraduateDegreeFrom"), y), // ?X ub:undergraduateDegreeFrom ?Y
-          TriplePattern(x, m("ub:memberOf"), z), // ?X ub:memberOf ?Z
-          TriplePattern(z, m("rdf:type"), m("ub:Department")), // ?Z rdf:type ub:Department
-          TriplePattern(z, m("ub:subOrganizationOf"), y), // ?Z ub:subOrganizationOf ?Y
-          TriplePattern(y, m("rdf:type"), m("ub:University")) // ?Y rdf:type ub:University
-          ),
-          new Array(3)),
-        QuerySpecification(2, Array(
-          TriplePattern(x, m("rdf:type"), m("ub:Course")), // ?X rdf:type ub:Course
-          TriplePattern(x, m("ub:name"), y)), // ?X ub:name ?Y
+          TriplePattern(game, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:First-person_shooters")), //?game <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:First-person_shooters> .
+          TriplePattern(game, m("foaf:name"), title)), //?game foaf:name ?title .
           new Array(2)),
+        QuerySpecification(2, Array(
+          TriplePattern(var3, m("foaf:homepage"), var2), //?var3 <http://xmlns.com/foaf/0.1/homepage> ?var2 .
+          TriplePattern(var3, m("rdf#type"), var1)), //?var3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?var 
+          new Array(3)),
         QuerySpecification(3, Array(
-          TriplePattern(x, m("ub:undergraduateDegreeFrom"), y), // ?X ub:undergraduateDegreeFrom ?Y
-          TriplePattern(x, m("rdf:type"), m("ub:UndergraduateStudent")), // ?X rdf:type ub:UndergraduateStudent
-          TriplePattern(x, m("ub:memberOf"), z), // ?X ub:memberOf ?Z
-          TriplePattern(z, m("ub:subOrganizationOf"), y), // ?Z ub:subOrganizationOf ?Y
-          TriplePattern(z, m("rdf:type"), m("ub:Department")), // ?Z rdf:type ub:Department
-          TriplePattern(y, m("rdf:type"), m("ub:University")) // ?Y rdf:type ub:University
-          ),
+          TriplePattern(musician, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:German_musicians")), //?musician <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:German_musicians> .
+          TriplePattern(musician, m("foaf:name"), name), //?musician foaf:name ?name .
+          TriplePattern(musician, m("rdfs#comment"), vdescription)), //?musician rdfs:comment ?description
           new Array(3)),
         QuerySpecification(4, Array(
-          TriplePattern(x, m("ub:worksFor"), m("http://www.Department0.University0.edu")), // ?X ub:worksFor http://www.Department0.University0.edu
-          TriplePattern(x, m("rdf:type"), m("ub:FullProfessor")), // ?X rdf:type ub:FullProfessor
-          TriplePattern(x, m("ub:name"), -2), // ?X ub:name ?Y1
-          TriplePattern(x, m("ub:emailAddress"), -3), // ?X ub:emailAddress ?Y2
-          TriplePattern(x, m("ub:telephone"), -4) // ?X ub:telephone ?Y3
-          ),
+          TriplePattern(person, m("dbo:birthPlace"), m("http://dbpedia.org/resource/Berlin")),
+          TriplePattern(person, m("dbo:birthDate"), birth),
+          TriplePattern(person, m("foaf:name"), pname),
+          TriplePattern(person, m("dbo:deathDate"), death)),
           new Array(4)),
         QuerySpecification(5, Array(
-          TriplePattern(x, m("ub:subOrganizationOf"), m("http://www.Department0.University0.edu")), // ?X ub:subOrganizationOf http://www.Department0.University0.edu
-          TriplePattern(x, m("rdf:type"), m("ub:ResearchGroup")) // ?X rdf:type ub:ResearchGroup
-          ),
-          new Array(1)),
+          TriplePattern(car, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:Luxury_vehicles")),
+          TriplePattern(car, m("foaf:name"), name),
+          TriplePattern(car, m("dbo:manufacturer"), man),
+          TriplePattern(man, m("foaf:name"), manufacturer)),
+          new Array(4)),
         QuerySpecification(6, Array(
-          TriplePattern(y, m("ub:subOrganizationOf"), m("http://www.University0.edu")), // ?Y ub:subOrganizationOf http://www.University0.edu
-          TriplePattern(y, m("rdf:type"), m("ub:Department")), //?Y rdf:type ub:Department
-          TriplePattern(x, m("ub:worksFor"), y), // ?X ub:worksFor ?Y
-          TriplePattern(x, m("rdf:type"), m("ub:FullProfessor")) // ?X rdf:type ub:FullProfessor
-          ),
-          new Array(2)),
+          TriplePattern(bvar6, m("rdf#type"), bvar),
+          TriplePattern(bvar6, m("dbprop:name"), bvar0),
+          TriplePattern(bvar6, m("dbprop:pages"), bvar1),
+          TriplePattern(bvar6, m("dbprop:isbn"), bvar2),
+          TriplePattern(bvar6, m("dbprop:author"), bvar3)),
+          new Array(6)),
         QuerySpecification(7, Array(
-          TriplePattern(y, m("rdf:type"), m("ub:FullProfessor")), // ?Y rdf:type ub:FullProfessor
-          TriplePattern(y, m("ub:teacherOf"), z), // ?Y ub:teacherOf ?Z
-          TriplePattern(z, m("rdf:type"), m("ub:Course")), // ?Z rdf:type ub:Course
-          TriplePattern(x, m("ub:advisor"), y), // ?X ub:advisor ?Y
-          TriplePattern(x, m("ub:takesCourse"), z), // ?X ub:takesCourse ?Z
-          TriplePattern(x, m("rdf:type"), m("ub:UndergraduateStudent")) // ?X rdf:type ub:UndergraduateStudent
-          ),
-          new Array(3)))
+          TriplePattern(bvar6, m("rdf#type"), bvar),
+          TriplePattern(bvar6, m("dbprop:name"), bvar0),
+          TriplePattern(bvar6, m("dbprop:pages"), bvar1),
+          TriplePattern(bvar6, m("dbprop:isbn"), bvar2),
+          TriplePattern(bvar6, m("dbprop:author"), bvar3)),
+          new Array(6)),
+        QuerySpecification(8, Array(
+          TriplePattern(s, m("foaf:page"), player),
+          TriplePattern(s, m("rdf#type"), m("dbo:SoccerPlayer")),
+          TriplePattern(s, m("dbprop:position"), position),
+          TriplePattern(s, m("dbprop:clubs"), club),
+          TriplePattern(club, m("dbo:capacity"), cap),
+          TriplePattern(s, m("dbo:birthPlace"), place),
+          TriplePattern(place, m("dbprop:population"), pop),
+          TriplePattern(s, m("dbo:number"), tricot)),
+          new Array(8)))
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
       fullQueries
@@ -228,21 +238,13 @@ object LubmBenchmark extends App {
       new BulkAkkaMessageBusFactory(1024, false)).
       withMessageSerialization(false).
       withAkkaMessageCompression(true))
-      //            withLoggingLevel(Logging.DebugLevel).
-      //      withConsole(true, 8080).
-      //      withNodeProvisioner(new TorqueNodeProvisioner(
-      //        torqueHost = new TorqueHost(
-      //          jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-      //          localJarPath = assemblyPath,
-      //          jvmParameters = jvmHighThroughputGc,
-      //          priority = TorquePriority.fast),
-      //        numberOfNodes = 10)))
+    println(s"Local folder: ${(new File(".")).getAbsolutePath}")
 
-      def loadLubm {
-        val lubmFolderName = s"lubm$universities-filtered-splits"
-        for (splitId <- 0 until 2880) {
-          qe.loadBinary(s"./$lubmFolderName/$splitId.filtered-split", Some(splitId))
-          if (splitId % 288 == 279) {
+      def loadDbpsb {
+        val dbpsbFolderName = s"dbpsb10-filtered-splits"
+        for (splitId <- 0 until 576) { //576
+          qe.loadBinary(s"./$dbpsbFolderName/$splitId.filtered-split", Some(splitId))
+          if (splitId % 288 == 287) {
             println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
             qe.awaitIdle
             println(s"Continuing graph loading...")
@@ -282,8 +284,8 @@ object LubmBenchmark extends App {
        * Go to JVM JIT steady state by executing the query 100 times.
        */
       def jitSteadyState {
-        for (i <- 1 to 5) {
-          for (queryId <- 1 to 7) {
+        for (i <- 1 to 100) {
+          for (queryId <- 1 to 8) {
             val queryIndex = queryId - 1
             val query = fullQueries(queryIndex)
             print(s"Warming up with query $query ...")
@@ -328,10 +330,9 @@ object LubmBenchmark extends App {
         runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
         runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
         runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
-        runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
-        runResult += s"loadNumber" -> universities.toString
+        runResult += s"loadNumber" -> 10.toString
         runResult += s"date" -> date.toString
-        runResult += s"dataSet" -> s"lubm$universities"
+        runResult += s"dataSet" -> s"dbpsb10"
         finalResults = runResult :: finalResults
       }
 
@@ -340,16 +341,18 @@ object LubmBenchmark extends App {
     baseResults += "evaluationDescription" -> description
     val loadingTime = measureTime {
       println("Dispatching loading command to worker...")
-      loadLubm
+      loadDbpsb
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
 
     println("Starting warm-up...")
     jitSteadyState
-    cleanGarbage
+    //cleanGarbage
     println(s"Finished warm-up.")
-    for (queryId <- 1 to 7) {
+    println("Please connect profiler and press any key.")
+    readLine
+    for (queryId <- 1 to 8) {
       println(s"Running evaluation for query $queryId.")
       runEvaluation(queryId)
       println(s"Done running evaluation for query $queryId. Awaiting idle")

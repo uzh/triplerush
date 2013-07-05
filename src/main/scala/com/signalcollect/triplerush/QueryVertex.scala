@@ -28,9 +28,10 @@ import akka.actor.ActorRef
 import akka.actor.actorRef2Scala
 import com.signalcollect.Vertex
 import com.signalcollect.Edge
+import com.signalcollect.triplerush.QueryParticle._
 
 case class QueryResult(
-  queries: List[QueryParticle],
+  queries: List[Array[Int]],
   statKeys: Array[Any],
   statVariables: Array[Any])
 
@@ -47,11 +48,11 @@ case object QueryOptimizer {
 class QueryVertex(
     val query: QuerySpecification,
     val resultRecipient: ActorRef,
-    val optimizer: Int) extends Vertex[Int, List[QueryParticle]] {
+    val optimizer: Int) extends Vertex[Int, Nothing] {
 
   val id = query.queryId
 
-  @transient var state: List[QueryParticle] = _
+  @transient var state: Nothing = _
 
   val expectedTickets = Long.MaxValue
   val numberOfPatterns = query.unmatched.length
@@ -67,7 +68,6 @@ class QueryVertex(
   @transient var optimizedQuery: QuerySpecification = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    state = List[QueryParticle]()
     cardinalities = Map()
     if (optimizer != QueryOptimizer.None && numberOfPatterns > 1) {
       // Gather pattern cardinalities first.
@@ -92,8 +92,8 @@ class QueryVertex(
         queryCopyCount += 1
         processTickets(ticketsOfFailedQuery)
       //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
-      case query: QueryParticle =>
-        processQuery(query)
+      case queryParticle: Array[Int] =>
+        processQuery(queryParticle)
       //        println(s"Query vertex $id received bindings ${query.bindings}. Now at $receivedTickets/$expectedTickets")
       case CardinalityReply(forPattern, cardinality) =>
         cardinalities += forPattern -> cardinality
@@ -148,9 +148,9 @@ class QueryVertex(
     }
   }
 
-  def processQuery(query: QueryParticle) {
+  def processQuery(queryParticle: Array[Int]) {
     queryCopyCount += 1
-    processTickets(query.tickets)
+    processTickets(tickets(queryParticle))
     //if (query.unmatched.isEmpty) {
     // numberOfSuccessfulQueries += 1
     // println(s"Success: $query")
@@ -158,7 +158,7 @@ class QueryVertex(
     if (firstResultNanoTime == 0) {
       firstResultNanoTime = System.nanoTime
     }
-    resultRecipient ! query
+    resultRecipient ! queryParticle
     //} else {
     // numberOfFailedQueries += 1
     // println(s"Failure: $query")
@@ -188,7 +188,7 @@ class QueryVertex(
     graphEditor.removeVertex(id)
   }
 
-  def setState(s: List[QueryParticle]) {
+  def setState(s: Nothing) {
     state = s
   }
 

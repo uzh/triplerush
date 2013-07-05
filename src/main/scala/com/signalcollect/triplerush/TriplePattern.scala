@@ -21,6 +21,8 @@
 package com.signalcollect.triplerush
 import com.signalcollect.triplerush.Expression._
 import scala.Option.option2Iterable
+import scala.runtime.ScalaRunTime
+import scala.util.hashing.MurmurHash3._
 
 /**
  * Pattern of 3 expressions (subject, predicate object).
@@ -29,6 +31,18 @@ import scala.Option.option2Iterable
  * TODO: Use AnyVal of Array[Int] as representation.
  */
 case class TriplePattern(s: Int, p: Int, o: Int) {
+
+  @inline override def hashCode: Int = {
+    finalizeHash(mixLast(mix(s, p), o), 3)
+  }
+
+  @inline override def equals(other: Any): Boolean = {
+    other match {
+      case TriplePattern(otherS, otherP, otherO) =>
+        otherS == s && otherP == p && otherO == o
+      case _ => false
+    }
+  }
 
   override def toString = {
     s"(${s.toString},${p.toString},${o.toString})"

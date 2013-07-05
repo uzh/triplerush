@@ -35,7 +35,6 @@ import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
 import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import com.signalcollect.triplerush.Mapping
-import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.QueryEngine
 import com.signalcollect.triplerush.QueryOptimizer
 import com.signalcollect.triplerush.TriplePattern

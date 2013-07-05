@@ -45,12 +45,13 @@ import akka.util.Timeout
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.Expression._
 import akka.event.Logging
+import com.signalcollect.triplerush.QueryParticle._
 
 case class UndeliverableSignalHandler() {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
-      case query: QueryParticle =>
-        graphEditor.sendSignal(query.tickets, query.queryId, None)
+      case queryParticle: Array[Int] =>
+        graphEditor.sendSignal(tickets(queryParticle), queryId(queryParticle), None)
       case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
       case other =>
@@ -78,7 +79,7 @@ class ResultRecipientActor extends Actor {
   var queryDone: QueryDone = _
   var queryResultRecipient: ActorRef = _
 
-  var queries = List[QueryParticle]()
+  var queries = List[Array[Int]]()
 
   def receive = {
     case RegisterQueryResultRecipient =>
@@ -94,8 +95,8 @@ class ResultRecipientActor extends Actor {
         self ! PoisonPill
       }
 
-    case query: QueryParticle =>
-      // TODO: Send only bindings instead of full particles. 
+    case query: Array[Int] =>
+      // TODO: Send only bindings instead of full particles.
       queries = query :: queries
   }
 }
@@ -193,10 +194,11 @@ case class QueryEngine(
       withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)),
     //.withLoggingLevel(Logging.DebugLevel)
     console: Boolean = false) {
+  val s = TriplePattern(0,0,0).equals(TriplePattern(0,0,0))
+  
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
     withKryoRegistrations(List(
-      "com.signalcollect.triplerush.QueryParticle",
       "com.signalcollect.triplerush.TriplePattern",
       "com.signalcollect.triplerush.BindingIndexVertex",
       "com.signalcollect.triplerush.IndexVertex",
@@ -209,7 +211,6 @@ case class QueryEngine(
       "com.signalcollect.triplerush.QueryDone",
       "com.signalcollect.triplerush.TriplePattern",
       "Array[com.signalcollect.triplerush.TriplePattern]",
-      "Array[com.signalcollect.triplerush.QueryParticle]",
       "akka.actor.RepointableActorRef")).build
   print("Awaiting idle ... ")
   g.awaitIdle

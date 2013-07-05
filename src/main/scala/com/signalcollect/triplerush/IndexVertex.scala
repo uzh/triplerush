@@ -26,6 +26,7 @@ import com.signalcollect.examples.CompactIntSet
 import com.signalcollect.triplerush.Expression.{ * => * }
 import scala.collection.mutable.TreeSet
 import com.signalcollect.interfaces.Inspectable
+import com.signalcollect.triplerush.QueryParticle._
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -114,13 +115,14 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
     wasAdded
   }
 
-  def processFullQuery(query: QueryParticle, graphEditor: GraphEditor[Any, Any]) {
+  def processFullQuery(queryParticle: Array[Int], graphEditor: GraphEditor[Any, Any]) {
     val targetIdCount = edgeCount
-    val avg = math.abs(query.tickets) / targetIdCount
-    val complete = avg > 0 && query.tickets > 0
-    var extras = math.abs(query.tickets) % targetIdCount
-    val averageTicketQuery = query.copyWithTickets(avg, complete)
-    val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
+    val totalTickets = tickets(queryParticle)
+    val avg = math.abs(totalTickets) / targetIdCount
+    val complete = avg > 0 && totalTickets > 0
+    var extras = math.abs(totalTickets) % targetIdCount
+    val averageTicketQuery = copyWithTickets(queryParticle, avg, complete)
+    val aboveAverageTicketQuery = copyWithTickets(queryParticle, avg + 1, complete)
     CompactIntSet.foreach(childDeltasOptimized, childDelta => {
       val targetId = childPatternCreator(childDelta)
       if (extras > 0) {
@@ -134,8 +136,8 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
 
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
     signal match {
-      case query: QueryParticle =>
-        processFullQuery(query, graphEditor)
+      case queryParticle: Array[Int] =>
+        processFullQuery(queryParticle, graphEditor)
       case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, cardinality), requestor, None)
       case CardinalityReply(forPattern, patternCardinality) =>

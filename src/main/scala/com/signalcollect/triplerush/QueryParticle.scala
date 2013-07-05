@@ -41,145 +41,29 @@ object QueryIds {
  *           gets matched first).
  */
 class QueryParticle(val r: Array[Int]) extends AnyVal {
-  def getBindings: IndexedSeq[(Int, Int)] = {
-    ((-1 to -bindings.length by -1).zip(bindings))
-  }
-  def bindings: IndexedSeq[Int] = {
-    (0 until numberOfBindings) map (binding(_))
-  }
-  def isResult = r.length == 4 + numberOfBindings
-  def queryId: Int = r(0)
-  def writeQueryId(id: Int) = r(0) = id
-  def tickets: Long = {
-    ((r(1) | 0l) << 32) | (r(2) & 0x00000000FFFFFFFFL)
-  }
-  def writeTickets(t: Long) = {
-    r(1) = (t >> 32).toInt
-    r(2) = t.toInt
-  }
-  def numberOfBindings: Int = r(3)
-  def writeBindings(bindings: Array[Int]) {
-    r(3) = bindings.length
-    var i = 0
-    while (i < bindings.length) {
-      writeBinding(i, bindings(i))
-      i += 1
-    }
-  }
-  def writeBinding(bindingIndex: Int, boundValue: Int) {
-    val baseBindingIndex = 4
-    r(baseBindingIndex + bindingIndex) = boundValue
-  }
-  def binding(bindingIndex: Int): Int = {
-    val contentIntIndex = bindingIndex + 4
-    r(contentIntIndex)
-  }
-
-  /**
-   * Inverts the order of patterns.
-   */
-  def writePatterns(unmatched: Array[TriplePattern]) {
-    var i = 0
-    var tpByteIndex = r.length - 3 // index of subject of last pattern
-    while (i < unmatched.length) {
-      writePattern(tpByteIndex, unmatched(i))
-      tpByteIndex -= 3
-      i += 1
-    }
-  }
-
-  /**
-   * Requires the index where the subject will be written.
-   * Pattern is written in spo order.
-   */
-  def writePattern(subjectIndex: Int, p: TriplePattern) {
-    r(subjectIndex) = p.s
-    r(subjectIndex + 1) = p.p
-    r(subjectIndex + 2) = p.o
-  }
-
-  def copyWithTickets(t: Long, complete: Boolean): QueryParticle = {
-    val newRepresentation = r.clone
-    val newParticle = new QueryParticle(newRepresentation)
-    if (complete) {
-      newParticle.writeTickets(t)
-    } else {
-      newParticle.writeTickets(-t)
-    }
-    newParticle
-  }
-
-  def lastPattern: TriplePattern = {
-    val sIndex = r.length - 3
-    val pIndex = r.length - 2
-    val oIndex = r.length - 1
-    TriplePattern(
-      r(sIndex),
-      r(pIndex),
-      r(oIndex))
-  }
-
-  private def copyWithoutLastPattern: QueryParticle = {
-    val copyLength = r.length - 3
-    val rCopy = new Array[Int](copyLength)
-    System.arraycopy(r, 0, rCopy, 0, copyLength)
-    new QueryParticle(rCopy)
-  }
-
-  // Update all patterns with this new binding.
-  private def bindVariablesInPatterns(
-    variable: Int,
-    boundValue: Int) {
-    // Index of first subject of first TP.
-    var i = numberOfBindings + 4
-    while (i < r.length) {
-      if (r(i) == variable) {
-        r(i) = boundValue
-      }
-      i += 1
-    }
-  }
-
-  /**
-   * Assumption: TP has all constants.
-   */
-  def bind(tp: TriplePattern): QueryParticle = {
-    val patternToMatch = lastPattern
-    if (patternToMatch.s == tp.s) { // Subject is compatible constant. No binding necessary. 
-      if (patternToMatch.p == tp.p) { // Predicate is compatible constant. No binding necessary. 
-        if (patternToMatch.o == tp.o) { // Object is compatible constant. No binding necessary. 
-          return copyWithoutLastPattern
-        }
-        return QueryParticle.bindObject(patternToMatch, tp, this, true)
-      }
-      return QueryParticle.bindPredicate(patternToMatch, tp, this, true)
-    }
-    return QueryParticle.bindSubject(patternToMatch, tp, this, true)
-  }
 
 }
 
 object QueryParticle {
-  val failed = null.asInstanceOf[QueryParticle]
+  val failed = null.asInstanceOf[Array[Int]]
   def apply(queryId: Int,
             tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
             bindings: Array[Int],
-            unmatched: Array[TriplePattern]): QueryParticle = {
+            unmatched: Array[TriplePattern]): Array[Int] = {
     val ints = 4 + bindings.length + 3 * unmatched.length
-    val encoded = new Array[Int](ints)
-    val particle = new QueryParticle(encoded)
-    particle.writeQueryId(queryId)
-    particle.writeTickets(tickets)
-    particle.writeBindings(bindings)
-    particle.writePatterns(unmatched)
-    particle
+    val r = new Array[Int](ints)
+    writeQueryId(r, queryId)
+    writeTickets(r, tickets)
+    writeBindings(r, bindings)
+    writePatterns(r, unmatched)
+    r
   }
 
-  private def bindSubject(
+  @inline private def bindSubject(
+    r: Array[Int],
     patternToMatch: TriplePattern,
     tp: TriplePattern,
-    particle: QueryParticle,
-    copyBeforeWrite: Boolean): QueryParticle = {
+    copyBeforeWrite: Boolean): Array[Int] = {
     // Subject is conflicting constant. No binding possible.
     if (!patternToMatch.s.isVariable) {
       return failed
@@ -197,25 +81,25 @@ object QueryParticle {
 
     // No conflicts, we bind the value to the variable.
     val variableIndex = -(variable + 1)
-    val currentParticle = {
+    val currentParticle: Array[Int] = {
       if (copyBeforeWrite) {
-        particle.copyWithoutLastPattern
+        copyWithoutLastPattern(r)
       } else {
-        particle
+        r
       }
     }
-    currentParticle.writeBinding(variableIndex, boundValue)
-    currentParticle.bindVariablesInPatterns(variable, boundValue)
-    bindPredicate(patternToMatch, tp, currentParticle, false)
+    writeBinding(currentParticle, variableIndex, boundValue)
+    bindVariablesInPatterns(currentParticle, variable, boundValue)
+    bindPredicate(currentParticle, patternToMatch, tp, false)
   }
 
-  private def bindPredicate(
+  @inline private def bindPredicate(
+    r: Array[Int],
     patternToMatch: TriplePattern,
     tp: TriplePattern,
-    particle: QueryParticle,
-    copyBeforeWrite: Boolean): QueryParticle = {
+    copyBeforeWrite: Boolean): Array[Int] = {
     if (patternToMatch.p == tp.p) { // Predicate is compatible constant. No binding necessary. 
-      return bindObject(patternToMatch, tp, particle, copyBeforeWrite)
+      return bindObject(r, patternToMatch, tp, copyBeforeWrite)
     }
 
     // Predicate is conflicting constant. No binding possible.
@@ -236,21 +120,21 @@ object QueryParticle {
     val variableIndex = -(variable + 1)
     val currentParticle = {
       if (copyBeforeWrite) {
-        particle.copyWithoutLastPattern
+        copyWithoutLastPattern(r)
       } else {
-        particle
+        r
       }
     }
-    currentParticle.writeBinding(variableIndex, boundValue)
-    currentParticle.bindVariablesInPatterns(variable, boundValue)
-    bindObject(patternToMatch, tp, currentParticle, false)
+    writeBinding(currentParticle, variableIndex, boundValue)
+    bindVariablesInPatterns(currentParticle, variable, boundValue)
+    bindObject(currentParticle, patternToMatch, tp, false)
   }
 
-  private def bindObject(
+  @inline private def bindObject(
+    r: Array[Int],
     patternToMatch: TriplePattern,
     tp: TriplePattern,
-    particle: QueryParticle,
-    copyBeforeWrite: Boolean): QueryParticle = {
+    copyBeforeWrite: Boolean): Array[Int] = {
 
     if (patternToMatch.o == tp.o) { // Object is compatible constant. No binding necessary. 
       //      val result = {
@@ -263,7 +147,7 @@ object QueryParticle {
       //      }
       // In theory the check above would be necessary. In practice this
       // execution path is only reached if a particle copy was made before.
-      return particle
+      return r
     }
 
     // Object is conflicting constant. No binding possible.
@@ -280,20 +164,140 @@ object QueryParticle {
     val variableIndex = -(variable + 1)
     val currentParticle = {
       if (copyBeforeWrite) {
-        particle.copyWithoutLastPattern
+        copyWithoutLastPattern(r)
       } else {
-        particle
+        r
       }
     }
-    currentParticle.writeBinding(variableIndex, boundValue)
-    currentParticle.bindVariablesInPatterns(variable, boundValue)
+    writeBinding(currentParticle, variableIndex, boundValue)
+    bindVariablesInPatterns(currentParticle, variable, boundValue)
     currentParticle
   }
 
   // If the variable appears multiple times in the same pattern, then all the bindings have to be compatible.  
-  private def isBindingIncompatible(otherAttribute: Int, tpAttribute: Int, variable: Int, boundValue: Int) = (otherAttribute == variable && tpAttribute != boundValue)
+  @inline private def isBindingIncompatible(otherAttribute: Int, tpAttribute: Int, variable: Int, boundValue: Int) = (otherAttribute == variable && tpAttribute != boundValue)
 
   // Updates an attribute with a new binding.
-  private def updatedAttribute(attribute: Int, variable: Int, boundValue: Int) = if (attribute == variable) boundValue else attribute
+  @inline private def updatedAttribute(attribute: Int, variable: Int, boundValue: Int) = if (attribute == variable) boundValue else attribute
+
+  /**
+   * Experimental
+   */
+
+  @inline def getBindings(r: Array[Int]): IndexedSeq[(Int, Int)] = {
+    ((-1 to -bindings(r).length by -1).zip(bindings(r)))
+  }
+  @inline def bindings(r: Array[Int]): IndexedSeq[Int] = {
+    (0 until numberOfBindings(r)) map (binding(r, _))
+  }
+  @inline def isResult(r: Array[Int]) = r.length == 4 + numberOfBindings(r)
+  @inline def queryId(r: Array[Int]): Int = r(0)
+  def writeQueryId(r: Array[Int], id: Int) = r(0) = id
+  def tickets(r: Array[Int]): Long = {
+    ((r(1) | 0l) << 32) | (r(2) & 0x00000000FFFFFFFFL)
+  }
+  @inline def writeTickets(r: Array[Int], t: Long) = {
+    r(1) = (t >> 32).toInt
+    r(2) = t.toInt
+  }
+  @inline def numberOfBindings(r: Array[Int]): Int = r(3)
+  @inline def writeBindings(r: Array[Int], bindings: Array[Int]) {
+    r(3) = bindings.length
+    var i = 0
+    while (i < bindings.length) {
+      writeBinding(r, i, bindings(i))
+      i += 1
+    }
+  }
+  @inline def writeBinding(r: Array[Int], bindingIndex: Int, boundValue: Int) {
+    val baseBindingIndex = 4
+    r(baseBindingIndex + bindingIndex) = boundValue
+  }
+  @inline def binding(r: Array[Int], bindingIndex: Int): Int = {
+    val contentIntIndex = bindingIndex + 4
+    r(contentIntIndex)
+  }
+
+  /**
+   * Inverts the order of patterns.
+   */
+  @inline def writePatterns(r: Array[Int], unmatched: Array[TriplePattern]) {
+    var i = 0
+    var tpByteIndex = r.length - 3 // index of subject of last pattern
+    while (i < unmatched.length) {
+      writePattern(r, tpByteIndex, unmatched(i))
+      tpByteIndex -= 3
+      i += 1
+    }
+  }
+
+  /**
+   * Requires the index where the subject will be written.
+   * Pattern is written in spo order.
+   */
+  @inline def writePattern(r: Array[Int], subjectIndex: Int, p: TriplePattern) {
+    r(subjectIndex) = p.s
+    r(subjectIndex + 1) = p.p
+    r(subjectIndex + 2) = p.o
+  }
+
+  @inline def copyWithTickets(r: Array[Int], t: Long, complete: Boolean): Array[Int] = {
+    val newR = r.clone
+    if (complete) {
+      writeTickets(newR, t)
+    } else {
+      writeTickets(newR, -t)
+    }
+    newR
+  }
+
+  @inline def lastPattern(r: Array[Int]): TriplePattern = {
+    val sIndex = r.length - 3
+    val pIndex = r.length - 2
+    val oIndex = r.length - 1
+    TriplePattern(
+      r(sIndex),
+      r(pIndex),
+      r(oIndex))
+  }
+
+  @inline private def copyWithoutLastPattern(r: Array[Int]): Array[Int] = {
+    val copyLength = r.length - 3
+    val rCopy = new Array[Int](copyLength)
+    System.arraycopy(r, 0, rCopy, 0, copyLength)
+    rCopy
+  }
+
+  // Update all patterns with this new binding.
+  @inline private def bindVariablesInPatterns(
+    r: Array[Int],
+    variable: Int,
+    boundValue: Int) {
+    // Index of first subject of first TP.
+    var i = numberOfBindings(r) + 4
+    while (i < r.length) {
+      if (r(i) == variable) {
+        r(i) = boundValue
+      }
+      i += 1
+    }
+  }
+
+  /**
+   * Assumption: TP has all constants.
+   */
+  @inline def bind(r: Array[Int], tp: TriplePattern): Array[Int] = {
+    val patternToMatch = lastPattern(r)
+    if (patternToMatch.s == tp.s) { // Subject is compatible constant. No binding necessary. 
+      if (patternToMatch.p == tp.p) { // Predicate is compatible constant. No binding necessary. 
+        if (patternToMatch.o == tp.o) { // Object is compatible constant. No binding necessary. 
+          return copyWithoutLastPattern(r)
+        }
+        return bindObject(r, patternToMatch, tp, true)
+      }
+      return bindPredicate(r, patternToMatch, tp, true)
+    }
+    return bindSubject(r, patternToMatch, tp, true)
+  }
 
 }
