@@ -29,13 +29,10 @@ import akka.actor.actorRef2Scala
 import com.signalcollect.Vertex
 import com.signalcollect.Edge
 import com.signalcollect.triplerush.QueryParticle._
+import scala.concurrent.Promise
 
 case class QueryResult(
   queries: List[Array[Int]],
-  statKeys: Array[Any],
-  statVariables: Array[Any])
-
-case class QueryDone(
   statKeys: Array[Any],
   statVariables: Array[Any])
 
@@ -47,12 +44,12 @@ case object QueryOptimizer {
 
 class QueryVertex(
     val query: QuerySpecification,
-    val resultRecipient: ActorRef,
-    val optimizer: Int) extends Vertex[Int, Nothing] {
+    val promise: Promise[QueryResult],
+    val optimizer: Int) extends Vertex[Int, List[Array[Int]]] {
 
   val id = query.queryId
 
-  @transient var state: Nothing = _
+  @transient var state: List[Array[Int]] = List()
 
   val expectedTickets = Long.MaxValue
   val numberOfPatterns = query.unmatched.length
@@ -158,7 +155,7 @@ class QueryVertex(
     if (firstResultNanoTime == 0) {
       firstResultNanoTime = System.nanoTime
     }
-    resultRecipient ! queryParticle
+    state = queryParticle :: state
     //} else {
     // numberOfFailedQueries += 1
     // println(s"Failure: $query")
@@ -182,13 +179,11 @@ class QueryVertex(
       "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
     val statsKeys: Array[Any] = stats.keys.toArray
     val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
-    resultRecipient ! QueryDone(statsKeys, statsValues)
-    //    val totalQueries = (numberOfFailedQueries + numberOfSuccessfulQueries).toDouble
-    //    println(s"Total # of queries = $totalQueries failed : ${((numberOfFailedQueries / totalQueries) * 100.0).round}%")
+    promise.success(QueryResult(state, statsKeys, statsValues))
     graphEditor.removeVertex(id)
   }
 
-  def setState(s: Nothing) {
+  def setState(s: List[Array[Int]]) {
     state = s
   }
 

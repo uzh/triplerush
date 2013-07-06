@@ -73,34 +73,6 @@ case class VertexPreparation() {
   }
 }
 
-case object RegisterQueryResultRecipient
-
-class ResultRecipientActor extends Actor {
-  var queryDone: QueryDone = _
-  var queryResultRecipient: ActorRef = _
-
-  var queries = List[Array[Int]]()
-
-  def receive = {
-    case RegisterQueryResultRecipient =>
-      queryResultRecipient = sender
-      if (queryDone != null) {
-        queryResultRecipient ! QueryResult(queries, queryDone.statKeys, queryDone.statVariables)
-        self ! PoisonPill
-      }
-    case queryDone: QueryDone =>
-      this.queryDone = queryDone
-      if (queryResultRecipient != null) {
-        queryResultRecipient ! QueryResult(queries, queryDone.statKeys, queryDone.statVariables)
-        self ! PoisonPill
-      }
-
-    case query: Array[Int] =>
-      // TODO: Send only bindings instead of full particles.
-      queries = query :: queries
-  }
-}
-
 /**
  * Only works if the file contains at least one triple.
  */
@@ -195,8 +167,8 @@ case class QueryEngine(
       withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)),
     //.withLoggingLevel(Logging.DebugLevel)
     console: Boolean = false) {
-  val s = TriplePattern(0,0,0).equals(TriplePattern(0,0,0))
-  
+  val s = TriplePattern(0, 0, 0).equals(TriplePattern(0, 0, 0))
+
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
     withKryoRegistrations(List(
@@ -209,7 +181,6 @@ case class QueryEngine(
       "com.signalcollect.triplerush.QueryVertex",
       "com.signalcollect.triplerush.QueryOptimizer",
       "com.signalcollect.triplerush.QueryResult",
-      "com.signalcollect.triplerush.QueryDone",
       "com.signalcollect.triplerush.TriplePattern",
       "Array[com.signalcollect.triplerush.TriplePattern]",
       "akka.actor.RepointableActorRef")).build
@@ -255,15 +226,11 @@ case class QueryEngine(
   }
 
   def executeQuery(q: QuerySpecification, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
-    assert(queryExecutionPrepared)
+    val p = promise[QueryResult]
     if (!q.unmatched.isEmpty) {
-      val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
-      g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer))
-      implicit val timeout = Timeout(Duration.create(7200, TimeUnit.SECONDS))
-      val resultFuture = resultRecipientActor ? RegisterQueryResultRecipient
-      resultFuture.asInstanceOf[Future[QueryResult]]
+      g.addVertex(new QueryVertex(q, p, optimizer))
+      p.future
     } else {
-      val p = promise[QueryResult]
       p success (QueryResult(List(), Array(), Array()))
       p.future
     }
