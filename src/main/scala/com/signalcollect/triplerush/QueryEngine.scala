@@ -181,6 +181,7 @@ case object FileLoaders {
   }
 
   def addTriple(tp: TriplePattern, graphEditor: GraphEditor[Any, Any]) {
+    BF.add(tp)
     for (parentPattern <- tp.parentPatterns) {
       val idDelta = tp.parentIdDelta(parentPattern)
       graphEditor.addVertex(new BindingIndexVertex(parentPattern))
@@ -245,6 +246,7 @@ case class QueryEngine(
     val pId = Mapping.register(p)
     val oId = Mapping.register(o)
     val tp = TriplePattern(sId, pId, oId)
+    BF.add(tp)
     for (parentPattern <- tp.parentPatterns) {
       val idDelta = tp.parentIdDelta(parentPattern)
       g.addVertex(new BindingIndexVertex(parentPattern))
