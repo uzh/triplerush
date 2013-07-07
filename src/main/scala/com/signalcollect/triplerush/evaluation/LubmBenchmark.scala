@@ -94,7 +94,7 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM trial run with primitive array particles"
+  def evalName = s"LUBM run with improved bloom filter."
   //  def evalName = "Local debugging."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)

@@ -155,9 +155,13 @@ case object FileLoaders {
   def addTriple(tp: TriplePattern, graphEditor: GraphEditor[Any, Any]) {
     BF.add(tp)
     for (parentPattern <- tp.parentPatterns) {
+      BF.add(parentPattern)
       val idDelta = tp.parentIdDelta(parentPattern)
       graphEditor.addVertex(new BindingIndexVertex(parentPattern))
       graphEditor.addEdge(parentPattern, new PlaceholderEdge(idDelta))
+      for (parentOfParentPattern <- parentPattern.parentPatterns) {
+        BF.add(parentOfParentPattern)
+      }
     }
   }
 }
@@ -167,7 +171,6 @@ case class QueryEngine(
       withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)),
     //.withLoggingLevel(Logging.DebugLevel)
     console: Boolean = false) {
-  val s = TriplePattern(0, 0, 0).equals(TriplePattern(0, 0, 0))
 
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
@@ -192,6 +195,7 @@ case class QueryEngine(
   println("Done")
   print("Adding root index vertex ...")
   g.addVertex(new IndexVertex(TriplePattern(*, *, *)))
+  BF.add(TriplePattern(*, *, *))
   println("Done")
 
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
@@ -219,9 +223,13 @@ case class QueryEngine(
     val tp = TriplePattern(sId, pId, oId)
     BF.add(tp)
     for (parentPattern <- tp.parentPatterns) {
+      BF.add(parentPattern)
       val idDelta = tp.parentIdDelta(parentPattern)
       g.addVertex(new BindingIndexVertex(parentPattern))
       g.addEdge(parentPattern, new PlaceholderEdge(idDelta))
+      for (parentOfParentPattern <- parentPattern.parentPatterns) {
+        BF.add(parentOfParentPattern)
+      }
     }
   }
 

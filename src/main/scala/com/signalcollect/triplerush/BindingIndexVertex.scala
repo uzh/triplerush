@@ -183,8 +183,10 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
       } else {
         // Query not complete yet, route onwards.
         val nextPattern = lastPattern(boundQuery).routingAddress
-        if (!nextPattern.isFullyBound || BF.contains(nextPattern)) {
+        if (BF.contains(nextPattern)) {
           graphEditor.sendSignal(boundQuery, nextPattern.routingAddress, None)
+        } else {
+          graphEditor.sendSignal(tickets(boundQuery), queryId(boundQuery), None)
         }
       }
     } else {
