@@ -162,13 +162,13 @@ case object FileLoaders {
 }
 
 case class QueryEngine(
-    graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.
-      withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)),
+    graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
     //.withLoggingLevel(Logging.DebugLevel)
     console: Boolean = false) {
 
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
+    withMessageBusFactory(new CombiningMessageBusFactory(1024, false)).
     withKryoRegistrations(List(
       "com.signalcollect.triplerush.TriplePattern",
       "com.signalcollect.triplerush.BindingIndexVertex",

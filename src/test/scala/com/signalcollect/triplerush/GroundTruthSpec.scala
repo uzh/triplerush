@@ -181,9 +181,9 @@ WHERE
   "LUBM Query 1" should {
     val queryId = 1
     s"DSL-match the reference results $queryId" in {
-//      print("Press any key to continue ...")
-//      readLine
-//      println(" Running.")
+      //      print("Press any key to continue ...")
+      //      readLine
+      //      println(" Running.")
       runTest(queryId, sparql = false)
     }
     s"SPARQL-match the reference results $queryId" in {
@@ -314,7 +314,6 @@ WHERE
   //  }
 
   val qe = new QueryEngine(graphBuilder = GraphBuilder.
-    withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).
     withMessageSerialization(false))
 
   println("Loading LUBM1 ... ")
