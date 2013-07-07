@@ -22,7 +22,6 @@ package com.signalcollect.triplerush
 
 import language.implicitConversions
 import java.util.concurrent.atomic.AtomicInteger
-import com.signalcollect.triplerush.Expression._
 
 object QueryIds {
   private val maxFullQueryId = new AtomicInteger
@@ -65,7 +64,7 @@ object QueryParticle {
     tp: TriplePattern,
     copyBeforeWrite: Boolean): Array[Int] = {
     // Subject is conflicting constant. No binding possible.
-    if (!patternToMatch.s.isVariable) {
+    if (patternToMatch.s > 0) {
       return failed
     }
 
@@ -103,7 +102,7 @@ object QueryParticle {
     }
 
     // Predicate is conflicting constant. No binding possible.
-    if (!patternToMatch.p.isVariable) {
+    if (patternToMatch.p > 0) {
       return failed
     }
 
@@ -151,7 +150,7 @@ object QueryParticle {
     }
 
     // Object is conflicting constant. No binding possible.
-    if (!patternToMatch.o.isVariable) {
+    if (patternToMatch.o > 0) {
       return failed
     }
 

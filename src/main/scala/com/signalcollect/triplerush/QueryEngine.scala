@@ -43,7 +43,6 @@ import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.util.Timeout
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
-import com.signalcollect.triplerush.Expression._
 import akka.event.Logging
 import com.signalcollect.triplerush.QueryParticle._
 
@@ -189,7 +188,7 @@ case class QueryEngine(
   g.setUndeliverableSignalHandler(UndeliverableSignalHandler().handle _)
   println("Done")
   print("Adding root index vertex ...")
-  g.addVertex(new IndexVertex(TriplePattern(*, *, *)))
+  g.addVertex(new IndexVertex(RootPattern))
   println("Done")
 
   val system = ActorSystemRegistry.retrieve("SignalCollect").get

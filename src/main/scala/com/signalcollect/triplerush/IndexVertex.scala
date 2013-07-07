@@ -23,7 +23,6 @@ package com.signalcollect.triplerush
 import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
 import com.signalcollect.examples.CompactIntSet
-import com.signalcollect.triplerush.Expression.{ * => * }
 import scala.collection.mutable.TreeSet
 import com.signalcollect.interfaces.Inspectable
 import com.signalcollect.triplerush.QueryParticle._
@@ -65,7 +64,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
   def computeCardinality(graphEditor: GraphEditor[Any, Any]) {
     assert(childDeltasOptimized != null)
     cardinality = 0
-    if (id == TriplePattern(*, *, *)) {
+    if (id == RootPattern) {
       cardinality = Int.MaxValue //TODO: Add comment about why MaxValue
     } else {
       CompactIntSet.foreach(childDeltasOptimized, childDelta => {

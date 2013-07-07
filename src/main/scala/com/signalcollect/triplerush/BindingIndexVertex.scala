@@ -23,7 +23,6 @@ package com.signalcollect.triplerush
 import java.util.Arrays
 import scala.collection.mutable.TreeSet
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.Expression.{ * => * }
 import com.signalcollect.interfaces.Inspectable
 import com.signalcollect.DefaultEdge
 import com.signalcollect.Edge
@@ -95,7 +94,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
     //TODO: Evaluate running the process function in parallel on all the queries.
     assert(childDeltasOptimized != null)
     val nextPatternToMatch = lastPattern(queryParticle)
-    if (nextPatternToMatch.isFullyBound) {
+    if (nextPatternToMatch.s > 0 && nextPatternToMatch.p > 0 && nextPatternToMatch.o > 0) {
       // We are looking for a specific, fully bound triple pattern. This means that we have to do a binary search on the targetIds.
       if (patternExists(nextPatternToMatch)) {
         bindToTriplePattern(nextPatternToMatch, queryParticle, graphEditor)
@@ -142,11 +141,11 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   }
 
   @inline def patternExists(tp: TriplePattern): Boolean = {
-    if (id.s == *) {
+    if (id.s == 0) {
       find(tp.s)
-    } else if (id.p == *) {
+    } else if (id.p == 0) {
       find(tp.p)
-    } else if (id.o == *) {
+    } else if (id.o == 0) {
       find(tp.o)
     } else {
       throw new UnsupportedOperationException(s"The vertex with id $id should not be a BindingIndexVertex.")
