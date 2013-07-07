@@ -167,7 +167,8 @@ case class QueryEngine(
 
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
-    withMessageBusFactory(new CombiningMessageBusFactory(1024, false)).
+    withMessageBusFactory(new CombiningMessageBusFactory(4096, false)).
+    withHeartbeatInterval(500).
     withKryoRegistrations(List(
       "com.signalcollect.triplerush.TriplePattern",
       "com.signalcollect.triplerush.BindingIndexVertex",
