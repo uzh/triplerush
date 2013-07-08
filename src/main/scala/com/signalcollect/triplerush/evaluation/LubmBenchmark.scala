@@ -95,7 +95,7 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"Another preliminary LUBM run with more warm-ups and more GC runs."
+  def evalName = s"LUBM with result combiner and old warmup/gc settings."
   //  def evalName = "Local debugging."
   def runs = 8
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -225,10 +225,7 @@ object LubmBenchmark extends App {
     }
 
     var baseResults = Map[String, String]()
-    val qe = new QueryEngine(GraphBuilder.withMessageBusFactory(
-      new BulkAkkaMessageBusFactory(1024, false)).
-      withMessageSerialization(false).
-      withAkkaMessageCompression(true))
+    val qe = new QueryEngine()
       //            withLoggingLevel(Logging.DebugLevel).
       //      withConsole(true, 8080).
       //      withNodeProvisioner(new TorqueNodeProvisioner(
@@ -283,7 +280,7 @@ object LubmBenchmark extends App {
        * Go to JVM JIT steady state by executing the query 100 times.
        */
       def jitSteadyState {
-        for (i <- 1 to 1000) {
+        for (i <- 1 to 5) {
           for (queryId <- 1 to 7) {
             val queryIndex = queryId - 1
             val query = fullQueries(queryIndex)
@@ -357,7 +354,6 @@ object LubmBenchmark extends App {
       println(s"Done running evaluation for query $queryId. Awaiting idle")
       qe.awaitIdle
       println("Idle")
-      cleanGarbage
     }
 
     qe.shutdown
