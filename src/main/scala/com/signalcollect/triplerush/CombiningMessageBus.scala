@@ -30,6 +30,7 @@ import com.signalcollect.messaging.BulkMessageBus
 import scala.collection.mutable.HashMap
 import com.signalcollect.interfaces.SignalMessage
 import com.signalcollect.interfaces.MessageBusFactory
+import scala.collection.mutable.UnrolledBuffer
 
 class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
     extends MessageBusFactory {
@@ -71,31 +72,44 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
       workerApiFactory) {
 
   val aggregatedTickets = new HashMap[Int, Long]().withDefaultValue(0)
+  val aggregatedResults = new HashMap[Int, UnrolledBuffer[Array[Int]]]().withDefaultValue(null)
 
   override def sendSignal(
     signal: Signal,
     targetId: Id,
     sourceId: Option[Id],
     blocking: Boolean = false) {
-    signal match {
-      case tickets: Long =>
-        val tId = targetId.asInstanceOf[Int]
-        val oldTickets = aggregatedTickets(tId)
-        if (oldTickets < 0) {
-          if (tickets < 0) {
-            aggregatedTickets(tId) = oldTickets + tickets
+    if (targetId.isInstanceOf[Int]) {
+      val tId = targetId.asInstanceOf[Int]
+      signal match {
+        case tickets: Long =>
+          val oldTickets = aggregatedTickets(tId)
+          if (oldTickets < 0) {
+            if (tickets < 0) {
+              aggregatedTickets(tId) = oldTickets + tickets
+            } else {
+              aggregatedTickets(tId) = oldTickets - tickets
+            }
           } else {
-            aggregatedTickets(tId) = oldTickets - tickets
+            if (tickets < 0) {
+              aggregatedTickets(tId) = tickets - oldTickets
+            } else {
+              aggregatedTickets(tId) = tickets + oldTickets
+            }
           }
-        } else {
-          if (tickets < 0) {
-            aggregatedTickets(tId) = tickets - oldTickets
+        case result: Array[Int] =>
+          val oldBuffer = aggregatedResults(tId)
+          if (oldBuffer != null) {
+            aggregatedResults(tId) = oldBuffer.concat(UnrolledBuffer(result))
           } else {
-            aggregatedTickets(tId) = tickets + oldTickets
+            aggregatedResults(tId) = UnrolledBuffer(result)
           }
-        }
-      case other =>
-        super.sendSignal(signal, targetId, sourceId, blocking)
+        case other =>
+          super.sendSignal(signal, targetId, sourceId, blocking)
+      }
+    } else {
+      // TODO: Also improve efficiency of sending non-result particles.
+      super.sendSignal(signal, targetId, sourceId, blocking)
     }
   }
 
@@ -107,6 +121,14 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
           queryVertexId.asInstanceOf[Id])
       }
       aggregatedTickets.clear
+    }
+    if (!aggregatedResults.isEmpty) {
+      for ((queryVertexId, results) <- aggregatedResults) {
+        super.sendToWorkerForVertexId(
+          SignalMessage(queryVertexId, null, results),
+          queryVertexId.asInstanceOf[Id])
+      }
+      aggregatedResults.clear
     }
     super.flush
   }

@@ -42,6 +42,7 @@ import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
 import com.signalcollect.triplerush.QueryResult
 import com.signalcollect.triplerush.QuerySpecification
+import scala.collection.mutable.UnrolledBuffer
 
 /**
  * Local profiling of DBPSB benchmark on part of data.
@@ -276,7 +277,7 @@ object LocalDbpsbProfiling extends App {
         } catch {
           case t: Throwable =>
             println(s"Query $q timed out!")
-            QueryResult(List(), Array("exception"), Array(t))
+            QueryResult(UnrolledBuffer(), Array("exception"), Array(t))
         }
       }
 

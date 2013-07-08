@@ -45,6 +45,7 @@ import akka.util.Timeout
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import akka.event.Logging
 import com.signalcollect.triplerush.QueryParticle._
+import scala.collection.mutable.UnrolledBuffer
 
 case class UndeliverableSignalHandler() {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
@@ -228,7 +229,7 @@ case class QueryEngine(
       g.addVertex(new QueryVertex(q, p, optimizer))
       p.future
     } else {
-      p success (QueryResult(List(), Array(), Array()))
+      p success (QueryResult(UnrolledBuffer(), Array(), Array()))
       p.future
     }
   }

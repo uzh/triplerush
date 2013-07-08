@@ -30,9 +30,10 @@ import com.signalcollect.Vertex
 import com.signalcollect.Edge
 import com.signalcollect.triplerush.QueryParticle._
 import scala.concurrent.Promise
+import scala.collection.mutable.UnrolledBuffer
 
 case class QueryResult(
-  queries: List[Array[Int]],
+  queries: UnrolledBuffer[Array[Int]],
   statKeys: Array[Any],
   statVariables: Array[Any])
 
@@ -45,11 +46,11 @@ case object QueryOptimizer {
 class QueryVertex(
     val query: QuerySpecification,
     val promise: Promise[QueryResult],
-    val optimizer: Int) extends Vertex[Int, List[Array[Int]]] {
+    val optimizer: Int) extends Vertex[Int, UnrolledBuffer[Array[Int]]] {
 
   val id = query.queryId
 
-  @transient var state: List[Array[Int]] = List()
+  @transient var state: UnrolledBuffer[Array[Int]] = UnrolledBuffer()
 
   val expectedTickets = Long.MaxValue
   val numberOfPatterns = query.unmatched.length
@@ -89,8 +90,18 @@ class QueryVertex(
         queryCopyCount += 1
         processTickets(ticketsOfFailedQuery)
       //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
-      case queryParticle: Array[Int] =>
-        processQuery(queryParticle)
+      case bufferOfQueryParticles: UnrolledBuffer[_] =>
+        queryCopyCount += 1
+        val castBuffer = bufferOfQueryParticles.asInstanceOf[UnrolledBuffer[Array[Int]]]
+        castBuffer foreach { particle: Array[Int] => processTickets(tickets(particle)) }
+        if (firstResultNanoTime == 0) {
+          firstResultNanoTime = System.nanoTime
+        }
+        state = state.concat(castBuffer)
+      //} else {
+      // numberOfFailedQueries += 1
+      // println(s"Failure: $query")
+      //}
       //        println(s"Query vertex $id received bindings ${query.bindings}. Now at $receivedTickets/$expectedTickets")
       case CardinalityReply(forPattern, cardinality) =>
         cardinalities += forPattern -> cardinality
@@ -145,23 +156,6 @@ class QueryVertex(
     }
   }
 
-  def processQuery(queryParticle: Array[Int]) {
-    queryCopyCount += 1
-    processTickets(tickets(queryParticle))
-    //if (query.unmatched.isEmpty) {
-    // numberOfSuccessfulQueries += 1
-    // println(s"Success: $query")
-    // Query was matched successfully.
-    if (firstResultNanoTime == 0) {
-      firstResultNanoTime = System.nanoTime
-    }
-    state = queryParticle :: state
-    //} else {
-    // numberOfFailedQueries += 1
-    // println(s"Failure: $query")
-    //}
-  }
-
   def processTickets(t: Long) {
     receivedTickets += math.abs(t)
     if (t < 0) {
@@ -183,7 +177,7 @@ class QueryVertex(
     graphEditor.removeVertex(id)
   }
 
-  def setState(s: List[Array[Int]]) {
+  def setState(s: UnrolledBuffer[Array[Int]]) {
     state = s
   }
 

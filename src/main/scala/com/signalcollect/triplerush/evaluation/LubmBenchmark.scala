@@ -43,6 +43,7 @@ import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
 import com.signalcollect.triplerush.QueryResult
 import com.signalcollect.triplerush.QuerySpecification
+import scala.collection.mutable.UnrolledBuffer
 
 /**
  * Runs a PageRank algorithm on a graph of a fixed size
@@ -94,9 +95,9 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"Preliminary LUBM run with more warm-ups and more GC runs."
+  def evalName = s"Another preliminary LUBM run with more warm-ups and more GC runs."
   //  def evalName = "Local debugging."
-  def runs = 1
+  def runs = 8
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
@@ -274,7 +275,7 @@ object LubmBenchmark extends App {
         } catch {
           case t: Throwable =>
             println(s"Query $q timed out!")
-            QueryResult(List(), Array("exception"), Array(t))
+            QueryResult(UnrolledBuffer(), Array("exception"), Array(t))
         }
       }
 
@@ -296,10 +297,11 @@ object LubmBenchmark extends App {
 
       def cleanGarbage {
         for (i <- 1 to 10) {
+          System.runFinalization
           System.gc
           Thread.sleep(100)
         }
-        Thread.sleep(10000)
+        Thread.sleep(60000)
       }
 
     var finalResults = List[Map[String, String]]()
