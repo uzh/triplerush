@@ -76,7 +76,7 @@ object LubmBenchmark extends App {
   //  assemblyFile.renameTo(new File(assemblyPath))
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmHighThroughputGc, priority = TorquePriority.superfast)
+    localJarPath = assemblyPath, jvmParameters = jvmHighThroughputGc, priority = TorquePriority.fast)
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
@@ -94,7 +94,7 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM run with improved bloom filter."
+  def evalName = s"Preliminary LUBM run with more warm-ups and more GC runs."
   //  def evalName = "Local debugging."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
@@ -282,7 +282,7 @@ object LubmBenchmark extends App {
        * Go to JVM JIT steady state by executing the query 100 times.
        */
       def jitSteadyState {
-        for (i <- 1 to 5) {
+        for (i <- 1 to 1000) {
           for (queryId <- 1 to 7) {
             val queryIndex = queryId - 1
             val query = fullQueries(queryIndex)
@@ -310,8 +310,8 @@ object LubmBenchmark extends App {
         val query = queries(queryIndex)
         val startTime = System.nanoTime
         val queryResult = executeOnQueryEngine(query)
-        val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
         val finishTime = System.nanoTime
+        val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
         val executionTime = roundToMillisecondFraction(finishTime - startTime)
         val timeToFirstResult = roundToMillisecondFraction(queryStats("firstResultNanoTime").asInstanceOf[Long] - startTime)
         val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
@@ -355,6 +355,7 @@ object LubmBenchmark extends App {
       println(s"Done running evaluation for query $queryId. Awaiting idle")
       qe.awaitIdle
       println("Idle")
+      cleanGarbage
     }
 
     qe.shutdown
