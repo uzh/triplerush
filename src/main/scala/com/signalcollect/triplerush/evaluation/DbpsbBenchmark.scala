@@ -51,24 +51,22 @@ import scala.collection.mutable.UnrolledBuffer
  * Evaluation is set to execute on a 'Kraken'-node.
  */
 object DbpsbBenchmark extends App {
-  def jvmHighThroughputGc = " -Xmx64000m" +
-    " -Xms64000m" +
-    " -Xmn8000m" +
-    " -d64" +
-    " -XX:+UnlockExperimentalVMOptions" +
-    " -XX:+UseConcMarkSweepGC" +
-    " -XX:+UseParNewGC" +
-    " -XX:+CMSIncrementalPacing" +
-    " -XX:+CMSIncrementalMode" +
-    " -XX:ParallelGCThreads=20" +
-    " -XX:ParallelCMSThreads=20" +
-    " -XX:-PrintCompilation" +
-    " -XX:-PrintGC" +
-    " -Dsun.io.serialization.extendedDebugInfo=true" +
+  def jvmHighThroughputGc = " -Xmx31000m" +
+    " -Xms31000m" +
+//    " -Xmn8000m" +
+//    " -d64" +
+//    " -XX:+UnlockExperimentalVMOptions" +
+//    " -XX:+UseConcMarkSweepGC" +
+//    " -XX:+UseParNewGC" +
+//    " -XX:+CMSIncrementalPacing" +
+//    " -XX:+CMSIncrementalMode" +
+//    " -XX:ParallelGCThreads=20" +
+//    " -XX:ParallelCMSThreads=20" +
+//    " -XX:-PrintCompilation" +
+//    " -XX:-PrintGC" +
+//    " -Dsun.io.serialization.extendedDebugInfo=true" +
     " -XX:MaxInlineSize=1024"
 
-  def jvmParameters = " -Xmx64000m" +
-    " -Xms64000m"
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
   //  val jobId = Random.nextInt % 10000
@@ -94,9 +92,9 @@ object DbpsbBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"DBPSB with result combiner and old warmup/gc settings."
+  def evalName = s"DBPSB run with smaller heap and fewer JVM options."
   //  def evalName = "Local debugging."
-  def runs = 8
+  def runs = 2
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
@@ -308,7 +306,7 @@ object DbpsbBenchmark extends App {
       }
 
       /**
-       * Go to JVM JIT steady state by executing the query 100 times.
+       * Go to JVM JIT steady state by executing the queries multiple times.
        */
       def jitSteadyState {
         for (i <- 1 to 5) {
@@ -343,7 +341,6 @@ object DbpsbBenchmark extends App {
         val finishTime = System.nanoTime
         val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
         val executionTime = roundToMillisecondFraction(finishTime - startTime)
-        val timeToFirstResult = roundToMillisecondFraction(queryStats("firstResultNanoTime").asInstanceOf[Long] - startTime)
         val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
         runResult += s"revision" -> revision
         runResult += s"queryId" -> queryId.toString
@@ -353,7 +350,6 @@ object DbpsbBenchmark extends App {
         runResult += s"exception" -> queryStats("exception").toString
         runResult += s"results" -> queryResult.queries.length.toString
         runResult += s"executionTime" -> executionTime.toString
-        runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
         runResult += s"optimizingTime" -> optimizingTime.toString
         runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
         runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString

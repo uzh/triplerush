@@ -44,32 +44,27 @@ import akka.event.Logging
 import com.signalcollect.triplerush.QueryResult
 import com.signalcollect.triplerush.QuerySpecification
 import scala.collection.mutable.UnrolledBuffer
+import java.lang.management.ManagementFactory
+import collection.JavaConversions._
+import language.postfixOps
 
-/**
- * Runs a PageRank algorithm on a graph of a fixed size
- * for different numbers of worker threads.
- *
- * Evaluation is set to execute on a 'Kraken'-node.
- */
 object LubmBenchmark extends App {
-  def jvmHighThroughputGc = " -Xmx64000m" +
-    " -Xms64000m" +
-    " -Xmn8000m" +
-    " -d64" +
-    " -XX:+UnlockExperimentalVMOptions" +
-    " -XX:+UseConcMarkSweepGC" +
-    " -XX:+UseParNewGC" +
-    " -XX:+CMSIncrementalPacing" +
-    " -XX:+CMSIncrementalMode" +
-    " -XX:ParallelGCThreads=20" +
-    " -XX:ParallelCMSThreads=20" +
-    " -XX:-PrintCompilation" +
-    " -XX:-PrintGC" +
-    " -Dsun.io.serialization.extendedDebugInfo=true" +
+  def jvmHighThroughputGc = " -Xmx31000m" +
+    " -Xms31000m" +
+    //    " -Xmn8000m" +
+    //    " -d64" +
+    //    " -XX:+UnlockExperimentalVMOptions" +
+    //    " -XX:+UseConcMarkSweepGC" +
+    //    " -XX:+UseParNewGC" +
+    //    " -XX:+CMSIncrementalPacing" +
+    //    " -XX:+CMSIncrementalMode" +
+    //    " -XX:ParallelGCThreads=20" +
+    //    " -XX:ParallelCMSThreads=20" +
+    //    " -XX:-PrintCompilation" +
+    //    " -XX:-PrintGC" +
+    //    " -Dsun.io.serialization.extendedDebugInfo=true" +
     " -XX:MaxInlineSize=1024"
 
-  def jvmParameters = " -Xmx64000m" +
-    " -Xms64000m"
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
   //  val jobId = Random.nextInt % 10000
@@ -95,14 +90,15 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM with result combiner and old warmup/gc settings."
+  //  def evalName = s"LUBM run with smaller heap and fewer JVM options."
+  def evalName = s"New stats test run."
   //  def evalName = "Local debugging."
-  def runs = 8
+  def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
-  for (unis <- List(160)) {
+  for (unis <- List(20, 40, 80, 160, 320, 640)) { //, 20, 40, 80, 160, 320
     for (run <- 1 to runs) {
       // for (queryId <- 1 to 1) {
       for (optimizer <- List(QueryOptimizer.Clever)) {
@@ -277,10 +273,10 @@ object LubmBenchmark extends App {
       }
 
       /**
-       * Go to JVM JIT steady state by executing the query 100 times.
+       * Go to JVM JIT steady state by executing the queries multiple times.
        */
       def jitSteadyState {
-        for (i <- 1 to 5) {
+        for (i <- 1 to jitRepetitions) {
           for (queryId <- 1 to 7) {
             val queryIndex = queryId - 1
             val query = fullQueries(queryIndex)
@@ -292,13 +288,17 @@ object LubmBenchmark extends App {
         }
       }
 
+      def jitRepetitions = 5 //10
+      def gcRunsPerCleanGarbageInvocation = 10 //100
+      def sleepAfterCleanGarbage = 1000 // 300000
+
       def cleanGarbage {
-        for (i <- 1 to 10) {
+        for (i <- 1 to gcRunsPerCleanGarbageInvocation) {
           System.runFinalization
           System.gc
-          Thread.sleep(100)
+          Thread.sleep(1000)
         }
-        Thread.sleep(60000)
+        Thread.sleep(sleepAfterCleanGarbage)
       }
 
     var finalResults = List[Map[String, String]]()
@@ -307,13 +307,24 @@ object LubmBenchmark extends App {
         var date: Date = new Date
         val queryIndex = queryId - 1
         val query = queries(queryIndex)
+        val gcTimeBefore = getGcCollectionTime
+        val gcCountBefore = getGcCollectionCount
+        val compileTimeBefore = compilations.getTotalCompilationTime
+        runResult += s"totalMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
+        runResult += s"freeMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
+        runResult += s"usedMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
         val startTime = System.nanoTime
         val queryResult = executeOnQueryEngine(query)
         val finishTime = System.nanoTime
         val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
         val executionTime = roundToMillisecondFraction(finishTime - startTime)
-        val timeToFirstResult = roundToMillisecondFraction(queryStats("firstResultNanoTime").asInstanceOf[Long] - startTime)
         val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
+        val gcTimeAfter = getGcCollectionTime
+        val gcCountAfter = getGcCollectionCount
+        val gcTimeDuringQuery = gcTimeAfter - gcTimeBefore
+        val gcCountDuringQuery = gcCountAfter - gcCountBefore
+        val compileTimeAfter = compilations.getTotalCompilationTime
+        val compileTimeDuringQuery = compileTimeAfter - compileTimeBefore
         runResult += s"revision" -> revision
         runResult += s"queryId" -> queryId.toString
         runResult += s"optimizer" -> optimizer.toString
@@ -322,12 +333,17 @@ object LubmBenchmark extends App {
         runResult += s"exception" -> queryStats("exception").toString
         runResult += s"results" -> queryResult.queries.length.toString
         runResult += s"executionTime" -> executionTime.toString
-        runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
         runResult += s"optimizingTime" -> optimizingTime.toString
         runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
         runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
         runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
         runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
+        runResult += "gcTimeAfter" -> gcTimeAfter.toString
+        runResult += "gcCountAfter" -> gcCountAfter.toString
+        runResult += "gcTimeDuringQuery" -> gcTimeDuringQuery.toString
+        runResult += "gcCountDuringQuery" -> gcCountDuringQuery.toString
+        runResult += "compileTimeAfter" -> compileTimeAfter.toString
+        runResult += "compileTimeDuringQuery" -> compileTimeDuringQuery.toString
         runResult += s"loadNumber" -> universities.toString
         runResult += s"date" -> date.toString
         runResult += s"dataSet" -> s"lubm$universities"
@@ -337,6 +353,23 @@ object LubmBenchmark extends App {
       def bytesToGigabytes(bytes: Long): Double = ((bytes / 1073741824.0) * 10.0).round / 10.0
 
     baseResults += "evaluationDescription" -> description
+    baseResults += "jitRepetitions" -> jitRepetitions.toString
+    baseResults += "gcRunsPerCleanGarbageInvocation" -> gcRunsPerCleanGarbageInvocation.toString
+    baseResults += "sleepAfterCleanGarbage" -> sleepAfterCleanGarbage.toString
+    baseResults += "java.runtime.version" -> System.getProperty("java.runtime.version")
+
+      def gcs = ManagementFactory.getGarbageCollectorMXBeans
+
+      def getGcCollectionTime: Long = {
+        gcs map (_.getCollectionTime) sum
+      }
+
+      def getGcCollectionCount: Long = {
+        gcs map (_.getCollectionCount) sum
+      }
+
+      def compilations = ManagementFactory.getCompilationMXBean
+
     val loadingTime = measureTime {
       println("Dispatching loading command to worker...")
       loadLubm
@@ -354,8 +387,8 @@ object LubmBenchmark extends App {
       println(s"Done running evaluation for query $queryId. Awaiting idle")
       qe.awaitIdle
       println("Idle")
+      cleanGarbage
     }
-
     qe.shutdown
     finalResults
   }

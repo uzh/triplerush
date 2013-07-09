@@ -57,7 +57,6 @@ class QueryVertex(
 
   @transient var queryCopyCount: Long = 0
   @transient var receivedTickets: Long = 0
-  @transient var firstResultNanoTime = 0l
   @transient var complete = true
 
   @transient var optimizingStartTime = 0l
@@ -94,9 +93,6 @@ class QueryVertex(
         queryCopyCount += 1
         val castBuffer = bufferOfQueryParticles.asInstanceOf[UnrolledBuffer[Array[Int]]]
         castBuffer foreach { particle: Array[Int] => processTickets(tickets(particle)) }
-        if (firstResultNanoTime == 0) {
-          firstResultNanoTime = System.nanoTime
-        }
         state = state.concat(castBuffer)
       //} else {
       // numberOfFailedQueries += 1
@@ -167,7 +163,6 @@ class QueryVertex(
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
     val stats = Map[Any, Any](
-      "firstResultNanoTime" -> firstResultNanoTime,
       "optimizingDuration" -> optimizingDuration,
       "queryCopyCount" -> queryCopyCount,
       "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
