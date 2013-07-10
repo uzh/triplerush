@@ -49,11 +49,11 @@ import collection.JavaConversions._
 import language.postfixOps
 
 object LubmBenchmark extends App {
-  def jvmHighThroughputGc = " -Xmx31800m" +
-    " -Xms31800m" +
-    " -XX:CompileThreshold=20000" +
+  def jvmHighThroughputGc = " -Xmx31000m" +
+    " -Xms31000m" +
+//    " -XX:CompileThreshold=1500" +
     " -XX:+AggressiveOpts" +
-    " -XX:+UseFastAccessorMethods" +
+    //    " -XX:+UseFastAccessorMethods" +
     " -XX:+AlwaysPreTouch" +
     " -XX:+UseNUMA" +
     " -XX:-UseBiasedLocking" +
@@ -98,14 +98,14 @@ object LubmBenchmark extends App {
   /*********/
   //  def evalName = s"LUBM run with smaller heap and fewer JVM options."
   //  def evalName = s"LUBM Trial run with dynamic GC."
-  def evalName = s"LUBM Trial run with lots of JVM options."
+  def evalName = s"More warmup runs and longer waiting after GC."
   //  def evalName = "Local debugging."
   def runs = 8
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
-  for (unis <- List(1, 10, 20, 40, 80, 160, 320, 640)) { //1, 10, 20, 40, 80, 160, 320, 640
+  for (unis <- List(160)) { //1, 10, 20, 40, 80, 160, 320, 640
     for (run <- 1 to runs) {
       // for (queryId <- 1 to 1) {
       for (optimizer <- List(QueryOptimizer.Clever)) {
@@ -297,7 +297,7 @@ object LubmBenchmark extends App {
         }
       }
 
-      def gcs = ManagementFactory.getGarbageCollectorMXBeans
+      lazy val gcs = ManagementFactory.getGarbageCollectorMXBeans
 
       def getGcCollectionTime: Long = {
         gcs map (_.getCollectionTime) sum
@@ -333,26 +333,43 @@ object LubmBenchmark extends App {
         gcs map (_.getCollectionCount) sum
       }
 
-      def compilations = ManagementFactory.getCompilationMXBean
+    lazy val compilations = ManagementFactory.getCompilationMXBean
 
-      def javaVersion = ManagementFactory.getRuntimeMXBean.getVmVersion
+    lazy val javaVersion = ManagementFactory.getRuntimeMXBean.getVmVersion
 
-      def jvmLibraryPath = ManagementFactory.getRuntimeMXBean.getLibraryPath
+    lazy val jvmLibraryPath = ManagementFactory.getRuntimeMXBean.getLibraryPath
 
-      def jvmArguments = ManagementFactory.getRuntimeMXBean.getInputArguments
+    lazy val jvmArguments = ManagementFactory.getRuntimeMXBean.getInputArguments
+
+      //      def cleanGarbage {
+      //        var freed = 1l
+      //        var previousGcId = lastGcId
+      //        while (previousGcId == lastGcId || freed <= 0) {
+      //          previousGcId = lastGcId
+      //          System.runFinalization
+      //          System.gc
+      //          Thread.sleep(5000)
+      //          freed = freedDuringLastGc
+      //          println(s"Freed during gc with id $lastGcId $freed")
+      //        }
+      //        Thread.sleep(10000)
+      //      }
+
+      //      def waitForGc(maxTime: Long) {
+      //        val time = System.currentTimeMillis
+      //        var gcId = lastGcId
+      //        while (gcId == lastGcId && time + maxTime < System.currentTimeMillis()) {
+      //          Thread.sleep(100)
+      //        }
+      //      }
 
       def cleanGarbage {
-        var freed = 1l
-        var previousGcId = lastGcId
-        while (previousGcId == lastGcId || freed > 0 || freed < 0) {
-          previousGcId = lastGcId
+        for (i <- 1 to 10) {
           System.runFinalization
           System.gc
-          Thread.sleep(5000)
-          freed = freedDuringLastGc
-          println(s"Freed during gc with id $lastGcId $freed")
+          Thread.sleep(10000)
         }
-        Thread.sleep(10000)
+        Thread.sleep(120000)
       }
 
     var finalResults = List[Map[String, String]]()
@@ -430,7 +447,6 @@ object LubmBenchmark extends App {
       println(s"Done running evaluation for query $queryId. Awaiting idle")
       qe.awaitIdle
       println("Idle")
-      cleanGarbage
     }
     qe.shutdown
     finalResults
