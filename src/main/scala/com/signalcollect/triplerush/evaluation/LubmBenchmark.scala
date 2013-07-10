@@ -49,36 +49,19 @@ import collection.JavaConversions._
 import language.postfixOps
 
 object LubmBenchmark extends App {
-  def jvmHighThroughputGc = " -Xmx31000m" +
+  def jvmParameters = " -Xmx31000m" +
     " -Xms31000m" +
-//    " -XX:CompileThreshold=1500" +
     " -XX:+AggressiveOpts" +
-    //    " -XX:+UseFastAccessorMethods" +
     " -XX:+AlwaysPreTouch" +
     " -XX:+UseNUMA" +
     " -XX:-UseBiasedLocking" +
-    //    " -Xmn8000m" +
-    //    " -d64" +
-    //    " -XX:+UnlockExperimentalVMOptions" +
-    //    " -XX:+UseConcMarkSweepGC" +
-    //    " -XX:+UseParNewGC" +
-    //    " -XX:+CMSIncrementalPacing" +
-    //    " -XX:+CMSIncrementalMode" +
-    //    " -XX:ParallelGCThreads=20" +
-    //    " -XX:ParallelCMSThreads=20" +
-    //    " -XX:-PrintCompilation" +
-    //    " -XX:-PrintGC" +
-    //    " -Dsun.io.serialization.extendedDebugInfo=true" +
     " -XX:MaxInlineSize=1024"
 
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
-  //  val jobId = Random.nextInt % 10000
-  //  def copyName = assemblyPath.replace("-SNAPSHOT", jobId.toString)
-  //  assemblyFile.renameTo(new File(assemblyPath))
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmHighThroughputGc, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
+    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
@@ -96,40 +79,29 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  //  def evalName = s"LUBM run with smaller heap and fewer JVM options."
-  //  def evalName = s"LUBM Trial run with dynamic GC."
-  def evalName = s"More warmup runs and longer waiting after GC."
-  //  def evalName = "Local debugging."
-  def runs = 8
+  def evalName = s"LUBM Evaluation."
+  def runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
-  for (unis <- List(160)) { //1, 10, 20, 40, 80, 160, 320, 640
+  for (unis <- List(320, 160, 80, 40, 20, 10, 1)) {
     for (run <- 1 to runs) {
-      // for (queryId <- 1 to 1) {
       for (optimizer <- List(QueryOptimizer.Clever)) {
-        //for (tickets <- List(1000, 10000, 100000, 1000000)) {
-        //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
-        //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
-        //      }
         evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
           evalName,
-          //queryId,
           false,
           Long.MaxValue,
           optimizer,
           getRevision,
           unis))
       }
-      //  }
     }
   }
   evaluation.execute
 
   def lubmBenchmarkRun(
     description: String,
-    //queryId: Int,
     sampling: Boolean,
     tickets: Long,
     optimizer: Int,
@@ -144,7 +116,6 @@ object LubmBenchmark extends App {
      * LUBM-10240 2502 11016920 0  10 10 125 450721
      *
      * Times Trinity: 281 132 110  5    4 9 630
-     * Time TripleR: 3815 222 3126 2    1 2 603
      */
     val x = -1
     val y = -2
@@ -229,15 +200,6 @@ object LubmBenchmark extends App {
 
     var baseResults = Map[String, String]()
     val qe = new QueryEngine()
-      //            withLoggingLevel(Logging.DebugLevel).
-      //      withConsole(true, 8080).
-      //      withNodeProvisioner(new TorqueNodeProvisioner(
-      //        torqueHost = new TorqueHost(
-      //          jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-      //          localJarPath = assemblyPath,
-      //          jvmParameters = jvmHighThroughputGc,
-      //          priority = TorquePriority.fast),
-      //        numberOfNodes = 10)))
 
       def loadLubm {
         val lubmFolderName = s"lubm$universities-filtered-splits"
@@ -297,7 +259,7 @@ object LubmBenchmark extends App {
         }
       }
 
-      lazy val gcs = ManagementFactory.getGarbageCollectorMXBeans
+    lazy val gcs = ManagementFactory.getGarbageCollectorMXBeans
 
       def getGcCollectionTime: Long = {
         gcs map (_.getCollectionTime) sum
@@ -340,28 +302,6 @@ object LubmBenchmark extends App {
     lazy val jvmLibraryPath = ManagementFactory.getRuntimeMXBean.getLibraryPath
 
     lazy val jvmArguments = ManagementFactory.getRuntimeMXBean.getInputArguments
-
-      //      def cleanGarbage {
-      //        var freed = 1l
-      //        var previousGcId = lastGcId
-      //        while (previousGcId == lastGcId || freed <= 0) {
-      //          previousGcId = lastGcId
-      //          System.runFinalization
-      //          System.gc
-      //          Thread.sleep(5000)
-      //          freed = freedDuringLastGc
-      //          println(s"Freed during gc with id $lastGcId $freed")
-      //        }
-      //        Thread.sleep(10000)
-      //      }
-
-      //      def waitForGc(maxTime: Long) {
-      //        val time = System.currentTimeMillis
-      //        var gcId = lastGcId
-      //        while (gcId == lastGcId && time + maxTime < System.currentTimeMillis()) {
-      //          Thread.sleep(100)
-      //        }
-      //      }
 
       def cleanGarbage {
         for (i <- 1 to 10) {
