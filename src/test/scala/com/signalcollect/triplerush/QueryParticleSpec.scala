@@ -51,7 +51,8 @@ class QueryParticleSpec extends SpecificationWithJUnit {
             new Array(2)).toParticle
           queryId(qp) === queryPatternId
         }
-      specialInts foreach (testIdEncoding(_))
+      val allPassed = specialInts foreach (testIdEncoding(_))
+      allPassed === true
     }
 
     "correctly encode the number of tickets" in {
@@ -63,7 +64,8 @@ class QueryParticleSpec extends SpecificationWithJUnit {
           writeTickets(qp, numberOftickets)
           tickets(qp) === numberOftickets
         }
-      specialLongs foreach (testTicketEncoding(_))
+      val allPassed = specialLongs foreach (testTicketEncoding(_))
+      allPassed === true
     }
 
   }
