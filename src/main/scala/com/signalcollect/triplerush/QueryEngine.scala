@@ -46,6 +46,7 @@ import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import akka.event.Logging
 import com.signalcollect.triplerush.QueryParticle._
 import scala.collection.mutable.UnrolledBuffer
+import com.signalcollect.interfaces.ModularAggregationOperation
 
 case class UndeliverableSignalHandler() {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
@@ -128,6 +129,21 @@ case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEdito
   }
 }
 
+case object TripleCounter extends ModularAggregationOperation[Long] {
+
+  val neutralElement = 0l
+
+  def aggregate(a: Long, b: Long): Long = a + b
+
+  def extract(v: Vertex[_, _]): Long = {
+    v match {
+      case v: BindingIndexVertex => v.targetIds.size
+      case other                 => 0l
+    }
+  }
+
+}
+
 case object FileLoaders {
   def loadNtriplesFile(ntriplesFilename: String)(graphEditor: GraphEditor[Any, Any]) {
     val is = new FileInputStream(ntriplesFilename)
@@ -206,6 +222,10 @@ case class QueryEngine(
 
   def loadBinary(binaryFilename: String, placementHint: Option[Any] = None) {
     g.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
+  }
+
+  def tripleCount: Long = {
+    g.aggregate(TripleCounter) / 3
   }
 
   /**

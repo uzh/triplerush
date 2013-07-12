@@ -79,8 +79,8 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM Evaluation."
-  def runs = 10
+  def evalName = s"LUBM Triple counts."
+  def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
@@ -376,6 +376,8 @@ object LubmBenchmark extends App {
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
+    baseResults += "tripleCount" -> qe.tripleCount.toString
+    
 
     println("Starting warm-up...")
     jitSteadyState

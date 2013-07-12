@@ -84,8 +84,8 @@ object DbpsbBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"DBPSB Evaluation."
-  def runs = 10
+  def evalName = s"DBPSB Triple counts."
+  def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   /*********/
 
@@ -386,6 +386,7 @@ object DbpsbBenchmark extends App {
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
+    baseResults += "tripleCount" -> qe.tripleCount.toString
 
     println("Starting warm-up...")
     jitSteadyState
