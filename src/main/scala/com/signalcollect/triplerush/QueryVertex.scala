@@ -113,6 +113,9 @@ class QueryVertex(
     true
   }
 
+  /**
+   * TODO: Root vertex was removed, we need to find another way of handling the unbound patterns. 
+   */
   def optimizeQuery: QuerySpecification = {
     var sortedPatterns = cardinalities.toArray sortBy (_._2)
     optimizer match {

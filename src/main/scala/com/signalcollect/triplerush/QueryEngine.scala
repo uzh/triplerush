@@ -196,7 +196,6 @@ case class QueryEngine(
       "com.signalcollect.triplerush.QueryVertex",
       "com.signalcollect.triplerush.QueryOptimizer",
       "com.signalcollect.triplerush.QueryResult",
-      "com.signalcollect.triplerush.TriplePattern",
       "Array[com.signalcollect.triplerush.TriplePattern]",
       "akka.actor.RepointableActorRef")).build
   print("Awaiting idle ... ")
@@ -204,9 +203,6 @@ case class QueryEngine(
   println("Done")
   print("Setting undeliverable signal handler ... ")
   g.setUndeliverableSignalHandler(UndeliverableSignalHandler().handle _)
-  println("Done")
-  print("Adding root index vertex ...")
-  g.addVertex(new IndexVertex(RootPattern))
   println("Done")
 
   val system = ActorSystemRegistry.retrieve("SignalCollect").get

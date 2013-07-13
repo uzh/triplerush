@@ -64,14 +64,10 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
   def computeCardinality(graphEditor: GraphEditor[Any, Any]) {
     assert(childDeltasOptimized != null)
     cardinality = 0
-    if (id == RootPattern) {
-      cardinality = Int.MaxValue //TODO: Add comment about why MaxValue
-    } else {
-      CompactIntSet.foreach(childDeltasOptimized, childDelta => {
-        val childPattern = childPatternCreator(childDelta)
-        graphEditor.sendSignal(CardinalityRequest(null, id), childPattern, None)
-      })
-    }
+    CompactIntSet.foreach(childDeltasOptimized, childDelta => {
+      val childPattern = childPatternCreator(childDelta)
+      graphEditor.sendSignal(CardinalityRequest(null, id), childPattern, None)
+    })
   }
 
   @transient var cardinality: Int = _

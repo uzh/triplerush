@@ -23,8 +23,6 @@ import scala.Option.option2Iterable
 import scala.runtime.ScalaRunTime
 import scala.util.hashing.MurmurHash3._
 
-object RootPattern extends TriplePattern(0, 0, 0)
-
 /**
  * Pattern of 3 expressions (subject, predicate object).
  * They are represented as Int, but can be converted to Expression implicitly and for free (value class).
@@ -70,8 +68,6 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
 
   def childPatternRecipe: Int => TriplePattern = {
     this match {
-      case RootPattern =>
-        TriplePattern(_, 0, 0)
       case TriplePattern(0, p, 0) =>
         TriplePattern(0, p, _)
       case TriplePattern(0, 0, o) =>
@@ -101,10 +97,8 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
 
   def parentPatterns: List[TriplePattern] = {
     this match {
-      case RootPattern =>
-        List()
       case TriplePattern(s, 0, 0) =>
-        List(TriplePattern(0, 0, 0))
+        List()
       case TriplePattern(0, p, 0) =>
         List()
       case TriplePattern(0, 0, o) =>
