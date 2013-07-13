@@ -43,32 +43,31 @@ import akka.event.Logging
 import com.signalcollect.triplerush.QueryResult
 import com.signalcollect.triplerush.QuerySpecification
 import scala.collection.mutable.UnrolledBuffer
-import java.lang.management.ManagementFactory
-import collection.JavaConversions._
-import language.postfixOps
 
 /**
- * Runs a PageRank algorithm on a graph of a fixed size
- * for different numbers of worker threads.
- *
- * Evaluation is set to execute on a 'Kraken'-node.
+ * Local profiling of DBPSB benchmark on part of data.
  */
-object DbpsbBenchmark extends App {
-  def jvmParameters = " -Xmx31000m" +
-    " -Xms31000m" +
-    " -XX:+AggressiveOpts" +
-    " -XX:+AlwaysPreTouch" +
-    " -XX:+UseNUMA" +
-    " -XX:-UseBiasedLocking" +
+object LocalDbpsbProfiling extends App {
+  def jvmHighThroughputGc = " -Xmx3000m" +
+    " -Xms3000m" +
+    " -Xmn400m" +
+    " -d64" +
+    " -XX:+UnlockExperimentalVMOptions" +
+    " -XX:+UseConcMarkSweepGC" +
+    " -XX:+UseParNewGC" +
+    " -XX:+CMSIncrementalPacing" +
+    " -XX:+CMSIncrementalMode" +
+    " -XX:ParallelGCThreads=20" +
+    " -XX:ParallelCMSThreads=20" +
+    " -XX:-PrintCompilation" +
+    " -XX:-PrintGC" +
+    " -Dsun.io.serialization.extendedDebugInfo=true" +
     " -XX:MaxInlineSize=1024"
 
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
-  val kraken = new TorqueHost(
-    jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
   val localHost = new LocalHost
-  val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
+  //  val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
   def getRevision: String = {
     try {
@@ -84,9 +83,9 @@ object DbpsbBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"DBPSB Triple counts."
+  def evalName = s"DBPSB Profiling"
   def runs = 1
-  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
+  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost) //.addResultHandler(googleDocs)
   /*********/
 
   for (run <- 1 to runs) {
@@ -112,6 +111,7 @@ object DbpsbBenchmark extends App {
      * Queries from: Trinity.RDF
      *
      * Times Trinity: 7   220 5 7 8 21 13 28
+     * Times TripleR:
      */
     val game = -1
     val title = -2
@@ -235,13 +235,17 @@ object DbpsbBenchmark extends App {
     }
 
     var baseResults = Map[String, String]()
-    val qe = new QueryEngine()
+    val qe = new QueryEngine(GraphBuilder.withMessageBusFactory(
+      new BulkAkkaMessageBusFactory(1024, false)).
+      withMessageSerialization(false).
+      withAkkaMessageCompression(true))
+    println(s"Local folder: ${(new File(".")).getAbsolutePath}")
 
       def loadDbpsb {
         val dbpsbFolderName = s"dbpsb10-filtered-splits"
-        for (splitId <- 0 until 2880) {
+        for (splitId <- 0 until 576) { //576
           qe.loadBinary(s"./$dbpsbFolderName/$splitId.filtered-split", Some(splitId))
-          if (splitId % 288 == 279) {
+          if (splitId % 288 == 287) {
             println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
             qe.awaitIdle
             println(s"Continuing graph loading...")
@@ -277,13 +281,11 @@ object DbpsbBenchmark extends App {
         }
       }
 
-      def jitRepetitions = 100
-
       /**
-       * Go to JVM JIT steady state by executing the queries multiple times.
+       * Go to JVM JIT steady state by executing the query 100 times.
        */
       def jitSteadyState {
-        for (i <- 1 to jitRepetitions) {
+        for (i <- 1 to 100) {
           for (queryId <- 1 to 8) {
             val queryIndex = queryId - 1
             val query = fullQueries(queryIndex)
@@ -295,31 +297,12 @@ object DbpsbBenchmark extends App {
         }
       }
 
-    lazy val gcs = ManagementFactory.getGarbageCollectorMXBeans
-
-      def getGcCollectionTime: Long = {
-        gcs map (_.getCollectionTime) sum
-      }
-
-      def getGcCollectionCount: Long = {
-        gcs map (_.getCollectionCount) sum
-      }
-
-    lazy val compilations = ManagementFactory.getCompilationMXBean
-
-    lazy val javaVersion = ManagementFactory.getRuntimeMXBean.getVmVersion
-
-    lazy val jvmLibraryPath = ManagementFactory.getRuntimeMXBean.getLibraryPath
-
-    lazy val jvmArguments = ManagementFactory.getRuntimeMXBean.getInputArguments
-
       def cleanGarbage {
         for (i <- 1 to 10) {
-          System.runFinalization
           System.gc
-          Thread.sleep(10000)
+          Thread.sleep(100)
         }
-        Thread.sleep(120000)
+        Thread.sleep(10000)
       }
 
     var finalResults = List[Map[String, String]]()
@@ -328,24 +311,13 @@ object DbpsbBenchmark extends App {
         var date: Date = new Date
         val queryIndex = queryId - 1
         val query = queries(queryIndex)
-        val gcTimeBefore = getGcCollectionTime
-        val gcCountBefore = getGcCollectionCount
-        val compileTimeBefore = compilations.getTotalCompilationTime
-        runResult += s"totalMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
-        runResult += s"freeMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
-        runResult += s"usedMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
         val startTime = System.nanoTime
         val queryResult = executeOnQueryEngine(query)
-        val finishTime = System.nanoTime
         val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
+        val finishTime = System.nanoTime
         val executionTime = roundToMillisecondFraction(finishTime - startTime)
+        val timeToFirstResult = roundToMillisecondFraction(queryStats("firstResultNanoTime").asInstanceOf[Long] - startTime)
         val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
-        val gcTimeAfter = getGcCollectionTime
-        val gcCountAfter = getGcCollectionCount
-        val gcTimeDuringQuery = gcTimeAfter - gcTimeBefore
-        val gcCountDuringQuery = gcCountAfter - gcCountBefore
-        val compileTimeAfter = compilations.getTotalCompilationTime
-        val compileTimeDuringQuery = compileTimeAfter - compileTimeBefore
         runResult += s"revision" -> revision
         runResult += s"queryId" -> queryId.toString
         runResult += s"optimizer" -> optimizer.toString
@@ -354,17 +326,11 @@ object DbpsbBenchmark extends App {
         runResult += s"exception" -> queryStats("exception").toString
         runResult += s"results" -> queryResult.queries.length.toString
         runResult += s"executionTime" -> executionTime.toString
+        runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
         runResult += s"optimizingTime" -> optimizingTime.toString
         runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
         runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
         runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
-        runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
-        runResult += "gcTimeAfter" -> gcTimeAfter.toString
-        runResult += "gcCountAfter" -> gcCountAfter.toString
-        runResult += "gcTimeDuringQuery" -> gcTimeDuringQuery.toString
-        runResult += "gcCountDuringQuery" -> gcCountDuringQuery.toString
-        runResult += "compileTimeAfter" -> compileTimeAfter.toString
-        runResult += "compileTimeDuringQuery" -> compileTimeDuringQuery.toString
         runResult += s"loadNumber" -> 10.toString
         runResult += s"date" -> date.toString
         runResult += s"dataSet" -> s"dbpsb10"
@@ -374,24 +340,19 @@ object DbpsbBenchmark extends App {
       def bytesToGigabytes(bytes: Long): Double = ((bytes / 1073741824.0) * 10.0).round / 10.0
 
     baseResults += "evaluationDescription" -> description
-    baseResults += "jitRepetitions" -> jitRepetitions.toString
-    baseResults += "java.runtime.version" -> System.getProperty("java.runtime.version")
-    baseResults += "javaVmVersion" -> javaVersion
-    baseResults += "jvmLibraryPath" -> jvmLibraryPath
-    baseResults += "jvmArguments" -> jvmArguments.mkString(" ")
-
     val loadingTime = measureTime {
       println("Dispatching loading command to worker...")
       loadDbpsb
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
-    baseResults += "tripleCount" -> qe.tripleCount.toString
 
     println("Starting warm-up...")
     jitSteadyState
-    cleanGarbage
+    //cleanGarbage
     println(s"Finished warm-up.")
+    println("Please connect profiler and press any key.")
+    readLine
     for (queryId <- 1 to 8) {
       println(s"Running evaluation for query $queryId.")
       runEvaluation(queryId)
@@ -399,6 +360,7 @@ object DbpsbBenchmark extends App {
       qe.awaitIdle
       println("Idle")
     }
+
     qe.shutdown
     finalResults
   }

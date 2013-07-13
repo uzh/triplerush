@@ -28,13 +28,12 @@ import akka.actor.ActorRef
 import akka.actor.actorRef2Scala
 import com.signalcollect.Vertex
 import com.signalcollect.Edge
+import com.signalcollect.triplerush.QueryParticle._
+import scala.concurrent.Promise
+import scala.collection.mutable.UnrolledBuffer
 
 case class QueryResult(
-  queries: List[QueryParticle],
-  statKeys: Array[Any],
-  statVariables: Array[Any])
-
-case class QueryDone(
+  queries: UnrolledBuffer[Array[Int]],
   statKeys: Array[Any],
   statVariables: Array[Any])
 
@@ -46,19 +45,18 @@ case object QueryOptimizer {
 
 class QueryVertex(
     val query: QuerySpecification,
-    val resultRecipient: ActorRef,
-    val optimizer: Int) extends Vertex[Int, List[QueryParticle]] {
+    val promise: Promise[QueryResult],
+    val optimizer: Int) extends Vertex[Int, UnrolledBuffer[Array[Int]]] {
 
   val id = query.queryId
 
-  @transient var state: List[QueryParticle] = _
+  @transient var state: UnrolledBuffer[Array[Int]] = UnrolledBuffer()
 
   val expectedTickets = Long.MaxValue
   val numberOfPatterns = query.unmatched.length
 
   @transient var queryCopyCount: Long = 0
   @transient var receivedTickets: Long = 0
-  @transient var firstResultNanoTime = 0l
   @transient var complete = true
 
   @transient var optimizingStartTime = 0l
@@ -67,7 +65,6 @@ class QueryVertex(
   @transient var optimizedQuery: QuerySpecification = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    state = List[QueryParticle]()
     cardinalities = Map()
     if (optimizer != QueryOptimizer.None && numberOfPatterns > 1) {
       // Gather pattern cardinalities first.
@@ -92,8 +89,15 @@ class QueryVertex(
         queryCopyCount += 1
         processTickets(ticketsOfFailedQuery)
       //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
-      case query: QueryParticle =>
-        processQuery(query)
+      case bufferOfQueryParticles: UnrolledBuffer[_] =>
+        queryCopyCount += 1
+        val castBuffer = bufferOfQueryParticles.asInstanceOf[UnrolledBuffer[Array[Int]]]
+        castBuffer foreach { particle: Array[Int] => processTickets(tickets(particle)) }
+        state = state.concat(castBuffer)
+      //} else {
+      // numberOfFailedQueries += 1
+      // println(s"Failure: $query")
+      //}
       //        println(s"Query vertex $id received bindings ${query.bindings}. Now at $receivedTickets/$expectedTickets")
       case CardinalityReply(forPattern, cardinality) =>
         cardinalities += forPattern -> cardinality
@@ -148,23 +152,6 @@ class QueryVertex(
     }
   }
 
-  def processQuery(query: QueryParticle) {
-    queryCopyCount += 1
-    processTickets(query.tickets)
-    //if (query.unmatched.isEmpty) {
-    // numberOfSuccessfulQueries += 1
-    // println(s"Success: $query")
-    // Query was matched successfully.
-    if (firstResultNanoTime == 0) {
-      firstResultNanoTime = System.nanoTime
-    }
-    resultRecipient ! query
-    //} else {
-    // numberOfFailedQueries += 1
-    // println(s"Failure: $query")
-    //}
-  }
-
   def processTickets(t: Long) {
     receivedTickets += math.abs(t)
     if (t < 0) {
@@ -176,19 +163,16 @@ class QueryVertex(
 
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
     val stats = Map[Any, Any](
-      "firstResultNanoTime" -> firstResultNanoTime,
       "optimizingDuration" -> optimizingDuration,
       "queryCopyCount" -> queryCopyCount,
       "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
     val statsKeys: Array[Any] = stats.keys.toArray
     val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
-    resultRecipient ! QueryDone(statsKeys, statsValues)
-    //    val totalQueries = (numberOfFailedQueries + numberOfSuccessfulQueries).toDouble
-    //    println(s"Total # of queries = $totalQueries failed : ${((numberOfFailedQueries / totalQueries) * 100.0).round}%")
+    promise.success(QueryResult(state, statsKeys, statsValues))
     graphEditor.removeVertex(id)
   }
 
-  def setState(s: List[QueryParticle]) {
+  def setState(s: UnrolledBuffer[Array[Int]]) {
     state = s
   }
 

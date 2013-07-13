@@ -31,9 +31,7 @@ case class QuerySpecification(
     unmatched: Array[TriplePattern],
     bindings: Array[Int]) {
 
-  implicit def int2expression(i: Int) = Expression(i)
-
-  def toParticle = {
+  def toParticle: Array[Int] = {
     QueryParticle(queryId,
       Long.MaxValue,
       bindings: Array[Int],

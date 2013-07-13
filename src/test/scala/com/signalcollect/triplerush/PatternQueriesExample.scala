@@ -22,6 +22,7 @@ package com.signalcollect.triplerush
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.signalcollect.triplerush.evaluation.SparqlDsl._
+import com.signalcollect.triplerush.QueryParticle._
 
 object PatternQueriesExample extends App {
   val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
@@ -59,7 +60,7 @@ object PatternQueriesExample extends App {
     case results =>
       println("Result bindings:")
       results.queries foreach { result =>
-        println("\t" + result.bindings + " tickets = " + result.tickets)
+        println("\t" + bindings(result) + " tickets = " + tickets(result))
       }
   }
 

@@ -43,14 +43,16 @@ import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.util.Timeout
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
-import com.signalcollect.triplerush.Expression._
 import akka.event.Logging
+import com.signalcollect.triplerush.QueryParticle._
+import scala.collection.mutable.UnrolledBuffer
+import com.signalcollect.interfaces.ModularAggregationOperation
 
 case class UndeliverableSignalHandler() {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
-      case query: QueryParticle =>
-        graphEditor.sendSignal(query.tickets, query.queryId, None)
+      case queryParticle: Array[Int] =>
+        graphEditor.sendSignal(tickets(queryParticle), queryId(queryParticle), None)
       case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
       case other =>
@@ -69,34 +71,6 @@ case class VertexPreparation() {
         v.optimizeEdgeRepresentation
       case other => throw new Exception(s"Only index vertices expected, but found vertex $other")
     }
-  }
-}
-
-case object RegisterQueryResultRecipient
-
-class ResultRecipientActor extends Actor {
-  var queryDone: QueryDone = _
-  var queryResultRecipient: ActorRef = _
-
-  var queries = List[QueryParticle]()
-
-  def receive = {
-    case RegisterQueryResultRecipient =>
-      queryResultRecipient = sender
-      if (queryDone != null) {
-        queryResultRecipient ! QueryResult(queries, queryDone.statKeys, queryDone.statVariables)
-        self ! PoisonPill
-      }
-    case queryDone: QueryDone =>
-      this.queryDone = queryDone
-      if (queryResultRecipient != null) {
-        queryResultRecipient ! QueryResult(queries, queryDone.statKeys, queryDone.statVariables)
-        self ! PoisonPill
-      }
-
-    case query: QueryParticle =>
-      // TODO: Send only bindings instead of full particles. 
-      queries = query :: queries
   }
 }
 
@@ -155,6 +129,21 @@ case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEdito
   }
 }
 
+case object TripleCounter extends ModularAggregationOperation[Long] {
+
+  val neutralElement = 0l
+
+  def aggregate(a: Long, b: Long): Long = a + b
+
+  def extract(v: Vertex[_, _]): Long = {
+    v match {
+      case v: BindingIndexVertex => v.targetIds.size
+      case other                 => 0l
+    }
+  }
+
+}
+
 case object FileLoaders {
   def loadNtriplesFile(ntriplesFilename: String)(graphEditor: GraphEditor[Any, Any]) {
     val is = new FileInputStream(ntriplesFilename)
@@ -189,14 +178,15 @@ case object FileLoaders {
 }
 
 case class QueryEngine(
-    graphBuilder: GraphBuilder[Any, Any] = GraphBuilder.
-      withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)),
+    graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
     //.withLoggingLevel(Logging.DebugLevel)
     console: Boolean = false) {
+
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
+    withMessageBusFactory(new CombiningMessageBusFactory(1024, false)).
+    withHeartbeatInterval(500).
     withKryoRegistrations(List(
-      "com.signalcollect.triplerush.QueryParticle",
       "com.signalcollect.triplerush.TriplePattern",
       "com.signalcollect.triplerush.BindingIndexVertex",
       "com.signalcollect.triplerush.IndexVertex",
@@ -206,10 +196,8 @@ case class QueryEngine(
       "com.signalcollect.triplerush.QueryVertex",
       "com.signalcollect.triplerush.QueryOptimizer",
       "com.signalcollect.triplerush.QueryResult",
-      "com.signalcollect.triplerush.QueryDone",
       "com.signalcollect.triplerush.TriplePattern",
       "Array[com.signalcollect.triplerush.TriplePattern]",
-      "Array[com.signalcollect.triplerush.QueryParticle]",
       "akka.actor.RepointableActorRef")).build
   print("Awaiting idle ... ")
   g.awaitIdle
@@ -218,7 +206,7 @@ case class QueryEngine(
   g.setUndeliverableSignalHandler(UndeliverableSignalHandler().handle _)
   println("Done")
   print("Adding root index vertex ...")
-  g.addVertex(new IndexVertex(TriplePattern(*, *, *)))
+  g.addVertex(new IndexVertex(RootPattern))
   println("Done")
 
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
@@ -234,6 +222,10 @@ case class QueryEngine(
 
   def loadBinary(binaryFilename: String, placementHint: Option[Any] = None) {
     g.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
+  }
+
+  def tripleCount: Long = {
+    g.aggregate(TripleCounter) / 3
   }
 
   /**
@@ -252,16 +244,12 @@ case class QueryEngine(
   }
 
   def executeQuery(q: QuerySpecification, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
-    assert(queryExecutionPrepared)
+    val p = promise[QueryResult]
     if (!q.unmatched.isEmpty) {
-      val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
-      g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer))
-      implicit val timeout = Timeout(Duration.create(7200, TimeUnit.SECONDS))
-      val resultFuture = resultRecipientActor ? RegisterQueryResultRecipient
-      resultFuture.asInstanceOf[Future[QueryResult]]
+      g.addVertex(new QueryVertex(q, p, optimizer))
+      p.future
     } else {
-      val p = promise[QueryResult]
-      p success (QueryResult(List(), Array(), Array()))
+      p success (QueryResult(UnrolledBuffer(), Array(), Array()))
       p.future
     }
   }

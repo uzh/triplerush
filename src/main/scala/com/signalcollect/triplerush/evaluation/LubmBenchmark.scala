@@ -43,40 +43,25 @@ import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
 import com.signalcollect.triplerush.QueryResult
 import com.signalcollect.triplerush.QuerySpecification
+import scala.collection.mutable.UnrolledBuffer
+import java.lang.management.ManagementFactory
+import collection.JavaConversions._
+import language.postfixOps
 
-/**
- * Runs a PageRank algorithm on a graph of a fixed size
- * for different numbers of worker threads.
- *
- * Evaluation is set to execute on a 'Kraken'-node.
- */
 object LubmBenchmark extends App {
-  def jvmHighThroughputGc = " -Xmx64000m" +
-    " -Xms64000m" +
-    " -Xmn8000m" +
-    " -d64" +
-    " -XX:+UnlockExperimentalVMOptions" +
-    " -XX:+UseConcMarkSweepGC" +
-    " -XX:+UseParNewGC" +
-    " -XX:+CMSIncrementalPacing" +
-    " -XX:+CMSIncrementalMode" +
-    " -XX:ParallelGCThreads=20" +
-    " -XX:ParallelCMSThreads=20" +
-    " -XX:-PrintCompilation" +
-    " -XX:-PrintGC" +
-    " -Dsun.io.serialization.extendedDebugInfo=true" +
+  def jvmParameters = " -Xmx31000m" +
+    " -Xms31000m" +
+    " -XX:+AggressiveOpts" +
+    " -XX:+AlwaysPreTouch" +
+    " -XX:+UseNUMA" +
+    " -XX:-UseBiasedLocking" +
     " -XX:MaxInlineSize=1024"
 
-  def jvmParameters = " -Xmx64000m" +
-    " -Xms64000m"
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
-  //  val jobId = Random.nextInt % 10000
-  //  def copyName = assemblyPath.replace("-SNAPSHOT", jobId.toString)
-  //  assemblyFile.renameTo(new File(assemblyPath))
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmHighThroughputGc, priority = TorquePriority.superfast)
+    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
@@ -94,38 +79,29 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM trial run with Array particles & System.arraycopy"
-  //  def evalName = "Local debugging."
+  def evalName = s"LUBM Triple counts."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
-  for (unis <- List(160)) {
+  for (unis <- List(320, 160, 80, 40, 20, 10, 1)) {
     for (run <- 1 to runs) {
-      // for (queryId <- 1 to 1) {
       for (optimizer <- List(QueryOptimizer.Clever)) {
-        //for (tickets <- List(1000, 10000, 100000, 1000000)) {
-        //evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, true, tickets))
-        //        evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(evalName, queryId, false, tickets))
-        //      }
         evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
           evalName,
-          //queryId,
           false,
           Long.MaxValue,
           optimizer,
           getRevision,
           unis))
       }
-      //  }
     }
   }
   evaluation.execute
 
   def lubmBenchmarkRun(
     description: String,
-    //queryId: Int,
     sampling: Boolean,
     tickets: Long,
     optimizer: Int,
@@ -140,7 +116,6 @@ object LubmBenchmark extends App {
      * LUBM-10240 2502 11016920 0  10 10 125 450721
      *
      * Times Trinity: 281 132 110  5    4 9 630
-     * Time TripleR: 3815 222 3126 2    1 2 603
      */
     val x = -1
     val y = -2
@@ -224,19 +199,7 @@ object LubmBenchmark extends App {
     }
 
     var baseResults = Map[String, String]()
-    val qe = new QueryEngine(GraphBuilder.withMessageBusFactory(
-      new BulkAkkaMessageBusFactory(1024, false)).
-      withMessageSerialization(false).
-      withAkkaMessageCompression(true))
-      //            withLoggingLevel(Logging.DebugLevel).
-      //      withConsole(true, 8080).
-      //      withNodeProvisioner(new TorqueNodeProvisioner(
-      //        torqueHost = new TorqueHost(
-      //          jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-      //          localJarPath = assemblyPath,
-      //          jvmParameters = jvmHighThroughputGc,
-      //          priority = TorquePriority.fast),
-      //        numberOfNodes = 10)))
+    val qe = new QueryEngine()
 
       def loadLubm {
         val lubmFolderName = s"lubm$universities-filtered-splits"
@@ -274,15 +237,17 @@ object LubmBenchmark extends App {
         } catch {
           case t: Throwable =>
             println(s"Query $q timed out!")
-            QueryResult(List(), Array("exception"), Array(t))
+            QueryResult(UnrolledBuffer(), Array("exception"), Array(t))
         }
       }
 
+      def jitRepetitions = 100
+
       /**
-       * Go to JVM JIT steady state by executing the query 100 times.
+       * Go to JVM JIT steady state by executing the queries multiple times.
        */
       def jitSteadyState {
-        for (i <- 1 to 5) {
+        for (i <- 1 to jitRepetitions) {
           for (queryId <- 1 to 7) {
             val queryIndex = queryId - 1
             val query = fullQueries(queryIndex)
@@ -294,12 +259,57 @@ object LubmBenchmark extends App {
         }
       }
 
+    lazy val gcs = ManagementFactory.getGarbageCollectorMXBeans
+
+      def getGcCollectionTime: Long = {
+        gcs map (_.getCollectionTime) sum
+      }
+
+      def lastGcId: Long = {
+        val sunGcs = gcs map (_.asInstanceOf[com.sun.management.GarbageCollectorMXBean])
+        val gcIds = sunGcs.
+          map(_.getLastGcInfo).
+          flatMap(info => if (info != null) Some(info.getId) else None)
+        if (gcIds.isEmpty) 0 else gcIds.max
+      }
+
+      def freedDuringLastGc: Long = {
+        val sunGcs = gcs map (_.asInstanceOf[com.sun.management.GarbageCollectorMXBean])
+        val usedBeforeLastGc = sunGcs.
+          map(_.getLastGcInfo).
+          map(_.getMemoryUsageBeforeGc).
+          flatMap(_.values).
+          map(_.getCommitted).
+          sum
+        val usedAfterLastGc = sunGcs.
+          map(_.getLastGcInfo).
+          map(_.getMemoryUsageAfterGc).
+          flatMap(_.values).
+          map(_.getCommitted).
+          sum
+        val freedDuringLastGc = usedBeforeLastGc - usedAfterLastGc
+        freedDuringLastGc
+      }
+
+      def getGcCollectionCount: Long = {
+        gcs map (_.getCollectionCount) sum
+      }
+
+    lazy val compilations = ManagementFactory.getCompilationMXBean
+
+    lazy val javaVersion = ManagementFactory.getRuntimeMXBean.getVmVersion
+
+    lazy val jvmLibraryPath = ManagementFactory.getRuntimeMXBean.getLibraryPath
+
+    lazy val jvmArguments = ManagementFactory.getRuntimeMXBean.getInputArguments
+
       def cleanGarbage {
         for (i <- 1 to 10) {
+          System.runFinalization
           System.gc
-          Thread.sleep(100)
+          Thread.sleep(10000)
         }
-        Thread.sleep(10000)
+        Thread.sleep(120000)
       }
 
     var finalResults = List[Map[String, String]]()
@@ -308,13 +318,24 @@ object LubmBenchmark extends App {
         var date: Date = new Date
         val queryIndex = queryId - 1
         val query = queries(queryIndex)
+        val gcTimeBefore = getGcCollectionTime
+        val gcCountBefore = getGcCollectionCount
+        val compileTimeBefore = compilations.getTotalCompilationTime
+        runResult += s"totalMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
+        runResult += s"freeMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
+        runResult += s"usedMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
         val startTime = System.nanoTime
         val queryResult = executeOnQueryEngine(query)
-        val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
         val finishTime = System.nanoTime
+        val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
         val executionTime = roundToMillisecondFraction(finishTime - startTime)
-        val timeToFirstResult = roundToMillisecondFraction(queryStats("firstResultNanoTime").asInstanceOf[Long] - startTime)
         val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
+        val gcTimeAfter = getGcCollectionTime
+        val gcCountAfter = getGcCollectionCount
+        val gcTimeDuringQuery = gcTimeAfter - gcTimeBefore
+        val gcCountDuringQuery = gcCountAfter - gcCountBefore
+        val compileTimeAfter = compilations.getTotalCompilationTime
+        val compileTimeDuringQuery = compileTimeAfter - compileTimeBefore
         runResult += s"revision" -> revision
         runResult += s"queryId" -> queryId.toString
         runResult += s"optimizer" -> optimizer.toString
@@ -323,12 +344,17 @@ object LubmBenchmark extends App {
         runResult += s"exception" -> queryStats("exception").toString
         runResult += s"results" -> queryResult.queries.length.toString
         runResult += s"executionTime" -> executionTime.toString
-        runResult += s"timeUntilFirstResult" -> timeToFirstResult.toString
         runResult += s"optimizingTime" -> optimizingTime.toString
         runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
         runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
         runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
         runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
+        runResult += "gcTimeAfter" -> gcTimeAfter.toString
+        runResult += "gcCountAfter" -> gcCountAfter.toString
+        runResult += "gcTimeDuringQuery" -> gcTimeDuringQuery.toString
+        runResult += "gcCountDuringQuery" -> gcCountDuringQuery.toString
+        runResult += "compileTimeAfter" -> compileTimeAfter.toString
+        runResult += "compileTimeDuringQuery" -> compileTimeDuringQuery.toString
         runResult += s"loadNumber" -> universities.toString
         runResult += s"date" -> date.toString
         runResult += s"dataSet" -> s"lubm$universities"
@@ -338,12 +364,20 @@ object LubmBenchmark extends App {
       def bytesToGigabytes(bytes: Long): Double = ((bytes / 1073741824.0) * 10.0).round / 10.0
 
     baseResults += "evaluationDescription" -> description
+    baseResults += "jitRepetitions" -> jitRepetitions.toString
+    baseResults += "java.runtime.version" -> System.getProperty("java.runtime.version")
+    baseResults += "javaVmVersion" -> javaVersion
+    baseResults += "jvmLibraryPath" -> jvmLibraryPath
+    baseResults += "jvmArguments" -> jvmArguments.mkString(" ")
+
     val loadingTime = measureTime {
       println("Dispatching loading command to worker...")
       loadLubm
       qe.awaitIdle
     }
     baseResults += "loadingTime" -> loadingTime.toString
+    baseResults += "tripleCount" -> qe.tripleCount.toString
+    
 
     println("Starting warm-up...")
     jitSteadyState
@@ -356,7 +390,6 @@ object LubmBenchmark extends App {
       qe.awaitIdle
       println("Idle")
     }
-
     qe.shutdown
     finalResults
   }

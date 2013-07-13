@@ -35,6 +35,7 @@ import com.signalcollect.triplerush.evaluation.SparqlDsl.dsl2Query
 import com.signalcollect.triplerush.evaluation.SparqlDsl.{ | => | }
 import org.specs2.runner.JUnitRunner
 import com.signalcollect.triplerush.evaluation.SparqlDsl.DslQuery
+import com.signalcollect.triplerush.QueryParticle._
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
@@ -180,9 +181,9 @@ WHERE
   "LUBM Query 1" should {
     val queryId = 1
     s"DSL-match the reference results $queryId" in {
-//      print("Press any key to continue ...")
-//      readLine
-//      println(" Running.")
+      //      print("Press any key to continue ...")
+      //      readLine
+      //      println(" Running.")
       runTest(queryId, sparql = false)
     }
     s"SPARQL-match the reference results $queryId" in {
@@ -313,7 +314,6 @@ WHERE
   //  }
 
   val qe = new QueryEngine(graphBuilder = GraphBuilder.
-    withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false)).
     withMessageSerialization(false))
 
   println("Loading LUBM1 ... ")
@@ -331,7 +331,7 @@ WHERE
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
-    val bindings: List[Map[String, String]] = result.queries.toList map (_.getBindings.toMap map (entry => (q.getString(entry._1), q.getString(entry._2))))
+    val bindings: List[Map[String, String]] = result.queries.toList map (getBindings(_).toMap map (entry => (q.getString(entry._1), q.getString(entry._2))))
     val sortedBindings: List[TreeMap[String, String]] = bindings map (unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
     val sortedBindingList = (sortedBindings sortBy (map => map.values)).toList
     sortedBindingList
@@ -357,12 +357,12 @@ WHERE
       val fileName = entry._2
       val file = Source.fromFile(fileName)
       val lines = file.getLines
-      val bindings = getBindings(lines)
+      val bindings = getQueryBindings(lines)
       (entry._1, bindings)
     }
   }
 
-  def getBindings(lines: Iterator[String]): QuerySolution = {
+  def getQueryBindings(lines: Iterator[String]): QuerySolution = {
     var currentLine = lines.next
     if (currentLine == "NO ANSWERS.") {
       // No bindings.
