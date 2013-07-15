@@ -27,6 +27,7 @@ import com.signalcollect.interfaces.Inspectable
 import com.signalcollect.DefaultEdge
 import com.signalcollect.Edge
 import com.signalcollect.triplerush.QueryParticle._
+import scala.collection.mutable.ArrayBuffer
 
 class TripleIndexEdge(override val sourceId: TriplePattern, override val targetId: TriplePattern) extends DefaultEdge[TriplePattern](targetId) {
   def signal = Unit
@@ -54,7 +55,7 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     super.afterInitialization(graphEditor)
-    childDeltas = TreeSet[Int]()
+    childDeltas = new ArrayBuffer[Int](0)
     childPatternCreator = id.childPatternRecipe
   }
 
@@ -64,14 +65,14 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
 
   @transient var edgeCounter: Int = _
 
-  @transient var childDeltas: TreeSet[Int] = _
+  @transient var childDeltas: ArrayBuffer[Int] = _
 
   @transient var childDeltasOptimized: Array[Int] = _
 
   @transient var childPatternCreator: Int => TriplePattern = _
 
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
-    childDeltas = TreeSet[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
+    childDeltas = new ArrayBuffer[Int](1) // TODO: Make sure this still works as intended once we add index optimizations.
     val removed = edgeCount
     edgeCounter = 0
     removed
@@ -80,11 +81,9 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
     assert(childDeltas != null)
     val placeholderEdge = e.asInstanceOf[PlaceholderEdge]
-    val wasAdded = childDeltas.add(placeholderEdge.childDelta)
-    if (wasAdded) {
-      edgeCounter += 1
-    }
-    wasAdded
+    childDeltas.append(placeholderEdge.childDelta)
+    edgeCounter += 1
+    true
   }
 
   /**

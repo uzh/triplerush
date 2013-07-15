@@ -26,6 +26,7 @@ import com.signalcollect.examples.CompactIntSet
 import scala.collection.mutable.TreeSet
 import com.signalcollect.interfaces.Inspectable
 import com.signalcollect.triplerush.QueryParticle._
+import scala.collection.mutable.ArrayBuffer
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -74,7 +75,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
 
   @transient var edgeCounter: Int = _
 
-  @transient var childDeltas: TreeSet[Int] = _
+  @transient var childDeltas: ArrayBuffer[Int] = _
 
   @transient var childDeltasOptimized: Array[Byte] = _
 
@@ -87,14 +88,14 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     super.afterInitialization(graphEditor)
-    childDeltas = TreeSet[Int]()
+    childDeltas = new ArrayBuffer[Int](1)
     childPatternCreator = id.childPatternRecipe
   }
 
   override def edgeCount = edgeCounter
 
   override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = {
-    childDeltas = TreeSet[Int]() // TODO: Make sure this still works as intended once we add index optimizations.
+    childDeltas = new ArrayBuffer[Int](0) // TODO: Make sure this still works as intended once we add index optimizations.
     val removed = edgeCount
     edgeCounter = 0
     removed
@@ -103,11 +104,10 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
     assert(childDeltas != null)
     val placeholderEdge = e.asInstanceOf[PlaceholderEdge]
-    val wasAdded = childDeltas.add(placeholderEdge.childDelta)
-    if (wasAdded) {
-      edgeCounter += 1
-    }
-    wasAdded
+    // TODO: What if triple had been added before?
+    childDeltas.append(placeholderEdge.childDelta)
+    edgeCounter += 1
+    true
   }
 
   def processFullQuery(queryParticle: Array[Int], graphEditor: GraphEditor[Any, Any]) {
