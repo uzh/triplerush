@@ -183,11 +183,12 @@ object QueryParticle {
    * Experimental
    */
 
-  @inline def getBindings(r: Array[Int]): IndexedSeq[(Int, Int)] = {
-    ((-1 to -bindings(r).length by -1).zip(bindings(r)))
+  @inline def bindingsToMap(onlyBindings: Array[Int]): Map[Int, Int] = {
+    (((-1 to -onlyBindings.length by -1).zip(onlyBindings))).toMap
   }
-  @inline def bindings(r: Array[Int]): IndexedSeq[Int] = {
-    (0 until numberOfBindings(r)) map (binding(r, _))
+
+  @inline def bindings(r: Array[Int]): Array[Int] = {
+    r.slice(4, 4 + numberOfBindings(r))
   }
   @inline def isResult(r: Array[Int]) = r.length == 4 + numberOfBindings(r)
   @inline def queryId(r: Array[Int]): Int = r(0)

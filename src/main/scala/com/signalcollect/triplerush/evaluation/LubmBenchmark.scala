@@ -79,13 +79,13 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM Evaluation."
-  def runs = 10
-  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
-  //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
+  def evalName = s"LUBM Dist Evaluation 1 machine."
+  def runs = 1
+  //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
+  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
-  for (unis <- List(320, 160, 80, 40, 20, 10, 1)) {
+  for (unis <- List(160)) {
     for (run <- 1 to runs) {
       for (optimizer <- List(QueryOptimizer.Clever)) {
         evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
@@ -199,7 +199,14 @@ object LubmBenchmark extends App {
     }
 
     var baseResults = Map[String, String]()
-    val qe = new QueryEngine()
+    val kraken = new TorqueHost(
+      jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
+      localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
+    //      
+    val graphBuilder = GraphBuilder.
+//      withLoggingLevel(Logging.DebugLevel).
+      withNodeProvisioner(new TorqueNodeProvisioner(kraken, 1))
+    val qe = new QueryEngine(graphBuilder)
 
       def loadLubm {
         val lubmFolderName = s"lubm$universities-filtered-splits"
@@ -379,7 +386,7 @@ object LubmBenchmark extends App {
 
     println("Starting warm-up...")
     jitSteadyState
-    cleanGarbage
+//    cleanGarbage
     println(s"Finished warm-up.")
     for (queryId <- 1 to 7) {
       println(s"Running evaluation for query $queryId.")

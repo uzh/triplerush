@@ -32,6 +32,10 @@ import com.signalcollect.triplerush.QueryParticle._
 import scala.concurrent.Promise
 import scala.collection.mutable.UnrolledBuffer
 
+case class QueryDone(
+  statKeys: Array[Any],
+  statVariables: Array[Any])
+
 case class QueryResult(
   queries: UnrolledBuffer[Array[Int]],
   statKeys: Array[Any],
@@ -45,12 +49,12 @@ case object QueryOptimizer {
 
 class QueryVertex(
     val query: QuerySpecification,
-    val promise: Promise[QueryResult],
-    val optimizer: Int) extends Vertex[Int, UnrolledBuffer[Array[Int]]] {
+    val resultRecipientActor: ActorRef,
+    val optimizer: Int) extends Vertex[Int, Nothing] {
 
   val id = query.queryId
 
-  @transient var state: UnrolledBuffer[Array[Int]] = UnrolledBuffer()
+  @transient var state: Nothing = _ //UnrolledBuffer[Array[Int]] = UnrolledBuffer()
 
   val expectedTickets = Long.MaxValue
   val numberOfPatterns = query.unmatched.length
@@ -89,11 +93,11 @@ class QueryVertex(
         queryCopyCount += 1
         processTickets(ticketsOfFailedQuery)
       //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
-      case bufferOfQueryParticles: UnrolledBuffer[_] =>
+      case bindings: Array[Array[Int]] =>
         queryCopyCount += 1
-        val castBuffer = bufferOfQueryParticles.asInstanceOf[UnrolledBuffer[Array[Int]]]
-        castBuffer foreach { particle: Array[Int] => processTickets(tickets(particle)) }
-        state = state.concat(castBuffer)
+        resultRecipientActor ! bindings
+      //        val castBindingsBuffer = bufferOfBindings.asInstanceOf[UnrolledBuffer[Array[Int]]]
+      //        state = state.concat(castBindingsBuffer)
       //} else {
       // numberOfFailedQueries += 1
       // println(s"Failure: $query")
@@ -168,11 +172,11 @@ class QueryVertex(
       "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
     val statsKeys: Array[Any] = stats.keys.toArray
     val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
-    promise.success(QueryResult(state, statsKeys, statsValues))
+    resultRecipientActor ! QueryDone(statsKeys, statsValues)
     graphEditor.removeVertex(id)
   }
 
-  def setState(s: UnrolledBuffer[Array[Int]]) {
+  def setState(s: Nothing) {
     state = s
   }
 

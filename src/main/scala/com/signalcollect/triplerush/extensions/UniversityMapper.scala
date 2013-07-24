@@ -24,7 +24,8 @@ import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.interfaces.MapperFactory
 import com.signalcollect.triplerush.TriplePattern
 
-class UniversityMapper[Id](numberOfWorkers: Int) extends VertexToWorkerMapper[Id] {
+class UniversityMapper[Id](numberOfNodes: Int, workersPerNode: Int) extends VertexToWorkerMapper[Id] {
+  val numberOfWorkers = numberOfNodes * workersPerNode
   def getWorkerIdForVertexId(vertexId: Id): Int = {
     vertexId match {
       case tp: TriplePattern => {
@@ -61,5 +62,5 @@ class UniversityMapper[Id](numberOfWorkers: Int) extends VertexToWorkerMapper[Id
 }
 
 object UniversityMapperFactory extends MapperFactory {
-  def createInstance[Id](numberOfWorkers: Int) = new UniversityMapper[Id](numberOfWorkers)
+  def createInstance[Id](numberOfNodes: Int, workersPerNode: Int) = new UniversityMapper[Id](numberOfNodes, workersPerNode)
 }

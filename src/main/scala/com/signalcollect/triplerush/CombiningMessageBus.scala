@@ -72,7 +72,7 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
       workerApiFactory) {
 
   val aggregatedTickets = new HashMap[Int, Long]().withDefaultValue(0)
-  val aggregatedResults = new HashMap[Int, UnrolledBuffer[Array[Int]]]().withDefaultValue(null)
+  val aggregatedResults = new HashMap[Int, List[Array[Int]]]().withDefaultValue(null)
 
   override def sendSignal(
     signal: Signal,
@@ -82,27 +82,15 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     if (targetId.isInstanceOf[Int]) {
       val tId = targetId.asInstanceOf[Int]
       signal match {
-        case tickets: Long =>
-          val oldTickets = aggregatedTickets(tId)
-          if (oldTickets < 0) {
-            if (tickets < 0) {
-              aggregatedTickets(tId) = oldTickets + tickets
-            } else {
-              aggregatedTickets(tId) = oldTickets - tickets
-            }
-          } else {
-            if (tickets < 0) {
-              aggregatedTickets(tId) = tickets - oldTickets
-            } else {
-              aggregatedTickets(tId) = tickets + oldTickets
-            }
-          }
+        case tickets: Long => handleTickets(tickets, tId)
         case result: Array[Int] =>
-          val oldBuffer = aggregatedResults(tId)
-          if (oldBuffer != null) {
-            aggregatedResults(tId) = oldBuffer.concat(UnrolledBuffer(result))
+          val oldResults = aggregatedResults(tId)
+          val bindings = QueryParticle.bindings(result)
+          handleTickets(QueryParticle.tickets(result), tId)
+          if (oldResults != null) {
+            aggregatedResults(tId) = bindings :: oldResults
           } else {
-            aggregatedResults(tId) = UnrolledBuffer(result)
+            aggregatedResults(tId) = List(bindings)
           }
         case other =>
           super.sendSignal(signal, targetId, sourceId, blocking)
@@ -113,7 +101,34 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     }
   }
 
+  private def handleTickets(tickets: Long, queryId: Int) {
+    val oldTickets = aggregatedTickets(queryId)
+    if (oldTickets < 0) {
+      if (tickets < 0) {
+        aggregatedTickets(queryId) = oldTickets + tickets
+      } else {
+        aggregatedTickets(queryId) = oldTickets - tickets
+      }
+    } else {
+      if (tickets < 0) {
+        aggregatedTickets(queryId) = tickets - oldTickets
+      } else {
+        aggregatedTickets(queryId) = tickets + oldTickets
+      }
+    }
+  }
+
   override def flush {
+    // It is important that the results arrive before the tickets, because
+    // result tickets were separated from their respective results.
+    if (!aggregatedResults.isEmpty) {
+      for ((queryVertexId, results) <- aggregatedResults) {
+        super.sendToWorkerForVertexId(
+          SignalMessage(queryVertexId, null, results.toArray),
+          queryVertexId.asInstanceOf[Id])
+      }
+      aggregatedResults.clear
+    }
     if (!aggregatedTickets.isEmpty) {
       for ((queryVertexId, tickets) <- aggregatedTickets) {
         super.sendToWorkerForVertexId(
@@ -121,14 +136,6 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
           queryVertexId.asInstanceOf[Id])
       }
       aggregatedTickets.clear
-    }
-    if (!aggregatedResults.isEmpty) {
-      for ((queryVertexId, results) <- aggregatedResults) {
-        super.sendToWorkerForVertexId(
-          SignalMessage(queryVertexId, null, results),
-          queryVertexId.asInstanceOf[Id])
-      }
-      aggregatedResults.clear
     }
     super.flush
   }

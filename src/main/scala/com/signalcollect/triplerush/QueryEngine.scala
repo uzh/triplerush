@@ -47,6 +47,41 @@ import akka.event.Logging
 import com.signalcollect.triplerush.QueryParticle._
 import scala.collection.mutable.UnrolledBuffer
 
+case object RegisterQueryResultRecipient
+
+class ResultRecipientActor extends Actor {
+  var queryDone: QueryDone = _
+  var queryResultRecipient: ActorRef = _
+
+  var queries = UnrolledBuffer[Array[Int]]()
+
+  def receive = {
+    case RegisterQueryResultRecipient =>
+      queryResultRecipient = sender
+      if (queryDone != null) {
+        queryResultRecipient ! QueryResult(queries, queryDone.statKeys, queryDone.statVariables)
+        self ! PoisonPill
+      }
+    case queryDone: QueryDone =>
+      this.queryDone = queryDone
+      if (queryResultRecipient != null) {
+        queryResultRecipient ! QueryResult(queries, queryDone.statKeys, queryDone.statVariables)
+        self ! PoisonPill
+      }
+
+    case queryResults: Array[Array[Int]] =>
+      // TODO: Send only bindings instead of full particles.
+      val newBuffer = {
+        if (queryResults.length > 1) {
+          queryResults map (UnrolledBuffer(_)) reduce (_.concat(_))
+        } else {
+          UnrolledBuffer(queryResults(0))
+        }
+      }
+      queries = queries.concat(newBuffer)
+  }
+}
+
 case class UndeliverableSignalHandler() {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
@@ -169,11 +204,13 @@ case class QueryEngine(
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(1024, false)).
+    withMapperFactory(TripleMapperFactory).
     withHeartbeatInterval(500).
     withKryoRegistrations(List(
       "com.signalcollect.triplerush.TriplePattern",
       "com.signalcollect.triplerush.BindingIndexVertex",
       "com.signalcollect.triplerush.IndexVertex",
+      "com.signalcollect.triplerush.QueryDone",
       "com.signalcollect.triplerush.PlaceholderEdge",
       "com.signalcollect.triplerush.CardinalityRequest",
       "com.signalcollect.triplerush.CardinalityReply",
@@ -182,6 +219,7 @@ case class QueryEngine(
       "com.signalcollect.triplerush.QueryResult",
       "com.signalcollect.triplerush.TriplePattern",
       "Array[com.signalcollect.triplerush.TriplePattern]",
+      "com.signalcollect.interfaces.SignalMessage$mcIJ$sp",
       "akka.actor.RepointableActorRef")).build
   print("Awaiting idle ... ")
   g.awaitIdle
@@ -224,11 +262,14 @@ case class QueryEngine(
   }
 
   def executeQuery(q: QuerySpecification, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
-    val p = promise[QueryResult]
     if (!q.unmatched.isEmpty) {
-      g.addVertex(new QueryVertex(q, p, optimizer))
-      p.future
+      val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
+      g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer))
+      implicit val timeout = Timeout(Duration.create(7200, TimeUnit.SECONDS))
+      val resultFuture = resultRecipientActor ? RegisterQueryResultRecipient
+      resultFuture.asInstanceOf[Future[QueryResult]]
     } else {
+      val p = promise[QueryResult]
       p success (QueryResult(UnrolledBuffer(), Array(), Array()))
       p.future
     }
