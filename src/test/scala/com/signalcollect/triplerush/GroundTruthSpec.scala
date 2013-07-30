@@ -326,7 +326,7 @@ WHERE
 
   print("Optimizing edge representations...")
   qe.prepareQueryExecution
-  println(" Done.")
+  println("Done.")
 
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)
