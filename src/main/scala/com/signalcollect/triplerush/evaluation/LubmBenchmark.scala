@@ -51,6 +51,13 @@ import language.postfixOps
 object LubmBenchmark extends App {
   def jvmParameters = " -Xmx31000m" +
     " -Xms31000m" +
+    " -XX:+UnlockExperimentalVMOptions" +
+    " -XX:+UseConcMarkSweepGC" +
+    " -XX:+UseParNewGC" +
+    " -XX:+CMSIncrementalPacing" +
+    " -XX:+CMSIncrementalMode" +
+    " -XX:ParallelGCThreads=20" +
+    " -XX:ParallelCMSThreads=20" +
     " -XX:+AggressiveOpts" +
     " -XX:+AlwaysPreTouch" +
     " -XX:+UseNUMA" +
@@ -79,13 +86,13 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM Dist Evaluation 1 machine."
-  def runs = 1
+  def evalName = s"LUBM Dist Eval with better GC and compressed messages."
+  def runs = 3
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
-  for (unis <- List(160)) {
+  for (unis <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
     for (run <- 1 to runs) {
       for (optimizer <- List(QueryOptimizer.Clever)) {
         evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
@@ -204,8 +211,8 @@ object LubmBenchmark extends App {
       localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
     //      
     val graphBuilder = GraphBuilder.
-//      withLoggingLevel(Logging.DebugLevel).
-      withNodeProvisioner(new TorqueNodeProvisioner(kraken, 1))
+      //      withLoggingLevel(Logging.DebugLevel).
+      withNodeProvisioner(new TorqueNodeProvisioner(kraken, 8))
     val qe = new QueryEngine(graphBuilder)
 
       def loadLubm {
@@ -386,7 +393,7 @@ object LubmBenchmark extends App {
 
     println("Starting warm-up...")
     jitSteadyState
-//    cleanGarbage
+    cleanGarbage
     println(s"Finished warm-up.")
     for (queryId <- 1 to 7) {
       println(s"Running evaluation for query $queryId.")
