@@ -128,19 +128,22 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
    * Returns the id of the index/triple vertex to which this pattern should be routed.
    * Any variables (<0) should be converted to "unbound", which is represented by a wildcard.
    */
-  def routingAddress = {
+  def routingAddress(routedFrom: TriplePattern = null.asInstanceOf[TriplePattern]) = {
     if (s > 0 && p > 0 && o > 0) {
-      // If pattern is fully bound load balance over all 3 index vertices for this triple.
-      val routingIndex = ((s + p + o) & 0xEFFFFFFF) % 3
-      // 0 => route to binding index vertex for subject, 1 = route to
-      // binding index vertex for predicate, ...
-      if (routingIndex == 0) {
-        TriplePattern(0, p, o)
-      } else if (routingIndex == 1) {
-        TriplePattern(s, 0, o)
-      } else {
-        TriplePattern(s, p, 0)
-      }
+//      if (routedFrom == null) {
+        // If not known where we are routing from, load balance over all 
+        // 3 index vertices for this triple.
+        val routingIndex = ((s + p + o) & 0xEFFFFFFF) % 3
+        // 0 => route to binding index vertex for subject, 1 = route to
+        // binding index vertex for predicate, ...
+        if (routingIndex == 0) {
+          TriplePattern(0, p, o)
+        } else if (routingIndex == 1) {
+          TriplePattern(s, 0, o)
+        } else {
+          TriplePattern(s, p, 0)
+        }
+//      }
     } else {
       TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
     }

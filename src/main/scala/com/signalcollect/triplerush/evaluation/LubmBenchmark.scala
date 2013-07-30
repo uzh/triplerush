@@ -87,7 +87,7 @@ object LubmBenchmark extends App {
 
   /*********/
   def evalName = s"LUBM Dist Eval with better GC and compressed messages."
-  def runs = 3
+  def runs = 1
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
@@ -255,7 +255,7 @@ object LubmBenchmark extends App {
         }
       }
 
-      def jitRepetitions = 100
+      def jitRepetitions = 10
 
       /**
        * Go to JVM JIT steady state by executing the queries multiple times.

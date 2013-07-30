@@ -73,14 +73,14 @@ class QueryVertex(
     if (optimizer != QueryOptimizer.None && numberOfPatterns > 1) {
       // Gather pattern cardinalities first.
       query.unmatched foreach (triplePattern => {
-        val indexId = triplePattern.routingAddress
+        val indexId = triplePattern.routingAddress()
         optimizingStartTime = System.nanoTime
         graphEditor.sendSignal(CardinalityRequest(triplePattern, id), indexId, None)
       })
       optimizedQuery = query
     } else {
       // Dispatch the query directly.
-      graphEditor.sendSignal(query.toParticle, query.unmatched.head.routingAddress, None)
+      graphEditor.sendSignal(query.toParticle, query.unmatched.head.routingAddress(), None)
       optimizedQuery = query
     }
   }
@@ -111,7 +111,7 @@ class QueryVertex(
           if (optimizingStartTime != 0) {
             optimizingDuration = System.nanoTime - optimizingStartTime
           }
-          graphEditor.sendSignal(optimizedQuery.toParticle, optimizedQuery.unmatched.head.routingAddress, None)
+          graphEditor.sendSignal(optimizedQuery.toParticle, optimizedQuery.unmatched.head.routingAddress(), None)
         }
     }
     true

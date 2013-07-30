@@ -181,8 +181,8 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
         graphEditor.sendSignal(boundQuery, queryId(boundQuery), None)
       } else {
         // Query not complete yet, route onwards.
-        val nextPattern = lastPattern(boundQuery).routingAddress
-        graphEditor.sendSignal(boundQuery, nextPattern.routingAddress, None)
+        val nextRoutingAddress = lastPattern(boundQuery).routingAddress(routedFrom = id)
+        graphEditor.sendSignal(boundQuery, nextRoutingAddress, None)
       }
     } else {
       // Failed to bind, send to query vertex.
