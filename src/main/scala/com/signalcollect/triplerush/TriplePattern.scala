@@ -130,6 +130,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
    */
   def routingAddress(routedFrom: TriplePattern = null.asInstanceOf[TriplePattern]) = {
     if (s > 0 && p > 0 && o > 0) {
+      // Fully bound, we just need to check if this triple exists.
       if (routedFrom == null) {
         // If not known where we are routing from, always send to the
         // binding index vertex that stores the predicates, as there are
