@@ -23,6 +23,8 @@ package com.signalcollect.triplerush
 import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.interfaces.MapperFactory
 
+class MachineMapperSimulator(val machines: Int) extends TripleMapper[Any](machines, 1)
+
 class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Id] {
   val numberOfWorkers = numberOfNodes * workersPerNode
 
@@ -43,7 +45,7 @@ class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends 
         }
       }
       case qv: Int => loadBalance(qv, numberOfWorkers)
-      case other   => throw new UnsupportedOperationException("This mapper does not support mapping ids of type " + other.getClass)
+      case other => throw new UnsupportedOperationException("This mapper does not support mapping ids of type " + other.getClass)
     }
   }
 

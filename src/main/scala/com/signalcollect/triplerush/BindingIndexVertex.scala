@@ -27,6 +27,7 @@ import com.signalcollect.interfaces.Inspectable
 import com.signalcollect.DefaultEdge
 import com.signalcollect.Edge
 import com.signalcollect.triplerush.QueryParticle._
+import com.signalcollect.interfaces.VertexToWorkerMapper
 
 class TripleIndexEdge(override val sourceId: TriplePattern, override val targetId: TriplePattern) extends DefaultEdge[TriplePattern](targetId) {
   def signal = Unit
@@ -130,6 +131,18 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
     }
   }
 
+  def countMessageTo(otherId: Any) {
+    val otherMachine = mapper.getWorkerIdForVertexId(otherId)
+    val thisMachine = mapper.getWorkerIdForVertexId(id)
+    hashLookupCount += 1
+    if (thisMachine != otherMachine) {
+      interMachineMessages += 1
+    }
+  }
+  var mapper: VertexToWorkerMapper[Any] = null.asInstanceOf[VertexToWorkerMapper[Any]]
+  var hashLookupCount = 0
+  var interMachineMessages = 0
+
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
     signal match {
       case queryParticle: Array[Int] =>
@@ -178,10 +191,12 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
     if (boundQuery != null) {
       if (isResult(boundQuery)) {
         // Query successful, send to query vertex.
+        countMessageTo(queryId(boundQuery))
         graphEditor.sendSignal(boundQuery, queryId(boundQuery), None)
       } else {
         // Query not complete yet, route onwards.
         val nextRoutingAddress = lastPattern(boundQuery).routingAddress(routedFrom = id)
+        countMessageTo(nextRoutingAddress)
         graphEditor.sendSignal(boundQuery, nextRoutingAddress, None)
       }
     } else {

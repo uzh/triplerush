@@ -46,6 +46,11 @@ import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import akka.event.Logging
 import com.signalcollect.triplerush.QueryParticle._
 import scala.collection.mutable.UnrolledBuffer
+import com.signalcollect.interfaces.VertexToWorkerMapper
+import com.signalcollect.interfaces.MapperFactory
+import com.signalcollect.nodeprovisioning.NodeProvisioner
+import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
+import com.signalcollect.interfaces.ModularAggregationOperation
 
 case object RegisterQueryResultRecipient
 
@@ -196,17 +201,42 @@ case object FileLoaders {
   }
 }
 
+object InterMachineMessageAggregator extends ModularAggregationOperation[Int] {
+  def extract(v: Vertex[_, _]) = v match {
+    case i: IndexVertex =>
+      i.interMachineMessages
+    case b: BindingIndexVertex =>
+      b.interMachineMessages
+    case other =>
+      0
+  }
+  def neutralElement = 0
+  def aggregate(a: Int, b: Int) = a + b
+}
+
+object HashLookupAggregator extends ModularAggregationOperation[Int] {
+  def extract(v: Vertex[_, _]) = v match {
+    case i: IndexVertex =>
+      i.hashLookupCount
+    case b: BindingIndexVertex =>
+      b.hashLookupCount
+    case other =>
+      0
+  }
+  def neutralElement = 0
+  def aggregate(a: Int, b: Int) = a + b
+}
+
 case class QueryEngine(
-    graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
-    //.withLoggingLevel(Logging.DebugLevel)
-    console: Boolean = false) {
+  graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
+  //.withLoggingLevel(Logging.DebugLevel)
+  console: Boolean = false,
+  simulatedMachines: Int = 1) {
 
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
     withMapperFactory(TripleMapperFactory).
-//    withMessageSerialization(true).
-//    withJavaSerialization(false).
     withHeartbeatInterval(500).
     withKryoRegistrations(List(
       "com.signalcollect.triplerush.TriplePattern",
@@ -240,6 +270,32 @@ case class QueryEngine(
   println("Done")
   println("Graph engine is fully initialized.")
 
+  def getHashLookups: Int = {
+    g.aggregate(HashLookupAggregator) + 1 // for first particle delivery
+  }
+
+  def getInterMachineMessages: Int = {
+    if (simulatedMachines > 1) {
+      g.aggregate(InterMachineMessageAggregator) + 2 // 2 is the conservative estimate for query vertex addition and first particle
+    } else {
+      g.aggregate(InterMachineMessageAggregator)
+    }
+  }
+
+  def resetStats = {
+    g.foreachVertex(v => v match {
+      case i: IndexVertex =>
+        i.hashLookupCount = 0
+        i.interMachineMessages = 0
+      case b: BindingIndexVertex =>
+        b.hashLookupCount = 0
+        b.interMachineMessages = 0
+    })
+    numberOfExecutedQueries = 0
+  }
+
+  private var numberOfExecutedQueries = 0
+
   def loadNtriples(ntriplesFilename: String, placementHint: Option[Any] = None) {
     g.modifyGraph(FileLoaders.loadNtriplesFile(ntriplesFilename) _, placementHint)
   }
@@ -264,6 +320,7 @@ case class QueryEngine(
   }
 
   def executeQuery(q: QuerySpecification, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
+    numberOfExecutedQueries += 1
     if (!q.unmatched.isEmpty) {
       val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
       g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer))
@@ -294,6 +351,13 @@ case class QueryEngine(
     g.awaitIdle
     println("Done awaiting idle")
     queryExecutionPrepared = true
+    val mapper = new MachineMapperSimulator(simulatedMachines)
+    g.foreachVertex(v => v match {
+      case i: IndexVertex =>
+        i.mapper = mapper
+      case b: BindingIndexVertex =>
+        b.mapper = mapper
+    })
   }
 
   def awaitIdle {

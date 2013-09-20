@@ -26,6 +26,8 @@ import com.signalcollect.examples.CompactIntSet
 import scala.collection.mutable.TreeSet
 import com.signalcollect.interfaces.Inspectable
 import com.signalcollect.triplerush.QueryParticle._
+import com.signalcollect.interfaces.VertexToWorkerMapper
+import com.signalcollect.interfaces.ModularAggregationOperation
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -127,11 +129,25 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
       if (extras > 0) {
         graphEditor.sendSignal(aboveAverageTicketQuery, targetId, None)
         extras -= 1
+        countMessageTo(targetId)
       } else if (complete) {
         graphEditor.sendSignal(averageTicketQuery, targetId, None)
+        countMessageTo(targetId)
       }
     })
   }
+
+  def countMessageTo(otherId: Any) {
+    val otherMachine = mapper.getWorkerIdForVertexId(otherId)
+    val thisMachine = mapper.getWorkerIdForVertexId(id)
+    hashLookupCount += 1
+    if (thisMachine != otherMachine) {
+      interMachineMessages += 1
+    }
+  }
+  var mapper: VertexToWorkerMapper[Any] = null.asInstanceOf[VertexToWorkerMapper[Any]]
+  var hashLookupCount = 0
+  var interMachineMessages = 0
 
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
     signal match {
