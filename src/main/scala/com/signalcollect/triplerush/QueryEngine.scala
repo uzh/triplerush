@@ -86,7 +86,7 @@ case class UndeliverableSignalHandler() {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
       case queryParticle: Array[Int] =>
-        graphEditor.sendSignal(tickets(queryParticle), queryId(queryParticle), None)
+        graphEditor.sendSignal(queryParticle.tickets, queryParticle.queryId, None)
       case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
       case other =>

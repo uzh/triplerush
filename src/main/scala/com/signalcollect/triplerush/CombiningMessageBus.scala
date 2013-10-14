@@ -31,9 +31,10 @@ import scala.collection.mutable.HashMap
 import com.signalcollect.interfaces.SignalMessage
 import com.signalcollect.interfaces.MessageBusFactory
 import scala.collection.mutable.UnrolledBuffer
+import QueryParticle._
 
 class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
-    extends MessageBusFactory {
+  extends MessageBusFactory {
   def createInstance[Id: ClassTag, Signal: ClassTag](
     numberOfWorkers: Int,
     numberOfNodes: Int,
@@ -63,13 +64,13 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
   withSourceIds: Boolean,
   sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
   workerApiFactory: WorkerApiFactory)
-    extends BulkMessageBus[Id, Signal](numberOfWorkers,
-      numberOfNodes,
-      mapper,
-      flushThreshold,
-      withSourceIds,
-      sendCountIncrementorForRequests,
-      workerApiFactory) {
+  extends BulkMessageBus[Id, Signal](numberOfWorkers,
+    numberOfNodes,
+    mapper,
+    flushThreshold,
+    withSourceIds,
+    sendCountIncrementorForRequests,
+    workerApiFactory) {
 
   val aggregatedTickets = new HashMap[Int, Long]().withDefaultValue(0)
   val aggregatedResults = new HashMap[Int, List[Array[Int]]]().withDefaultValue(null)
@@ -85,8 +86,8 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
         case tickets: Long => handleTickets(tickets, tId)
         case result: Array[Int] =>
           val oldResults = aggregatedResults(tId)
-          val bindings = QueryParticle.bindings(result)
-          handleTickets(QueryParticle.tickets(result), tId)
+          val bindings = result.bindings
+          handleTickets(result.tickets, tId)
           if (oldResults != null) {
             aggregatedResults(tId) = bindings :: oldResults
           } else {

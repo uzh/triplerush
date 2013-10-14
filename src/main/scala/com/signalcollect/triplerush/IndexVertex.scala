@@ -116,12 +116,12 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
 
   def processFullQuery(queryParticle: Array[Int], graphEditor: GraphEditor[Any, Any]) {
     val targetIdCount = edgeCount
-    val totalTickets = tickets(queryParticle)
+    val totalTickets = queryParticle.tickets
     val avg = math.abs(totalTickets) / targetIdCount
     val complete = avg > 0 && totalTickets > 0
     var extras = math.abs(totalTickets) % targetIdCount
-    val averageTicketQuery = copyWithTickets(queryParticle, avg, complete)
-    val aboveAverageTicketQuery = copyWithTickets(queryParticle, avg + 1, complete)
+    val averageTicketQuery = queryParticle.copyWithTickets(avg, complete)
+    val aboveAverageTicketQuery = queryParticle.copyWithTickets(avg + 1, complete)
     CompactIntSet.foreach(childDeltasOptimized, childDelta => {
       val targetId = childPatternCreator(childDelta)
       if (extras > 0) {

@@ -93,14 +93,14 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   def bindQuery(queryParticle: Array[Int], graphEditor: GraphEditor[Any, Any]) {
     //TODO: Evaluate running the process function in parallel on all the queries.
     assert(childDeltasOptimized != null)
-    val nextPatternToMatch = lastPattern(queryParticle)
+    val nextPatternToMatch = queryParticle.lastPattern
     if (nextPatternToMatch.s > 0 && nextPatternToMatch.p > 0 && nextPatternToMatch.o > 0) {
       // We are looking for a specific, fully bound triple pattern. This means that we have to do a binary search on the targetIds.
       if (patternExists(nextPatternToMatch)) {
         bindToTriplePattern(nextPatternToMatch, queryParticle, graphEditor)
       } else {
         // Failed query
-        graphEditor.sendSignal(tickets(queryParticle), queryId(queryParticle), None)
+        graphEditor.sendSignal(queryParticle.tickets, queryParticle.queryId, None)
       }
     } else {
       // We need to bind the next pattern to all targetIds
@@ -110,12 +110,12 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   }
 
   def bindQueryParticle(queryParticle: Array[Int], edges: Int, graphEditor: GraphEditor[Any, Any]) {
-    val totalTickets = tickets(queryParticle)
+    val totalTickets = queryParticle.tickets
     val avg = math.abs(totalTickets) / edges
     val complete = avg > 0 && totalTickets > 0
     var extras = math.abs(totalTickets) % edges
-    val averageTicketQuery = copyWithTickets(queryParticle, avg, complete)
-    val aboveAverageTicketQuery = copyWithTickets(queryParticle, avg + 1, complete)
+    val averageTicketQuery = queryParticle.copyWithTickets(avg, complete)
+    val aboveAverageTicketQuery = queryParticle.copyWithTickets(avg + 1, complete)
     var i = 0
     val arrayLength = childDeltasOptimized.length
     while (i < arrayLength) {
@@ -174,19 +174,19 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
   }
 
   @inline def bindToTriplePattern(triplePattern: TriplePattern, queryParticle: Array[Int], graphEditor: GraphEditor[Any, Any]) {
-    val boundQuery = bind(queryParticle, triplePattern)
+    val boundQuery = queryParticle.bind(triplePattern)
     if (boundQuery != null) {
-      if (isResult(boundQuery)) {
+      if (boundQuery.isResult) {
         // Query successful, send to query vertex.
-        graphEditor.sendSignal(boundQuery, queryId(boundQuery), None)
+        graphEditor.sendSignal(boundQuery, boundQuery.queryId, None)
       } else {
         // Query not complete yet, route onwards.
-        val nextRoutingAddress = lastPattern(boundQuery).routingAddress(routedFrom = id)
+        val nextRoutingAddress = boundQuery.lastPattern.routingAddress(routedFrom = id)
         graphEditor.sendSignal(boundQuery, nextRoutingAddress, None)
       }
     } else {
       // Failed to bind, send to query vertex.
-      graphEditor.sendSignal(tickets(queryParticle), queryId(queryParticle), None)
+      graphEditor.sendSignal(queryParticle.tickets, queryParticle.queryId, None)
     }
   }
 

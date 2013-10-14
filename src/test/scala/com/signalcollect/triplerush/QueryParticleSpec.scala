@@ -44,26 +44,26 @@ class QueryParticleSpec extends SpecificationWithJUnit {
       List(Long.MinValue, Long.MaxValue)
 
     "correctly encode the id" in {
-        def testIdEncoding(queryPatternId: Int) {
-          val qp = QuerySpecification(queryPatternId, Array(
-            TriplePattern(-1, 1, 2),
-            TriplePattern(-1, 3, -2)),
-            new Array(2)).toParticle
-          queryId(qp) === queryPatternId
-        }
+      def testIdEncoding(queryPatternId: Int) {
+        val qp = QuerySpecification(queryPatternId, Array(
+          TriplePattern(-1, 1, 2),
+          TriplePattern(-1, 3, -2)),
+          new Array(2)).toParticle
+        qp.queryId === queryPatternId
+      }
       val allPassed = specialInts foreach (testIdEncoding(_))
       allPassed === true
     }
 
     "correctly encode the number of tickets" in {
-        def testTicketEncoding(numberOftickets: Long) {
-          val qp = QuerySpecification(10, Array(
-            TriplePattern(-1, 1, 2),
-            TriplePattern(-1, 3, -2)),
-            new Array(2)).toParticle
-          writeTickets(qp, numberOftickets)
-          tickets(qp) === numberOftickets
-        }
+      def testTicketEncoding(numberOftickets: Long) {
+        val qp = QuerySpecification(10, Array(
+          TriplePattern(-1, 1, 2),
+          TriplePattern(-1, 3, -2)),
+          new Array(2)).toParticle
+        qp.writeTickets(numberOftickets)
+        qp.tickets === numberOftickets
+      }
       val allPassed = specialLongs foreach (testTicketEncoding(_))
       allPassed === true
     }
