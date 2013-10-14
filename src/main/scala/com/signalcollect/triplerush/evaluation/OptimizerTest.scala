@@ -68,7 +68,7 @@ object OptimizerTest extends App {
   val assemblyFile = new File(assemblyPath)
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
+    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.superfast)
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
@@ -96,14 +96,16 @@ object OptimizerTest extends App {
     for (run <- 1 to runs) {
       for (optimizer <- List(QueryOptimizer.None)) {
         for (simulatedMachines <- List(1)) {
-          evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
-            evalName,
-            false,
-            Long.MaxValue,
-            optimizer,
-            getRevision,
-            unis,
-            simulatedMachines))
+          for (permutationIndex <- (0 until 720))
+            evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
+              evalName,
+              false,
+              Long.MaxValue,
+              optimizer,
+              getRevision,
+              unis,
+              simulatedMachines,
+              permutationIndex))
         }
       }
     }
@@ -117,7 +119,8 @@ object OptimizerTest extends App {
     optimizer: Int,
     revision: String,
     universities: Int,
-    simulatedMachines: Int)(): List[Map[String, String]] = {
+    simulatedMachines: Int,
+    permutationIndex: Int)(): List[Map[String, String]] = {
 
     /**
      * Queries from: http://www.cs.rpi.edu/~zaki/PaperDir/WWW10.pdf
@@ -407,11 +410,9 @@ object OptimizerTest extends App {
       println(s"Running evaluation for query $queryId.")
       val baseQuery = queries(2)
       val unmatched = baseQuery.unmatched
-      val combinations = unmatched.permutations
-      for (combination <- combinations) {
-        runEvaluation(baseQuery.withUnmatchedPatterns(combination))
-        qe.awaitIdle
-      }
+      val permutations = unmatched.permutations.toArray
+      runEvaluation(baseQuery.withUnmatchedPatterns(permutations(permutationIndex)))
+      qe.awaitIdle
     }
     qe.shutdown
     finalResults
