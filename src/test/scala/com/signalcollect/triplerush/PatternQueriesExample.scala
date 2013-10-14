@@ -59,7 +59,7 @@ object PatternQueriesExample extends App {
   result onSuccess {
     case results =>
       println("Result bindings:")
-      results.queries foreach { result =>
+      results.bindings foreach { result =>
         println("\t" + result.bindings + " tickets = " + result.tickets)
       }
   }

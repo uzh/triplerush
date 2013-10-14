@@ -356,7 +356,7 @@ object LubmBenchmark extends App {
         runResult += s"queryCopyCount" -> queryStats("queryCopyCount").toString
         runResult += s"query" -> queryStats("optimizedQuery").toString
         runResult += s"exception" -> queryStats("exception").toString
-        runResult += s"results" -> queryResult.queries.length.toString
+        runResult += s"results" -> queryResult.bindings.length.toString
         runResult += s"executionTime" -> executionTime.toString
         runResult += s"optimizingTime" -> optimizingTime.toString
         runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString

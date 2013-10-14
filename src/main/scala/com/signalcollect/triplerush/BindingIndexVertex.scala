@@ -91,7 +91,6 @@ class BindingIndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) 
    * Binds the queries to the pattern of this vertex and routes them to their next destinations.
    */
   def bindQuery(queryParticle: Array[Int], graphEditor: GraphEditor[Any, Any]) {
-    //TODO: Evaluate running the process function in parallel on all the queries.
     assert(childDeltasOptimized != null)
     val nextPatternToMatch = queryParticle.lastPattern
     if (nextPatternToMatch.s > 0 && nextPatternToMatch.p > 0 && nextPatternToMatch.o > 0) {

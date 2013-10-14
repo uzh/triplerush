@@ -72,10 +72,10 @@ class ResultRecipientActor extends Actor {
     case queryResults: Array[Array[Int]] =>
       // TODO: Send only bindings instead of full particles.
       val newBuffer = {
-        if (queryResults.length > 1) {
-          queryResults map (UnrolledBuffer(_)) reduce (_.concat(_))
-        } else {
+        if (queryResults.length == 1) {
           UnrolledBuffer(queryResults(0))
+        } else {
+          queryResults map (UnrolledBuffer(_)) reduce (_.concat(_))
         }
       }
       queries = queries.concat(newBuffer)
@@ -197,16 +197,16 @@ case object FileLoaders {
 }
 
 case class QueryEngine(
-    graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
-    //.withLoggingLevel(Logging.DebugLevel)
-    console: Boolean = false) {
+  graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
+  //.withLoggingLevel(Logging.DebugLevel)
+  console: Boolean = false) {
 
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
     withMapperFactory(TripleMapperFactory).
-//    withMessageSerialization(true).
-//    withJavaSerialization(false).
+    //    withMessageSerialization(true).
+    //    withJavaSerialization(false).
     withHeartbeatInterval(500).
     withKryoRegistrations(List(
       "com.signalcollect.triplerush.TriplePattern",

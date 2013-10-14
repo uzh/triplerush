@@ -37,7 +37,7 @@ case class QueryDone(
   statVariables: Array[Any])
 
 case class QueryResult(
-  queries: UnrolledBuffer[Array[Int]],
+  bindings: UnrolledBuffer[Array[Int]],
   statKeys: Array[Any],
   statVariables: Array[Any])
 
