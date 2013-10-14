@@ -331,10 +331,14 @@ WHERE
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
     val resultFuture = qe.executeQuery(q)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
-    val bindings: List[Map[String, String]] = result.queries.toList.map(query => query.bindingsAsMap.map(entry => (q.getString(entry._1), q.getString(entry._2))))
+    val bindings: List[Map[String, String]] = result.queries.toList.map(bindingsToMap(_).map(entry => (q.getString(entry._1), q.getString(entry._2))))
     val sortedBindings: List[TreeMap[String, String]] = bindings map (unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
     val sortedBindingList = (sortedBindings sortBy (map => map.values)).toList
     sortedBindingList
+  }
+
+  def bindingsToMap(bindings: Array[Int]): Map[Int, Int] = {
+    (((-1 to -bindings.length by -1).zip(bindings))).toMap
   }
 
   type Bindings = TreeMap[String, String]

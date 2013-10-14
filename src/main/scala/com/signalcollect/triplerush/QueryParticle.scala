@@ -175,11 +175,6 @@ object QueryParticle {
     // Updates an attribute with a new binding.
     @inline private def updatedAttribute(attribute: Int, variable: Int, boundValue: Int) = if (attribute == variable) boundValue else attribute
 
-    def bindingsAsMap: Map[Int, Int] = {
-      val b = bindings 
-      (((-1 to -b.length by -1).zip(b))).toMap
-    }
-
     def bindings: Array[Int] = {
       r.slice(4, 4 + numberOfBindings)
     }
