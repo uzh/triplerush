@@ -92,20 +92,11 @@ class QueryVertex(
       case ticketsOfFailedQuery: Long =>
         queryCopyCount += 1
         processTickets(ticketsOfFailedQuery)
-      //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
       case bindings: Array[Array[Int]] =>
         queryCopyCount += 1
         resultRecipientActor ! bindings
-      //        val castBindingsBuffer = bufferOfBindings.asInstanceOf[UnrolledBuffer[Array[Int]]]
-      //        state = state.concat(castBindingsBuffer)
-      //} else {
-      // numberOfFailedQueries += 1
-      // println(s"Failure: $query")
-      //}
-      //        println(s"Query vertex $id received bindings ${query.bindings}. Now at $receivedTickets/$expectedTickets")
       case CardinalityReply(forPattern, cardinality) =>
         cardinalities += forPattern -> cardinality
-        //        println(s"Query vertex $id received cardinalities $forPattern -> $cardinality")
         if (cardinalities.size == numberOfPatterns) {
           optimizedQuery = optimizeQuery
           if (optimizingStartTime != 0) {
