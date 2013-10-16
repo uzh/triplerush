@@ -131,26 +131,27 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
   def routingAddress(routedFrom: TriplePattern = null.asInstanceOf[TriplePattern]) = {
     if (s > 0 && p > 0 && o > 0) {
       // Fully bound, we just need to check if this triple exists.
-      if (routedFrom == null) {
-        // If not known where we are routing from, always send to the
-        // binding index vertex that stores the predicates, as there are
-        // usually not many entries in this vertex, which speeds up the
-        // lookup.
-        TriplePattern(s, 0, o)
-      } else {
-        // Attempt to choose a binding index vertex that is on the same
-        // node as the routedFrom vertex (see TripleMapper).
-        if (routedFrom.s == s && routedFrom.o == 0) {
-          TriplePattern(s, p, 0)
-        } else if (routedFrom.p == p && routedFrom.s == 0) {
-          TriplePattern(0, p, o)
-        } else {
-          // In all other cases. Usually there are not many predicates for
-          // a subject/object pair, so the lookup will be fast, even if the
-          // vertex should not be on the same machine.
-          TriplePattern(s, 0, o)
-        }
-      }
+      TriplePattern(s, p, 0)
+      //      if (routedFrom == null) {
+      //        // If not known where we are routing from, always send to the
+      //        // binding index vertex that stores the predicates, as there are
+      //        // usually not many entries in this vertex, which speeds up the
+      //        // lookup.
+      //        TriplePattern(s, 0, o)
+      //      } else {
+      //        // Attempt to choose a binding index vertex that is on the same
+      //        // node as the routedFrom vertex (see TripleMapper).
+      //        if (routedFrom.s == s && routedFrom.o == 0) {
+      //          TriplePattern(s, p, 0)
+      //        } else if (routedFrom.p == p && routedFrom.s == 0) {
+      //          TriplePattern(0, p, o)
+      //        } else {
+      //          // In all other cases. Usually there are not many predicates for
+      //          // a subject/object pair, so the lookup will be fast, even if the
+      //          // vertex should not be on the same machine.
+      //          TriplePattern(s, 0, o)
+      //        }
+      //      }
     } else {
       TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
     }
