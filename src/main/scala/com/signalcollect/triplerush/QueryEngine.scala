@@ -70,7 +70,6 @@ class ResultRecipientActor extends Actor {
       }
 
     case queryResults: Array[Array[Int]] =>
-      // TODO: Send only bindings instead of full particles.
       val newBuffer = {
         if (queryResults.length == 1) {
           UnrolledBuffer(queryResults(0))
@@ -203,7 +202,7 @@ case class QueryEngine(
 
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
-    withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
+    withMessageBusFactory(new CombiningMessageBusFactory(8192, false)).
     withMapperFactory(TripleMapperFactory).
     //    withMessageSerialization(true).
     //    withJavaSerialization(false).
