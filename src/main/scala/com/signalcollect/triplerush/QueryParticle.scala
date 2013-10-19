@@ -274,6 +274,7 @@ object QueryParticle {
      * Assumption: TP has all constants.
      */
     def bind(tp: TriplePattern): Array[Int] = {
+      // TODO: Avoid creation of triple pattern instance.
       val patternToMatch = r.lastPattern
       if (patternToMatch.s == tp.s) { // Subject is compatible constant. No binding necessary. 
         if (patternToMatch.p == tp.p) { // Predicate is compatible constant. No binding necessary. 
