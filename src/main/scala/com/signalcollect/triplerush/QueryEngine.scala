@@ -24,6 +24,7 @@ import java.io.DataInputStream
 import java.io.EOFException
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
+import scala.concurrent._
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.concurrent.promise
@@ -271,9 +272,9 @@ case class QueryEngine(
       val resultFuture = resultRecipientActor ? RegisterQueryResultRecipient
       resultFuture.asInstanceOf[Future[QueryResult]]
     } else {
-      val p = promise[QueryResult]
-      p success (QueryResult(UnrolledBuffer(), Array(), Array()))
-      p.future
+      future {
+        QueryResult(UnrolledBuffer(), Array(), Array())
+      }
     }
   }
 
