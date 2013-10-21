@@ -27,17 +27,23 @@ import com.signalcollect.GraphEditor
  */
 abstract class PatternVertex[Signal, State](
   id: TriplePattern)
-    extends BaseVertex[TriplePattern, Signal, State](id) {
+  extends BaseVertex[TriplePattern, Signal, State](id) {
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     // Build the hierarchical index on initialization.
     id.parentPatterns foreach { parentId =>
       if (parentId != RootPattern) {
         // The root is added initially, no need to add again.
-        graphEditor.addVertex(new IndexVertex(parentId))
+        val indexVertex = parentId match {
+          case TriplePattern(s, 0, 0) => new SIndexVertex(parentId)
+          case TriplePattern(0, p, 0) => new PIndexVertex(parentId)
+          case TriplePattern(0, 0, o) => new OIndexVertex(parentId)
+        }
+        graphEditor.addVertex(indexVertex)
+        // TODO: Add handling for root index vertex.
+        val idDelta = id.parentIdDelta(parentId)
+        graphEditor.addEdge(parentId, new PlaceholderEdge(idDelta))
       }
-      val idDelta = id.parentIdDelta(parentId)
-      graphEditor.addEdge(parentId, new PlaceholderEdge(idDelta))
     }
   }
 }

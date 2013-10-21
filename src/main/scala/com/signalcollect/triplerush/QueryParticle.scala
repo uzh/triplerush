@@ -56,21 +56,25 @@ object QueryParticle {
   implicit class Particle(val r: Array[Int]) {
 
     def bindSubject(
-      patternToMatch: TriplePattern,
-      tp: TriplePattern,
+      toMatchS: Int,
+      toMatchP: Int,
+      toMatchO: Int,
+      toBindS: Int,
+      toBindP: Int,
+      toBindO: Int,
       copyBeforeWrite: Boolean): Array[Int] = {
       // Subject is conflicting constant. No binding possible.
-      if (patternToMatch.s > 0) {
+      if (toMatchS > 0) {
         return failed
       }
 
       // Subject is a variable that needs to be bound to the constant in the triple pattern. 
       // Bind value to variable.
-      val variable = patternToMatch.s
-      val boundValue = tp.s
+      val variable = toMatchS
+      val boundValue = toBindS
 
-      if (isBindingIncompatible(patternToMatch.p, tp.p, variable, boundValue)
-        || isBindingIncompatible(patternToMatch.o, tp.o, variable, boundValue)) {
+      if (isBindingIncompatible(toMatchP, toBindP, variable, boundValue)
+        || isBindingIncompatible(toMatchO, toBindO, variable, boundValue)) {
         return QueryParticle.failed
       }
 
@@ -85,29 +89,31 @@ object QueryParticle {
       }
       currentParticle.writeBinding(variableIndex, boundValue)
       currentParticle.bindVariablesInPatterns(variable, boundValue)
-      currentParticle.bindPredicate(patternToMatch, tp, false)
+      currentParticle.bindPredicate(toMatchP, toMatchO, toBindP, toBindO, false)
       currentParticle
     }
 
     def bindPredicate(
-      patternToMatch: TriplePattern,
-      tp: TriplePattern,
+      toMatchP: Int,
+      toMatchO: Int,
+      toBindP: Int,
+      toBindO: Int,
       copyBeforeWrite: Boolean): Array[Int] = {
-      if (patternToMatch.p == tp.p) { // Predicate is compatible constant. No binding necessary. 
-        return bindObject(patternToMatch, tp, copyBeforeWrite)
+      if (toMatchP == toBindP) { // Predicate is compatible constant. No binding necessary. 
+        return bindObject(toMatchO, toBindO, copyBeforeWrite)
       }
 
       // Predicate is conflicting constant. No binding possible.
-      if (patternToMatch.p > 0) {
+      if (toMatchP > 0) {
         return failed
       }
 
       // Predicate is a variable that needs to be bound to the constant in the triple pattern. 
       // Bind value to variable.
-      val variable = patternToMatch.p
-      val boundValue = tp.p
+      val variable = toMatchP
+      val boundValue = toBindP
 
-      if (isBindingIncompatible(patternToMatch.o, tp.o, variable, boundValue)) {
+      if (isBindingIncompatible(toMatchO, toBindO, variable, boundValue)) {
         return failed
       }
 
@@ -122,16 +128,16 @@ object QueryParticle {
       }
       currentParticle.writeBinding(variableIndex, boundValue)
       currentParticle.bindVariablesInPatterns(variable, boundValue)
-      currentParticle.bindObject(patternToMatch, tp, false)
+      currentParticle.bindObject(toMatchO, toBindO, false)
       currentParticle
     }
 
     def bindObject(
-      patternToMatch: TriplePattern,
-      tp: TriplePattern,
+      toMatchO: Int,
+      toBindO: Int,
       copyBeforeWrite: Boolean): Array[Int] = {
 
-      if (patternToMatch.o == tp.o) { // Object is compatible constant. No binding necessary. 
+      if (toMatchO == toBindO) { // Object is compatible constant. No binding necessary. 
         //      val result = {
         //        if (copyBeforeWrite) {
         //          // We need to cut off the last pattern, even if we never write.
@@ -146,14 +152,14 @@ object QueryParticle {
       }
 
       // Object is conflicting constant. No binding possible.
-      if (patternToMatch.o > 0) {
+      if (toMatchO > 0) {
         return failed
       }
 
       // Object is a variable that needs to be bound to the constant in the triple pattern. 
       // Bind value to variable.
-      val variable = patternToMatch.o
-      val boundValue = tp.o
+      val variable = toMatchO
+      val boundValue = toBindO
 
       // No conflicts, we bind the value to the variable.
       val variableIndex = -(variable + 1)
@@ -270,22 +276,27 @@ object QueryParticle {
       }
     }
 
+    @inline def lastPatternS = r(r.length - 3)
+    @inline def lastPatternP = r(r.length - 2)
+    @inline def lastPatternO = r(r.length - 1)
+
     /**
      * Assumption: TP has all constants.
      */
-    def bind(tp: TriplePattern): Array[Int] = {
-      // TODO: Avoid creation of triple pattern instance.
-      val patternToMatch = r.lastPattern
-      if (patternToMatch.s == tp.s) { // Subject is compatible constant. No binding necessary. 
-        if (patternToMatch.p == tp.p) { // Predicate is compatible constant. No binding necessary. 
-          if (patternToMatch.o == tp.o) { // Object is compatible constant. No binding necessary. 
+    def bind(toBindS: Int, toBindP: Int, toBindO: Int): Array[Int] = {
+      val patternS = lastPatternS
+      val patternP = lastPatternP
+      val patternO = lastPatternO
+      if (toBindS == patternS) { // Subject is compatible constant. No binding necessary. 
+        if (toBindP == patternP) { // Predicate is compatible constant. No binding necessary. 
+          if (toBindO == patternO) { // Object is compatible constant. No binding necessary. 
             return copyWithoutLastPattern
           }
-          return bindObject(patternToMatch, tp, true)
+          return bindObject(patternO, toBindO, true)
         }
-        return bindPredicate(patternToMatch, tp, true)
+        return bindPredicate(patternP, patternO, toBindP, toBindO, true)
       }
-      return bindSubject(patternToMatch, tp, true)
+      return bindSubject(patternS, patternP, patternO, toBindS, toBindP, toBindO, true)
     }
   }
 

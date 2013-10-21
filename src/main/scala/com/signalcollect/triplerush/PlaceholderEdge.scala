@@ -28,7 +28,7 @@ import com.signalcollect.Vertex
 class PlaceholderEdge(val childDelta: Int) extends Edge[Int] {
   override def id: EdgeId[_] = throw new UnsupportedOperationException
   override def sourceId: Any = throw new UnsupportedOperationException
-  override def targetId = throw new UnsupportedOperationException
+  override def targetId = childDelta
   override def source: Source = throw new UnsupportedOperationException
   override def onAttach(source: Vertex[_, _], graphEditor: GraphEditor[Any, Any]) = throw new UnsupportedOperationException
   override def weight: Double = 1

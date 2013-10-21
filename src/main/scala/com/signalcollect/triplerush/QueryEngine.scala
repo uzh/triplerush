@@ -191,7 +191,12 @@ case object FileLoaders {
   def addTriple(tp: TriplePattern, graphEditor: GraphEditor[Any, Any]) {
     for (parentPattern <- tp.parentPatterns) {
       val idDelta = tp.parentIdDelta(parentPattern)
-      graphEditor.addVertex(new BindingIndexVertex(parentPattern))
+      val bindingIndexVertex = parentPattern match {
+        case TriplePattern(0, p, o) => new POBindingIndex(parentPattern)
+        case TriplePattern(s, 0, o) => new SOBindingIndex(parentPattern)
+        case TriplePattern(s, p, 0) => new SPBindingIndex(parentPattern)
+      }
+      graphEditor.addVertex(bindingIndexVertex)
       graphEditor.addEdge(parentPattern, new PlaceholderEdge(idDelta))
     }
   }
@@ -231,7 +236,8 @@ case class QueryEngine(
   g.setUndeliverableSignalHandler(UndeliverableSignalHandler().handle _)
   println("Done")
   print("Adding root index vertex ...")
-  g.addVertex(new IndexVertex(RootPattern))
+  // TODO: Add special treatment for root patterns.
+  //g.addVertex(new IndexVertex(RootPattern))
   println("Done")
 
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
@@ -257,11 +263,7 @@ case class QueryEngine(
     val pId = Mapping.register(p)
     val oId = Mapping.register(o)
     val tp = TriplePattern(sId, pId, oId)
-    for (parentPattern <- tp.parentPatterns) {
-      val idDelta = tp.parentIdDelta(parentPattern)
-      g.addVertex(new BindingIndexVertex(parentPattern))
-      g.addEdge(parentPattern, new PlaceholderEdge(idDelta))
-    }
+    FileLoaders.addTriple(tp, g)
   }
 
   def executeQuery(q: QuerySpecification, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {

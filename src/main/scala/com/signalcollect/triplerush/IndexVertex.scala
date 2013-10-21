@@ -33,22 +33,48 @@ object SignalSet extends Enumeration with Serializable {
   val BoundObject = Value
 }
 
+class SIndexVertex(id: TriplePattern) extends IndexVertex(id) {
+
+  @inline def sendSignal(childDelta: Int, particle: Array[Int], ge: GraphEditor[Any, Any]) {
+    ge.sendSignal(particle, TriplePattern(id.s, childDelta, 0), None)
+  }
+
+}
+
+class PIndexVertex(id: TriplePattern) extends IndexVertex(id) {
+
+  @inline def sendSignal(childDelta: Int, particle: Array[Int], ge: GraphEditor[Any, Any]) {
+    ge.sendSignal(particle, TriplePattern(0, id.p, childDelta), None)
+  }
+
+}
+
+class OIndexVertex(id: TriplePattern) extends IndexVertex(id) {
+
+  @inline def sendSignal(childDelta: Int, particle: Array[Int], ge: GraphEditor[Any, Any]) {
+    ge.sendSignal(particle, TriplePattern(childDelta, 0, id.o), None)
+  }
+
+}
+
 /**
  * This vertex represents part of the TripleRush index.
  * The edge representation can currently only be modified during graph loading.
  * After graph loading, the `optimizeEdgeRepresentation` has to be called.
  * Query processing can only start once the edge representation has been optimized.
  */
-class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with Inspectable[TriplePattern, Any] {
+abstract class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with Inspectable[TriplePattern, Any] {
+
+  def sendSignal(childDelta: Int, particle: Array[Int], ge: GraphEditor[Any, Any])
 
   override def targetIds: Traversable[TriplePattern] = {
     if (childDeltas != null) {
-      childDeltas map (childPatternCreator)
+      childDeltas map (id.childPatternRecipe)
     } else {
       // TODO: Give CompactIntSet a nicer API
       var childDeltasTemp = List[Int]()
       CompactIntSet.foreach(childDeltasOptimized, childDelta => childDeltasTemp = childDelta :: childDeltasTemp)
-      childDeltasTemp map (childPatternCreator)
+      childDeltasTemp map (id.childPatternRecipe)
     }
   }
 
@@ -68,7 +94,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
       cardinality = Int.MaxValue //TODO: Add comment about why MaxValue
     } else {
       CompactIntSet.foreach(childDeltasOptimized, childDelta => {
-        val childPattern = childPatternCreator(childDelta)
+        val childPattern = id.childPatternRecipe(childDelta)
         graphEditor.sendSignal(CardinalityRequest(null, id), childPattern, None)
       })
     }
@@ -82,8 +108,6 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
 
   @transient var childDeltasOptimized: Array[Byte] = _
 
-  @transient var childPatternCreator: Int => TriplePattern = _
-
   def optimizeEdgeRepresentation {
     childDeltasOptimized = CompactIntSet.create(childDeltas.toArray)
     childDeltas = null
@@ -92,7 +116,6 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     super.afterInitialization(graphEditor)
     childDeltas = TreeSet[Int]()
-    childPatternCreator = id.childPatternRecipe
   }
 
   override def edgeCount = edgeCounter
@@ -123,12 +146,11 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
     val averageTicketQuery = queryParticle.copyWithTickets(avg, complete)
     val aboveAverageTicketQuery = queryParticle.copyWithTickets(avg + 1, complete)
     CompactIntSet.foreach(childDeltasOptimized, childDelta => {
-      val targetId = childPatternCreator(childDelta)
       if (extras > 0) {
-        graphEditor.sendSignal(aboveAverageTicketQuery, targetId, None)
+        sendSignal(childDelta, aboveAverageTicketQuery, graphEditor)
         extras -= 1
       } else if (complete) {
-        graphEditor.sendSignal(averageTicketQuery, targetId, None)
+        sendSignal(childDelta, averageTicketQuery, graphEditor)
       }
     })
   }
