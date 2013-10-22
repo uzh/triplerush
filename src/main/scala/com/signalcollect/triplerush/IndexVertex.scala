@@ -22,10 +22,11 @@ package com.signalcollect.triplerush
 
 import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
-import com.signalcollect.examples.CompactIntSet
 import scala.collection.mutable.TreeSet
 import com.signalcollect.interfaces.Inspectable
 import com.signalcollect.triplerush.QueryParticle._
+import com.signalcollect.util.Ints._
+import com.signalcollect.util.Ints
 
 object SignalSet extends Enumeration with Serializable {
   val BoundSubject = Value
@@ -47,7 +48,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
     } else {
       // TODO: Give CompactIntSet a nicer API
       var childDeltasTemp = List[Int]()
-      CompactIntSet.foreach(childDeltasOptimized, childDelta => childDeltasTemp = childDelta :: childDeltasTemp)
+      IntSet(childDeltasOptimized).foreach(childDelta => childDeltasTemp = childDelta :: childDeltasTemp)
       childDeltasTemp map (childPatternCreator)
     }
   }
@@ -64,7 +65,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
   def computeCardinality(graphEditor: GraphEditor[Any, Any]) {
     assert(childDeltasOptimized != null)
     cardinality = 0
-    CompactIntSet.foreach(childDeltasOptimized, childDelta => {
+    IntSet(childDeltasOptimized).foreach(childDelta => {
       val childPattern = childPatternCreator(childDelta)
       graphEditor.sendSignal(CardinalityRequest(null, id), childPattern, None)
     })
@@ -81,7 +82,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
   @transient var childPatternCreator: Int => TriplePattern = _
 
   def optimizeEdgeRepresentation {
-    childDeltasOptimized = CompactIntSet.create(childDeltas.toArray)
+    childDeltasOptimized = Ints.createCompactSet(childDeltas.toArray)
     childDeltas = null
   }
 
@@ -118,7 +119,7 @@ class IndexVertex(id: TriplePattern) extends PatternVertex[Any, Any](id) with In
     var extras = math.abs(totalTickets) % targetIdCount
     val averageTicketQuery = copyWithTickets(queryParticle, avg, complete)
     val aboveAverageTicketQuery = copyWithTickets(queryParticle, avg + 1, complete)
-    CompactIntSet.foreach(childDeltasOptimized, childDelta => {
+    IntSet(childDeltasOptimized).foreach(childDelta => {
       val targetId = childPatternCreator(childDelta)
       if (extras > 0) {
         graphEditor.sendSignal(aboveAverageTicketQuery, targetId, None)
