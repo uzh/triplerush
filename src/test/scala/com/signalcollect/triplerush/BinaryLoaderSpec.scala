@@ -62,10 +62,6 @@ class BinaryLoaderSpec extends SpecificationWithJUnit {
   qe.awaitIdle
   println("Finished loading.")
 
-  print("Optimizing edge representations...")
-  qe.prepareQueryExecution
-  println("done")
-
   def executeOnQueryEngine(q: QuerySpecification) = {
     val resultFuture = qe.executeQuery(q)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))

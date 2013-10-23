@@ -22,6 +22,7 @@ package com.signalcollect.triplerush
 import scala.Option.option2Iterable
 import scala.runtime.ScalaRunTime
 import scala.util.hashing.MurmurHash3._
+import com.signalcollect.triplerush.TripleMapper
 
 object RootPattern extends TriplePattern(0, 0, 0)
 
@@ -48,6 +49,8 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
   override def toString = {
     s"(${s.toString},${p.toString},${o.toString})"
   }
+
+  def lookup = s"(${Mapping.getString(s)},${Mapping.getString(p)},${Mapping.getString(o)})"
 
   def variables: List[Int] = {
     val sOpt = if (s < 0) Some(s) else None
@@ -120,9 +123,9 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     }
   }
 
-  //  @inline def isFullyBound: Boolean = {
-  //    s > 0 && p > 0 && o > 0
-  //  }
+  @inline def isFullyBound: Boolean = {
+    s > 0 && p > 0 && o > 0
+  }
 
   /**
    * Returns the id of the index/triple vertex to which this pattern should be routed.

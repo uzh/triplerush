@@ -74,6 +74,7 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
 
   val aggregatedTickets = new HashMap[Int, Long]().withDefaultValue(0)
   val aggregatedResults = new HashMap[Int, List[Array[Int]]]().withDefaultValue(null)
+  val aggregatedCardinalities = new HashMap[TriplePattern, Int]().withDefaultValue(0)
 
   override def sendSignal(
     signal: Signal,
@@ -96,6 +97,10 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
         case other =>
           super.sendSignal(signal, targetId, sourceId, blocking)
       }
+    } else if (signal.isInstanceOf[Int]) {
+      val t = targetId.asInstanceOf[TriplePattern]
+      val oldCardinalities = aggregatedCardinalities(t)
+      aggregatedCardinalities(t) = oldCardinalities + signal.asInstanceOf[Int]
     } else {
       // TODO: Also improve efficiency of sending non-result particles.
       super.sendSignal(signal, targetId, sourceId, blocking)
@@ -137,6 +142,14 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
           queryVertexId.asInstanceOf[Id])
       }
       aggregatedTickets.clear
+    }
+    if (!aggregatedCardinalities.isEmpty) {
+      for ((targetId, cardinalityIncrement) <- aggregatedCardinalities) {
+        super.sendToWorkerForVertexId(
+          SignalMessage(targetId, null, cardinalityIncrement),
+          targetId.asInstanceOf[Id])
+      }
+      aggregatedCardinalities.clear
     }
     super.flush
   }

@@ -18,19 +18,23 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.vertices
 
 import scala.Array.canBuildFrom
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.UnrolledBuffer
+import com.signalcollect.triplerush.QueryParticle._
+
+import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
-import com.signalcollect.ProcessingVertex
+import com.signalcollect.Vertex
+import com.signalcollect.triplerush.CardinalityReply
+import com.signalcollect.triplerush.CardinalityRequest
+import com.signalcollect.triplerush.QuerySpecification
+import com.signalcollect.triplerush.TriplePattern
+
 import akka.actor.ActorRef
 import akka.actor.actorRef2Scala
-import com.signalcollect.Vertex
-import com.signalcollect.Edge
-import com.signalcollect.triplerush.QueryParticle._
-import scala.concurrent.Promise
-import scala.collection.mutable.UnrolledBuffer
 
 case class QueryDone(
   statKeys: Array[Any],
@@ -48,16 +52,16 @@ case object QueryOptimizer {
 }
 
 class QueryVertex(
-    val query: QuerySpecification,
-    val resultRecipientActor: ActorRef,
-    val optimizer: Int) extends Vertex[Int, Nothing] {
+  val query: Array[Int],
+  val resultRecipientActor: ActorRef,
+  val optimizer: Int) extends Vertex[Int, Nothing] {
 
   val id = query.queryId
 
-  @transient var state: Nothing = _ //UnrolledBuffer[Array[Int]] = UnrolledBuffer()
+  @transient var state: Nothing = _
 
   val expectedTickets = Long.MaxValue
-  val numberOfPatterns = query.unmatched.length
+  val numberOfPatterns = query.numberOfPatterns
 
   @transient var queryCopyCount: Long = 0
   @transient var receivedTickets: Long = 0
@@ -66,13 +70,14 @@ class QueryVertex(
   @transient var optimizingStartTime = 0l
   @transient var optimizingDuration = 0l
 
-  @transient var optimizedQuery: QuerySpecification = _
+  @transient var optimizedQuery: Array[Int] = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    println(s"query vertex initialized for query ${query.queryId}")
     cardinalities = Map()
     if (optimizer != QueryOptimizer.None && numberOfPatterns > 1) {
       // Gather pattern cardinalities first.
-      query.unmatched foreach (triplePattern => {
+      query.unmatchedPatterns foreach (triplePattern => {
         val indexId = triplePattern.routingAddress()
         optimizingStartTime = System.nanoTime
         graphEditor.sendSignal(CardinalityRequest(triplePattern, id), indexId, None)
@@ -80,7 +85,7 @@ class QueryVertex(
       optimizedQuery = query
     } else {
       // Dispatch the query directly.
-      graphEditor.sendSignal(query.toParticle, query.unmatched.head.routingAddress(), None)
+      graphEditor.sendSignal(query, query.lastPattern.routingAddress(), None)
       optimizedQuery = query
     }
   }
@@ -104,9 +109,11 @@ class QueryVertex(
       //}
       //        println(s"Query vertex $id received bindings ${query.bindings}. Now at $receivedTickets/$expectedTickets")
       case CardinalityReply(forPattern, cardinality) =>
+        println(s"query vertex @$id received cardinality for $forPattern ($cardinality)")
         cardinalities += forPattern -> cardinality
         //        println(s"Query vertex $id received cardinalities $forPattern -> $cardinality")
         if (cardinalities.size == numberOfPatterns) {
+          println(s"query vertex @$id has received all cardinalities")
           optimizedQuery = optimizeQuery
           if (optimizingStartTime != 0) {
             optimizingDuration = System.nanoTime - optimizingStartTime
@@ -117,12 +124,12 @@ class QueryVertex(
     true
   }
 
-  def optimizeQuery: QuerySpecification = {
+  def optimizeQuery: Array[Int] = {
     var sortedPatterns = cardinalities.toArray sortBy (_._2)
     optimizer match {
       case QueryOptimizer.Greedy =>
         // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
-        query.withUnmatchedPatterns(sortedPatterns map (_._1))
+        query.writePatterns(sortedPatterns map (_._1))
       case QueryOptimizer.Clever =>
         var boundVariables = Set[Int]() // The lower the score, the more constrained the variable.
         val optimizedPatterns = ArrayBuffer[TriplePattern]()
@@ -161,6 +168,11 @@ class QueryVertex(
     if (t < 0) {
       complete = false
     }
+    println(s"Received tickets: $t, total of $receivedTickets")
+    if (receivedTickets == Long.MaxValue) {
+      println(s"RECEIVED ALL!")
+    }
+    //    //println((receivedTickets.toDouble / Long.MaxValue.toDouble).round + "%")
   }
 
   override def scoreSignal: Double = if (expectedTickets == receivedTickets) 1 else 0

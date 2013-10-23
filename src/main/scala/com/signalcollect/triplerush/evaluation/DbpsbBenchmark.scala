@@ -36,11 +36,11 @@ import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import com.signalcollect.triplerush.Mapping
 import com.signalcollect.triplerush.QueryEngine
-import com.signalcollect.triplerush.QueryOptimizer
+import com.signalcollect.triplerush.vertices.QueryOptimizer
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
-import com.signalcollect.triplerush.QueryResult
+import com.signalcollect.triplerush.vertices.QueryResult
 import com.signalcollect.triplerush.QuerySpecification
 import scala.collection.mutable.UnrolledBuffer
 import java.lang.management.ManagementFactory
@@ -175,60 +175,60 @@ object DbpsbBenchmark extends App {
       "dbprop:population" -> 966,
       "dbo:number" -> 411)
 
-      /**
-       * Queries from Trinity.RDF paper
-       *
-       */
-      def fullQueries: List[QuerySpecification] = List(
-        QuerySpecification(1, Array(
-          TriplePattern(game, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:First-person_shooters")), //?game <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:First-person_shooters> .
-          TriplePattern(game, m("foaf:name"), title)), //?game foaf:name ?title .
-          new Array(2)),
-        QuerySpecification(2, Array(
-          TriplePattern(var3, m("foaf:homepage"), var2), //?var3 <http://xmlns.com/foaf/0.1/homepage> ?var2 .
-          TriplePattern(var3, m("rdf#type"), var1)), //?var3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?var 
-          new Array(3)),
-        QuerySpecification(3, Array(
-          TriplePattern(musician, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:German_musicians")), //?musician <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:German_musicians> .
-          TriplePattern(musician, m("foaf:name"), name), //?musician foaf:name ?name .
-          TriplePattern(musician, m("rdfs#comment"), vdescription)), //?musician rdfs:comment ?description
-          new Array(3)),
-        QuerySpecification(4, Array(
-          TriplePattern(person, m("dbo:birthPlace"), m("http://dbpedia.org/resource/Berlin")),
-          TriplePattern(person, m("dbo:birthDate"), birth),
-          TriplePattern(person, m("foaf:name"), pname),
-          TriplePattern(person, m("dbo:deathDate"), death)),
-          new Array(4)),
-        QuerySpecification(5, Array(
-          TriplePattern(car, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:Luxury_vehicles")),
-          TriplePattern(car, m("foaf:name"), name),
-          TriplePattern(car, m("dbo:manufacturer"), man),
-          TriplePattern(man, m("foaf:name"), manufacturer)),
-          new Array(4)),
-        QuerySpecification(6, Array(
-          TriplePattern(bvar6, m("rdf#type"), bvar),
-          TriplePattern(bvar6, m("dbprop:name"), bvar0),
-          TriplePattern(bvar6, m("dbprop:pages"), bvar1),
-          TriplePattern(bvar6, m("dbprop:isbn"), bvar2),
-          TriplePattern(bvar6, m("dbprop:author"), bvar3)),
-          new Array(6)),
-        QuerySpecification(7, Array(
-          TriplePattern(bvar6, m("rdf#type"), bvar),
-          TriplePattern(bvar6, m("dbprop:name"), bvar0),
-          TriplePattern(bvar6, m("dbprop:pages"), bvar1),
-          TriplePattern(bvar6, m("dbprop:isbn"), bvar2),
-          TriplePattern(bvar6, m("dbprop:author"), bvar3)),
-          new Array(6)),
-        QuerySpecification(8, Array(
-          TriplePattern(s, m("foaf:page"), player),
-          TriplePattern(s, m("rdf#type"), m("dbo:SoccerPlayer")),
-          TriplePattern(s, m("dbprop:position"), position),
-          TriplePattern(s, m("dbprop:clubs"), club),
-          TriplePattern(club, m("dbo:capacity"), cap),
-          TriplePattern(s, m("dbo:birthPlace"), place),
-          TriplePattern(place, m("dbprop:population"), pop),
-          TriplePattern(s, m("dbo:number"), tricot)),
-          new Array(8)))
+    /**
+     * Queries from Trinity.RDF paper
+     *
+     */
+    def fullQueries: List[QuerySpecification] = List(
+      QuerySpecification(Array(
+        TriplePattern(game, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:First-person_shooters")), //?game <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:First-person_shooters> .
+        TriplePattern(game, m("foaf:name"), title)), //?game foaf:name ?title .
+        1),
+      QuerySpecification(Array(
+        TriplePattern(var3, m("foaf:homepage"), var2), //?var3 <http://xmlns.com/foaf/0.1/homepage> ?var2 .
+        TriplePattern(var3, m("rdf#type"), var1)), //?var3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?var 
+        2),
+      QuerySpecification(Array(
+        TriplePattern(musician, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:German_musicians")), //?musician <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:German_musicians> .
+        TriplePattern(musician, m("foaf:name"), name), //?musician foaf:name ?name .
+        TriplePattern(musician, m("rdfs#comment"), vdescription)), //?musician rdfs:comment ?description
+        3),
+      QuerySpecification(Array(
+        TriplePattern(person, m("dbo:birthPlace"), m("http://dbpedia.org/resource/Berlin")),
+        TriplePattern(person, m("dbo:birthDate"), birth),
+        TriplePattern(person, m("foaf:name"), pname),
+        TriplePattern(person, m("dbo:deathDate"), death)),
+        4),
+      QuerySpecification(Array(
+        TriplePattern(car, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:Luxury_vehicles")),
+        TriplePattern(car, m("foaf:name"), name),
+        TriplePattern(car, m("dbo:manufacturer"), man),
+        TriplePattern(man, m("foaf:name"), manufacturer)),
+        5),
+      QuerySpecification(Array(
+        TriplePattern(bvar6, m("rdf#type"), bvar),
+        TriplePattern(bvar6, m("dbprop:name"), bvar0),
+        TriplePattern(bvar6, m("dbprop:pages"), bvar1),
+        TriplePattern(bvar6, m("dbprop:isbn"), bvar2),
+        TriplePattern(bvar6, m("dbprop:author"), bvar3)),
+        6),
+      QuerySpecification(Array(
+        TriplePattern(bvar6, m("rdf#type"), bvar),
+        TriplePattern(bvar6, m("dbprop:name"), bvar0),
+        TriplePattern(bvar6, m("dbprop:pages"), bvar1),
+        TriplePattern(bvar6, m("dbprop:isbn"), bvar2),
+        TriplePattern(bvar6, m("dbprop:author"), bvar3)),
+        7),
+      QuerySpecification(Array(
+        TriplePattern(s, m("foaf:page"), player),
+        TriplePattern(s, m("rdf#type"), m("dbo:SoccerPlayer")),
+        TriplePattern(s, m("dbprop:position"), position),
+        TriplePattern(s, m("dbprop:clubs"), club),
+        TriplePattern(club, m("dbo:capacity"), cap),
+        TriplePattern(s, m("dbo:birthPlace"), place),
+        TriplePattern(place, m("dbprop:population"), pop),
+        TriplePattern(s, m("dbo:number"), tricot)),
+        8))
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
       fullQueries
@@ -237,73 +237,70 @@ object DbpsbBenchmark extends App {
     var baseResults = Map[String, String]()
     val qe = new QueryEngine()
 
-      def loadDbpsb {
-        val dbpsbFolderName = s"dbpsb10-filtered-splits"
-        for (splitId <- 0 until 2880) {
-          qe.loadBinary(s"./$dbpsbFolderName/$splitId.filtered-split", Some(splitId))
-          if (splitId % 288 == 279) {
-            println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
-            qe.awaitIdle
-            println(s"Continuing graph loading...")
-          }
-        }
-        println("Query engine preparing query execution.")
-        qe.prepareQueryExecution
-        println("Query engine ready.")
-      }
-
-      /**
-       * Returns the time in milliseconds it takes to execute the code in 'codeBlock'.
-       */
-      def measureTime(codeBlock: => Unit): Long = {
-        val startTime = System.currentTimeMillis
-        codeBlock
-        val finishTime = System.currentTimeMillis
-        finishTime - startTime
-      }
-
-      def roundToMillisecondFraction(nanoseconds: Long): Double = {
-        ((nanoseconds / 100000.0).round) / 10.0
-      }
-
-      def executeOnQueryEngine(q: QuerySpecification): QueryResult = {
-        val resultFuture = qe.executeQuery(q, optimizer)
-        try {
-          Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
-        } catch {
-          case t: Throwable =>
-            println(s"Query $q timed out!")
-            QueryResult(UnrolledBuffer(), Array("exception"), Array(t))
+    def loadDbpsb {
+      val dbpsbFolderName = s"dbpsb10-filtered-splits"
+      for (splitId <- 0 until 2880) {
+        qe.loadBinary(s"./$dbpsbFolderName/$splitId.filtered-split", Some(splitId))
+        if (splitId % 288 == 279) {
+          println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
+          qe.awaitIdle
+          println(s"Continuing graph loading...")
         }
       }
+    }
 
-      def jitRepetitions = 100
+    /**
+     * Returns the time in milliseconds it takes to execute the code in 'codeBlock'.
+     */
+    def measureTime(codeBlock: => Unit): Long = {
+      val startTime = System.currentTimeMillis
+      codeBlock
+      val finishTime = System.currentTimeMillis
+      finishTime - startTime
+    }
 
-      /**
-       * Go to JVM JIT steady state by executing the queries multiple times.
-       */
-      def jitSteadyState {
-        for (i <- 1 to jitRepetitions) {
-          for (queryId <- 1 to 8) {
-            val queryIndex = queryId - 1
-            val query = fullQueries(queryIndex)
-            print(s"Warming up with query $query ...")
-            executeOnQueryEngine(query)
-            qe.awaitIdle
-            println(s" Done.")
-          }
+    def roundToMillisecondFraction(nanoseconds: Long): Double = {
+      ((nanoseconds / 100000.0).round) / 10.0
+    }
+
+    def executeOnQueryEngine(q: QuerySpecification): QueryResult = {
+      val resultFuture = qe.executeQuery(q, optimizer)
+      try {
+        Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
+      } catch {
+        case t: Throwable =>
+          println(s"Query $q timed out!")
+          QueryResult(UnrolledBuffer(), Array("exception"), Array(t))
+      }
+    }
+
+    def jitRepetitions = 100
+
+    /**
+     * Go to JVM JIT steady state by executing the queries multiple times.
+     */
+    def jitSteadyState {
+      for (i <- 1 to jitRepetitions) {
+        for (queryId <- 1 to 8) {
+          val queryIndex = queryId - 1
+          val query = fullQueries(queryIndex)
+          print(s"Warming up with query $query ...")
+          executeOnQueryEngine(query)
+          qe.awaitIdle
+          println(s" Done.")
         }
       }
+    }
 
     lazy val gcs = ManagementFactory.getGarbageCollectorMXBeans
 
-      def getGcCollectionTime: Long = {
-        gcs map (_.getCollectionTime) sum
-      }
+    def getGcCollectionTime: Long = {
+      gcs map (_.getCollectionTime) sum
+    }
 
-      def getGcCollectionCount: Long = {
-        gcs map (_.getCollectionCount) sum
-      }
+    def getGcCollectionCount: Long = {
+      gcs map (_.getCollectionCount) sum
+    }
 
     lazy val compilations = ManagementFactory.getCompilationMXBean
 
@@ -313,65 +310,65 @@ object DbpsbBenchmark extends App {
 
     lazy val jvmArguments = ManagementFactory.getRuntimeMXBean.getInputArguments
 
-      def cleanGarbage {
-        for (i <- 1 to 10) {
-          System.runFinalization
-          System.gc
-          Thread.sleep(10000)
-        }
-        Thread.sleep(120000)
+    def cleanGarbage {
+      for (i <- 1 to 10) {
+        System.runFinalization
+        System.gc
+        Thread.sleep(10000)
       }
+      Thread.sleep(120000)
+    }
 
     var finalResults = List[Map[String, String]]()
-      def runEvaluation(queryId: Int) {
-        var runResult = baseResults
-        var date: Date = new Date
-        val queryIndex = queryId - 1
-        val query = queries(queryIndex)
-        val gcTimeBefore = getGcCollectionTime
-        val gcCountBefore = getGcCollectionCount
-        val compileTimeBefore = compilations.getTotalCompilationTime
-        runResult += s"totalMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
-        runResult += s"freeMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
-        runResult += s"usedMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
-        val startTime = System.nanoTime
-        val queryResult = executeOnQueryEngine(query)
-        val finishTime = System.nanoTime
-        val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
-        val executionTime = roundToMillisecondFraction(finishTime - startTime)
-        val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
-        val gcTimeAfter = getGcCollectionTime
-        val gcCountAfter = getGcCollectionCount
-        val gcTimeDuringQuery = gcTimeAfter - gcTimeBefore
-        val gcCountDuringQuery = gcCountAfter - gcCountBefore
-        val compileTimeAfter = compilations.getTotalCompilationTime
-        val compileTimeDuringQuery = compileTimeAfter - compileTimeBefore
-        runResult += s"revision" -> revision
-        runResult += s"queryId" -> queryId.toString
-        runResult += s"optimizer" -> optimizer.toString
-        runResult += s"queryCopyCount" -> queryStats("queryCopyCount").toString
-        runResult += s"query" -> queryStats("optimizedQuery").toString
-        runResult += s"exception" -> queryStats("exception").toString
-        runResult += s"results" -> queryResult.bindings.length.toString
-        runResult += s"executionTime" -> executionTime.toString
-        runResult += s"optimizingTime" -> optimizingTime.toString
-        runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
-        runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
-        runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
-        runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
-        runResult += "gcTimeAfter" -> gcTimeAfter.toString
-        runResult += "gcCountAfter" -> gcCountAfter.toString
-        runResult += "gcTimeDuringQuery" -> gcTimeDuringQuery.toString
-        runResult += "gcCountDuringQuery" -> gcCountDuringQuery.toString
-        runResult += "compileTimeAfter" -> compileTimeAfter.toString
-        runResult += "compileTimeDuringQuery" -> compileTimeDuringQuery.toString
-        runResult += s"loadNumber" -> 10.toString
-        runResult += s"date" -> date.toString
-        runResult += s"dataSet" -> s"dbpsb10"
-        finalResults = runResult :: finalResults
-      }
+    def runEvaluation(queryId: Int) {
+      var runResult = baseResults
+      var date: Date = new Date
+      val queryIndex = queryId - 1
+      val query = queries(queryIndex)
+      val gcTimeBefore = getGcCollectionTime
+      val gcCountBefore = getGcCollectionCount
+      val compileTimeBefore = compilations.getTotalCompilationTime
+      runResult += s"totalMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
+      runResult += s"freeMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
+      runResult += s"usedMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
+      val startTime = System.nanoTime
+      val queryResult = executeOnQueryEngine(query)
+      val finishTime = System.nanoTime
+      val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
+      val executionTime = roundToMillisecondFraction(finishTime - startTime)
+      val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
+      val gcTimeAfter = getGcCollectionTime
+      val gcCountAfter = getGcCollectionCount
+      val gcTimeDuringQuery = gcTimeAfter - gcTimeBefore
+      val gcCountDuringQuery = gcCountAfter - gcCountBefore
+      val compileTimeAfter = compilations.getTotalCompilationTime
+      val compileTimeDuringQuery = compileTimeAfter - compileTimeBefore
+      runResult += s"revision" -> revision
+      runResult += s"queryId" -> queryId.toString
+      runResult += s"optimizer" -> optimizer.toString
+      runResult += s"queryCopyCount" -> queryStats("queryCopyCount").toString
+      runResult += s"query" -> queryStats("optimizedQuery").toString
+      runResult += s"exception" -> queryStats("exception").toString
+      runResult += s"results" -> queryResult.bindings.length.toString
+      runResult += s"executionTime" -> executionTime.toString
+      runResult += s"optimizingTime" -> optimizingTime.toString
+      runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
+      runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
+      runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
+      runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
+      runResult += "gcTimeAfter" -> gcTimeAfter.toString
+      runResult += "gcCountAfter" -> gcCountAfter.toString
+      runResult += "gcTimeDuringQuery" -> gcTimeDuringQuery.toString
+      runResult += "gcCountDuringQuery" -> gcCountDuringQuery.toString
+      runResult += "compileTimeAfter" -> compileTimeAfter.toString
+      runResult += "compileTimeDuringQuery" -> compileTimeDuringQuery.toString
+      runResult += s"loadNumber" -> 10.toString
+      runResult += s"date" -> date.toString
+      runResult += s"dataSet" -> s"dbpsb10"
+      finalResults = runResult :: finalResults
+    }
 
-      def bytesToGigabytes(bytes: Long): Double = ((bytes / 1073741824.0) * 10.0).round / 10.0
+    def bytesToGigabytes(bytes: Long): Double = ((bytes / 1073741824.0) * 10.0).round / 10.0
 
     baseResults += "evaluationDescription" -> description
     baseResults += "jitRepetitions" -> jitRepetitions.toString

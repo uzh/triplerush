@@ -29,7 +29,6 @@ import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.Mapping
 import com.signalcollect.triplerush.QueryIds
 
-
 object SparqlDsl extends App {
   object | {
     def -(s: String): DslS = DslS(s)
@@ -88,6 +87,6 @@ object SparqlDsl extends App {
 
   implicit def dsl2Query(q: DslQuery): QuerySpecification = {
     val queryId = if (q.isSamplingQuery) QueryIds.nextSamplingQueryId else QueryIds.nextFullQueryId
-    QuerySpecification(queryId, q.dslTriplePatterns map (_.toTriplePattern(q.variableToId)) toArray, bindings = new Array[Int](q.variableToId.size))
+    QuerySpecification(q.dslTriplePatterns map (_.toTriplePattern(q.variableToId)) toArray, queryId)
   }
 }

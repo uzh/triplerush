@@ -56,18 +56,14 @@ class SmallIntegrationSpec extends SpecificationWithJUnit {
     withMessageSerialization(true))
 
   println("Loading small dataset ... ")
-  qe.loadTriple("A", "takesCourse", "Department0.University0.GraduateCourse0")
-  qe.loadTriple("A", "type", "GraduateStudent")
-  qe.loadTriple("B", "takesCourse", "Department0.University0.GraduateCourse0")
-  qe.loadTriple("B", "type", "GraduateStudent")
-  qe.loadTriple("C", "takesCourse", "Department0.University0.GraduateCourse1")
-  qe.loadTriple("C", "type", "GraduateStudent")
+  qe.addTriple("A", "takesCourse", "Department0.University0.GraduateCourse0")
+  qe.addTriple("A", "type", "GraduateStudent")
+  qe.addTriple("B", "takesCourse", "Department0.University0.GraduateCourse0")
+  qe.addTriple("B", "type", "GraduateStudent")
+  qe.addTriple("C", "takesCourse", "Department0.University0.GraduateCourse1")
+  qe.addTriple("C", "type", "GraduateStudent")
   qe.awaitIdle
   println("Finished loading.")
-
-  print("Optimizing edge representations...")
-  qe.prepareQueryExecution
-  println("done")
 
   def executeOnQueryEngine(q: QuerySpecification) = {
     val resultFuture = qe.executeQuery(q)

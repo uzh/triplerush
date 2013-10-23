@@ -18,26 +18,28 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.PlaceholderEdge
+import com.signalcollect.triplerush.RootPattern
+import com.signalcollect.triplerush.TriplePattern
 
 /**
  * Basic vertex that recursively builds the TripleRush index structure.
  */
-abstract class PatternVertex[Signal, State](
-  id: TriplePattern)
-  extends BaseVertex[TriplePattern, Signal, State](id) {
+trait ParentBuilding[Signal, State] extends BaseVertex[TriplePattern, Signal, State] {
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     // Build the hierarchical index on initialization.
     id.parentPatterns foreach { parentId =>
       if (parentId != RootPattern) {
+        //        println(s"$id is parent building, looking at $parentId")
         // The root is added initially, no need to add again.
         val indexVertex = parentId match {
-          case TriplePattern(s, 0, 0) => new SIndexVertex(parentId)
-          case TriplePattern(0, p, 0) => new PIndexVertex(parentId)
-          case TriplePattern(0, 0, o) => new OIndexVertex(parentId)
+          case TriplePattern(s, 0, 0) => new SIndex(parentId)
+          case TriplePattern(0, p, 0) => new PIndex(parentId)
+          case TriplePattern(0, 0, o) => new OIndex(parentId)
         }
         graphEditor.addVertex(indexVertex)
         // TODO: Add handling for root index vertex.
@@ -46,4 +48,5 @@ abstract class PatternVertex[Signal, State](
       }
     }
   }
+
 }

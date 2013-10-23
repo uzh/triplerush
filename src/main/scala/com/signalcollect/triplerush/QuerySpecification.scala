@@ -22,28 +22,31 @@ package com.signalcollect.triplerush
 
 import language.implicitConversions
 import java.util.concurrent.atomic.AtomicInteger
+import scala.util.Random
 
 /**
  * Represents a SPARQL query.
  */
 case class QuerySpecification(
-    queryId: Int,
-    unmatched: Array[TriplePattern],
-    bindings: Array[Int]) {
+  unmatched: Array[TriplePattern],
+  queryId: Int = Random.nextInt) {
 
   def toParticle: Array[Int] = {
-    QueryParticle(queryId,
+    val patterns = unmatched.distinct
+    val variableCount = patterns.flatMap(tp => tp.variables).toSet.size
+    QueryParticle(
+      queryId,
       Long.MaxValue,
-      bindings: Array[Int],
-      unmatched: Array[TriplePattern])
+      new Array[Int](variableCount),
+      patterns)
   }
-  
+
   def withUnmatchedPatterns(u: Array[TriplePattern]): QuerySpecification = {
     copy(unmatched = u)
   }
 
   override def toString = {
-    unmatched.mkString("\n") + bindings.toString
+    unmatched.mkString("\n")
   }
 
 }

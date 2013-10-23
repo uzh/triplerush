@@ -24,18 +24,32 @@ import java.io.DataInputStream
 import java.io.EOFException
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
-import scala.concurrent._
+
+import scala.Array.canBuildFrom
+import scala.collection.mutable.UnrolledBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import scala.concurrent.promise
+import scala.concurrent.future
 import scala.util.Random
+
 import org.semanticweb.yars.nx.parser.NxParser
+
 import com.signalcollect.ExecutionConfiguration
 import com.signalcollect.GraphBuilder
 import com.signalcollect.GraphEditor
 import com.signalcollect.Vertex
 import com.signalcollect.configuration.ActorSystemRegistry
 import com.signalcollect.configuration.ExecutionMode
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
+import com.signalcollect.triplerush.vertices.Forwarding
+import com.signalcollect.triplerush.vertices.POIndex
+import com.signalcollect.triplerush.vertices.QueryDone
+import com.signalcollect.triplerush.vertices.QueryOptimizer
+import com.signalcollect.triplerush.vertices.QueryResult
+import com.signalcollect.triplerush.vertices.QueryVertex
+import com.signalcollect.triplerush.vertices.SOIndex
+import com.signalcollect.triplerush.vertices.SPIndex
+
 import akka.actor.Actor
 import akka.actor.ActorRef
 import akka.actor.PoisonPill
@@ -43,10 +57,6 @@ import akka.actor.Props
 import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.util.Timeout
-import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
-import akka.event.Logging
-import com.signalcollect.triplerush.QueryParticle._
-import scala.collection.mutable.UnrolledBuffer
 
 case object RegisterQueryResultRecipient
 
@@ -83,7 +93,7 @@ class ResultRecipientActor extends Actor {
   }
 }
 
-case class UndeliverableSignalHandler() {
+case object UndeliverableRerouter {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
       case queryParticle: Array[Int] =>
@@ -92,19 +102,6 @@ case class UndeliverableSignalHandler() {
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
       case other =>
         println(s"Failed signal delivery of $other of type ${other.getClass} to the vertex with id $targetId and sender id $sourceId.")
-    }
-  }
-}
-
-case class VertexPreparation() {
-  def prepareVertex(graphEditor: GraphEditor[Any, Any])(v: Vertex[_, _]) {
-    v match {
-      case v: IndexVertex =>
-        v.optimizeEdgeRepresentation
-        v.computeCardinality(graphEditor)
-      case v: BindingIndexVertex =>
-        v.optimizeEdgeRepresentation
-      case other => throw new Exception(s"Only index vertices expected, but found vertex $other")
     }
   }
 }
@@ -189,16 +186,16 @@ case object FileLoaders {
   }
 
   def addTriple(tp: TriplePattern, graphEditor: GraphEditor[Any, Any]) {
-    for (parentPattern <- tp.parentPatterns) {
-      val idDelta = tp.parentIdDelta(parentPattern)
-      val bindingIndexVertex = parentPattern match {
-        case TriplePattern(0, p, o) => new POBindingIndex(parentPattern)
-        case TriplePattern(s, 0, o) => new SOBindingIndex(parentPattern)
-        case TriplePattern(s, p, 0) => new SPBindingIndex(parentPattern)
-      }
-      graphEditor.addVertex(bindingIndexVertex)
-      graphEditor.addEdge(parentPattern, new PlaceholderEdge(idDelta))
-    }
+    assert(tp.isFullyBound)
+    val po = TriplePattern(0, tp.p, tp.o)
+    val so = TriplePattern(tp.s, 0, tp.o)
+    val sp = TriplePattern(tp.s, tp.p, 0)
+    graphEditor.addVertex(new POIndex(po))
+    graphEditor.addVertex(new SOIndex(so))
+    graphEditor.addVertex(new SPIndex(sp))
+    graphEditor.addEdge(po, new PlaceholderEdge(tp.s))
+    graphEditor.addEdge(so, new PlaceholderEdge(tp.p))
+    graphEditor.addEdge(sp, new PlaceholderEdge(tp.o))
   }
 }
 
@@ -211,41 +208,33 @@ case class QueryEngine(
   private val g = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
     withMapperFactory(TripleMapperFactory).
-    //    withMessageSerialization(true).
+    withMessageSerialization(true).
     //    withJavaSerialization(false).
     withHeartbeatInterval(500).
     withKryoRegistrations(List(
+      "com.signalcollect.triplerush.vertices.SIndex",
+      "com.signalcollect.triplerush.vertices.PIndex",
+      "com.signalcollect.triplerush.vertices.OIndex",
+      "com.signalcollect.triplerush.vertices.SPIndex",
+      "com.signalcollect.triplerush.vertices.POIndex",
+      "com.signalcollect.triplerush.vertices.SOIndex",
       "com.signalcollect.triplerush.TriplePattern",
-      "com.signalcollect.triplerush.BindingIndexVertex",
-      "com.signalcollect.triplerush.IndexVertex",
-      "com.signalcollect.triplerush.QueryDone",
+      "com.signalcollect.triplerush.vertices.QueryVertex",
+      "com.signalcollect.triplerush.vertices.QueryOptimizer",
+      "com.signalcollect.triplerush.vertices.QueryDone",
       "com.signalcollect.triplerush.PlaceholderEdge",
       "com.signalcollect.triplerush.CardinalityRequest",
       "com.signalcollect.triplerush.CardinalityReply",
-      "com.signalcollect.triplerush.QueryVertex",
-      "com.signalcollect.triplerush.QueryOptimizer",
-      "com.signalcollect.triplerush.QueryResult",
+      "com.signalcollect.triplerush.vertices.QueryResult",
       "com.signalcollect.triplerush.TriplePattern",
       "Array[com.signalcollect.triplerush.TriplePattern]",
       "com.signalcollect.interfaces.SignalMessage$mcIJ$sp",
       "akka.actor.RepointableActorRef")).build
-  print("Awaiting idle ... ")
-  g.awaitIdle
-  println("Done")
-  print("Setting undeliverable signal handler ... ")
-  g.setUndeliverableSignalHandler(UndeliverableSignalHandler().handle _)
-  println("Done")
-  print("Adding root index vertex ...")
-  // TODO: Add special treatment for root patterns.
-  //g.addVertex(new IndexVertex(RootPattern))
-  println("Done")
-
+  g.setUndeliverableSignalHandler(UndeliverableRerouter.handle _)
+  g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
-  print("Awaiting idle ... ")
-  g.awaitIdle
-  println("Done")
-  println("Graph engine is fully initialized.")
+  println("TripleRush is ready.")
 
   def loadNtriples(ntriplesFilename: String, placementHint: Option[Any] = None) {
     g.modifyGraph(FileLoaders.loadNtriplesFile(ntriplesFilename) _, placementHint)
@@ -258,7 +247,7 @@ case class QueryEngine(
   /**
    * Slow, only use for debugging purposes.
    */
-  def loadTriple(s: String, p: String, o: String) {
+  def addTriple(s: String, p: String, o: String) {
     val sId = Mapping.register(s)
     val pId = Mapping.register(p)
     val oId = Mapping.register(o)
@@ -266,9 +255,17 @@ case class QueryEngine(
     FileLoaders.addTriple(tp, g)
   }
 
+  /**
+   * Slow, only use for debugging purposes.
+   */
+  def addEncodedTriple(sId: Int, pId: Int, oId: Int) {
+    FileLoaders.addTriple(TriplePattern(sId, pId, oId), g)
+  }
+
   def executeQuery(q: QuerySpecification, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
     if (!q.unmatched.isEmpty) {
       val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
+      // TODO: Add callback that removes the query vertex and result recipient actor.
       g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer))
       implicit val timeout = Timeout(Duration.create(7200, TimeUnit.SECONDS))
       val resultFuture = resultRecipientActor ? RegisterQueryResultRecipient
@@ -278,25 +275,6 @@ case class QueryEngine(
         QueryResult(UnrolledBuffer(), Array(), Array())
       }
     }
-  }
-
-  private var queryExecutionPrepared = false
-
-  def prepareQueryExecution {
-    print("Waiting for graph loading to finish ... ")
-    g.awaitIdle
-    println("Done")
-    print("Starting continuous asynchronous mode ... ")
-    g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
-    println("Done")
-    println("Preparing query execution and awaiting idle.")
-    g.awaitIdle
-    println("Prepared query execution and preparing vertices.")
-    g.foreachVertexWithGraphEditor(VertexPreparation().prepareVertex _)
-    println("Done preparing vertices. Awaiting idle again")
-    g.awaitIdle
-    println("Done awaiting idle")
-    queryExecutionPrepared = true
   }
 
   def awaitIdle {

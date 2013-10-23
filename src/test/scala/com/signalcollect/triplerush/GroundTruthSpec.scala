@@ -43,6 +43,7 @@ class GroundTruthSpec extends SpecificationWithJUnit {
   sequential
 
   val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+//  val enabledQueries = Set(2)
   val dslEnabled = true
   val sparqlEnabled = false
 
@@ -323,9 +324,7 @@ WHERE
   }
   qe.awaitIdle
   println("Finished loading LUBM1.")
-
-  print("Optimizing edge representations...")
-  qe.prepareQueryExecution
+  qe.awaitIdle
   println("Done.")
 
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
