@@ -24,16 +24,13 @@ import java.io.DataInputStream
 import java.io.EOFException
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
-
 import scala.Array.canBuildFrom
 import scala.collection.mutable.UnrolledBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.concurrent.future
 import scala.util.Random
-
 import org.semanticweb.yars.nx.parser.NxParser
-
 import com.signalcollect.ExecutionConfiguration
 import com.signalcollect.GraphBuilder
 import com.signalcollect.GraphEditor
@@ -49,7 +46,6 @@ import com.signalcollect.triplerush.vertices.QueryResult
 import com.signalcollect.triplerush.vertices.QueryVertex
 import com.signalcollect.triplerush.vertices.SOIndex
 import com.signalcollect.triplerush.vertices.SPIndex
-
 import akka.actor.Actor
 import akka.actor.ActorRef
 import akka.actor.PoisonPill
@@ -100,6 +96,8 @@ case object UndeliverableRerouter {
         graphEditor.sendSignal(queryParticle.tickets, queryParticle.queryId, None)
       case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
+      case CardinalityReply(forPattern, cardinality) =>
+      // Do nothing, query vertex has removed itself already because of a 0 cardinality pattern.
       case other =>
         println(s"Failed signal delivery of $other of type ${other.getClass} to the vertex with id $targetId and sender id $sourceId.")
     }
@@ -203,12 +201,15 @@ case class QueryEngine(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
   //.withLoggingLevel(Logging.DebugLevel)
   console: Boolean = false) {
+  
+  // TODO: Handle root pattern(s).
+  // TODO: Validate/simplify queries before executing them.
 
   println("Graph engine is initializing ...")
   private val g = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
     withMapperFactory(TripleMapperFactory).
-    withMessageSerialization(true).
+//    withMessageSerialization(true).
     //    withJavaSerialization(false).
     withHeartbeatInterval(500).
     withKryoRegistrations(List(
@@ -262,8 +263,8 @@ case class QueryEngine(
     FileLoaders.addTriple(TriplePattern(sId, pId, oId), g)
   }
 
-  def executeQuery(q: QuerySpecification, optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
-    if (!q.unmatched.isEmpty) {
+  def executeQuery(q: Array[Int], optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
+    if (!q.isResult) {
       val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
       // TODO: Add callback that removes the query vertex and result recipient actor.
       g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer))

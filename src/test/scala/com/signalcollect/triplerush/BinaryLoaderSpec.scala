@@ -63,7 +63,7 @@ class BinaryLoaderSpec extends SpecificationWithJUnit {
   println("Finished loading.")
 
   def executeOnQueryEngine(q: QuerySpecification) = {
-    val resultFuture = qe.executeQuery(q)
+    val resultFuture = qe.executeQuery(q.toParticle)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
     result.bindings
   }

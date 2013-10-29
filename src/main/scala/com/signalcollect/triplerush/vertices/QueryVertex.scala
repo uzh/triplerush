@@ -54,7 +54,8 @@ case object QueryOptimizer {
 class QueryVertex(
   val query: Array[Int],
   val resultRecipientActor: ActorRef,
-  val optimizer: Int) extends Vertex[Int, Nothing] {
+  val optimizer: Int,
+  val recordStats: Boolean = false) extends Vertex[Int, Nothing] {
 
   val id = query.queryId
 
@@ -77,15 +78,24 @@ class QueryVertex(
     cardinalities = Map()
     if (optimizer != QueryOptimizer.None && numberOfPatterns > 1) {
       // Gather pattern cardinalities first.
-      query.unmatchedPatterns foreach (triplePattern => {
-        val indexId = triplePattern.routingAddress()
+      query.patterns foreach (triplePattern => {
+        val responsibleIndexId = triplePattern.routingAddress
         optimizingStartTime = System.nanoTime
-        graphEditor.sendSignal(CardinalityRequest(triplePattern, id), indexId, None)
+        println(s"Query @$id requests cardinality of $triplePattern")
+        responsibleIndexId match {
+          case root @ TriplePattern(0, 0, 0) =>
+            handleCardinalityReply(triplePattern, Int.MaxValue, graphEditor)
+          case other =>
+            graphEditor.sendSignal(
+              CardinalityRequest(triplePattern, id),
+              responsibleIndexId, None)
+        }
       })
       optimizedQuery = query
     } else {
       // Dispatch the query directly.
-      graphEditor.sendSignal(query, query.lastPattern.routingAddress(), None)
+      println(s"Query vertex $id has dispatched the query to ${query.routingAddress}.")
+      graphEditor.sendSignal(query, query.routingAddress, None)
       optimizedQuery = query
     }
   }
@@ -97,39 +107,51 @@ class QueryVertex(
       case ticketsOfFailedQuery: Long =>
         queryCopyCount += 1
         processTickets(ticketsOfFailedQuery)
+        if (receivedTickets == expectedTickets) {
+          queryDone(graphEditor)
+        }
       //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
       case bindings: Array[Array[Int]] =>
         queryCopyCount += 1
         resultRecipientActor ! bindings
-      //        val castBindingsBuffer = bufferOfBindings.asInstanceOf[UnrolledBuffer[Array[Int]]]
-      //        state = state.concat(castBindingsBuffer)
-      //} else {
-      // numberOfFailedQueries += 1
-      // println(s"Failure: $query")
-      //}
-      //        println(s"Query vertex $id received bindings ${query.bindings}. Now at $receivedTickets/$expectedTickets")
       case CardinalityReply(forPattern, cardinality) =>
-        println(s"query vertex @$id received cardinality for $forPattern ($cardinality)")
-        cardinalities += forPattern -> cardinality
-        //        println(s"Query vertex $id received cardinalities $forPattern -> $cardinality")
-        if (cardinalities.size == numberOfPatterns) {
-          println(s"query vertex @$id has received all cardinalities")
-          optimizedQuery = optimizeQuery
-          if (optimizingStartTime != 0) {
-            optimizingDuration = System.nanoTime - optimizingStartTime
-          }
-          graphEditor.sendSignal(optimizedQuery.toParticle, optimizedQuery.unmatched.head.routingAddress(), None)
-        }
+        handleCardinalityReply(forPattern, cardinality, graphEditor)
     }
     true
   }
 
+  def handleCardinalityReply(
+    forPattern: TriplePattern,
+    cardinality: Int,
+    graphEditor: GraphEditor[Any, Any]) = {
+    println(s"query vertex @$id received cardinality for $forPattern ($cardinality)")
+    if (cardinality == 0) {
+      // 0 cardinality => no results => we're done.
+      queryDone(graphEditor)
+    } else {
+      // TODO: If pattern is fully bound and cardinality is one, bind immediately.
+      cardinalities += forPattern -> cardinality
+      //        println(s"Query vertex $id received cardinalities $forPattern -> $cardinality")
+      if (cardinalities.size == numberOfPatterns) {
+        println(s"query vertex @$id has received all cardinalities")
+        optimizedQuery = optimizeQuery
+        if (optimizingStartTime != 0) {
+          optimizingDuration = System.nanoTime - optimizingStartTime
+        }
+        graphEditor.sendSignal(optimizedQuery, optimizedQuery.routingAddress, None)
+      }
+    }
+  }
+
   def optimizeQuery: Array[Int] = {
+    println(s"query vertex @$id is optimizing the query")
     var sortedPatterns = cardinalities.toArray sortBy (_._2)
     optimizer match {
       case QueryOptimizer.Greedy =>
         // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
-        query.writePatterns(sortedPatterns map (_._1))
+        val copy = query.copy
+        copy.writePatterns(sortedPatterns map (_._1))
+        copy
       case QueryOptimizer.Clever =>
         var boundVariables = Set[Int]() // The lower the score, the more constrained the variable.
         val optimizedPatterns = ArrayBuffer[TriplePattern]()
@@ -159,7 +181,9 @@ class QueryVertex(
           }
           sortedPatterns = sortedPatterns sortBy (_._2)
         }
-        query.withUnmatchedPatterns(optimizedPatterns.toArray)
+        val c = query.copy
+        c.writePatterns(optimizedPatterns.toArray)
+        c
     }
   }
 
@@ -175,16 +199,22 @@ class QueryVertex(
     //    //println((receivedTickets.toDouble / Long.MaxValue.toDouble).round + "%")
   }
 
-  override def scoreSignal: Double = if (expectedTickets == receivedTickets) 1 else 0
+  override def scoreSignal: Double = 0
 
-  override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {
-    val stats = Map[Any, Any](
-      "optimizingDuration" -> optimizingDuration,
-      "queryCopyCount" -> queryCopyCount,
-      "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
-    val statsKeys: Array[Any] = stats.keys.toArray
-    val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
-    resultRecipientActor ! QueryDone(statsKeys, statsValues)
+  override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {}
+
+  def queryDone(graphEditor: GraphEditor[Any, Any]) {
+    if (recordStats) {
+      val stats = Map[Any, Any](
+        "optimizingDuration" -> optimizingDuration,
+        "queryCopyCount" -> queryCopyCount,
+        "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
+      val statsKeys: Array[Any] = stats.keys.toArray
+      val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
+      resultRecipientActor ! QueryDone(Array(), Array())
+    } else {
+      resultRecipientActor ! QueryDone(Array(), Array())
+    }
     graphEditor.removeVertex(id)
   }
 

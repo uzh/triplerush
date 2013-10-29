@@ -100,16 +100,7 @@ trait Binding
       graphEditor.sendSignal(boundParticle, boundParticle.queryId, None)
     } else {
       println(s"@$id will further route query ${boundParticle.queryId}")
-      // Query not complete yet, route onwards.
-      val s = boundParticle.lastPatternS
-      val p = boundParticle.lastPatternP
-      val o = boundParticle.lastPatternO
-      val nextRoutingAddress = if (s > 0 && p > 0 && o > 0) {
-        TriplePattern(s, 0, o)
-      } else {
-        TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
-      }
-      graphEditor.sendSignal(boundParticle, nextRoutingAddress, None)
+      graphEditor.sendSignal(boundParticle, boundParticle.routingAddress, None)
     }
   }
 

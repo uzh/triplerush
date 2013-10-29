@@ -24,11 +24,32 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.util.SearchableIntSet
 import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.CardinalityRequest
+import com.signalcollect.triplerush.CardinalityReply
 
 class SOIndex(id: TriplePattern) extends SearchableIndexVertex(id)
   with Binding {
 
   assert(id.s != 0 && id.p == 0 && id.o != 0)
+
+  /**
+   * Need to check if the pattern is fully bound, then answer with appropriate cardinality.
+   */
+  override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
+    val pattern = c.forPattern
+    if (pattern.isFullyBound) {
+      val exists = new SearchableIntSet(childDeltaArray).contains(pattern.p)
+      if (exists) {
+        graphEditor.sendSignal(
+          CardinalityReply(pattern, 1), c.requestor, None)
+      } else {
+        graphEditor.sendSignal(
+          CardinalityReply(pattern, 0), c.requestor, None)
+      }
+    } else {
+      super.handleCardinalityRequest(c, graphEditor)
+    }
+  }
 
   @inline def bindIndividualQuery(childDelta: Int, query: Array[Int]): Array[Int] = {
     query.bind(id.s, childDelta, id.o)

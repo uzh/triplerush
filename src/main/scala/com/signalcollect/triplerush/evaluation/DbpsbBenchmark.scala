@@ -264,7 +264,7 @@ object DbpsbBenchmark extends App {
     }
 
     def executeOnQueryEngine(q: QuerySpecification): QueryResult = {
-      val resultFuture = qe.executeQuery(q, optimizer)
+      val resultFuture = qe.executeQuery(q.toParticle, optimizer)
       try {
         Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
       } catch {

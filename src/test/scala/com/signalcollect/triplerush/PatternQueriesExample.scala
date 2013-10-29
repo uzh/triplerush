@@ -54,7 +54,7 @@ object PatternQueriesExample extends App {
   }
   qe.awaitIdle
   println("Executing query ...")
-  val result = qe.executeQuery(query1Dsl)
+  val result = qe.executeQuery(query1Dsl.toParticle)
 
   result onSuccess {
     case results =>

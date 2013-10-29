@@ -63,6 +63,12 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
 
   import QueryParticle._
 
+  def copy: Array[Int] = {
+    val c = new Array[Int](r.length)
+    System.arraycopy(r, 0, c, 0, r.length)
+    c
+  }
+
   def bindSubject(
     toMatchS: Int,
     toMatchP: Int,
@@ -220,9 +226,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     r(contentIntIndex)
   }
 
-  /**
-   * Inverts the order of patterns.
-   */
   def writePatterns(unmatched: Array[TriplePattern]) {
     var i = 0
     var tpByteIndex = r.length - 3 // index of subject of last pattern
@@ -253,14 +256,14 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     newR
   }
 
-  def unmatchedPatterns = {
-    for (i <- 0 until numberOfPatterns) yield pattern(i)
+  def patterns = {
+    for (i <- numberOfPatterns - 1 to 0 by -1) yield pattern(i)
   }
 
   def numberOfPatterns: Int = (r.length - 4 - numberOfBindings) / 3
 
   def pattern(index: Int) = {
-    val sIndex = 4 + numberOfBindings
+    val sIndex = 3 * index + 4 + numberOfBindings
     val pIndex = sIndex + 1
     val oIndex = sIndex + 2
     TriplePattern(r(sIndex), r(pIndex), r(oIndex))
@@ -294,6 +297,25 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
         r(i) = boundValue
       }
       i += 1
+    }
+  }
+
+  /**
+   *  Routing address for this query.
+   */
+  def routingAddress: Any = {
+    if (isResult) {
+      queryId
+    } else {
+      // Query not complete yet, route onwards.
+      val s = lastPatternS
+      val p = lastPatternP
+      val o = lastPatternO
+      if (s > 0 && p > 0 && o > 0) {
+        TriplePattern(s, 0, o)
+      } else {
+        TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
+      }
     }
   }
 

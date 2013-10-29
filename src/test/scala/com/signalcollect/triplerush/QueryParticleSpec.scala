@@ -20,54 +20,61 @@
 
 package com.signalcollect.triplerush
 
-import java.util.concurrent.TimeUnit
-import concurrent.Await
-import concurrent.duration.FiniteDuration
-import org.junit.runner.RunWith
-import org.specs2.mutable.SpecificationWithJUnit
-import com.signalcollect.GraphBuilder
-import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
-import com.signalcollect.triplerush.evaluation.SparqlDsl.SELECT
-import com.signalcollect.triplerush.evaluation.SparqlDsl.dsl2Query
-import com.signalcollect.triplerush.evaluation.SparqlDsl.{ | => | }
-import org.specs2.runner.JUnitRunner
+import org.scalatest.FlatSpec
+import org.scalatest.ShouldMatchers
+import org.scalatest.prop.Checkers
 import com.signalcollect.triplerush.QueryParticle._
+import org.scalacheck.Arbitrary._
+import org.scalacheck.Arbitrary
+import com.signalcollect.triplerush.ArbUtil._
 
-@RunWith(classOf[JUnitRunner])
-class QueryParticleSpec extends SpecificationWithJUnit {
+object ArbUtil {
+  implicit def arbTriplePattern(
+    implicit s: Arbitrary[Int]): Arbitrary[TriplePattern] = {
+    Arbitrary(for {
+      s <- arbitrary[Int]
+      p <- arbitrary[Int]
+      o <- arbitrary[Int]
+    } yield TriplePattern(s, p, o))
+  }
+}
 
-  sequential
+class QueryParticleSpec extends FlatSpec with ShouldMatchers with Checkers {
 
-  "QueryParticle" should {
-    val specialInts = List(Int.MinValue, Int.MaxValue, 0, -1, 10)
-    val specialLongs = specialInts.map(_.toLong) ++
-      List(Long.MinValue, Long.MaxValue)
-
-    "correctly encode the id" in {
-      def testIdEncoding(queryPatternId: Int) {
+  "QueryParticle" should "correctly encode ids" in {
+    check(
+      (id: Int) => {
         val qp = QuerySpecification(Array(
           TriplePattern(-1, 1, 2),
           TriplePattern(-1, 3, -2)),
-          queryPatternId).toParticle
-        qp.queryId === queryPatternId
-      }
-      val allPassed = specialInts foreach (testIdEncoding(_))
-      allPassed === true
-    }
+          id).toParticle
+        qp.queryId == id
+      },
+      minSuccessful(1000))
+  }
 
-    "correctly encode the number of tickets" in {
-      def testTicketEncoding(numberOftickets: Long) {
+  it should "correctly encode tickets" in {
+    check(
+      (tickets: Long) => {
         val qp = QuerySpecification(Array(
           TriplePattern(-1, 1, 2),
           TriplePattern(-1, 3, -2)),
-          10).toParticle
-        qp.writeTickets(numberOftickets)
-        qp.tickets === numberOftickets
-      }
-      val allPassed = specialLongs foreach (testTicketEncoding(_))
-      allPassed === true
-    }
+          1).toParticle
+        qp.writeTickets(tickets)
+        qp.tickets == tickets
+      },
+      minSuccessful(1000))
+  }
 
+  it should "correctly encode triple patterns" in {
+    check(
+      (a: TriplePattern, b: TriplePattern, c: TriplePattern) => {
+        val patterns = Array(a, b, c)
+        val qp = QuerySpecification(patterns,
+          1).toParticle
+        qp.patterns.toList == patterns.toList
+      },
+      minSuccessful(1000))
   }
 
 }

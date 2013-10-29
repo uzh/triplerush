@@ -328,7 +328,7 @@ WHERE
   println("Done.")
 
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
-    val resultFuture = qe.executeQuery(q)
+    val resultFuture = qe.executeQuery(q.toParticle)
     val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
     val bindings: List[Map[String, String]] = result.bindings.toList.map(bindingsToMap(_).map(entry => (q.getString(entry._1), q.getString(entry._2))))
     val sortedBindings: List[TreeMap[String, String]] = bindings map (unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
