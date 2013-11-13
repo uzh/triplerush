@@ -28,20 +28,22 @@ import scala.util.Random
  * Represents a SPARQL query.
  */
 case class QuerySpecification(
-  unmatched: Array[TriplePattern],
-  queryId: Int = Random.nextInt) {
+  unmatched: List[TriplePattern]) {
 
   def toParticle: Array[Int] = {
     val patterns = unmatched.distinct
     val variableCount = patterns.flatMap(tp => tp.variables).toSet.size
     QueryParticle(
-      queryId,
       Long.MaxValue,
       new Array[Int](variableCount),
-      patterns)
+      patterns.toArray)
   }
 
-  def withUnmatchedPatterns(u: Array[TriplePattern]): QuerySpecification = {
+  def extend(p: TriplePattern): QuerySpecification = {
+    QuerySpecification(p :: unmatched)
+  }
+
+  def withUnmatchedPatterns(u: List[TriplePattern]): QuerySpecification = {
     copy(unmatched = u)
   }
 

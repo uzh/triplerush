@@ -180,46 +180,42 @@ object DbpsbBenchmark extends App {
      *
      */
     def fullQueries: List[QuerySpecification] = List(
-      QuerySpecification(Array(
+      QuerySpecification(List(
         TriplePattern(game, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:First-person_shooters")), //?game <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:First-person_shooters> .
-        TriplePattern(game, m("foaf:name"), title)), //?game foaf:name ?title .
-        1),
-      QuerySpecification(Array(
+        TriplePattern(game, m("foaf:name"), title)) //?game foaf:name ?title .
+        ),
+      QuerySpecification(List(
         TriplePattern(var3, m("foaf:homepage"), var2), //?var3 <http://xmlns.com/foaf/0.1/homepage> ?var2 .
-        TriplePattern(var3, m("rdf#type"), var1)), //?var3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?var 
-        2),
-      QuerySpecification(Array(
+        TriplePattern(var3, m("rdf#type"), var1)) //?var3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?var 
+        ),
+      QuerySpecification(List(
         TriplePattern(musician, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:German_musicians")), //?musician <http://www.w3.org/2004/02/skos/core#subject> <http://dbpedia.org/resource/Category:German_musicians> .
         TriplePattern(musician, m("foaf:name"), name), //?musician foaf:name ?name .
-        TriplePattern(musician, m("rdfs#comment"), vdescription)), //?musician rdfs:comment ?description
-        3),
-      QuerySpecification(Array(
+        TriplePattern(musician, m("rdfs#comment"), vdescription)) //?musician rdfs:comment ?description
+        ),
+      QuerySpecification(List(
         TriplePattern(person, m("dbo:birthPlace"), m("http://dbpedia.org/resource/Berlin")),
         TriplePattern(person, m("dbo:birthDate"), birth),
         TriplePattern(person, m("foaf:name"), pname),
-        TriplePattern(person, m("dbo:deathDate"), death)),
-        4),
-      QuerySpecification(Array(
+        TriplePattern(person, m("dbo:deathDate"), death))),
+      QuerySpecification(List(
         TriplePattern(car, m("http://www.w3.org/2004/02/skos/core#subject"), m("http://dbpedia.org/resource/Category:Luxury_vehicles")),
         TriplePattern(car, m("foaf:name"), name),
         TriplePattern(car, m("dbo:manufacturer"), man),
-        TriplePattern(man, m("foaf:name"), manufacturer)),
-        5),
-      QuerySpecification(Array(
+        TriplePattern(man, m("foaf:name"), manufacturer))),
+      QuerySpecification(List(
         TriplePattern(bvar6, m("rdf#type"), bvar),
         TriplePattern(bvar6, m("dbprop:name"), bvar0),
         TriplePattern(bvar6, m("dbprop:pages"), bvar1),
         TriplePattern(bvar6, m("dbprop:isbn"), bvar2),
-        TriplePattern(bvar6, m("dbprop:author"), bvar3)),
-        6),
-      QuerySpecification(Array(
+        TriplePattern(bvar6, m("dbprop:author"), bvar3))),
+      QuerySpecification(List(
         TriplePattern(bvar6, m("rdf#type"), bvar),
         TriplePattern(bvar6, m("dbprop:name"), bvar0),
         TriplePattern(bvar6, m("dbprop:pages"), bvar1),
         TriplePattern(bvar6, m("dbprop:isbn"), bvar2),
-        TriplePattern(bvar6, m("dbprop:author"), bvar3)),
-        7),
-      QuerySpecification(Array(
+        TriplePattern(bvar6, m("dbprop:author"), bvar3))),
+      QuerySpecification(List(
         TriplePattern(s, m("foaf:page"), player),
         TriplePattern(s, m("rdf#type"), m("dbo:SoccerPlayer")),
         TriplePattern(s, m("dbprop:position"), position),
@@ -227,8 +223,7 @@ object DbpsbBenchmark extends App {
         TriplePattern(club, m("dbo:capacity"), cap),
         TriplePattern(s, m("dbo:birthPlace"), place),
         TriplePattern(place, m("dbprop:population"), pop),
-        TriplePattern(s, m("dbo:number"), tricot)),
-        8))
+        TriplePattern(s, m("dbo:number"), tricot))))
     val queries = {
       require(!sampling && tickets == Long.MaxValue)
       fullQueries
@@ -263,8 +258,8 @@ object DbpsbBenchmark extends App {
       ((nanoseconds / 100000.0).round) / 10.0
     }
 
-    def executeOnQueryEngine(q: QuerySpecification): QueryResult = {
-      val resultFuture = qe.executeQuery(q.toParticle, optimizer)
+    def executeOnQueryEngine(q: Array[Int]): QueryResult = {
+      val resultFuture = qe.executeQuery(q, optimizer)
       try {
         Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
       } catch {
@@ -285,7 +280,7 @@ object DbpsbBenchmark extends App {
           val queryIndex = queryId - 1
           val query = fullQueries(queryIndex)
           print(s"Warming up with query $query ...")
-          executeOnQueryEngine(query)
+          executeOnQueryEngine(query.toParticle)
           qe.awaitIdle
           println(s" Done.")
         }
@@ -332,7 +327,7 @@ object DbpsbBenchmark extends App {
       runResult += s"freeMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
       runResult += s"usedMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
       val startTime = System.nanoTime
-      val queryResult = executeOnQueryEngine(query)
+      val queryResult = executeOnQueryEngine(query.toParticle)
       val finishTime = System.nanoTime
       val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
       val executionTime = roundToMillisecondFraction(finishTime - startTime)

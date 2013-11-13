@@ -33,10 +33,11 @@ object QueryIds {
 object QueryParticle {
   implicit def arrayToParticle(a: Array[Int]) = new QueryParticle(a)
 
-  def apply(queryId: Int,
+  def apply(
     tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
     bindings: Array[Int],
-    unmatched: Array[TriplePattern]): Array[Int] = {
+    unmatched: Array[TriplePattern],
+    queryId: Int = QueryIds.nextFullQueryId): Array[Int] = {
     val ints = 4 + bindings.length + 3 * unmatched.length
     val r = new Array[Int](ints)
     r.writeQueryId(queryId)

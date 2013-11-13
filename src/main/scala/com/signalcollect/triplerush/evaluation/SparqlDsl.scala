@@ -86,7 +86,7 @@ object SparqlDsl extends App {
   }
 
   implicit def dsl2Query(q: DslQuery): QuerySpecification = {
-    val queryId = if (q.isSamplingQuery) QueryIds.nextSamplingQueryId else QueryIds.nextFullQueryId
-    QuerySpecification(q.dslTriplePatterns map (_.toTriplePattern(q.variableToId)) toArray, queryId)
+    assert(!q.isSamplingQuery) // Currently unsupported.
+    QuerySpecification(q.dslTriplePatterns map (_.toTriplePattern(q.variableToId)) toList)
   }
 }
