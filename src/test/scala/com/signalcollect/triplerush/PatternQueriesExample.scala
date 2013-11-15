@@ -43,7 +43,7 @@ object PatternQueriesExample extends App {
   val crazyQuery = SAMPLE(100) ? "x" ? "y" ? "z" ? "b" WHERE (
     | - "x" - "y" - "z",
     | - "x" - s"$rdf#type" - "b")
-  val qe = new QueryEngine
+  val qe = new TripleRush
   println("Loading triples ...")
 
   for (fileNumber <- 0 to 14) {

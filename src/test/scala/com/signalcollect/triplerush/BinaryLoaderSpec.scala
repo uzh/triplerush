@@ -53,7 +53,7 @@ class BinaryLoaderSpec extends SpecificationWithJUnit {
 
   }
 
-  val qe = new QueryEngine(graphBuilder = GraphBuilder.
+  val qe = new TripleRush(graphBuilder = GraphBuilder.
     withMessageBusFactory(new BulkAkkaMessageBusFactory(1024, false))
     .withConsole(true, 8080))
 

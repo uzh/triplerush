@@ -22,7 +22,6 @@ package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.PlaceholderEdge
-import com.signalcollect.triplerush.RootPattern
 import com.signalcollect.triplerush.TriplePattern
 
 /**
@@ -33,7 +32,7 @@ trait ParentBuilding[Signal, State] extends BaseVertex[TriplePattern, Signal, St
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     // Build the hierarchical index on initialization.
     id.parentPatterns foreach { parentId =>
-      if (parentId != RootPattern) {
+      if (parentId != TriplePattern(0, 0, 0)) {
         //        println(s"$id is parent building, looking at $parentId")
         // The root is added initially, no need to add again.
         val indexVertex = parentId match {

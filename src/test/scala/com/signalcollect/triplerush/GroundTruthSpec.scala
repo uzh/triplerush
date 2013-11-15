@@ -314,7 +314,7 @@ WHERE
   //    case Right(error) => throw new Exception(error)
   //  }
 
-  val qe = new QueryEngine(graphBuilder = GraphBuilder.
+  val qe = new TripleRush(graphBuilder = GraphBuilder.
     withMessageSerialization(false))
 
   println("Loading LUBM1 ... ")
