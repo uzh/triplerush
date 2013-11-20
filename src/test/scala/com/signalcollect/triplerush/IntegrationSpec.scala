@@ -36,7 +36,7 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
 
   lazy val genTriples = containerOf[List, TriplePattern](genTriple)
 
-  implicit lazy val arbTriple = Arbitrary(genTriple)
+  //  implicit lazy val arbTriple = Arbitrary(genTriple)
   implicit lazy val arbTriples = Arbitrary(genTriples)
 
   lazy val genQueryPattern = for {
@@ -45,13 +45,29 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
     o <- frequency((2, variable), (3, smallId))
   } yield TriplePattern(s, p, o)
 
-  lazy val queryPatterns = containerOf[List, TriplePattern](genQueryPattern)
+  lazy val queryPatterns = nonEmptyContainerOf[List, TriplePattern](genQueryPattern)
 
-  lazy val genQuery = for {
-    patterns <- queryPatterns
-  } yield QuerySpecification(patterns)
+  lazy val genQuery = queryPatterns map (QuerySpecification(_))
 
   implicit lazy val arbQuery = Arbitrary(genQuery)
+
+  "Jena" should "correctly answer a simple query" in {
+    val qe = new Jena
+    val query = new QuerySpecification(List(TriplePattern(-1, 4, -2)))
+    for (triple <- List[TriplePattern](TriplePattern(1, 4, 2), TriplePattern(2, 4, 3))) {
+      qe.addEncodedTriple(triple.s, triple.p, triple.o)
+    }
+    qe.awaitIdle
+    println("Executing query.")
+    val f = qe.executeQuery(query.toParticle)
+    println("Awaiting end of execution.")
+    val result = Await.result(f, 10 seconds)
+    println("Done executing query.")
+    val bindings: Set[List[Int]] = (result.bindings.map(_.toList)).toSet
+    println(bindings)
+    qe.shutdown
+    true === true
+  }
 
   "TripleRush" should "correctly answer queries with basic graph patterns" in {
     check((triples: List[TriplePattern], query: QuerySpecification) => {
@@ -60,8 +76,13 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
         qe.addEncodedTriple(triple.s, triple.p, triple.o)
       }
       qe.awaitIdle
-      val result = Await.result(qe.executeQuery(query.toParticle), 10 seconds)
+      println("Executing query.")
+      val f = qe.executeQuery(query.toParticle)
+      println("Awaiting end of execution.")
+      val result = Await.result(f, 10 seconds)
+      println("Done executing query.")
       val bindings: Set[List[Int]] = (result.bindings.map(_.toList)).toSet
+      println(bindings)
       qe.shutdown
       true
     })

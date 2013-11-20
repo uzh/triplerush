@@ -263,7 +263,7 @@ case class TripleRush(
     FileLoaders.addTriple(TriplePattern(sId, pId, oId), g)
   }
 
-  def executeQuery(q: Array[Int]) = executeQuery(q)
+  def executeQuery(q: Array[Int]) = executeQuery(q, QueryOptimizer.Clever)
 
   def executeQuery(q: Array[Int], optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
     if (!q.isResult) {
