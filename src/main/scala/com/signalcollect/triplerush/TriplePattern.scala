@@ -29,7 +29,7 @@ import scala.util.hashing.MurmurHash3._
  */
 case class TriplePattern(s: Int, p: Int, o: Int) {
 
-  @inline override def hashCode: Int = {
+  override def hashCode: Int = {
     finalizeHash(mixLast(mix(s, p), o), 3)
   }
 
@@ -118,7 +118,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     }
   }
 
-  @inline def isFullyBound: Boolean = {
+  def isFullyBound: Boolean = {
     s > 0 && p > 0 && o > 0
   }
 

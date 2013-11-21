@@ -150,30 +150,30 @@ object DbpsbBenchmark extends App {
     val tricot = -8
 
     val m = Map(
-      "http://www.w3.org/2004/02/skos/core#subject" -> 1,
-      "http://dbpedia.org/resource/Category:First-person_shooters" -> 47406,
-      "foaf:name" -> 41,
-      "foaf:homepage" -> 653,
-      "rdf#type" -> 16,
-      "http://dbpedia.org/resource/Category:German_musicians" -> 187543,
-      "rdfs#comment" -> 27,
-      "dbo:birthPlace" -> 1132,
-      "http://dbpedia.org/resource/Berlin" -> 19706,
-      "dbo:birthDate" -> 436,
-      "dbo:deathDate" -> 1177,
-      "http://dbpedia.org/resource/Category:Luxury_vehicles" -> 322352,
-      "dbo:manufacturer" -> 11736,
-      "dbprop:name" -> 30,
-      "dbprop:pages" -> 37409,
-      "dbprop:isbn" -> 3385,
-      "dbprop:author" -> 3371,
-      "foaf:page" -> 39,
-      "dbo:SoccerPlayer" -> 1723,
-      "dbprop:position" -> 397,
-      "dbprop:clubs" -> 1709,
-      "dbo:capacity" -> 6306,
-      "dbprop:population" -> 966,
-      "dbo:number" -> 411)
+      ("http://www.w3.org/2004/02/skos/core#subject", 1),
+      ("http://dbpedia.org/resource/Category:First-person_shooters", 47406),
+      ("foaf:name", 41),
+      ("foaf:homepage", 653),
+      ("rdf#type", 16),
+      ("http://dbpedia.org/resource/Category:German_musicians", 187543),
+      ("rdfs#comment", 27),
+      ("dbo:birthPlace", 1132),
+      ("http://dbpedia.org/resource/Berlin", 19706),
+      ("dbo:birthDate", 436),
+      ("dbo:deathDate", 1177),
+      ("http://dbpedia.org/resource/Category:Luxury_vehicles", 322352),
+      ("dbo:manufacturer", 11736),
+      ("dbprop:name", 30),
+      ("dbprop:pages", 37409),
+      ("dbprop:isbn", 3385),
+      ("dbprop:author", 3371),
+      ("foaf:page", 39),
+      ("dbo:SoccerPlayer", 1723),
+      ("dbprop:position", 397),
+      ("dbprop:clubs", 1709),
+      ("dbo:capacity", 6306),
+      ("dbprop:population", 966),
+      ("dbo:number", 411))
 
     /**
      * Queries from Trinity.RDF paper
@@ -323,9 +323,9 @@ object DbpsbBenchmark extends App {
       val gcTimeBefore = getGcCollectionTime
       val gcCountBefore = getGcCollectionCount
       val compileTimeBefore = compilations.getTotalCompilationTime
-      runResult += s"totalMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
-      runResult += s"freeMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
-      runResult += s"usedMemoryBefore" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
+      runResult += ((s"totalMemoryBefore", bytesToGigabytes(Runtime.getRuntime.totalMemory).toString))
+      runResult += ((s"freeMemoryBefore", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
+      runResult += ((s"usedMemoryBefore", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
       val startTime = System.nanoTime
       val queryResult = executeOnQueryEngine(query.toParticle)
       val finishTime = System.nanoTime
@@ -338,46 +338,46 @@ object DbpsbBenchmark extends App {
       val gcCountDuringQuery = gcCountAfter - gcCountBefore
       val compileTimeAfter = compilations.getTotalCompilationTime
       val compileTimeDuringQuery = compileTimeAfter - compileTimeBefore
-      runResult += s"revision" -> revision
-      runResult += s"queryId" -> queryId.toString
-      runResult += s"optimizer" -> optimizer.toString
-      runResult += s"queryCopyCount" -> queryStats("queryCopyCount").toString
-      runResult += s"query" -> queryStats("optimizedQuery").toString
-      runResult += s"exception" -> queryStats("exception").toString
-      runResult += s"results" -> queryResult.bindings.length.toString
-      runResult += s"executionTime" -> executionTime.toString
-      runResult += s"optimizingTime" -> optimizingTime.toString
-      runResult += s"totalMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory).toString
-      runResult += s"freeMemory" -> bytesToGigabytes(Runtime.getRuntime.freeMemory).toString
-      runResult += s"usedMemory" -> bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString
-      runResult += s"executionHostname" -> java.net.InetAddress.getLocalHost.getHostName
-      runResult += "gcTimeAfter" -> gcTimeAfter.toString
-      runResult += "gcCountAfter" -> gcCountAfter.toString
-      runResult += "gcTimeDuringQuery" -> gcTimeDuringQuery.toString
-      runResult += "gcCountDuringQuery" -> gcCountDuringQuery.toString
-      runResult += "compileTimeAfter" -> compileTimeAfter.toString
-      runResult += "compileTimeDuringQuery" -> compileTimeDuringQuery.toString
-      runResult += s"loadNumber" -> 10.toString
-      runResult += s"date" -> date.toString
-      runResult += s"dataSet" -> s"dbpsb10"
+      runResult += ((s"revision", revision))
+      runResult += ((s"queryId", queryId.toString))
+      runResult += ((s"optimizer", optimizer.toString))
+      runResult += ((s"queryCopyCount", queryStats("queryCopyCount").toString))
+      runResult += ((s"query", queryStats("optimizedQuery").toString))
+      runResult += ((s"exception", queryStats("exception").toString))
+      runResult += ((s"results", queryResult.bindings.length.toString))
+      runResult += ((s"executionTime", executionTime.toString))
+      runResult += ((s"optimizingTime", optimizingTime.toString))
+      runResult += ((s"totalMemory", bytesToGigabytes(Runtime.getRuntime.totalMemory).toString))
+      runResult += ((s"freeMemory", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
+      runResult += ((s"usedMemory", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
+      runResult += ((s"executionHostname", java.net.InetAddress.getLocalHost.getHostName))
+      runResult += (("gcTimeAfter", gcTimeAfter.toString))
+      runResult += (("gcCountAfter", gcCountAfter.toString))
+      runResult += (("gcTimeDuringQuery", gcTimeDuringQuery.toString))
+      runResult += (("gcCountDuringQuery", gcCountDuringQuery.toString))
+      runResult += (("compileTimeAfter", compileTimeAfter.toString))
+      runResult += (("compileTimeDuringQuery", compileTimeDuringQuery.toString))
+      runResult += ((s"loadNumber", 10.toString))
+      runResult += ((s"date", date.toString))
+      runResult += ((s"dataSet", s"dbpsb10"))
       finalResults = runResult :: finalResults
     }
 
     def bytesToGigabytes(bytes: Long): Double = ((bytes / 1073741824.0) * 10.0).round / 10.0
 
-    baseResults += "evaluationDescription" -> description
-    baseResults += "jitRepetitions" -> jitRepetitions.toString
-    baseResults += "java.runtime.version" -> System.getProperty("java.runtime.version")
-    baseResults += "javaVmVersion" -> javaVersion
-    baseResults += "jvmLibraryPath" -> jvmLibraryPath
-    baseResults += "jvmArguments" -> jvmArguments.mkString(" ")
+    baseResults += (("evaluationDescription", description))
+    baseResults += (("jitRepetitions", jitRepetitions.toString))
+    baseResults += (("java.runtime.version", System.getProperty("java.runtime.version")))
+    baseResults += (("javaVmVersion", javaVersion))
+    baseResults += (("jvmLibraryPath", jvmLibraryPath))
+    baseResults += (("jvmArguments", jvmArguments.mkString(" ")))
 
     val loadingTime = measureTime {
       println("Dispatching loading command to worker...")
       loadDbpsb
       qe.awaitIdle
     }
-    baseResults += "loadingTime" -> loadingTime.toString
+    baseResults += (("loadingTime", loadingTime.toString))
 
     println("Starting warm-up...")
     jitSteadyState
