@@ -31,5 +31,6 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.11.0" % "test",
   "org.scalatest" %% "scalatest" % "2.0.1-SNAP" % "test",
   "org.easymock" % "easymock" % "3.2" % "test",
-  "org.apache.jena" % "apache-jena-libs" % "2.11.0" % "test"
+  "org.apache.jena" % "apache-jena-libs" % "2.11.0" % "test",
+  "org.openrdf.sesame" % "sesame-runtime" % "2.7.8" % "test"
   )

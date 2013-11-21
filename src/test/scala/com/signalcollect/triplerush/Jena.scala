@@ -13,34 +13,43 @@ import com.hp.hpl.jena.query.QueryExecutionFactory
 import com.signalcollect.triplerush.QueryParticle._
 import collection.JavaConversions._
 import com.hp.hpl.jena.query.QuerySolution
+import com.hp.hpl.jena.rdf.model.RDFNode
 
 class Jena extends QueryEngine {
   val model = ModelFactory.createDefaultModel
   def addEncodedTriple(s: Int, p: Int, o: Int) {
-    val resource = model.createResource(intToString(s))
-    val prop = model.createProperty(intToString(p))
-    val obj = model.createResource(intToString(o))
+    val resource = model.createResource(intToInsertString(s))
+    val prop = model.createProperty(intToInsertString(p))
+    val obj = model.createResource(intToInsertString(o))
     model.add(resource, prop, obj)
-    println(s"Added: $resource $prop $obj")
   }
   def executeQuery(q: Array[Int]): Future[QueryResult] = {
-    println("executing query on model:")
-    println("Model:\n" + model.listStatements.mkString("\n"))
     future {
       val patterns = q.patterns
-      val variables = patterns flatMap (p => Set(p.s, p.p, p.o))
-      val variableNames = variables filter (_ < 0) map (intToString)
-      val queryString = s"""SELECT ${variableNames.mkString(" ")}	
-                            WHERE
-                            { ${patterns.map(patternToString).mkString(" .\n")} }"""
-      println("Query: " + queryString)
+      val variableNames = {
+        val vars = patterns.
+          flatMap(p => Set(p.s, p.p, p.o)).
+          filter(_ < 0).
+          map(intToQueryString).
+          distinct
+        if (vars.isEmpty) {
+          List("*")
+        } else {
+          vars
+        }
+      }
+      val queryString = s"""
+PREFIX ns: <http://example.com#>
+SELECT ${variableNames.mkString(" ")}	
+WHERE {
+\t${patterns.map(patternToString).mkString(" \n\t")} }"""
       val query = QueryFactory.create(queryString)
-      println("parsed query: " + query)
       val qe = QueryExecutionFactory.create(query, model)
-      val results = qe.execSelect
-      println(s"Number of results: ${results.size}")
+      val results = qe.execSelect.toList
       val trResults = results.map(transformJenaResult)
-      val bufferResults = trResults.map(UnrolledBuffer(_)).foldLeft(UnrolledBuffer.empty[Array[Int]])(_.concat(_))
+      val bufferResults = trResults.map(
+        UnrolledBuffer(_)).foldLeft(
+          UnrolledBuffer.empty[Array[Int]])(_.concat(_))
       qe.close
       QueryResult(bufferResults, Array(), Array())
     }
@@ -52,17 +61,37 @@ class Jena extends QueryEngine {
     val y = s.get("Y")
     val z = s.get("Z")
     println("xyz = " + x + y + z)
-    Array()
+    Array(exampleToInt(x), exampleToInt(y), exampleToInt(z))
   }
 
-  def patternToString(tp: TriplePattern): String = s"${intToString(tp.s)} ${intToString(tp.p)} ${intToString(tp.o)} ."
-  def intToString(v: Int): String = {
+  def exampleToInt(r: RDFNode): Int = {
+    if (r == null) {
+      Int.MinValue
+    } else {
+      val s = r.toString.substring(19)
+      val decoded = s(0) - a
+      decoded
+    }
+  }
+
+  val a: Char = 'a'
+  def patternToString(tp: TriplePattern): String = s"${intToQueryString(tp.s)} ${intToQueryString(tp.p)} ${intToQueryString(tp.o)} ."
+  def intToQueryString(v: Int): String = {
     v match {
-      case i if i > 0 => s"<${i.toString}>"
-      case -1 => "?x"
-      case -2 => "?y"
-      case -3 => "?z"
+      // map to characters
+      //case i if i > 0 => s"<${i.toString}>"
+      case i if i > 0 => "ns:" + (a + i).toChar
+      case -1 => "?X"
+      case -2 => "?Y"
+      case -3 => "?Z"
       case other => throw new Exception("Unsupported variable.")
+    }
+  }
+  def intToInsertString(v: Int): String = {
+    if (v > 0) {
+      "http://example.com#" + (a + v).toChar
+    } else {
+      throw new Exception(s"Unsupported value $v.")
     }
   }
   def awaitIdle {}

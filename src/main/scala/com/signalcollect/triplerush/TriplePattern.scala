@@ -133,5 +133,5 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
       TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
     }
   }
-
+  
 }

@@ -32,7 +32,12 @@ case class QuerySpecification(
 
   def toParticle: Array[Int] = {
     val patterns = unmatched.distinct
-    val variableCount = patterns.flatMap(tp => tp.variables).toSet.size
+    val variableCount = math.abs(unmatched.foldLeft(0) {
+      (currentMin, next) =>
+        val minCandidate = math.min(next.o, math.min(next.s, next.p))
+        math.min(currentMin, minCandidate)
+    })
+    //patterns.flatMap(tp => tp.variables).toSet.size
     QueryParticle(
       Long.MaxValue,
       new Array[Int](variableCount),

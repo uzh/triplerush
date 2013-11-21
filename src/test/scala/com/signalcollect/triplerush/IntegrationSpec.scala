@@ -13,6 +13,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Prop
+import org.openrdf.query.QueryResult
 
 class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
 
@@ -45,47 +46,65 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
     o <- frequency((2, variable), (3, smallId))
   } yield TriplePattern(s, p, o)
 
-  lazy val queryPatterns = nonEmptyContainerOf[List, TriplePattern](genQueryPattern)
+  //lazy val queryPatterns = nonEmptyContainerOf[List, TriplePattern](genQueryPattern)
+
+  lazy val queryPatterns: Gen[List[TriplePattern]] = {
+    //nonEmptyContainerOf[List, TriplePattern](genQueryPattern)
+    for {
+      p <- Arbitrary(genQueryPattern).arbitrary
+      // Bias towards shoter pattern lists, long ones rarely have any results.
+      patternList <- frequency((5, Nil), (1, queryPatterns))
+    } yield p :: patternList
+  }
 
   lazy val genQuery = queryPatterns map (QuerySpecification(_))
 
   implicit lazy val arbQuery = Arbitrary(genQuery)
 
-  "Jena" should "correctly answer a simple query" in {
-    val qe = new Jena
-    val query = new QuerySpecification(List(TriplePattern(-1, 4, -2)))
-    for (triple <- List[TriplePattern](TriplePattern(1, 4, 2), TriplePattern(2, 4, 3))) {
+  "TripleRush" should "correctly answer a simple query" in {
+    val trResults = execute(
+      new TripleRush,
+      List(TriplePattern(4, 3, 4)),
+      QuerySpecification(List(TriplePattern(-1, 3, -1))))
+    println(trResults)
+    assert(Set(Map(-1 -> 4)) === trResults, "TR should have the same result as Jena.")
+  }
+
+  it should "correctly answer random queries with basic graph patterns" in {
+    check((triples: List[TriplePattern], query: QuerySpecification) => {
+      val jenaResults = execute(new Jena, triples, query)
+      val trResults = execute(new TripleRush, triples, query)
+      println("Jena: " + jenaResults +
+        "\nTR  : " + trResults)
+      assert(jenaResults === trResults, "TR should have the same result as Jena.")
+      jenaResults === trResults
+    })
+  }
+
+  def execute(
+    qe: QueryEngine,
+    triples: List[TriplePattern],
+    query: QuerySpecification): Set[Map[Int, Int]] = {
+    for (triple <- triples) {
       qe.addEncodedTriple(triple.s, triple.p, triple.o)
     }
     qe.awaitIdle
-    println("Executing query.")
     val f = qe.executeQuery(query.toParticle)
-    println("Awaiting end of execution.")
     val result = Await.result(f, 10 seconds)
-    println("Done executing query.")
-    val bindings: Set[List[Int]] = (result.bindings.map(_.toList)).toSet
-    println(bindings)
+    val bindings: Set[Map[Int, Int]] = {
+      result.bindings.map({ binding: Array[Int] =>
+        // Only keep variable bindings that have an assigned value.
+        val filtered: Map[Int, Int] = {
+          (-1 to -binding.length).
+            zip(binding).
+            filter(_._2 > 0).
+            toMap
+        }
+        filtered
+      }).toSet
+    }
     qe.shutdown
-    true === true
-  }
-
-  "TripleRush" should "correctly answer queries with basic graph patterns" in {
-    check((triples: List[TriplePattern], query: QuerySpecification) => {
-      val qe = new TripleRush
-      for (triple <- triples) {
-        qe.addEncodedTriple(triple.s, triple.p, triple.o)
-      }
-      qe.awaitIdle
-      println("Executing query.")
-      val f = qe.executeQuery(query.toParticle)
-      println("Awaiting end of execution.")
-      val result = Await.result(f, 10 seconds)
-      println("Done executing query.")
-      val bindings: Set[List[Int]] = (result.bindings.map(_.toList)).toSet
-      println(bindings)
-      qe.shutdown
-      true
-    })
+    bindings
   }
 
 }
