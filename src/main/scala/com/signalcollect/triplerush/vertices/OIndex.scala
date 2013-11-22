@@ -28,6 +28,6 @@ class OIndex(id: TriplePattern) extends CardinalityCountingIndex(id)
 
   assert(id.s == 0 && id.p == 0 && id.o != 0)
 
-  def nextRoutingAddress(childDelta: Int) = TriplePattern(childDelta, 0, id.p)
+  def nextRoutingAddress(childDelta: Int) = TriplePattern(childDelta, 0, id.o)
 
 }
