@@ -23,7 +23,7 @@ class Jena extends QueryEngine {
     val obj = model.createResource(intToInsertString(o))
     model.add(resource, prop, obj)
   }
-  def executeQuery(q: Array[Int]): Future[QueryResult] = {
+  def executeQuery(q: Array[Int], optimizer: Boolean): Future[QueryResult] = {
     future {
       val patterns = q.patterns
       val variableNames = {
