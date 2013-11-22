@@ -274,9 +274,7 @@ case class TripleRush(
       val resultFuture = resultRecipientActor ? RegisterQueryResultRecipient
       resultFuture.asInstanceOf[Future[QueryResult]]
     } else {
-      future {
-        QueryResult(UnrolledBuffer(), Array(), Array())
-      }
+      Future.successful(QueryResult(UnrolledBuffer(), Array(), Array()))
     }
   }
 

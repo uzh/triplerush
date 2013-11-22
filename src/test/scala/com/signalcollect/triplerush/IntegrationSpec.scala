@@ -14,6 +14,7 @@ import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Prop
 import org.openrdf.query.QueryResult
+import org.scalacheck.Prop.BooleanOperators
 
 class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
 
@@ -35,10 +36,11 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
     o <- smallId
   } yield TriplePattern(s, p, o)
 
-  lazy val genTriples = containerOf[List, TriplePattern](genTriple)
+  lazy val genTriples = containerOf[Set, TriplePattern](genTriple)
+  //lazy val genQuery = containerOf[List, TriplePattern](genQueryPattern)
 
-  //  implicit lazy val arbTriple = Arbitrary(genTriple)
   implicit lazy val arbTriples = Arbitrary(genTriples)
+  implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
   lazy val genQueryPattern = for {
     s <- frequency((10, x), (5, y), (1, z), (4, smallId))
@@ -57,45 +59,60 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
     } yield p :: patternList
   }
 
-  lazy val genQuery = queryPatterns map (QuerySpecification(_))
+  //  lazy val genQuery = queryPatterns map (QuerySpecification(_))
 
-  implicit lazy val arbQuery = Arbitrary(genQuery)
+  //  implicit lazy val arbQuery = Arbitrary(genQuery)
 
-  "TripleRush" should "correctly answer a simple query" in {
+//  it should "correctly answer a simple query 1" in {
+//    val trResults = execute(
+//      new TripleRush,
+//      Set(TriplePattern(4, 3, 4)),
+//      List(TriplePattern(-1, 3, -1)))
+//    println(trResults)
+//    assert(Set(Map(-1 -> 4)) === trResults)
+//  }
+
+  it should "correctly answer a simple query 2" in {
     val trResults = execute(
       new TripleRush,
-      List(TriplePattern(4, 3, 4)),
-      QuerySpecification(List(TriplePattern(-1, 3, -1))))
+      Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
+        TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
+        TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
+      List(TriplePattern(-2, -1, 3)))
     println(trResults)
-    assert(Set(Map(-1 -> 4)) === trResults, "TR should have the same result as Jena.")
+    assert(Set(Map(-1 -> 3, -2 -> 2), Map(-1 -> 3, -2 -> 3),
+      Map(-1 -> 4, -2 -> 4)) === trResults)
   }
 
-  it should "correctly answer random queries with basic graph patterns" in {
-    check((triples: List[TriplePattern], query: QuerySpecification) => {
-      val jenaResults = execute(new Jena, triples, query)
-      val trResults = execute(new TripleRush, triples, query)
-      println("Jena: " + jenaResults +
-        "\nTR  : " + trResults)
-      assert(jenaResults === trResults, "TR should have the same result as Jena.")
-      jenaResults === trResults
-    })
-  }
+//  it should "correctly answer random queries with basic graph patterns" in {
+//    check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
+//      // TODO: Root pattern currently unsupported.
+//      !query.exists(_.hasOnlyVariables) ==> {
+//        val jenaResults = execute(new Jena, triples, query)
+//        val trResults = execute(new TripleRush, triples, query)
+//        println("Jena: " + jenaResults +
+//          "\nTR  : " + trResults)
+//        assert(jenaResults === trResults, "TR should have the same result as Jena.")
+//        jenaResults === trResults
+//      }
+//    }, minSuccessful(100))
+//  }
 
   def execute(
     qe: QueryEngine,
-    triples: List[TriplePattern],
-    query: QuerySpecification): Set[Map[Int, Int]] = {
+    triples: Set[TriplePattern],
+    query: List[TriplePattern]): Set[Map[Int, Int]] = {
     for (triple <- triples) {
       qe.addEncodedTriple(triple.s, triple.p, triple.o)
     }
     qe.awaitIdle
-    val f = qe.executeQuery(query.toParticle)
+    val f = qe.executeQuery(QuerySpecification(query).toParticle)
     val result = Await.result(f, 10 seconds)
     val bindings: Set[Map[Int, Int]] = {
       result.bindings.map({ binding: Array[Int] =>
         // Only keep variable bindings that have an assigned value.
         val filtered: Map[Int, Int] = {
-          (-1 to -binding.length).
+          (-1 to -binding.length by -1).
             zip(binding).
             filter(_._2 > 0).
             toMap

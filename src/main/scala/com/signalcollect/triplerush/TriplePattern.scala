@@ -42,7 +42,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
   }
 
   override def toString = {
-    s"(${s.toString},${p.toString},${o.toString})"
+    s"TriplePattern(${s.toString},${p.toString},${o.toString})"
   }
 
   def lookup = s"(${Mapping.getString(s)},${Mapping.getString(p)},${Mapping.getString(o)})"
@@ -122,6 +122,10 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     s > 0 && p > 0 && o > 0
   }
 
+  def hasOnlyVariables: Boolean = {
+    s < 0 && p < 0 && o < 0
+  }
+
   /**
    * Returns the id of the index/triple vertex to which this pattern should be routed.
    * Any variables (<0) should be converted to "unbound", which is represented by a wildcard.
@@ -133,5 +137,5 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
       TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
     }
   }
-  
+
 }

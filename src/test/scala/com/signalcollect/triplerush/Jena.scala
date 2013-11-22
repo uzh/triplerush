@@ -46,7 +46,7 @@ WHERE {
       val query = QueryFactory.create(queryString)
       val qe = QueryExecutionFactory.create(query, model)
       val results = qe.execSelect.toList
-      val trResults = results.map(transformJenaResult)
+      val trResults = results.flatMap(transformJenaResult)
       val bufferResults = trResults.map(
         UnrolledBuffer(_)).foldLeft(
           UnrolledBuffer.empty[Array[Int]])(_.concat(_))
@@ -55,13 +55,15 @@ WHERE {
     }
   }
 
-  def transformJenaResult(s: QuerySolution): Array[Int] = {
-    println("Transforming solution: " + s)
+  def transformJenaResult(s: QuerySolution): Option[Array[Int]] = {
     val x = s.get("X")
     val y = s.get("Y")
     val z = s.get("Z")
-    println("xyz = " + x + y + z)
-    Array(exampleToInt(x), exampleToInt(y), exampleToInt(z))
+    if (x != null || y != null || z != null) {
+      Some(Array(exampleToInt(x), exampleToInt(y), exampleToInt(z)))
+    } else {
+      None
+    }
   }
 
   def exampleToInt(r: RDFNode): Int = {

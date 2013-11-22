@@ -199,7 +199,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   def bindings: Array[Int] = {
     r.slice(4, 4 + numberOfBindings)
   }
-  def isResult = r.length == 4 + numberOfBindings
+  def isResult = numberOfBindings == 0 || r.length == 4 + numberOfBindings
   def queryId: Int = r(0)
   def writeQueryId(id: Int) = r(0) = id
   def tickets: Long = {
