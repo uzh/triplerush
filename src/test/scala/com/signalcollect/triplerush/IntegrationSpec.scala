@@ -43,7 +43,6 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
     for {
       t <- Arbitrary(genTriple).arbitrary
       patternSet <- frequency((1, Set[TriplePattern]()), (50, genTriples))
-      // TODO: Root pattern currently unsupported.
     } yield patternSet + t
   }
 
@@ -58,7 +57,7 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
       p <- Arbitrary(genQueryPattern).arbitrary
       // Bias towards shorter pattern lists, long ones rarely have any results.
       patternList <- frequency((2, Nil), (1, queryPatterns))
-    } yield (p :: patternList).filter(!_.hasOnlyVariables)
+    } yield (p :: patternList).filter(!_.hasOnlyVariables) // TODO: Root pattern currently unsupported.
   }
 
   implicit lazy val arbTriples = Arbitrary(genTriples)
