@@ -59,8 +59,11 @@ WHERE {
     val x = s.get("X")
     val y = s.get("Y")
     val z = s.get("Z")
-    if (x != null || y != null || z != null) {
-      Some(Array(exampleToInt(x), exampleToInt(y), exampleToInt(z)))
+    val a = s.get("A")
+    val b = s.get("B")
+    val c = s.get("C")
+    if (x != null || y != null || z != null || a != null || b != null || c != null) {
+      Some(Array(exampleToInt(x), exampleToInt(y), exampleToInt(z), exampleToInt(a), exampleToInt(b), exampleToInt(c)))
     } else {
       None
     }
@@ -81,11 +84,14 @@ WHERE {
   def intToQueryString(v: Int): String = {
     v match {
       // map to characters
-      //case i if i > 0 => s"<${i.toString}>"
-      case i if i > 0 => "ns:" + (a + i).toChar
+      case i if i > 0 && i < 26 =>
+        "ns:" + (a + i).toChar
       case -1 => "?X"
       case -2 => "?Y"
       case -3 => "?Z"
+      case -4 => "?A"
+      case -5 => "?B"
+      case -6 => "?C"
       case other => throw new Exception("Unsupported variable.")
     }
   }

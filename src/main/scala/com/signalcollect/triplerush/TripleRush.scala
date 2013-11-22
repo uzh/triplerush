@@ -91,6 +91,10 @@ class ResultRecipientActor extends Actor {
 
 case object UndeliverableRerouter {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
+    // TODO: Handle root pattern.
+    if (targetId == TriplePattern(0, 0, 0)) {
+      throw new Exception("Root pattern is not supported.")
+    }
     signal match {
       case queryParticle: Array[Int] =>
         graphEditor.sendSignal(queryParticle.tickets, queryParticle.queryId, None)

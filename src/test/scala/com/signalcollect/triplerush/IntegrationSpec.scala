@@ -18,17 +18,20 @@ import org.scalacheck.Prop.BooleanOperators
 
 class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
 
-  val maxId = 4
+  val maxId = 10
 
-  // Larger ids are more likely.
-  lazy val frequencies = (1 to maxId) map (id => (id, const(id)))
+  // Smaller ids are more frequent.
+  lazy val frequencies = (1 to maxId) map (id => (maxId - id, const(id)))
   lazy val smallId = frequency(frequencies: _*)
 
   lazy val x = const(-1)
   lazy val y = const(-2)
   lazy val z = const(-3)
+  lazy val a = const(-4)
+  lazy val b = const(-5)
+  lazy val c = const(-6)
   // Different frequencies for different variables.
-  lazy val variable = frequency((10, x), (5, y), (1, z))
+  lazy val variable = frequency((15, x), (10, y), (5, z), (3, a), (2, b), (1, c))
 
   lazy val genTriple = for {
     s <- smallId
@@ -36,41 +39,38 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
     o <- smallId
   } yield TriplePattern(s, p, o)
 
-  lazy val genTriples = containerOf[Set, TriplePattern](genTriple)
-  //lazy val genQuery = containerOf[List, TriplePattern](genQueryPattern)
+  lazy val genTriples: Gen[Set[TriplePattern]] = {
+    for {
+      t <- Arbitrary(genTriple).arbitrary
+      patternSet <- frequency((1, Set[TriplePattern]()), (50, genTriples))
+      // TODO: Root pattern currently unsupported.
+    } yield patternSet + t
+  }
+
+  lazy val genQueryPattern = for {
+    s <- frequency((2, variable), (1, smallId))
+    p <- frequency((1, variable), (5, smallId))
+    o <- frequency((2, variable), (5, smallId))
+  } yield TriplePattern(s, p, o)
+
+  lazy val queryPatterns: Gen[List[TriplePattern]] = {
+    for {
+      p <- Arbitrary(genQueryPattern).arbitrary
+      // Bias towards shorter pattern lists, long ones rarely have any results.
+      patternList <- frequency((2, Nil), (1, queryPatterns))
+    } yield (p :: patternList).filter(!_.hasOnlyVariables)
+  }
 
   implicit lazy val arbTriples = Arbitrary(genTriples)
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
-  lazy val genQueryPattern = for {
-    s <- frequency((10, x), (5, y), (1, z), (4, smallId))
-    p <- frequency((1, variable), (5, smallId))
-    o <- frequency((2, variable), (3, smallId))
-  } yield TriplePattern(s, p, o)
-
-  //lazy val queryPatterns = nonEmptyContainerOf[List, TriplePattern](genQueryPattern)
-
-  lazy val queryPatterns: Gen[List[TriplePattern]] = {
-    //nonEmptyContainerOf[List, TriplePattern](genQueryPattern)
-    for {
-      p <- Arbitrary(genQueryPattern).arbitrary
-      // Bias towards shoter pattern lists, long ones rarely have any results.
-      patternList <- frequency((5, Nil), (1, queryPatterns))
-    } yield p :: patternList
+  it should "correctly answer a simple query 1" in {
+    val trResults = execute(
+      new TripleRush,
+      Set(TriplePattern(4, 3, 4)),
+      List(TriplePattern(-1, 3, -1)))
+    assert(Set(Map(-1 -> 4)) === trResults)
   }
-
-  //  lazy val genQuery = queryPatterns map (QuerySpecification(_))
-
-  //  implicit lazy val arbQuery = Arbitrary(genQuery)
-
-//  it should "correctly answer a simple query 1" in {
-//    val trResults = execute(
-//      new TripleRush,
-//      Set(TriplePattern(4, 3, 4)),
-//      List(TriplePattern(-1, 3, -1)))
-//    println(trResults)
-//    assert(Set(Map(-1 -> 4)) === trResults)
-//  }
 
   it should "correctly answer a simple query 2" in {
     val trResults = execute(
@@ -79,24 +79,38 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
         TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
         TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
       List(TriplePattern(-2, -1, 3)))
-    println(trResults)
     assert(Set(Map(-1 -> 3, -2 -> 2), Map(-1 -> 3, -2 -> 3),
       Map(-1 -> 4, -2 -> 4)) === trResults)
   }
 
-//  it should "correctly answer random queries with basic graph patterns" in {
-//    check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
-//      // TODO: Root pattern currently unsupported.
-//      !query.exists(_.hasOnlyVariables) ==> {
-//        val jenaResults = execute(new Jena, triples, query)
-//        val trResults = execute(new TripleRush, triples, query)
-//        println("Jena: " + jenaResults +
-//          "\nTR  : " + trResults)
-//        assert(jenaResults === trResults, "TR should have the same result as Jena.")
-//        jenaResults === trResults
-//      }
-//    }, minSuccessful(100))
-//  }
+  it should "correctly answer a simple query over a lot of data" in {
+    val triples = {
+      for {
+        s <- 1 to 25
+        p <- 1 to 25
+        o <- 1 to 25
+      } yield TriplePattern(s, p, o)
+    }.toSet
+    val trResults = execute(
+      new TripleRush,
+      triples,
+      List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25)))
+    val jenaResults = execute(
+      new Jena,
+      triples,
+      List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25)))
+    println(jenaResults)
+    assert(jenaResults === trResults)
+  }
+
+  it should "correctly answer random queries with basic graph patterns" in {
+    check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
+      val jenaResults = execute(new Jena, triples, query)
+      val trResults = execute(new TripleRush, triples, query)
+      assert(jenaResults === trResults, "TR should have the same result as Jena.")
+      jenaResults === trResults
+    }, minSuccessful(1000))
+  }
 
   def execute(
     qe: QueryEngine,
