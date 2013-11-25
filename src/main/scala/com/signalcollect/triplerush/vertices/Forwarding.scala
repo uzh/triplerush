@@ -35,23 +35,14 @@ trait Forwarding extends IndexVertex {
     val avg = math.abs(totalTickets) / edges
     val complete = avg > 0 && totalTickets > 0
     var extras = math.abs(totalTickets) % edges
-    //    println(s"@id=$id $edgeCount=$edgeCount cardinality=$cardinality extras=$extras avg=$avg complete=$complete")
     val averageTicketQuery = query.copyWithTickets(avg, complete)
     val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
     foreachChildDelta(childDelta => {
       val routingAddress = nextRoutingAddress(childDelta)
       if (extras > 0) {
         extras -= 1
-        if (aboveAverageTicketQuery.tickets <= 0) {
-          println(s"GOTCHA!!!!!!!!!!!! $aboveAverageTicketQuery.tickets")
-          throw new Exception("Haha, you cannot run and you cannot hide.")
-        }
         graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress, None)
       } else if (complete) {
-        if (averageTicketQuery.tickets <= 0) {
-          println(s"GOTCHA!!!!!!!!!!!! $aboveAverageTicketQuery.tickets")
-          throw new Exception("Haha, you cannot run and you cannot hide.")
-        }
         graphEditor.sendSignal(averageTicketQuery, routingAddress, None)
       }
     })

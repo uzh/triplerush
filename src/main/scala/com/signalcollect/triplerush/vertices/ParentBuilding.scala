@@ -33,7 +33,6 @@ trait ParentBuilding[Signal, State] extends BaseVertex[TriplePattern, Signal, St
     // Build the hierarchical index on initialization.
     id.parentPatterns foreach { parentId =>
       if (parentId != TriplePattern(0, 0, 0)) {
-        //        println(s"$id is parent building, looking at $parentId")
         // The root is added initially, no need to add again.
         val indexVertex = parentId match {
           case TriplePattern(s, 0, 0) => new SIndex(parentId)

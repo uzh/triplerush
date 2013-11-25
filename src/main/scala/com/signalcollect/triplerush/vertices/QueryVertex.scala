@@ -74,14 +74,12 @@ class QueryVertex(
   @transient var optimizedQuery: Array[Int] = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    println(s"query vertex initialized for query ${query.queryId}")
     cardinalities = Map()
     if (optimizer != QueryOptimizer.None && numberOfPatterns > 1) {
       // Gather pattern cardinalities first.
       query.patterns foreach (triplePattern => {
         val responsibleIndexId = triplePattern.routingAddress
         optimizingStartTime = System.nanoTime
-        println(s"Query @$id requests cardinality of $triplePattern")
         responsibleIndexId match {
           case root @ TriplePattern(0, 0, 0) =>
             handleCardinalityReply(triplePattern, Int.MaxValue, graphEditor)
@@ -94,7 +92,6 @@ class QueryVertex(
       optimizedQuery = query
     } else {
       // Dispatch the query directly.
-      println(s"Query vertex $id has dispatched the query to ${query.routingAddress}.")
       graphEditor.sendSignal(query, query.routingAddress, None)
       optimizedQuery = query
     }
@@ -110,7 +107,6 @@ class QueryVertex(
         if (receivedTickets == expectedTickets) {
           queryDone(graphEditor)
         }
-      //        println(s"Query vertex $id received tickets $ticketsOfFailedQuery. Now at $receivedTickets/$expectedTickets")
       case bindings: Array[Array[Int]] =>
         queryCopyCount += 1
         resultRecipientActor ! bindings
@@ -124,16 +120,13 @@ class QueryVertex(
     forPattern: TriplePattern,
     cardinality: Int,
     graphEditor: GraphEditor[Any, Any]) = {
-    println(s"query vertex @$id received cardinality for $forPattern ($cardinality)")
     if (cardinality == 0) {
       // 0 cardinality => no results => we're done.
       queryDone(graphEditor)
     } else {
       // TODO: If pattern is fully bound and cardinality is one, bind immediately.
       cardinalities += forPattern -> cardinality
-      //        println(s"Query vertex $id received cardinalities $forPattern -> $cardinality")
       if (cardinalities.size == numberOfPatterns) {
-        println(s"query vertex @$id has received all cardinalities")
         optimizedQuery = optimizeQuery
         if (optimizingStartTime != 0) {
           optimizingDuration = System.nanoTime - optimizingStartTime
@@ -144,7 +137,6 @@ class QueryVertex(
   }
 
   def optimizeQuery: Array[Int] = {
-    println(s"query vertex @$id is optimizing the query")
     var sortedPatterns = cardinalities.toArray sortBy (_._2)
     optimizer match {
       case QueryOptimizer.Greedy =>
@@ -192,11 +184,6 @@ class QueryVertex(
     if (t < 0) {
       complete = false
     }
-    println(s"Received tickets: $t, total of $receivedTickets")
-    if (receivedTickets == Long.MaxValue) {
-      println(s"RECEIVED ALL!")
-    }
-    //    //println((receivedTickets.toDouble / Long.MaxValue.toDouble).round + "%")
   }
 
   override def scoreSignal: Double = 0

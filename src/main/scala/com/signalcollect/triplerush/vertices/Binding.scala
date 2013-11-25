@@ -32,7 +32,6 @@ trait Binding
 
   def incrementParentIndexCardinalities(ge: GraphEditor[Any, Any]) {
     for (parent <- id.parentPatterns) {
-      //      println(s"$id of type ${this.getClass} increments cardinality of ${parent}")
       ge.sendSignal(1, parent, None)
     }
   }
@@ -65,11 +64,6 @@ trait Binding
     var extras = math.abs(totalTickets) % edges
     val averageTicketQuery = query.copyWithTickets(avg, complete)
     val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
-    //    val total = extras * (avg + 1) + (edges - extras) * avg
-    //    if (total != totalTickets) {
-    //      println("WAAAAAAH")
-    //    }
-    //    println(s"Sending tickets ${averageTicketQuery.tickets} and ${aboveAverageTicketQuery.tickets}")
     foreachChildDelta(childDelta =>
       if (extras > 0) {
         extras -= 1
@@ -95,11 +89,9 @@ trait Binding
   def routeSuccessfullyBound(boundParticle: Array[Int],
     graphEditor: GraphEditor[Any, Any]) {
     if (boundParticle.isResult) {
-      println(s"@$id discovered a result for query ${boundParticle.queryId}, carries ${boundParticle.tickets}")
       // Query successful, send to query vertex.
       graphEditor.sendSignal(boundParticle, boundParticle.queryId, None)
     } else {
-      println(s"@$id will further route query ${boundParticle.queryId}")
       graphEditor.sendSignal(boundParticle, boundParticle.routingAddress, None)
     }
   }

@@ -34,17 +34,18 @@ abstract class OptimizedIndexVertex(
 
   def edgeCount = edgeCounter
   def cardinality = edgeCounter
-  
+
   def foreachChildDelta[U](f: Int => U) = new IntSet(optimizedChildDeltas).foreach(f)
 
   def addChildDelta(delta: Int): Boolean = {
-    val lengthBeforeInsert = optimizedChildDeltas.length
-    optimizedChildDeltas = new IntSet(optimizedChildDeltas).insert(delta)
-    val wasAdded = lengthBeforeInsert < optimizedChildDeltas.length
-    if (wasAdded) {
+    val alreadyContained = new IntSet(optimizedChildDeltas).contains(delta)
+    if (alreadyContained) {
+      false
+    } else {
+      optimizedChildDeltas = new IntSet(optimizedChildDeltas).insert(delta)
       edgeCounter += 1
+      true
     }
-    wasAdded
   }
 
 }

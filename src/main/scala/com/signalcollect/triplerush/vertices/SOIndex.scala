@@ -60,18 +60,14 @@ class SOIndex(id: TriplePattern) extends SearchableIndexVertex(id)
    * next destinations.
    */
   override def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
-    println(s"@$id is processing query ${query.queryId}")
     val patternS = query.lastPatternS
     val patternP = query.lastPatternP
     val patternO = query.lastPatternO
     if (patternS > 0 && patternP > 0 && patternO > 0) {
-      println(s"@$id is doing a binary search for query ${query.queryId}")
       // We are looking for a specific, fully bound triple pattern. This means that we have to do a binary search on the targetIds.
       if (new SearchableIntSet(childDeltaArray).contains(patternP)) {
-        println(s"@$id binary search succeeded for query ${query.queryId}")
         routeSuccessfullyBound(query.copyWithoutLastPattern, graphEditor)
       } else {
-        println(s"@$id binary search failed for query ${query.queryId}")
         // Failed query
         graphEditor.sendSignal(query.tickets, query.queryId, None)
       }

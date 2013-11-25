@@ -54,7 +54,6 @@ abstract class IndexVertex(id: TriplePattern)
    * Default reply, is only overridden by SOIndex.
    */
   def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
-    println(s"@$id received a cardinality request, reply is $cardinality.")
     graphEditor.sendSignal(CardinalityReply(
       c.forPattern, cardinality), c.requestor, None)
   }
@@ -81,16 +80,12 @@ abstract class IndexVertex(id: TriplePattern)
     signal match {
       case query: Array[Int] =>
         val q = new QueryParticle(query)
-        println(s"${q.queryId} with next pattern ${q.lastPattern} @$id")
-        //        println(s"Query(${q.queryId} @ $id with cardinality $cardinality and #edges $edgeCount):\n" +
-        //          s"Last pattern: ${q.lastPattern.lookup}\n" +
-        //          s"#Existing bindings: ${q.bindings.mkString(", ")}")
         processQuery(query, graphEditor)
       case c: CardinalityRequest =>
         handleCardinalityRequest(c, graphEditor)
       case cardinalityIncrement: Int =>
         handleCardinalityIncrement(cardinalityIncrement)
-      case other => println(s"WTF: $other")
+      case other => throw new Exception(s"Unexpected signal @ $id: $other")
     }
     true
   }
