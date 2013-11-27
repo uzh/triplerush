@@ -289,7 +289,7 @@ case class TripleRush(
     if (!q.isResult) {
       val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
       // TODO: Add callback that removes the query vertex and result recipient actor.
-      g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer))
+      g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer, recordStats = true))
       implicit val timeout = Timeout(Duration.create(7200, TimeUnit.SECONDS))
       val resultFuture = resultRecipientActor ? RegisterQueryResultRecipient
       resultFuture.asInstanceOf[Future[QueryResult]]
