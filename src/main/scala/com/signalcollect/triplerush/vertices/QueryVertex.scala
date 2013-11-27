@@ -64,6 +64,7 @@ class QueryVertex(
   val expectedTickets = Long.MaxValue
   val numberOfPatterns = query.numberOfPatterns
 
+  @transient var queryDone = false
   @transient var queryCopyCount: Long = 0
   @transient var receivedTickets: Long = 0
   @transient var complete = true
@@ -101,9 +102,9 @@ class QueryVertex(
 
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
     signal match {
-      case ticketsOfFailedQuery: Long =>
+      case tickets: Long =>
         queryCopyCount += 1
-        processTickets(ticketsOfFailedQuery)
+        processTickets(tickets)
         if (receivedTickets == expectedTickets) {
           queryDone(graphEditor)
         }
@@ -122,6 +123,7 @@ class QueryVertex(
     graphEditor: GraphEditor[Any, Any]) = {
     if (cardinality == 0) {
       // 0 cardinality => no results => we're done.
+      println(s"Query vertex $id is giving up, pattern $forPattern has cardinality 0")
       queryDone(graphEditor)
     } else {
       // TODO: If pattern is fully bound and cardinality is one, bind immediately.
@@ -191,18 +193,21 @@ class QueryVertex(
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {}
 
   def queryDone(graphEditor: GraphEditor[Any, Any]) {
-    if (recordStats) {
-      val stats = Map[Any, Any](
-        "optimizingDuration" -> optimizingDuration,
-        "queryCopyCount" -> queryCopyCount,
-        "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
-      val statsKeys: Array[Any] = stats.keys.toArray
-      val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
-      resultRecipientActor ! QueryDone(Array(), Array())
-    } else {
-      resultRecipientActor ! QueryDone(Array(), Array())
+    if (!queryDone) {
+      if (recordStats) {
+        val stats = Map[Any, Any](
+          "optimizingDuration" -> optimizingDuration,
+          "queryCopyCount" -> queryCopyCount,
+          "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
+        val statsKeys: Array[Any] = stats.keys.toArray
+        val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
+        resultRecipientActor ! QueryDone(statsKeys, statsValues)
+      } else {
+        resultRecipientActor ! QueryDone(Array(), Array())
+      }
+      graphEditor.removeVertex(id)
+      queryDone = true
     }
-    graphEditor.removeVertex(id)
   }
 
   def setState(s: Nothing) {

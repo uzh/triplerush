@@ -87,7 +87,7 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM Parallel Eval After Rewrite."
+  def evalName = s"LUBM KRAKEN Eval After Rewrite."
   def runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
@@ -213,7 +213,8 @@ object LubmBenchmark extends App {
     def loadLubm {
       val lubmFolderName = s"lubm$universities-filtered-splits"
       for (splitId <- 0 until 2880) {
-        qe.loadBinary(s"./$lubmFolderName/$splitId.filtered-split", Some(splitId))
+        val splitFile = s"./$lubmFolderName/$splitId.filtered-split"
+        qe.loadBinary(splitFile, Some(splitId))
         if (splitId % 288 == 279) {
           println(s"Dispatched up to split #$splitId/2880, awaiting idle.")
           qe.awaitIdle
@@ -257,7 +258,7 @@ object LubmBenchmark extends App {
         for (queryId <- 1 to 7) {
           val queryIndex = queryId - 1
           val query = fullQueries(queryIndex).toParticle
-          print(s"Warming up with query $query ...")
+          print(s"Warming up with query ${new QueryParticle(query).queryId} ...")
           executeOnQueryEngine(query)
           qe.awaitIdle
           println(s" Done.")
@@ -335,7 +336,13 @@ object LubmBenchmark extends App {
       val finishTime = System.nanoTime
       val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
-      val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
+      val optimizingTime = {
+        try {
+          roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long]).toString
+        } catch {
+          case t: Throwable => "Undefined"
+        }
+      }
       val gcTimeAfter = getGcCollectionTime
       val gcCountAfter = getGcCollectionCount
       val gcTimeDuringQuery = gcTimeAfter - gcTimeBefore
@@ -350,7 +357,7 @@ object LubmBenchmark extends App {
       runResult += ((s"exception", queryStats("exception").toString))
       runResult += ((s"results", queryResult.bindings.length.toString))
       runResult += ((s"executionTime", executionTime.toString))
-      runResult += ((s"optimizingTime", optimizingTime.toString))
+      runResult += ((s"optimizingTime", optimizingTime))
       runResult += ((s"totalMemory", bytesToGigabytes(Runtime.getRuntime.totalMemory).toString))
       runResult += ((s"freeMemory", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
       runResult += ((s"usedMemory", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
@@ -377,9 +384,9 @@ object LubmBenchmark extends App {
     baseResults += (("jvmArguments", jvmArguments.mkString(" ")))
 
     val loadingTime = measureTime {
-      println("Dispatching loading command to worker...")
+      println("Dispatching loading command to workers...")
       loadLubm
-      qe.awaitIdle
+      qe.prepareExecution
     }
     baseResults += (("loadingTime", loadingTime.toString))
 

@@ -168,7 +168,7 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
     for (triple <- triples) {
       qe.addEncodedTriple(triple.s, triple.p, triple.o)
     }
-    qe.awaitIdle
+    qe.prepareExecution
     val f = qe.executeQuery(QuerySpecification(query).toParticle, optimizer)
     val result = Await.result(f, 10 seconds)
     val bindings: Set[Map[Int, Int]] = {

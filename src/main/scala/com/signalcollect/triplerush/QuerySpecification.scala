@@ -37,7 +37,6 @@ case class QuerySpecification(
         val minCandidate = math.min(next.o, math.min(next.s, next.p))
         math.min(currentMin, minCandidate)
     })
-    //patterns.flatMap(tp => tp.variables).toSet.size
     QueryParticle(
       Long.MaxValue,
       new Array[Int](variableCount),

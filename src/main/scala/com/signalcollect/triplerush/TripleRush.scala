@@ -53,6 +53,7 @@ import akka.actor.Props
 import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.util.Timeout
+import java.io.File
 
 case object RegisterQueryResultRecipient
 
@@ -206,6 +207,15 @@ case class TripleRush(
   //.withLoggingLevel(Logging.DebugLevel)
   console: Boolean = false) extends QueryEngine {
 
+  var canExecute = false
+
+  def prepareExecution {
+    g.awaitIdle
+    g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+    g.awaitIdle
+    canExecute = true
+  }
+
   // TODO: Handle root pattern(s).
   // TODO: Validate/simplify queries before executing them.
 
@@ -236,7 +246,6 @@ case class TripleRush(
       "com.signalcollect.interfaces.SignalMessage$mcIJ$sp",
       "akka.actor.RepointableActorRef")).build
   g.setUndeliverableSignalHandler(UndeliverableRerouter.handle _)
-  g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
   println("TripleRush is ready.")
@@ -276,6 +285,7 @@ case class TripleRush(
   }
 
   def executeQuery(q: Array[Int], optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
+    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     if (!q.isResult) {
       val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
       // TODO: Add callback that removes the query vertex and result recipient actor.

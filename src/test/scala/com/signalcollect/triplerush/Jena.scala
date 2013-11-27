@@ -104,4 +104,5 @@ WHERE {
   }
   def awaitIdle {}
   def shutdown {}
+  def prepareExecution {}
 }
