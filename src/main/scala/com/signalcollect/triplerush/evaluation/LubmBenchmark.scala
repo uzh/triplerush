@@ -52,13 +52,6 @@ import com.signalcollect.triplerush.TripleRush
 object LubmBenchmark extends App {
   def jvmParameters = " -Xmx31000m" +
     " -Xms31000m" +
-    " -XX:+UnlockExperimentalVMOptions" +
-    " -XX:+UseConcMarkSweepGC" +
-    " -XX:+UseParNewGC" +
-    " -XX:+CMSIncrementalPacing" +
-    " -XX:+CMSIncrementalMode" +
-    " -XX:ParallelGCThreads=20" +
-    " -XX:ParallelCMSThreads=20" +
     " -XX:+AggressiveOpts" +
     " -XX:+AlwaysPreTouch" +
     " -XX:+UseNUMA" +
@@ -87,7 +80,7 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM KRAKEN Eval After Rewrite."
+  def evalName = s"LUBM KRAKEN Eval with more warmups, removed pargc JVM parameters."
   def runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
@@ -248,7 +241,7 @@ object LubmBenchmark extends App {
       }
     }
 
-    def jitRepetitions = 10
+    def jitRepetitions = 100
 
     /**
      * Go to JVM JIT steady state by executing the queries multiple times.
