@@ -46,13 +46,10 @@ abstract class SearchableIndexVertex[SignalType, State](
   def forechildDeltas: Traversable[Int] = childDeltaArray
 
   def addChildDelta(delta: Int): Boolean = {
-    val alreadyContained = new SearchableIntSet(childDeltaArray).contains(delta)
-    if (alreadyContained) {
-      false
-    } else {
-      childDeltaArray = new SearchableIntSet(childDeltaArray).insert(delta)
-      true
-    }
+    val deltasBeforeInsert = childDeltaArray
+    childDeltaArray = new SearchableIntSet(childDeltaArray).insert(delta)
+    val wasInserted = deltasBeforeInsert != childDeltaArray
+    wasInserted
   }
 
 }

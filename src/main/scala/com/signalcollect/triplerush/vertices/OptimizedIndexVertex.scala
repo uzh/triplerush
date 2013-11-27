@@ -38,14 +38,13 @@ abstract class OptimizedIndexVertex(
   @inline def foreachChildDelta(f: Int => Unit) = new IntSet(optimizedChildDeltas).foreach(f)
 
   def addChildDelta(delta: Int): Boolean = {
-    val alreadyContained = new IntSet(optimizedChildDeltas).contains(delta)
-    if (alreadyContained) {
-      false
-    } else {
-      optimizedChildDeltas = new IntSet(optimizedChildDeltas).insert(delta)
+    val deltasBeforeInsert = optimizedChildDeltas
+    optimizedChildDeltas = new IntSet(optimizedChildDeltas).insert(delta)
+    val wasInserted = deltasBeforeInsert != optimizedChildDeltas
+    if (wasInserted) {
       edgeCounter += 1
-      true
     }
+    wasInserted
   }
 
 }
