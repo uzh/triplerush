@@ -69,7 +69,7 @@ object LubmBenchmark extends App {
   val assemblyFile = new File(assemblyPath)
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
+    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.slow)
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
@@ -87,10 +87,10 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM Dist Eval with better GC and compressed messages."
-  def runs = 1
-  //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
-  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
+  def evalName = s"LUBM Parallel Eval After Rewrite."
+  def runs = 10
+  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
+  //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
   for (unis <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
@@ -205,9 +205,9 @@ object LubmBenchmark extends App {
       jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
       localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
     //      
-    val graphBuilder = GraphBuilder.
-      //      withLoggingLevel(Logging.DebugLevel).
-      withNodeProvisioner(new TorqueNodeProvisioner(kraken, 8))
+    val graphBuilder = GraphBuilder
+    //      withLoggingLevel(Logging.DebugLevel).
+    //withNodeProvisioner(new TorqueNodeProvisioner(kraken, 8))
     val qe = new TripleRush(graphBuilder)
 
     def loadLubm {

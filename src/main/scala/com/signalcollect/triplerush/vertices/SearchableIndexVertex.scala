@@ -30,7 +30,14 @@ abstract class SearchableIndexVertex[SignalType, State](
   childDeltaArray = Array()
   @transient var childDeltaArray: Array[Int] = _
 
-  def foreachChildDelta[U](f: Int => U) = childDeltaArray.foreach(f)
+  @inline def foreachChildDelta(f: Int => Unit) = {
+    var i = 0
+    val l = childDeltaArray.length
+    while (i < l) {
+      f(childDeltaArray(i))
+      i += 1
+    }
+  }
 
   def edgeCount = childDeltaArray.length
 

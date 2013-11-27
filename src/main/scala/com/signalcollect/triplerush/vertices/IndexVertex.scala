@@ -40,7 +40,7 @@ abstract class IndexVertex(id: TriplePattern)
   with ParentBuilding[Any, Any]
   with Inspectable[TriplePattern, Any] {
 
-  def foreachChildDelta[U](f: Int => U)
+  def foreachChildDelta(f: Int => Unit)
 
   def addChildDelta(delta: Int): Boolean
 

@@ -64,13 +64,15 @@ trait Binding
     var extras = math.abs(totalTickets) % edges
     val averageTicketQuery = query.copyWithTickets(avg, complete)
     val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
-    foreachChildDelta(childDelta =>
+    def bind(childDelta: Int) {
       if (extras > 0) {
         extras -= 1
         handleQueryBinding(childDelta, aboveAverageTicketQuery, graphEditor)
       } else if (complete) {
         handleQueryBinding(childDelta, averageTicketQuery, graphEditor)
-      })
+      }
+    }
+    foreachChildDelta(bind)
   }
 
   def handleQueryBinding(

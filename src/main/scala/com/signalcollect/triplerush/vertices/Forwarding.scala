@@ -37,7 +37,7 @@ trait Forwarding extends IndexVertex {
     var extras = math.abs(totalTickets) % edges
     val averageTicketQuery = query.copyWithTickets(avg, complete)
     val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
-    foreachChildDelta(childDelta => {
+    def sendTo(childDelta: Int) {
       val routingAddress = nextRoutingAddress(childDelta)
       if (extras > 0) {
         extras -= 1
@@ -45,7 +45,8 @@ trait Forwarding extends IndexVertex {
       } else if (complete) {
         graphEditor.sendSignal(averageTicketQuery, routingAddress, None)
       }
-    })
+    }
+    foreachChildDelta(sendTo)
   }
 
 }
