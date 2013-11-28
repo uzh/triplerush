@@ -24,7 +24,6 @@ import scala.Array.canBuildFrom
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.UnrolledBuffer
 import com.signalcollect.triplerush.QueryParticle._
-
 import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
 import com.signalcollect.Vertex
@@ -32,9 +31,9 @@ import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TriplePattern
-
 import akka.actor.ActorRef
 import akka.actor.actorRef2Scala
+import com.signalcollect.triplerush.QueryParticle
 
 case class QueryDone(
   statKeys: Array[Any],
@@ -198,7 +197,7 @@ class QueryVertex(
         val stats = Map[Any, Any](
           "optimizingDuration" -> optimizingDuration,
           "queryCopyCount" -> queryCopyCount,
-          "optimizedQuery" -> (optimizedQuery.toString + "\nCardinalities: " + cardinalities.toString))
+          "optimizedQuery" -> ("Pattern matching order: " + new QueryParticle(optimizedQuery).patterns.toList + "\nCardinalities: " + cardinalities.toString))
         val statsKeys: Array[Any] = stats.keys.toArray
         val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
         resultRecipientActor ! QueryDone(statsKeys, statsValues)

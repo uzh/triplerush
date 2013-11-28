@@ -102,7 +102,7 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
       val oldCardinalities = aggregatedCardinalities(t)
       aggregatedCardinalities(t) = oldCardinalities + signal.asInstanceOf[Int]
     } else {
-      // TODO: Also improve efficiency of sending non-result particles.
+      // TODO: Also improve efficiency of sending non-result particles. Compression?
       super.sendSignal(signal, targetId, sourceId, blocking)
     }
   }
