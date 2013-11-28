@@ -129,25 +129,19 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
       for ((queryVertexId, results) <- aggregatedResults) {
-        super.sendToWorkerForVertexId(
-          SignalMessage(queryVertexId, null, results.toArray),
-          queryVertexId.asInstanceOf[Id])
+        super.sendSignal(results.toArray.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
       }
       aggregatedResults.clear
     }
     if (!aggregatedTickets.isEmpty) {
       for ((queryVertexId, tickets) <- aggregatedTickets) {
-        super.sendToWorkerForVertexId(
-          SignalMessage(queryVertexId, null, tickets),
-          queryVertexId.asInstanceOf[Id])
+        super.sendSignal(tickets.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
       }
       aggregatedTickets.clear
     }
     if (!aggregatedCardinalities.isEmpty) {
       for ((targetId, cardinalityIncrement) <- aggregatedCardinalities) {
-        super.sendToWorkerForVertexId(
-          SignalMessage(targetId, null, cardinalityIncrement),
-          targetId.asInstanceOf[Id])
+        super.sendSignal(cardinalityIncrement.asInstanceOf[Signal], targetId.asInstanceOf[Id], null, false)
       }
       aggregatedCardinalities.clear
     }
