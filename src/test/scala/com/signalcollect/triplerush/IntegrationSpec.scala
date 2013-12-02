@@ -15,6 +15,7 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Prop
 import org.openrdf.query.QueryResult
 import org.scalacheck.Prop.BooleanOperators
+import com.signalcollect.triplerush.jena.Jena
 
 class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
 
@@ -169,10 +170,9 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
       qe.addEncodedTriple(triple.s, triple.p, triple.o)
     }
     qe.prepareExecution
-    val f = qe.executeQuery(QuerySpecification(query).toParticle, optimizer)
-    val result = Await.result(f, 10 seconds)
+    val results = qe.executeQuery(QuerySpecification(query).toParticle, optimizer)
     val bindings: Set[Map[Int, Int]] = {
-      result.bindings.map({ binding: Array[Int] =>
+      results.map({ binding: Array[Int] =>
         // Only keep variable bindings that have an assigned value.
         val filtered: Map[Int, Int] = {
           (-1 to -binding.length by -1).

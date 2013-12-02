@@ -24,71 +24,35 @@ import java.io.DataInputStream
 import java.io.EOFException
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
-import scala.Array.canBuildFrom
+
+import scala.annotation.elidable
+import scala.annotation.elidable.ASSERTION
 import scala.collection.mutable.UnrolledBuffer
 import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.concurrent.duration.Duration
-import scala.concurrent.future
-import scala.util.Random
+
 import org.semanticweb.yars.nx.parser.NxParser
+
 import com.signalcollect.ExecutionConfiguration
 import com.signalcollect.GraphBuilder
 import com.signalcollect.GraphEditor
-import com.signalcollect.Vertex
 import com.signalcollect.configuration.ActorSystemRegistry
 import com.signalcollect.configuration.ExecutionMode
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
-import com.signalcollect.triplerush.vertices.Forwarding
 import com.signalcollect.triplerush.vertices.POIndex
-import com.signalcollect.triplerush.vertices.QueryDone
 import com.signalcollect.triplerush.vertices.QueryOptimizer
-import com.signalcollect.triplerush.vertices.QueryResult
 import com.signalcollect.triplerush.vertices.QueryVertex
 import com.signalcollect.triplerush.vertices.SOIndex
 import com.signalcollect.triplerush.vertices.SPIndex
-import akka.actor.Actor
-import akka.actor.ActorRef
-import akka.actor.PoisonPill
-import akka.actor.Props
-import akka.actor.actorRef2Scala
-import akka.pattern.ask
+
 import akka.util.Timeout
-import java.io.File
+import rx.lang.scala.Observable
+import rx.lang.scala.Observer
+import rx.lang.scala.Subscription
+import rx.lang.scala.subjects.ReplaySubject
 
 case object RegisterQueryResultRecipient
-
-class ResultRecipientActor extends Actor {
-  var queryDone: QueryDone = _
-  var queryResultRecipient: ActorRef = _
-
-  var queries = UnrolledBuffer[Array[Int]]()
-
-  def receive = {
-    case RegisterQueryResultRecipient =>
-      queryResultRecipient = sender
-      if (queryDone != null) {
-        queryResultRecipient ! QueryResult(queries, queryDone.statKeys, queryDone.statVariables)
-        self ! PoisonPill
-      }
-    case queryDone: QueryDone =>
-      this.queryDone = queryDone
-      if (queryResultRecipient != null) {
-        queryResultRecipient ! QueryResult(queries, queryDone.statKeys, queryDone.statVariables)
-        self ! PoisonPill
-      }
-
-    case queryResults: Array[Array[Int]] =>
-      // TODO: Send only bindings instead of full particles.
-      val newBuffer = {
-        if (queryResults.length == 1) {
-          UnrolledBuffer(queryResults(0))
-        } else {
-          queryResults map (UnrolledBuffer(_)) reduce (_.concat(_))
-        }
-      }
-      queries = queries.concat(newBuffer)
-  }
-}
 
 case object UndeliverableRerouter {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
@@ -236,11 +200,9 @@ case class TripleRush(
       "com.signalcollect.triplerush.TriplePattern",
       "com.signalcollect.triplerush.vertices.QueryVertex",
       "com.signalcollect.triplerush.vertices.QueryOptimizer",
-      "com.signalcollect.triplerush.vertices.QueryDone",
       "com.signalcollect.triplerush.PlaceholderEdge",
       "com.signalcollect.triplerush.CardinalityRequest",
       "com.signalcollect.triplerush.CardinalityReply",
-      "com.signalcollect.triplerush.vertices.QueryResult",
       "com.signalcollect.triplerush.TriplePattern",
       "Array[com.signalcollect.triplerush.TriplePattern]",
       "com.signalcollect.interfaces.SignalMessage$mcIJ$sp",
@@ -276,7 +238,7 @@ case class TripleRush(
     FileLoaders.addTriple(TriplePattern(sId, pId, oId), g)
   }
 
-  def executeQuery(q: Array[Int], optimizer: Boolean) = {
+  def executeQuery(q: Array[Int], optimizer: Boolean): Iterable[Array[Int]] = {
     if (optimizer) {
       executeQuery(q, QueryOptimizer.Clever)
     } else {
@@ -284,17 +246,26 @@ case class TripleRush(
     }
   }
 
-  def executeQuery(q: Array[Int], optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
+  def executeQuery(q: Array[Int], optimizer: Int = QueryOptimizer.Clever): Iterable[Array[Int]] = {
+    val (results, stats) = executeReactive(q, optimizer)
+    results.toBlockingObservable.toIterable
+  }
+
+  /**
+   * Observable supports only one observer to avoid excessive result caching.
+   */
+  def executeReactive(
+    q: Array[Int],
+    optimizer: Int = QueryOptimizer.Clever): (Observable[Array[Int]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     if (!q.isResult) {
-      val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)
-      // TODO: Add callback that removes the query vertex and result recipient actor.
-      g.addVertex(new QueryVertex(q, resultRecipientActor, optimizer, recordStats = true))
+      val resultReporting = new ResultReporting
+      val statsPromise = Promise[Map[Any, Any]]()
+      g.addVertex(new QueryVertex(q, resultReporting, statsPromise, optimizer))
       implicit val timeout = Timeout(Duration.create(7200, TimeUnit.SECONDS))
-      val resultFuture = resultRecipientActor ? RegisterQueryResultRecipient
-      resultFuture.asInstanceOf[Future[QueryResult]]
+      (resultReporting.observable, statsPromise.future)
     } else {
-      Future.successful(QueryResult(UnrolledBuffer(), Array(), Array()))
+      (Observable(), (Future.successful(Map())))
     }
   }
 
@@ -304,4 +275,72 @@ case class TripleRush(
 
   def shutdown = g.shutdown
 
+}
+
+class ResultReporting {
+  var observer: Observer[Array[Int]] = null.asInstanceOf[Observer[Array[Int]]]
+  var subscriptionCanceled = false
+  var isDone = false
+  var unreportedResults: UnrolledBuffer[Array[Array[Int]]] = UnrolledBuffer()
+
+  def reportResult(bindingsArray: Array[Array[Int]]) {
+    var shouldReportDirectly = false
+    synchronized {
+      if (unreportedResults != null && !subscriptionCanceled) {
+        unreportedResults.concat(UnrolledBuffer(bindingsArray))
+      } else {
+        shouldReportDirectly = true
+      }
+    }
+    if (shouldReportDirectly && !subscriptionCanceled) {
+      for (bindings <- bindingsArray) {
+        observer.onNext(bindings)
+      }
+    }
+  }
+
+  def executionFinished = {
+    synchronized {
+      isDone = true
+      if (observer != null) {
+        observer.onCompleted
+      }
+    }
+  }
+
+  def setObserver(o: Observer[Array[Int]]) = {
+    synchronized {
+      assert(observer == null, "TripleRush supports only one result observer.")
+      observer = o
+      reportUnreported
+      if (isDone) {
+        observer.onCompleted
+      }
+    }
+  }
+
+  def reportUnreported = {
+    var unreported = null.asInstanceOf[UnrolledBuffer[Array[Array[Int]]]]
+    synchronized {
+      unreported = unreportedResults
+      unreportedResults = null
+    }
+    if (unreported != null) {
+      for (buffer <- unreported) {
+        for (bindings <- buffer) {
+          observer.onNext(bindings)
+        }
+      }
+    }
+  }
+
+  def observable: Observable[Array[Int]] = {
+    Observable {
+      o: Observer[Array[Int]] =>
+        setObserver(o)
+        Subscription {
+          subscriptionCanceled = true
+        }
+    }
+  }
 }

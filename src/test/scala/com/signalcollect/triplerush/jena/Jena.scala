@@ -1,19 +1,15 @@
-package com.signalcollect.triplerush
-
-import scala.concurrent.Future
-import scala.concurrent.future
-import com.signalcollect.triplerush.vertices.QueryResult
+package com.signalcollect.triplerush.jena
 import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.rdf.model.Statement
-import com.hp.hpl.jena.rdf.model.Model
 import scala.collection.mutable.UnrolledBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
 import com.hp.hpl.jena.query.QueryFactory
 import com.hp.hpl.jena.query.QueryExecutionFactory
 import com.signalcollect.triplerush.QueryParticle._
 import collection.JavaConversions._
 import com.hp.hpl.jena.query.QuerySolution
 import com.hp.hpl.jena.rdf.model.RDFNode
+import com.signalcollect.triplerush.QueryEngine
+import com.signalcollect.triplerush.TriplePattern
+import scala.Option.option2Iterable
 
 class Jena extends QueryEngine {
   val model = ModelFactory.createDefaultModel
@@ -23,36 +19,34 @@ class Jena extends QueryEngine {
     val obj = model.createResource(intToInsertString(o))
     model.add(resource, prop, obj)
   }
-  def executeQuery(q: Array[Int], optimizer: Boolean): Future[QueryResult] = {
-    future {
-      val patterns = q.patterns
-      val variableNames = {
-        val vars = patterns.
-          flatMap(p => Set(p.s, p.p, p.o)).
-          filter(_ < 0).
-          map(intToQueryString).
-          distinct
-        if (vars.isEmpty) {
-          List("*")
-        } else {
-          vars
-        }
+  def executeQuery(q: Array[Int], optimizer: Boolean): Iterable[Array[Int]] = {
+    val patterns = q.patterns
+    val variableNames = {
+      val vars = patterns.
+        flatMap(p => Set(p.s, p.p, p.o)).
+        filter(_ < 0).
+        map(intToQueryString).
+        distinct
+      if (vars.isEmpty) {
+        List("*")
+      } else {
+        vars
       }
-      val queryString = s"""
+    }
+    val queryString = s"""
 PREFIX ns: <http://example.com#>
-SELECT ${variableNames.mkString(" ")}	
+SELECT ${variableNames.mkString(" ")}
 WHERE {
 \t${patterns.map(patternToString).mkString(" \n\t")} }"""
-      val query = QueryFactory.create(queryString)
-      val qe = QueryExecutionFactory.create(query, model)
-      val results = qe.execSelect.toList
-      val trResults = results.flatMap(transformJenaResult)
-      val bufferResults = trResults.map(
-        UnrolledBuffer(_)).foldLeft(
-          UnrolledBuffer.empty[Array[Int]])(_.concat(_))
-      qe.close
-      QueryResult(bufferResults, Array(), Array())
-    }
+    val query = QueryFactory.create(queryString)
+    val qe = QueryExecutionFactory.create(query, model)
+    val results = qe.execSelect.toList
+    val transformedResults = results.flatMap(transformJenaResult)
+    val bufferResults = transformedResults.map(
+      UnrolledBuffer(_)).foldLeft(
+        UnrolledBuffer.empty[Array[Int]])(_.concat(_))
+    qe.close
+    bufferResults
   }
 
   def transformJenaResult(s: QuerySolution): Option[Array[Int]] = {

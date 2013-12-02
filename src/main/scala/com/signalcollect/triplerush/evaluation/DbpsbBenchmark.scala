@@ -25,6 +25,7 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.io.Source
 import scala.util.Random
 import com.signalcollect.GraphBuilder
@@ -40,7 +41,6 @@ import com.signalcollect.triplerush.vertices.QueryOptimizer
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
-import com.signalcollect.triplerush.vertices.QueryResult
 import com.signalcollect.triplerush.QuerySpecification
 import scala.collection.mutable.UnrolledBuffer
 import java.lang.management.ManagementFactory
@@ -258,17 +258,6 @@ object DbpsbBenchmark extends App {
       ((nanoseconds / 100000.0).round) / 10.0
     }
 
-    def executeOnQueryEngine(q: Array[Int]): QueryResult = {
-      val resultFuture = qe.executeQuery(q, optimizer)
-      try {
-        Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
-      } catch {
-        case t: Throwable =>
-          println(s"Query $q timed out!")
-          QueryResult(UnrolledBuffer(), Array("exception"), Array(t))
-      }
-    }
-
     def jitRepetitions = 100
 
     /**
@@ -280,7 +269,7 @@ object DbpsbBenchmark extends App {
           val queryIndex = queryId - 1
           val query = fullQueries(queryIndex)
           print(s"Warming up with query $query ...")
-          executeOnQueryEngine(query.toParticle)
+          qe.executeQuery(query.toParticle)
           qe.awaitIdle
           println(s" Done.")
         }
@@ -327,25 +316,32 @@ object DbpsbBenchmark extends App {
       runResult += ((s"freeMemoryBefore", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
       runResult += ((s"usedMemoryBefore", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
       val startTime = System.nanoTime
-      val queryResult = executeOnQueryEngine(query.toParticle)
+      val (queryResultObservable, queryStatsFuture) = qe.executeReactive(query.toParticle)
+      // Await first result, if there is any.
+      val firstResult = queryResultObservable.toBlockingObservable.singleOption
+      val firstResultArrival = System.nanoTime
+      // Await full materialization.
+      val queryResult = queryResultObservable.toBlockingObservable.toList
       val finishTime = System.nanoTime
-      val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
-      val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
+      val firstResultTime = roundToMillisecondFraction(firstResultArrival - startTime)
       val gcTimeAfter = getGcCollectionTime
       val gcCountAfter = getGcCollectionCount
       val gcTimeDuringQuery = gcTimeAfter - gcTimeBefore
       val gcCountDuringQuery = gcCountAfter - gcCountBefore
       val compileTimeAfter = compilations.getTotalCompilationTime
       val compileTimeDuringQuery = compileTimeAfter - compileTimeBefore
+      val queryStats = Await.result(queryStatsFuture, 10 seconds)
+      val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
       runResult += ((s"revision", revision))
       runResult += ((s"queryId", queryId.toString))
       runResult += ((s"optimizer", optimizer.toString))
       runResult += ((s"queryCopyCount", queryStats("queryCopyCount").toString))
       runResult += ((s"query", queryStats("optimizedQuery").toString))
       runResult += ((s"exception", queryStats("exception").toString))
-      runResult += ((s"results", queryResult.bindings.length.toString))
+      runResult += ((s"results", queryResult.length.toString))
       runResult += ((s"executionTime", executionTime.toString))
+      runResult += ((s"timeUntilFirstResult", firstResultTime.toString))
       runResult += ((s"optimizingTime", optimizingTime.toString))
       runResult += ((s"totalMemory", bytesToGigabytes(Runtime.getRuntime.totalMemory).toString))
       runResult += ((s"freeMemory", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))

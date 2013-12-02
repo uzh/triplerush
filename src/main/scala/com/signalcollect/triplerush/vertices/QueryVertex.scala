@@ -34,15 +34,10 @@ import com.signalcollect.triplerush.TriplePattern
 import akka.actor.ActorRef
 import akka.actor.actorRef2Scala
 import com.signalcollect.triplerush.QueryParticle
-
-case class QueryDone(
-  statKeys: Array[Any],
-  statVariables: Array[Any])
-
-case class QueryResult(
-  bindings: UnrolledBuffer[Array[Int]],
-  statKeys: Array[Any],
-  statVariables: Array[Any])
+import rx.lang.scala.subjects.ReplaySubject
+import scala.concurrent.Promise
+import rx.lang.scala.Observer
+import com.signalcollect.triplerush.ResultReporting
 
 case object QueryOptimizer {
   val None = 0 // Execute patterns in order passed.
@@ -52,9 +47,9 @@ case object QueryOptimizer {
 
 class QueryVertex(
   val query: Array[Int],
-  val resultRecipientActor: ActorRef,
-  val optimizer: Int,
-  val recordStats: Boolean = false) extends Vertex[Int, Nothing] {
+  val resultReporting: ResultReporting,
+  val statsPromise: Promise[Map[Any, Any]],
+  val optimizer: Int) extends Vertex[Int, Nothing] {
 
   val id = query.queryId
 
@@ -109,7 +104,7 @@ class QueryVertex(
         }
       case bindings: Array[Array[Int]] =>
         queryCopyCount += 1
-        resultRecipientActor ! bindings
+        resultReporting.reportResult(bindings)
       case CardinalityReply(forPattern, cardinality) =>
         handleCardinalityReply(forPattern, cardinality, graphEditor)
     }
@@ -192,18 +187,16 @@ class QueryVertex(
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {}
 
   def queryDone(graphEditor: GraphEditor[Any, Any]) {
+    // Only execute this block once.
     if (!queryDone) {
-      if (recordStats) {
-        val stats = Map[Any, Any](
-          "optimizingDuration" -> optimizingDuration,
-          "queryCopyCount" -> queryCopyCount,
-          "optimizedQuery" -> ("Pattern matching order: " + new QueryParticle(optimizedQuery).patterns.toList + "\nCardinalities: " + cardinalities.toString))
-        val statsKeys: Array[Any] = stats.keys.toArray
-        val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
-        resultRecipientActor ! QueryDone(statsKeys, statsValues)
-      } else {
-        resultRecipientActor ! QueryDone(Array(), Array())
-      }
+      resultReporting.executionFinished
+      val stats = Map[Any, Any](
+        "optimizingDuration" -> optimizingDuration,
+        "queryCopyCount" -> queryCopyCount,
+        "optimizedQuery" -> ("Pattern matching order: " + new QueryParticle(optimizedQuery).
+          patterns.toList + "\nCardinalities: " + cardinalities.toString)).
+        withDefaultValue("")
+      statsPromise.success(stats)
       graphEditor.removeVertex(id)
       queryDone = true
     }
