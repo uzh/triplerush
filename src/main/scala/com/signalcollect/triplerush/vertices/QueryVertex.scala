@@ -37,7 +37,6 @@ import com.signalcollect.triplerush.QueryParticle
 import rx.lang.scala.subjects.ReplaySubject
 import scala.concurrent.Promise
 import rx.lang.scala.Observer
-import com.signalcollect.triplerush.ResultReporting
 
 case object QueryOptimizer {
   val None = 0 // Execute patterns in order passed.
@@ -47,13 +46,13 @@ case object QueryOptimizer {
 
 class QueryVertex(
   val query: Array[Int],
-  val resultReporting: ResultReporting,
+  val resultPromise: Promise[UnrolledBuffer[Array[Int]]],
   val statsPromise: Promise[Map[Any, Any]],
-  val optimizer: Int) extends Vertex[Int, Nothing] {
+  val optimizer: Int) extends Vertex[Int, UnrolledBuffer[Array[Int]]] {
 
   val id = query.queryId
 
-  @transient var state: Nothing = _
+  @transient var state: UnrolledBuffer[Array[Int]] = UnrolledBuffer()
 
   val expectedTickets = Long.MaxValue
   val numberOfPatterns = query.numberOfPatterns
@@ -102,9 +101,9 @@ class QueryVertex(
         if (receivedTickets == expectedTickets) {
           queryDone(graphEditor)
         }
-      case bindings: Array[Array[Int]] =>
+      case bindings: UnrolledBuffer[_] =>
         queryCopyCount += 1
-        resultReporting.reportResult(bindings)
+        state = state.concat(bindings.asInstanceOf[UnrolledBuffer[Array[Int]]])
       case CardinalityReply(forPattern, cardinality) =>
         handleCardinalityReply(forPattern, cardinality, graphEditor)
     }
@@ -189,7 +188,7 @@ class QueryVertex(
   def queryDone(graphEditor: GraphEditor[Any, Any]) {
     // Only execute this block once.
     if (!queryDone) {
-      resultReporting.executionFinished
+      resultPromise.success(state)
       val stats = Map[Any, Any](
         "optimizingDuration" -> optimizingDuration,
         "queryCopyCount" -> queryCopyCount,
@@ -202,13 +201,13 @@ class QueryVertex(
     }
   }
 
-  def setState(s: Nothing) {
+  def setState(s: UnrolledBuffer[Array[Int]]) {
     state = s
   }
 
   def scoreCollect = 0 // Because signals are collected upon delivery.
   def edgeCount = 0
-  override def toString = s"${this.getClass.getName}(state=$state)"
+  override def toString = s"${this.getClass.getName}(id=$id)"
   def executeCollectOperation(graphEditor: GraphEditor[Any, Any]) {}
   def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException

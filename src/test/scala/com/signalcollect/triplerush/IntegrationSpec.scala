@@ -100,12 +100,11 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
   implicit lazy val arbTriples = Arbitrary(genTriples map (_.toSet))
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
-  it should "correctly answer a simple query 1" in {
+  "TripleRush" should "correctly answer a simple query 1" in {
     val trResults = execute(
       new TripleRush,
       Set(TriplePattern(4, 3, 4)),
-      List(TriplePattern(-1, 3, -1)),
-      optimizer = true)
+      List(TriplePattern(-1, 3, -1)))
     assert(Set(Map(-1 -> 4)) === trResults)
   }
 
@@ -115,8 +114,7 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
       Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
         TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
         TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
-      List(TriplePattern(-2, -1, 3)),
-      optimizer = true)
+      List(TriplePattern(-2, -1, 3)))
     assert(Set(Map(-1 -> 3, -2 -> 2), Map(-1 -> 3, -2 -> 3),
       Map(-1 -> 4, -2 -> 4)) === trResults)
   }
@@ -132,30 +130,19 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
     val trResults = execute(
       new TripleRush,
       triples,
-      List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25)),
-      optimizer = true)
+      List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25)))
     val jenaResults = execute(
       new Jena,
       triples,
-      List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25)),
-      optimizer = true)
+      List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25)))
     println(jenaResults)
     assert(jenaResults === trResults)
   }
 
-  it should "correctly answer random queries with basic graph patterns without using the optimizer" in {
+  it should "correctly answer random queries with basic graph patterns" in {
     check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
-      val jenaResults = execute(new Jena, triples, query, optimizer = false)
-      val trResults = execute(new TripleRush, triples, query, optimizer = false)
-      assert(jenaResults === trResults, "TR should have the same result as Jena.")
-      jenaResults === trResults
-    }, minSuccessful(1000))
-  }
-
-  it should "correctly answer random queries with basic graph patterns while using the optimizer" in {
-    check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
-      val jenaResults = execute(new Jena, triples, query, optimizer = true)
-      val trResults = execute(new TripleRush, triples, query, optimizer = true)
+      val jenaResults = execute(new Jena, triples, query)
+      val trResults = execute(new TripleRush, triples, query)
       assert(jenaResults === trResults, "TR should have the same result as Jena.")
       jenaResults === trResults
     }, minSuccessful(1000))
@@ -164,13 +151,12 @@ class IntegrationSpec extends FlatSpec with ShouldMatchers with Checkers {
   def execute(
     qe: QueryEngine,
     triples: Set[TriplePattern],
-    query: List[TriplePattern],
-    optimizer: Boolean): Set[Map[Int, Int]] = {
+    query: List[TriplePattern]): Set[Map[Int, Int]] = {
     for (triple <- triples) {
       qe.addEncodedTriple(triple.s, triple.p, triple.o)
     }
     qe.prepareExecution
-    val results = qe.executeQuery(QuerySpecification(query).toParticle, optimizer)
+    val results = qe.executeQuery(QuerySpecification(query).toParticle)
     val bindings: Set[Map[Int, Int]] = {
       results.map({ binding: Array[Int] =>
         // Only keep variable bindings that have an assigned value.

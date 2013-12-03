@@ -241,7 +241,7 @@ object LubmBenchmark extends App {
           val queryIndex = queryId - 1
           val query = fullQueries(queryIndex).toParticle
           print(s"Warming up with query ${new QueryParticle(query).queryId} ...")
-          qe.executeReactive(query)
+          qe.executeQuery(query)
           qe.awaitIdle
           println(s" Done.")
         }
@@ -307,6 +307,7 @@ object LubmBenchmark extends App {
       var date: Date = new Date
       val queryIndex = queryId - 1
       val query = queries(queryIndex)
+      val particle = query.toParticle
       val gcTimeBefore = getGcCollectionTime
       val gcCountBefore = getGcCollectionCount
       val compileTimeBefore = compilations.getTotalCompilationTime
@@ -314,15 +315,10 @@ object LubmBenchmark extends App {
       runResult += ((s"freeMemoryBefore", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
       runResult += ((s"usedMemoryBefore", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
       val startTime = System.nanoTime
-      val (queryResultObservable, queryStatsFuture) = qe.executeReactive(query.toParticle)
-      // Await first result, if there is any.
-      val firstResult = queryResultObservable.toBlockingObservable.singleOption
-      val firstResultArrival = System.nanoTime
-      // Await full materialization.
-      val resultCount = queryResultObservable.length.toBlockingObservable.single
+      val (queryResultFuture, queryStatsFuture) = qe.executeAdvancedQuery(particle)
+      val queryResult = Await.result(queryResultFuture, 7200 seconds)
       val finishTime = System.nanoTime
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
-      val firstResultTime = roundToMillisecondFraction(firstResultArrival - startTime)
       val gcTimeAfter = getGcCollectionTime
       val gcCountAfter = getGcCollectionCount
       val gcTimeDuringQuery = gcTimeAfter - gcTimeBefore
@@ -337,9 +333,8 @@ object LubmBenchmark extends App {
       runResult += ((s"queryCopyCount", queryStats("queryCopyCount").toString))
       runResult += ((s"query", queryStats("optimizedQuery").toString))
       runResult += ((s"exception", queryStats("exception").toString))
-      runResult += ((s"results", resultCount.toString))
+      runResult += ((s"results", queryResult.length.toString))
       runResult += ((s"executionTime", executionTime.toString))
-      runResult += ((s"timeUntilFirstResult", firstResultTime.toString))
       runResult += ((s"optimizingTime", optimizingTime.toString))
       runResult += ((s"totalMemory", bytesToGigabytes(Runtime.getRuntime.totalMemory).toString))
       runResult += ((s"freeMemory", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))

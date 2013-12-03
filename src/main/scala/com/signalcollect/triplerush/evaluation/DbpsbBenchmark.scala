@@ -309,6 +309,7 @@ object DbpsbBenchmark extends App {
       var date: Date = new Date
       val queryIndex = queryId - 1
       val query = queries(queryIndex)
+      val particle = query.toParticle
       val gcTimeBefore = getGcCollectionTime
       val gcCountBefore = getGcCollectionCount
       val compileTimeBefore = compilations.getTotalCompilationTime
@@ -316,15 +317,10 @@ object DbpsbBenchmark extends App {
       runResult += ((s"freeMemoryBefore", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
       runResult += ((s"usedMemoryBefore", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
       val startTime = System.nanoTime
-      val (queryResultObservable, queryStatsFuture) = qe.executeReactive(query.toParticle)
-      // Await first result, if there is any.
-      val firstResult = queryResultObservable.toBlockingObservable.singleOption
-      val firstResultArrival = System.nanoTime
-      // Await full materialization.
-      val queryResult = queryResultObservable.toBlockingObservable.toList
+      val (queryResultFuture, queryStatsFuture) = qe.executeAdvancedQuery(particle)
+      val queryResult = Await.result(queryResultFuture, 7200 seconds)
       val finishTime = System.nanoTime
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
-      val firstResultTime = roundToMillisecondFraction(firstResultArrival - startTime)
       val gcTimeAfter = getGcCollectionTime
       val gcCountAfter = getGcCollectionCount
       val gcTimeDuringQuery = gcTimeAfter - gcTimeBefore
@@ -341,7 +337,6 @@ object DbpsbBenchmark extends App {
       runResult += ((s"exception", queryStats("exception").toString))
       runResult += ((s"results", queryResult.length.toString))
       runResult += ((s"executionTime", executionTime.toString))
-      runResult += ((s"timeUntilFirstResult", firstResultTime.toString))
       runResult += ((s"optimizingTime", optimizingTime.toString))
       runResult += ((s"totalMemory", bytesToGigabytes(Runtime.getRuntime.totalMemory).toString))
       runResult += ((s"freeMemory", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))

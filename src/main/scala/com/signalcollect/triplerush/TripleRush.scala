@@ -24,16 +24,13 @@ import java.io.DataInputStream
 import java.io.EOFException
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
-
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
 import scala.collection.mutable.UnrolledBuffer
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import scala.concurrent.duration.Duration
-
+import scala.concurrent.duration._
 import org.semanticweb.yars.nx.parser.NxParser
-
 import com.signalcollect.ExecutionConfiguration
 import com.signalcollect.GraphBuilder
 import com.signalcollect.GraphEditor
@@ -45,12 +42,12 @@ import com.signalcollect.triplerush.vertices.QueryOptimizer
 import com.signalcollect.triplerush.vertices.QueryVertex
 import com.signalcollect.triplerush.vertices.SOIndex
 import com.signalcollect.triplerush.vertices.SPIndex
-
 import akka.util.Timeout
 import rx.lang.scala.Observable
 import rx.lang.scala.Observer
 import rx.lang.scala.Subscription
 import rx.lang.scala.subjects.ReplaySubject
+import scala.concurrent.Await
 
 case object RegisterQueryResultRecipient
 
@@ -238,34 +235,24 @@ case class TripleRush(
     FileLoaders.addTriple(TriplePattern(sId, pId, oId), g)
   }
 
-  def executeQuery(q: Array[Int], optimizer: Boolean): Iterable[Array[Int]] = {
-    if (optimizer) {
-      executeQuery(q, QueryOptimizer.Clever)
-    } else {
-      executeQuery(q, QueryOptimizer.None)
-    }
+  def executeQuery(q: Array[Int]): Iterable[Array[Int]] = {
+    val (resultFuture, statsFuture) = executeAdvancedQuery(q, QueryOptimizer.Clever)
+    val result = Await.result(resultFuture, 7200 seconds)
+    result
   }
 
-  def executeQuery(q: Array[Int], optimizer: Int = QueryOptimizer.Clever): Iterable[Array[Int]] = {
-    val (results, stats) = executeReactive(q, optimizer)
-    results.toBlockingObservable.toIterable
-  }
-
-  /**
-   * Observable supports only one observer to avoid excessive result caching.
-   */
-  def executeReactive(
+  def executeAdvancedQuery(
     q: Array[Int],
-    optimizer: Int = QueryOptimizer.Clever): (Observable[Array[Int]], Future[Map[Any, Any]]) = {
+    optimizer: Int = QueryOptimizer.Clever): (Future[UnrolledBuffer[Array[Int]]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    val resultPromise = Promise[UnrolledBuffer[Array[Int]]]()
+    val statsPromise = Promise[Map[Any, Any]]()
+    g.addVertex(new QueryVertex(q, resultPromise, statsPromise, optimizer))
     if (!q.isResult) {
-      val resultReporting = new ResultReporting
-      val statsPromise = Promise[Map[Any, Any]]()
-      g.addVertex(new QueryVertex(q, resultReporting, statsPromise, optimizer))
-      implicit val timeout = Timeout(Duration.create(7200, TimeUnit.SECONDS))
-      (resultReporting.observable, statsPromise.future)
+      // Only check if result once computation is running.
+      (resultPromise.future, statsPromise.future)
     } else {
-      (Observable(), (Future.successful(Map())))
+      (Future.successful(UnrolledBuffer()), (Future.successful(Map())))
     }
   }
 
@@ -273,74 +260,8 @@ case class TripleRush(
     g.awaitIdle
   }
 
-  def shutdown = g.shutdown
-
-}
-
-class ResultReporting {
-  var observer: Observer[Array[Int]] = null.asInstanceOf[Observer[Array[Int]]]
-  var subscriptionCanceled = false
-  var isDone = false
-  var unreportedResults: UnrolledBuffer[Array[Array[Int]]] = UnrolledBuffer()
-
-  def reportResult(bindingsArray: Array[Array[Int]]) {
-    var shouldReportDirectly = false
-    synchronized {
-      if (unreportedResults != null && !subscriptionCanceled) {
-        unreportedResults.concat(UnrolledBuffer(bindingsArray))
-      } else {
-        shouldReportDirectly = true
-      }
-    }
-    if (shouldReportDirectly && !subscriptionCanceled) {
-      for (bindings <- bindingsArray) {
-        observer.onNext(bindings)
-      }
-    }
+  def shutdown = {
+    g.shutdown
   }
 
-  def executionFinished = {
-    synchronized {
-      isDone = true
-      if (observer != null) {
-        observer.onCompleted
-      }
-    }
-  }
-
-  def setObserver(o: Observer[Array[Int]]) = {
-    synchronized {
-      assert(observer == null, "TripleRush supports only one result observer.")
-      observer = o
-      reportUnreported
-      if (isDone) {
-        observer.onCompleted
-      }
-    }
-  }
-
-  def reportUnreported = {
-    var unreported = null.asInstanceOf[UnrolledBuffer[Array[Array[Int]]]]
-    synchronized {
-      unreported = unreportedResults
-      unreportedResults = null
-    }
-    if (unreported != null) {
-      for (buffer <- unreported) {
-        for (bindings <- buffer) {
-          observer.onNext(bindings)
-        }
-      }
-    }
-  }
-
-  def observable: Observable[Array[Int]] = {
-    Observable {
-      o: Observer[Array[Int]] =>
-        setObserver(o)
-        Subscription {
-          subscriptionCanceled = true
-        }
-    }
-  }
 }
