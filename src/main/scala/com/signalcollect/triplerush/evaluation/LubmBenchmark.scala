@@ -25,6 +25,7 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.io.Source
 import scala.util.Random
 import com.signalcollect.GraphBuilder
@@ -41,7 +42,6 @@ import com.signalcollect.triplerush.vertices.QueryOptimizer
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
-import com.signalcollect.triplerush.vertices.QueryResult
 import com.signalcollect.triplerush.QuerySpecification
 import scala.collection.mutable.UnrolledBuffer
 import java.lang.management.ManagementFactory
@@ -80,7 +80,7 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM KRAKEN Eval with more warmups, removed pargc JVM parameters."
+  def evalName = s"LUBM KRAKEN Reactive result reporting."
   def runs = 10
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
@@ -230,17 +230,6 @@ object LubmBenchmark extends App {
       ((nanoseconds / 100000.0).round) / 10.0
     }
 
-    def executeOnQueryEngine(particle: Array[Int]): QueryResult = {
-      val resultFuture = qe.executeQuery(particle, optimizer)
-      try {
-        Await.result(resultFuture, new FiniteDuration(1000, TimeUnit.SECONDS)) // TODO handle exception
-      } catch {
-        case t: Throwable =>
-          println(s"Query ${new QueryParticle(particle).queryId} timed out!")
-          QueryResult(UnrolledBuffer(), Array("exception"), Array(t))
-      }
-    }
-
     def jitRepetitions = 100
 
     /**
@@ -252,7 +241,7 @@ object LubmBenchmark extends App {
           val queryIndex = queryId - 1
           val query = fullQueries(queryIndex).toParticle
           print(s"Warming up with query ${new QueryParticle(query).queryId} ...")
-          executeOnQueryEngine(query)
+          qe.executeQuery(query)
           qe.awaitIdle
           println(s" Done.")
         }
@@ -317,7 +306,8 @@ object LubmBenchmark extends App {
       var runResult = baseResults
       var date: Date = new Date
       val queryIndex = queryId - 1
-      val query = queries(queryIndex).toParticle
+      val query = queries(queryIndex)
+      val particle = query.toParticle
       val gcTimeBefore = getGcCollectionTime
       val gcCountBefore = getGcCollectionCount
       val compileTimeBefore = compilations.getTotalCompilationTime
@@ -325,32 +315,27 @@ object LubmBenchmark extends App {
       runResult += ((s"freeMemoryBefore", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
       runResult += ((s"usedMemoryBefore", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
       val startTime = System.nanoTime
-      val queryResult = executeOnQueryEngine(query)
+      val (queryResultFuture, queryStatsFuture) = qe.executeAdvancedQuery(particle)
+      val queryResult = Await.result(queryResultFuture, 7200 seconds)
       val finishTime = System.nanoTime
-      val queryStats: Map[Any, Any] = (queryResult.statKeys zip queryResult.statVariables).toMap.withDefaultValue("")
       val executionTime = roundToMillisecondFraction(finishTime - startTime)
-      val optimizingTime = {
-        try {
-          roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long]).toString
-        } catch {
-          case t: Throwable => "Undefined"
-        }
-      }
       val gcTimeAfter = getGcCollectionTime
       val gcCountAfter = getGcCollectionCount
       val gcTimeDuringQuery = gcTimeAfter - gcTimeBefore
       val gcCountDuringQuery = gcCountAfter - gcCountBefore
       val compileTimeAfter = compilations.getTotalCompilationTime
       val compileTimeDuringQuery = compileTimeAfter - compileTimeBefore
+      val queryStats = Await.result(queryStatsFuture, 10 seconds)
+      val optimizingTime = roundToMillisecondFraction(queryStats("optimizingDuration").asInstanceOf[Long])
       runResult += ((s"revision", revision))
       runResult += ((s"queryId", queryId.toString))
       runResult += ((s"optimizer", optimizer.toString))
       runResult += ((s"queryCopyCount", queryStats("queryCopyCount").toString))
       runResult += ((s"query", queryStats("optimizedQuery").toString))
       runResult += ((s"exception", queryStats("exception").toString))
-      runResult += ((s"results", queryResult.bindings.length.toString))
+      runResult += ((s"results", queryResult.length.toString))
       runResult += ((s"executionTime", executionTime.toString))
-      runResult += ((s"optimizingTime", optimizingTime))
+      runResult += ((s"optimizingTime", optimizingTime.toString))
       runResult += ((s"totalMemory", bytesToGigabytes(Runtime.getRuntime.totalMemory).toString))
       runResult += ((s"freeMemory", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
       runResult += ((s"usedMemory", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
@@ -361,9 +346,9 @@ object LubmBenchmark extends App {
       runResult += (("gcCountDuringQuery", gcCountDuringQuery.toString))
       runResult += (("compileTimeAfter", compileTimeAfter.toString))
       runResult += (("compileTimeDuringQuery", compileTimeDuringQuery.toString))
-      runResult += ((s"loadNumber", universities.toString))
+      runResult += ((s"loadNumber", 10.toString))
       runResult += ((s"date", date.toString))
-      runResult += ((s"dataSet", s"lubm$universities"))
+      runResult += ((s"dataSet", s"dbpsb10"))
       finalResults = runResult :: finalResults
     }
 

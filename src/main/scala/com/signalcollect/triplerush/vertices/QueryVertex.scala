@@ -34,15 +34,9 @@ import com.signalcollect.triplerush.TriplePattern
 import akka.actor.ActorRef
 import akka.actor.actorRef2Scala
 import com.signalcollect.triplerush.QueryParticle
-
-case class QueryDone(
-  statKeys: Array[Any],
-  statVariables: Array[Any])
-
-case class QueryResult(
-  bindings: UnrolledBuffer[Array[Int]],
-  statKeys: Array[Any],
-  statVariables: Array[Any])
+import rx.lang.scala.subjects.ReplaySubject
+import scala.concurrent.Promise
+import rx.lang.scala.Observer
 
 case object QueryOptimizer {
   val None = 0 // Execute patterns in order passed.
@@ -52,13 +46,13 @@ case object QueryOptimizer {
 
 class QueryVertex(
   val query: Array[Int],
-  val resultRecipientActor: ActorRef,
-  val optimizer: Int,
-  val recordStats: Boolean = false) extends Vertex[Int, Nothing] {
+  val resultPromise: Promise[UnrolledBuffer[Array[Int]]],
+  val statsPromise: Promise[Map[Any, Any]],
+  val optimizer: Int) extends Vertex[Int, UnrolledBuffer[Array[Int]]] {
 
   val id = query.queryId
 
-  @transient var state: Nothing = _
+  @transient var state: UnrolledBuffer[Array[Int]] = UnrolledBuffer()
 
   val expectedTickets = Long.MaxValue
   val numberOfPatterns = query.numberOfPatterns
@@ -107,9 +101,9 @@ class QueryVertex(
         if (receivedTickets == expectedTickets) {
           queryDone(graphEditor)
         }
-      case bindings: Array[Array[Int]] =>
+      case bindings: UnrolledBuffer[_] =>
         queryCopyCount += 1
-        resultRecipientActor ! bindings
+        state = state.concat(bindings.asInstanceOf[UnrolledBuffer[Array[Int]]])
       case CardinalityReply(forPattern, cardinality) =>
         handleCardinalityReply(forPattern, cardinality, graphEditor)
     }
@@ -192,30 +186,28 @@ class QueryVertex(
   override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {}
 
   def queryDone(graphEditor: GraphEditor[Any, Any]) {
+    // Only execute this block once.
     if (!queryDone) {
-      if (recordStats) {
-        val stats = Map[Any, Any](
-          "optimizingDuration" -> optimizingDuration,
-          "queryCopyCount" -> queryCopyCount,
-          "optimizedQuery" -> ("Pattern matching order: " + new QueryParticle(optimizedQuery).patterns.toList + "\nCardinalities: " + cardinalities.toString))
-        val statsKeys: Array[Any] = stats.keys.toArray
-        val statsValues: Array[Any] = (statsKeys map (key => stats(key))).toArray
-        resultRecipientActor ! QueryDone(statsKeys, statsValues)
-      } else {
-        resultRecipientActor ! QueryDone(Array(), Array())
-      }
+      resultPromise.success(state)
+      val stats = Map[Any, Any](
+        "optimizingDuration" -> optimizingDuration,
+        "queryCopyCount" -> queryCopyCount,
+        "optimizedQuery" -> ("Pattern matching order: " + new QueryParticle(optimizedQuery).
+          patterns.toList + "\nCardinalities: " + cardinalities.toString)).
+        withDefaultValue("")
+      statsPromise.success(stats)
       graphEditor.removeVertex(id)
       queryDone = true
     }
   }
 
-  def setState(s: Nothing) {
+  def setState(s: UnrolledBuffer[Array[Int]]) {
     state = s
   }
 
   def scoreCollect = 0 // Because signals are collected upon delivery.
   def edgeCount = 0
-  override def toString = s"${this.getClass.getName}(state=$state)"
+  override def toString = s"${this.getClass.getName}(id=$id)"
   def executeCollectOperation(graphEditor: GraphEditor[Any, Any]) {}
   def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException

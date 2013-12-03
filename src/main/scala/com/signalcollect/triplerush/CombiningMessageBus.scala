@@ -73,7 +73,7 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     workerApiFactory) {
 
   val aggregatedTickets = new HashMap[Int, Long]().withDefaultValue(0)
-  val aggregatedResults = new HashMap[Int, List[Array[Int]]]().withDefaultValue(null)
+  val aggregatedResults = new HashMap[Int, UnrolledBuffer[Array[Int]]]().withDefaultValue(null)
   val aggregatedCardinalities = new HashMap[TriplePattern, Int]().withDefaultValue(0)
 
   override def sendSignal(
@@ -87,12 +87,12 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
         case tickets: Long => handleTickets(tickets, tId)
         case result: Array[Int] =>
           val oldResults = aggregatedResults(tId)
-          val bindings = result.bindings
+          val bindings = UnrolledBuffer(result.bindings)
           handleTickets(result.tickets, tId)
           if (oldResults != null) {
-            aggregatedResults(tId) = bindings :: oldResults
+            aggregatedResults(tId) = oldResults.concat(bindings)
           } else {
-            aggregatedResults(tId) = List(bindings)
+            aggregatedResults(tId) = bindings
           }
         case other =>
           super.sendSignal(signal, targetId, sourceId, blocking)
@@ -129,7 +129,7 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
       for ((queryVertexId, results) <- aggregatedResults) {
-        super.sendSignal(results.toArray.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
+        super.sendSignal(results.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
       }
       aggregatedResults.clear
     }
