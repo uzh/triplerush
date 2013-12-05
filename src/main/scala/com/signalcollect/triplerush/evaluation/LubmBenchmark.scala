@@ -346,9 +346,9 @@ object LubmBenchmark extends App {
       runResult += (("gcCountDuringQuery", gcCountDuringQuery.toString))
       runResult += (("compileTimeAfter", compileTimeAfter.toString))
       runResult += (("compileTimeDuringQuery", compileTimeDuringQuery.toString))
-      runResult += ((s"loadNumber", 10.toString))
-      runResult += ((s"date", date.toString))
-      runResult += ((s"dataSet", s"dbpsb10"))
+      runResult += s"loadNumber" -> universities.toString
+      runResult += s"date" -> date.toString
+      runResult += s"dataSet" -> s"lubm$universities"
       finalResults = runResult :: finalResults
     }
 
