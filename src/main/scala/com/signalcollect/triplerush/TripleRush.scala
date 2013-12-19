@@ -165,8 +165,15 @@ case object FileLoaders {
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
+  numberOfNodes: Int = 1,
+  numberOfCoresPerNode: Int = Runtime.getRuntime.availableProcessors,
+  // TODO: Ensure placement of Query vertices on coordinator node.
   //.withLoggingLevel(Logging.DebugLevel)
   console: Boolean = false) extends QueryEngine {
+
+  // Set to ensure that query vertices are placed on the coordinator node.
+  QueryIds.numberOfNodes.set(numberOfNodes)
+  QueryIds.numberOfCoresPerNode.set(numberOfCoresPerNode)
 
   var canExecute = false
 
@@ -203,6 +210,7 @@ case class TripleRush(
       "com.signalcollect.triplerush.TriplePattern",
       "Array[com.signalcollect.triplerush.TriplePattern]",
       "com.signalcollect.interfaces.SignalMessage$mcIJ$sp",
+      "com.signalcollect.interfaces.AddEdge",
       "akka.actor.RepointableActorRef")).build
   g.setUndeliverableSignalHandler(UndeliverableRerouter.handle _)
   val system = ActorSystemRegistry.retrieve("SignalCollect").get

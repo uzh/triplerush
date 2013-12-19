@@ -23,11 +23,16 @@ package com.signalcollect.triplerush.vertices
 import com.signalcollect.util.Ints._
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.util.SearchableIntSet
+import com.signalcollect.GraphEditor
 
 abstract class SearchableIndexVertex[SignalType, State](
   id: TriplePattern) extends IndexVertex(id) {
 
-  childDeltaArray = Array()
+  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    super.afterInitialization(graphEditor)
+    childDeltaArray = Array[Int]()
+  }
+
   @transient var childDeltaArray: Array[Int] = _
 
   @inline def foreachChildDelta(f: Int => Unit) = {
@@ -39,7 +44,9 @@ abstract class SearchableIndexVertex[SignalType, State](
     }
   }
 
-  def edgeCount = childDeltaArray.length
+  def edgeCount = {
+    if (childDeltaArray != null) childDeltaArray.length else 0
+  }
 
   def cardinality = childDeltaArray.length
 

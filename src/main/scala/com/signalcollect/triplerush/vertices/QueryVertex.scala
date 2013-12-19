@@ -101,9 +101,9 @@ class QueryVertex(
         if (receivedTickets == expectedTickets) {
           queryDone(graphEditor)
         }
-      case bindings: UnrolledBuffer[_] =>
+      case bindings: Array[_] =>
         queryCopyCount += 1
-        state = state.concat(bindings.asInstanceOf[UnrolledBuffer[Array[Int]]])
+        state = state.concat(UnrolledBuffer(bindings.asInstanceOf[Array[Array[Int]]]: _*))
       case CardinalityReply(forPattern, cardinality) =>
         handleCardinalityReply(forPattern, cardinality, graphEditor)
     }

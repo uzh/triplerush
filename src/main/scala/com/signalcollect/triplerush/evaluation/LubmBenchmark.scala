@@ -48,6 +48,7 @@ import java.lang.management.ManagementFactory
 import collection.JavaConversions._
 import language.postfixOps
 import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 
 object LubmBenchmark extends App {
   def jvmParameters = " -Xmx31000m" +
@@ -62,7 +63,7 @@ object LubmBenchmark extends App {
   val assemblyFile = new File(assemblyPath)
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.slow)
+    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
   val localHost = new LocalHost
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
 
@@ -80,10 +81,10 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM KRAKEN Reactive result reporting."
-  def runs = 10
+  def evalName = s"LUBM KRAKEN Distributed execution."
+  def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
-  //  var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
+  //    var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
   /*********/
 
   for (unis <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
@@ -194,15 +195,18 @@ object LubmBenchmark extends App {
     }
 
     var baseResults = Map[String, String]()
-    val kraken = new TorqueHost(
+    val krakenFromKraken = new TorqueHost(
       jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-      localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
+      localJarPath = "/home/user/stutz/triplerush-assembly-1.0-SNAPSHOT.jar", jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.fast)
     //      
-    val graphBuilder = GraphBuilder
-    //      withLoggingLevel(Logging.DebugLevel).
-    //withNodeProvisioner(new TorqueNodeProvisioner(kraken, 8))
-    val qe = new TripleRush(graphBuilder)
-
+    val numberOfNodes = 8
+    val graphBuilder = GraphBuilder.
+      //      withLoggingLevel(Logging.DebugLevel).
+      withNodeProvisioner(new TorqueNodeProvisioner(krakenFromKraken, numberOfNodes, allocateWorkersOnCoordinatorNode = true, copyExecutable = false))
+    val qe = new TripleRush(
+      graphBuilder,
+      numberOfNodes = numberOfNodes,
+      numberOfCoresPerNode = Runtime.getRuntime.availableProcessors)
     def loadLubm {
       val lubmFolderName = s"lubm$universities-filtered-splits"
       for (splitId <- 0 until 2880) {

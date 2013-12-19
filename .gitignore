@@ -39,3 +39,5 @@ binary-split/0.filtered-split
 *.snapshot
 
 *.filtered-split
+
+*.config
