@@ -29,6 +29,7 @@ import collection.JavaConversions._
 import scala.io.Source
 import org.semanticweb.yars.nx.parser.NxParser
 import java.io.OutputStreamWriter
+import com.signalcollect.triplerush.evaluation.lubm.FileOperations
 
 object DictionaryEncoderWithBase extends KrakenExecutable with Serializable {
   runOnKraken(BaseEncoder.encode(args(0)) _)

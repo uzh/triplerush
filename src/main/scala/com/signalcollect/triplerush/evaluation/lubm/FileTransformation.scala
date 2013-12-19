@@ -18,26 +18,13 @@
  *  
  */
 
-package com.signalcollect.triplerush.evaluation
+package com.signalcollect.triplerush.evaluation.lubm
 
 import java.io.File
-import org.semanticweb.yars.nx.parser.NxParser
-import com.signalcollect.triplerush.Mapping
-import java.io.FileInputStream
-import com.signalcollect.triplerush.TriplePattern
-import java.io.FileOutputStream
-import java.io.DataOutputStream
-import java.util.HashMap
 import collection.JavaConversions._
-import scala.io.Source
-import java.io.DataInputStream
-import java.io.EOFException
-import com.signalcollect.nodeprovisioning.torque.TorqueHost
-import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
-import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
-import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import java.nio.file.Paths
 import java.nio.file.Files
+import com.signalcollect.triplerush.evaluation.KrakenExecutable
 
 abstract class FileTransformation extends KrakenExecutable {
   import FileOperations._

@@ -18,15 +18,10 @@
  *  
  */
 
-package com.signalcollect.triplerush.evaluation
-
-import java.io.File
+package com.signalcollect.triplerush.evaluation.lubm
 import scala.sys.process._
-import com.signalcollect.nodeprovisioning.torque.TorqueHost
-import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
-import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
-import com.signalcollect.nodeprovisioning.torque.TorquePriority
-import java.nio.file.{ Files, Path, Paths }
+import com.signalcollect.triplerush.evaluation.KrakenExecutable
+import java.io.File
 
 object LubmGenerator extends KrakenExecutable {
   runOnKraken(Generator.generate(args(0).toInt) _)

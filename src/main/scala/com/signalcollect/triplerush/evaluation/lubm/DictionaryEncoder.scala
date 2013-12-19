@@ -18,7 +18,7 @@
  *  
  */
 
-package com.signalcollect.triplerush.evaluation
+package com.signalcollect.triplerush.evaluation.lubm
 
 import java.io.DataOutputStream
 import java.io.File
@@ -26,15 +26,17 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.HashMap
 import collection.JavaConversions._
-import scala.io.Source
 import org.semanticweb.yars.nx.parser.NxParser
 import java.io.OutputStreamWriter
+import FileOperations.createFolder
+import FileOperations.filesIn
+import com.signalcollect.triplerush.evaluation.KrakenExecutable
 
-object DictionaryEncoderWithPartitioning extends KrakenExecutable with Serializable {
-  runOnKraken(PartitioningEncoder.encode(args(0)) _)
+object DictionaryEncoder extends KrakenExecutable with Serializable {
+  runOnKraken(Encoder.encode(args(0)) _)
 }
 
-object PartitioningEncoder {
+object Encoder {
   def encode(sourceFolderBaseName: String)() {
     import FileOperations._
 
@@ -44,28 +46,24 @@ object PartitioningEncoder {
     val source = new File(sourceFolderName)
     val target = new File(targetFolderName)
     var nextId = 0
-    var universityId = 0
     val dictionaryPath = s"$targetFolderName/dictionary.txt"
     val dictionary = new HashMap[String, Int]()
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
     val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
 
-      def register(entry: String, university: Int): Int = {
+      def register(entry: String): Int = {
         val id = dictionary.get(entry)
         if (id != 0) {
           id
         } else {
-          val idForEntry = nextId | (university << 23)
+          val idForEntry = nextId
           dictionary.put(entry, idForEntry)
           nextId += 1
-          assert(nextId < 8000000)
           idForEntry
         }
       }
 
       def encodeFile(source: File, target: File) {
-        universityId = source.getName.split("University")(1).split("_")(0).toInt
-        assert(universityId < 256)
         val is = new FileInputStream(source)
         val binaryOs = new FileOutputStream(target)
         val binaryDos = new DataOutputStream(binaryOs)
@@ -73,16 +71,14 @@ object PartitioningEncoder {
         while (nxp.hasNext) {
           val triple = nxp.next
           val subjectString = triple(0).toString
-          if (!subjectString.startsWith("file:///Users")) {
-            val predicateString = triple(1).toString
-            val objectString = triple(2).toString
-            val sId = register(subjectString, universityId)
-            val pId = register(predicateString, universityId)
-            val oId = register(objectString, universityId)
-            binaryDos.writeInt(sId)
-            binaryDos.writeInt(pId)
-            binaryDos.writeInt(oId)
-          }
+          val predicateString = triple(1).toString
+          val objectString = triple(2).toString
+          val sId = register(subjectString)
+          val pId = register(predicateString)
+          val oId = register(objectString)
+          binaryDos.writeInt(sId)
+          binaryDos.writeInt(pId)
+          binaryDos.writeInt(oId)
         }
         binaryDos.close
         binaryOs.close

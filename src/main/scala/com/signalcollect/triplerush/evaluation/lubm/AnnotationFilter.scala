@@ -18,19 +18,12 @@
  *  
  */
 
-package com.signalcollect.triplerush.evaluation
-
-import java.io.File
+package com.signalcollect.triplerush.evaluation.lubm
 import scala.sys.process._
-import com.signalcollect.nodeprovisioning.torque.TorqueHost
-import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
-import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
-import com.signalcollect.nodeprovisioning.torque.TorquePriority
-import java.nio.file.{ Files, Path, Paths }
 import scala.io.Source
 import java.io.FileOutputStream
-import java.io.DataOutputStream
 import java.io.OutputStreamWriter
+import com.signalcollect.triplerush.evaluation.KrakenExecutable
 
 /**
  * Removes annotations from ntriple files.

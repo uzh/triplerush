@@ -22,11 +22,7 @@ package com.signalcollect.triplerush.evaluation
 
 import java.io.File
 import scala.sys.process._
-import com.signalcollect.nodeprovisioning.torque.TorqueHost
-import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
-import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
-import com.signalcollect.nodeprovisioning.torque.TorquePriority
-import java.nio.file.{ Files, Path, Paths }
+import com.signalcollect.triplerush.evaluation.lubm.FileTransformation
 
 object NtriplesConverter extends FileTransformation with Serializable {
 

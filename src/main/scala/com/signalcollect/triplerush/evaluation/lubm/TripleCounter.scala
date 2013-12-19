@@ -18,19 +18,11 @@
  *  
  */
 
-package com.signalcollect.triplerush.evaluation
-
-import java.io.DataOutputStream
+package com.signalcollect.triplerush.evaluation.lubm
 import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.util.HashMap
-import scala.io.Source
-import org.semanticweb.yars.nx.parser.NxParser
 import java.io.EOFException
-import java.util.HashSet
 import java.io.DataInputStream
-import com.signalcollect.triplerush.TriplePattern
 
 object TripleCounter extends App {
   val toCountFolderName = args(0)
