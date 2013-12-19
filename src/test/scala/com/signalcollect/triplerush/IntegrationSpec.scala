@@ -5,7 +5,7 @@ import scala.concurrent.duration.DurationInt
 import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
 import org.specs2.matcher.ShouldMatchers
-import com.signalcollect.triplerush.vertices.QueryOptimizer
+import com.signalcollect.triplerush.vertices.QueryOptimizers
 import com.signalcollect.triplerush.QueryParticle._
 import scala.util.Random
 import scala.annotation.tailrec

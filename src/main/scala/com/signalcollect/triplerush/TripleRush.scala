@@ -41,7 +41,7 @@ import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.vertices.Forwarding
 import com.signalcollect.triplerush.vertices.POIndex
 import com.signalcollect.triplerush.vertices.QueryDone
-import com.signalcollect.triplerush.vertices.QueryOptimizer
+import com.signalcollect.triplerush.vertices.QueryOptimizers
 import com.signalcollect.triplerush.vertices.QueryResult
 import com.signalcollect.triplerush.vertices.QueryVertex
 import com.signalcollect.triplerush.vertices.SOIndex
@@ -54,6 +54,10 @@ import akka.actor.actorRef2Scala
 import akka.pattern.ask
 import akka.util.Timeout
 import java.io.File
+
+import scala.collection.immutable.TreeMap
+import scala.concurrent.Await
+import scala.concurrent.duration.FiniteDuration
 
 case object RegisterQueryResultRecipient
 
@@ -202,6 +206,9 @@ case object FileLoaders {
   }
 }
 
+//for statistics gathering
+case class PredicatePair(first: Int, second: Int)
+
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
   //.withLoggingLevel(Logging.DebugLevel)
@@ -235,7 +242,7 @@ case class TripleRush(
       "com.signalcollect.triplerush.vertices.SOIndex",
       "com.signalcollect.triplerush.TriplePattern",
       "com.signalcollect.triplerush.vertices.QueryVertex",
-      "com.signalcollect.triplerush.vertices.QueryOptimizer",
+      //"com.signalcollect.triplerush.vertices.QueryOptimizer",
       "com.signalcollect.triplerush.vertices.QueryDone",
       "com.signalcollect.triplerush.PlaceholderEdge",
       "com.signalcollect.triplerush.CardinalityRequest",
@@ -258,6 +265,73 @@ case class TripleRush(
     g.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
   }
 
+  /**statistics generation queries*/
+  val x = -1
+
+  def bindingsToMap(bindings: Array[Int]): Map[Int, Int] = {
+    (((-1 to -bindings.length by -1).zip(bindings))).toMap
+  }
+
+  def getBindingsFor(variable: Int, bindings: UnrolledBuffer[Array[Int]]): Set[Int] = {
+    val allBindings: List[Map[Int, Int]] = bindings.toList.map(bindingsToMap(_).map(entry => (entry._1, entry._2)))
+    val listOfSetsOfKeysWithVar: List[Set[Int]] = allBindings.map {
+      bindings: Map[Int, Int] =>
+        bindings.filterKeys(_ == variable).values.toSet
+    }
+    listOfSetsOfKeysWithVar.foldLeft(Set[Int]())(_ union _)
+  }
+
+  def resultFromQuery(q: QuerySpecification): QueryResult = {
+    val resultFromQueryEngine = executeQuery(queryToGetAllPredicates.toParticle, true)
+    val result = Await.result(resultFromQueryEngine, new FiniteDuration(100, TimeUnit.SECONDS))
+    result
+  }
+  def resultFromQuery(q: QuerySpecification, resultFuture: Future[QueryResult]): QueryResult = {
+    val result = Await.result(resultFuture, new FiniteDuration(100, TimeUnit.SECONDS))
+    result
+  }
+
+  val queryToGetAllPredicates = QuerySpecification(List(TriplePattern(0, x, 0)))
+  //val allPredicatesQueryResult = executeQuery(queryToGetAllPredicates.toParticle, true)
+  val allPredicateResult = resultFromQuery(queryToGetAllPredicates)
+  //val allPredicateResult = resultFromQuery(queryToGetAllPredicates, allPredicatesQueryResult)
+  val bindingsForPredicates = getBindingsFor(x, allPredicateResult.bindings)
+
+  val mapOutOut = collection.mutable.Map[PredicatePair, Int]()
+  val mapInOut = collection.mutable.Map[PredicatePair, Int]()
+  val mapInIn = collection.mutable.Map[PredicatePair, Int]()
+  val mapOutIn = collection.mutable.Map[PredicatePair, Int]()
+  val mapPredicateBranching = collection.mutable.Map[Int, Int]()
+
+  for (p1 <- bindingsForPredicates) {
+    for (p2 <- bindingsForPredicates) {
+      if (p1 != p2) {
+        val outOutQuery = QuerySpecification(List(TriplePattern(x, p1, 0), TriplePattern(x, p2, 0)))
+        val inOutQuery = QuerySpecification(List(TriplePattern(0, p1, x), TriplePattern(x, p2, 0)))
+        val inInQuery = QuerySpecification(List(TriplePattern(0, p1, x), TriplePattern(0, p2, x)))
+        val outInQuery = QuerySpecification(List(TriplePattern(x, p1, 0), TriplePattern(0, p2, x)))
+
+        val resultOutOutQuery = resultFromQuery(outOutQuery)
+        val resultInOutQuery = resultFromQuery(inOutQuery)
+        val resultInInQuery = resultFromQuery(inInQuery)
+        val resultOutInQuery = resultFromQuery(outInQuery)
+
+        mapOutOut += PredicatePair(p1, p2) -> resultOutOutQuery.bindings.length
+        mapInOut += PredicatePair(p1, p2) -> resultInOutQuery.bindings.length
+        mapInIn += PredicatePair(p1, p2) -> resultInInQuery.bindings.length
+        mapOutIn += PredicatePair(p1, p2) -> resultOutInQuery.bindings.length
+      }
+    }
+    
+    /**need predicate branching statistics gathering here*/
+    val predicateBranchingQuery = QuerySpecification(List(TriplePattern(0, p1, 0)))
+    //val resultPredicateBranchingQuery = executeQuery(predicateBranchingQuery)
+    val resultPredicateBranchingQuery = resultFromQuery(predicateBranchingQuery)
+    //mapPredicateBranching += p1 -> resultPredicateBranchingQuery.bindings.length
+    mapPredicateBranching += p1 -> resultPredicateBranchingQuery.bindings.length
+  }
+  /** end of statistics gathering */
+
   /**
    * Slow, only use for debugging purposes.
    */
@@ -278,13 +352,13 @@ case class TripleRush(
 
   def executeQuery(q: Array[Int], optimizer: Boolean) = {
     if (optimizer) {
-      executeQuery(q, QueryOptimizer.Clever)
+      executeQuery(q, QueryOptimizers.Clever)
     } else {
-      executeQuery(q, QueryOptimizer.None)
+      executeQuery(q, QueryOptimizers.None)
     }
   }
 
-  def executeQuery(q: Array[Int], optimizer: Int = QueryOptimizer.Clever): Future[QueryResult] = {
+  def executeQuery(q: Array[Int], optimizer: Int = QueryOptimizers.Clever): Future[QueryResult] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     if (!q.isResult) {
       val resultRecipientActor = system.actorOf(Props[ResultRecipientActor], name = Random.nextLong.toString)

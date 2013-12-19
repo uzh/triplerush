@@ -30,6 +30,7 @@ trait Forwarding extends IndexVertex {
   def nextRoutingAddress(childDelta: Int): TriplePattern
 
   override def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
+    println("\tForwarding process query")
     val edges = edgeCount
     val totalTickets = query.tickets
     val avg = math.abs(totalTickets) / edges

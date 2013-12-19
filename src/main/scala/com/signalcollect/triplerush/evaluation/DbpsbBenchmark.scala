@@ -36,7 +36,7 @@ import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import com.signalcollect.triplerush.Mapping
 import com.signalcollect.triplerush.TripleRush
-import com.signalcollect.triplerush.vertices.QueryOptimizer
+import com.signalcollect.triplerush.vertices.QueryOptimizers
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
@@ -90,7 +90,7 @@ object DbpsbBenchmark extends App {
   /*********/
 
   for (run <- 1 to runs) {
-    for (optimizer <- List(QueryOptimizer.Clever)) {
+    for (optimizer <- List(QueryOptimizers.Clever)) {
       evaluation = evaluation.addEvaluationRun(dbpsbBenchmarkRun(
         evalName,
         false,

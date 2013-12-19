@@ -42,7 +42,8 @@ class GroundTruthSpec extends SpecificationWithJUnit {
 
   sequential
 
-  val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+  //val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+  val enabledQueries = Set(1,2,3,4,9)
   //  val enabledQueries = Set(2)
   val dslEnabled = true
   val sparqlEnabled = false
@@ -55,6 +56,14 @@ class GroundTruthSpec extends SpecificationWithJUnit {
     SELECT ? "X" WHERE (
       | - "X" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
       | - "X" - s"$rdf#type" - s"$ub#GraduateStudent"),
+      
+    SELECT ? "X" ? "Y" WHERE (
+      | - "X" -s"$ub#takesCourse" - "Y"),
+    
+    SELECT ? "X" ? "Y" WHERE (
+      | - "X" -s"$ub#takesCourse" - "Y",
+      | - "Y" -s"$rdf#type" - "Z"),
+      
     // Query 2
     SELECT ? "X" ? "Y" ? "Z" WHERE (
       | - "Y" - s"$rdf#type" - s"$ub#University",
@@ -346,6 +355,7 @@ WHERE
     if (enabledQueries.contains(queryId) && (dslEnabled && !sparql || sparqlEnabled && sparql)) {
       val referenceResult = referenceResults(queryId)
       val ourResult = executeOnQueryEngine(dslQueries(queryId - 1))
+      println("size of output: "+ourResult.length);
       ourResult === referenceResult
     } else {
       "Test was not enabled" === "Test was not enabled"

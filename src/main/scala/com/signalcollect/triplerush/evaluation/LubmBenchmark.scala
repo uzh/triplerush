@@ -37,7 +37,7 @@ import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import com.signalcollect.triplerush.Mapping
 import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.QueryEngine
-import com.signalcollect.triplerush.vertices.QueryOptimizer
+import com.signalcollect.triplerush.vertices.QueryOptimizers
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
@@ -88,7 +88,7 @@ object LubmBenchmark extends App {
 
   for (unis <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
     for (run <- 1 to runs) {
-      for (optimizer <- List(QueryOptimizer.Clever)) {
+      for (optimizer <- List(QueryOptimizers.Clever)) {
         evaluation = evaluation.addEvaluationRun(lubmBenchmarkRun(
           evalName,
           false,

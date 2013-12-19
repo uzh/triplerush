@@ -44,7 +44,7 @@ case class QueryResult(
   statKeys: Array[Any],
   statVariables: Array[Any])
 
-case object QueryOptimizer {
+case object QueryOptimizers {
   val None = 0 // Execute patterns in order passed.
   val Greedy = 1 // Execute patterns in descending order of cardinalities.
   val Clever = 2 // Uses cardinalities and prefers patterns that contain variables that have been matched in a previous pattern.
@@ -55,7 +55,7 @@ class QueryVertex(
   val resultRecipientActor: ActorRef,
   val optimizer: Int,
   val recordStats: Boolean = false) extends Vertex[Int, Nothing] {
-
+  
   val id = query.queryId
 
   @transient var state: Nothing = _
@@ -74,8 +74,9 @@ class QueryVertex(
   @transient var optimizedQuery: Array[Int] = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    println("query: " + query.mkString(" "))
     cardinalities = Map()
-    if (optimizer != QueryOptimizer.None && numberOfPatterns > 1) {
+    if (optimizer != QueryOptimizers.None && numberOfPatterns > 1) {
       // Gather pattern cardinalities first.
       query.patterns foreach (triplePattern => {
         val responsibleIndexId = triplePattern.routingAddress
@@ -132,6 +133,7 @@ class QueryVertex(
         if (optimizingStartTime != 0) {
           optimizingDuration = System.nanoTime - optimizingStartTime
         }
+        println("sending query signal to optimized query's routing address: " + optimizedQuery.routingAddress.toString)
         graphEditor.sendSignal(optimizedQuery, optimizedQuery.routingAddress, None)
       }
     }
@@ -139,41 +141,53 @@ class QueryVertex(
 
   def optimizeQuery: Array[Int] = {
     var sortedPatterns = cardinalities.toArray sortBy (_._2)
+    //print("optimize query: ");
     optimizer match {
-      case QueryOptimizer.Greedy =>
+      case QueryOptimizers.Greedy =>
         // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
         val copy = query.copy
         copy.writePatterns(sortedPatterns map (_._1))
         copy
-      case QueryOptimizer.Clever =>
+      case QueryOptimizers.Clever =>
         var boundVariables = Set[Int]() // The lower the score, the more constrained the variable.
         val optimizedPatterns = ArrayBuffer[TriplePattern]()
         while (!sortedPatterns.isEmpty) {
           val nextPattern = sortedPatterns.head._1
+          //print("first pattern: "+nextPattern.toString+", cardinality: "+cardinalities(nextPattern)+" bound vars: ");
           optimizedPatterns.append(nextPattern)
+          print("\t" + nextPattern + "," + cardinalities(nextPattern) + " ")
           val variablesInPattern = nextPattern.variables
           for (variable <- variablesInPattern) {
             boundVariables += variable
+            //print(variable+", ")
           }
+          println()
           sortedPatterns = sortedPatterns.tail map {
             case (pattern, oldCardinalityEstimate) =>
+              //println("\t"+pattern.toString+", cardinality: "+oldCardinalityEstimate)
               // We don't care about the old estimate.
               var cardinalityEstimate = cardinalities(pattern).toDouble
               var foundUnbound = false
               for (variable <- pattern.variables) {
                 if (boundVariables.contains(variable)) {
+                  //print("\tdivide by 100 ")
                   cardinalityEstimate = cardinalityEstimate / 100.0
                 } else {
                   foundUnbound = true
                 }
               }
               if (!foundUnbound) {
+                //val oldest = cardinalityEstimate
                 cardinalityEstimate = 1.0 + cardinalityEstimate / 100000000
+                //println("\tfoundUnbound false, cardinalityestimate: "+cardinalityEstimate+" otherwise: "+oldest)
               }
+              //else println("\tfoundunbound true, cardinalityestimate: "+cardinalityEstimate+" otherwise: "+(1.0+cardinalityEstimate/100000000))
               (pattern, cardinalityEstimate.toInt)
           }
           sortedPatterns = sortedPatterns sortBy (_._2)
+          //println("\tsortedpatterns: "+sortedPatterns.mkString(" "))
         }
+        println("\toptimizedpatterns: " + optimizedPatterns.mkString(" "))
         val c = query.copy
         c.writePatterns(optimizedPatterns.toArray)
         c
