@@ -23,27 +23,29 @@ package com.signalcollect.triplerush.vertices
 import com.signalcollect.util.Ints._
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.util.IntSet
+import com.signalcollect.util.SplayIntSet
+import com.signalcollect.GraphEditor
 
 abstract class OptimizedIndexVertex(
   id: TriplePattern) extends IndexVertex(id) {
 
-  optimizedChildDeltas = Array()
-  @transient var optimizedChildDeltas: Array[Byte] = _
+  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    super.afterInitialization(graphEditor)
+    optimizedChildDeltas = new MemoryEfficientSplayIntSet
+  }
 
-  @transient var edgeCounter = 0
+  @transient var optimizedChildDeltas: SplayIntSet = _
 
-  def edgeCount = edgeCounter
-  def cardinality = edgeCounter
+  def edgeCount = {
+    if (optimizedChildDeltas != null) optimizedChildDeltas.size else 0
+  }
+  def cardinality = optimizedChildDeltas.size
 
-  @inline def foreachChildDelta(f: Int => Unit) = new IntSet(optimizedChildDeltas).foreach(f)
+  @inline def foreachChildDelta(f: Int => Unit) = optimizedChildDeltas.foreach(f)
 
   def addChildDelta(delta: Int): Boolean = {
     val deltasBeforeInsert = optimizedChildDeltas
-    optimizedChildDeltas = new IntSet(optimizedChildDeltas).insert(delta)
-    val wasInserted = deltasBeforeInsert != optimizedChildDeltas
-    if (wasInserted) {
-      edgeCounter += 1
-    }
+    val wasInserted = optimizedChildDeltas.insert(delta)
     wasInserted
   }
 

@@ -30,8 +30,8 @@ import com.signalcollect.messaging.BulkMessageBus
 import scala.collection.mutable.HashMap
 import com.signalcollect.interfaces.SignalMessage
 import com.signalcollect.interfaces.MessageBusFactory
-import scala.collection.mutable.UnrolledBuffer
 import QueryParticle._
+import scala.collection.mutable.ArrayBuffer
 
 class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
   extends MessageBusFactory {
@@ -73,7 +73,7 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     workerApiFactory) {
 
   val aggregatedTickets = new HashMap[Int, Long]().withDefaultValue(0)
-  val aggregatedResults = new HashMap[Int, UnrolledBuffer[Array[Int]]]().withDefaultValue(null)
+  val aggregatedResults = new HashMap[Int, ArrayBuffer[Array[Int]]]().withDefaultValue(null)
   val aggregatedCardinalities = new HashMap[TriplePattern, Int]().withDefaultValue(0)
 
   override def sendSignal(
@@ -87,12 +87,13 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
         case tickets: Long => handleTickets(tickets, tId)
         case result: Array[Int] =>
           val oldResults = aggregatedResults(tId)
-          val bindings = UnrolledBuffer(result.bindings)
+          val bindings = result.bindings
           handleTickets(result.tickets, tId)
           if (oldResults != null) {
-            aggregatedResults(tId) = oldResults.concat(bindings)
+            oldResults.append(bindings)
           } else {
-            aggregatedResults(tId) = bindings
+            val newBuffer = ArrayBuffer(bindings)
+            aggregatedResults(tId) = newBuffer
           }
         case other =>
           super.sendSignal(signal, targetId, sourceId, blocking)
@@ -129,7 +130,7 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
       for ((queryVertexId, results) <- aggregatedResults) {
-        super.sendSignal(results.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
+        super.sendSignal(results.toArray.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
       }
       aggregatedResults.clear
     }
