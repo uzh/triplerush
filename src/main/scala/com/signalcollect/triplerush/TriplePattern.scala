@@ -108,9 +108,9 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
       case TriplePattern(0, 0, o) =>
         List()
       case TriplePattern(0, p, o) =>
-        List(TriplePattern(0, p, 0))
+        List(TriplePattern(0, 0, o), TriplePattern(0, p, 0))
       case TriplePattern(s, 0, o) =>
-        List(TriplePattern(0, 0, o))
+        List()
       case TriplePattern(s, p, 0) =>
         List(TriplePattern(s, 0, 0))
       case TriplePattern(s, p, o) =>

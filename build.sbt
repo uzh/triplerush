@@ -10,7 +10,7 @@ organization := "com.signalcollect"
 
 scalaVersion := "2.10.3"
 
-scalacOptions ++= Seq("-optimize", "-Yinline-warnings", "-feature", "-Xfatal-warnings")
+scalacOptions ++= Seq("-optimize", "-Yinline-warnings", "-feature", "-Xfatal-warnings", "-deprecation")
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
 

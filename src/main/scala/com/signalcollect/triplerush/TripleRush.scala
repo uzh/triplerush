@@ -44,6 +44,9 @@ import com.signalcollect.triplerush.vertices.SOIndex
 import com.signalcollect.triplerush.vertices.SPIndex
 import akka.util.Timeout
 import scala.concurrent.Await
+import com.signalcollect.interfaces.AggregationOperation
+import com.signalcollect.Vertex
+import com.signalcollect.interfaces.ModularAggregationOperation
 
 case object RegisterQueryResultRecipient
 
@@ -267,4 +270,40 @@ case class TripleRush(
     g.shutdown
   }
 
+  def edgesPerIndexType: Map[String, Int] = {
+    g.aggregate(new EdgesPerIndexType)
+  }
+
+  def countVerticesByType: Map[String, Int] = {
+    g.aggregate(new CountVerticesByType)
+  }
+
+}
+
+case class EdgesPerIndexType() extends AggregationOperation[Map[String, Int]] {
+  def extract(v: Vertex[_, _]): Map[String, Int] = {
+    Map(v.getClass.toString -> v.edgeCount).withDefaultValue(0)
+  }
+  def reduce(elements: Stream[Map[String, Int]]): Map[String, Int] = {
+    val result: Map[String, Int] = elements.reduce { (m1: Map[String, Int], m2: Map[String, Int]) =>
+      val keys = m1.keys ++ m2.keys
+      val merged = keys.map(k => (k, m1(k) + m2(k)))
+      merged.toMap.withDefaultValue(0)
+    }
+    result
+  }
+}
+
+case class CountVerticesByType() extends AggregationOperation[Map[String, Int]] {
+  def extract(v: Vertex[_, _]): Map[String, Int] = {
+    Map(v.getClass.toString -> 1).withDefaultValue(0)
+  }
+  def reduce(elements: Stream[Map[String, Int]]): Map[String, Int] = {
+    val result: Map[String, Int] = elements.reduce { (m1: Map[String, Int], m2: Map[String, Int]) =>
+      val keys = m1.keys ++ m2.keys
+      val merged = keys.map(k => (k, m1(k) + m2(k)))
+      merged.toMap.withDefaultValue(0)
+    }
+    result
+  }
 }

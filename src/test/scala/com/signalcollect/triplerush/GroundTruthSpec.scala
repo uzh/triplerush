@@ -324,6 +324,19 @@ WHERE
   }
   qe.prepareExecution
   println("Finished loading LUBM1.")
+
+  val edgesPerType = qe.edgesPerIndexType
+  val verticesPerType = qe.countVerticesByType
+
+  println("Total edge count by vertex type:")
+  println(edgesPerType)
+  println("Cardinalities by vertex type:")
+  println(verticesPerType)
+  println("Avg. edge count per vertex type:")
+  val vertexTypes = edgesPerType.keys
+  val avgEdgeCount = vertexTypes.map(k => (k, edgesPerType(k).toDouble / verticesPerType(k)))
+  println(avgEdgeCount)
+
   println("Done.")
 
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
