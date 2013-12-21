@@ -167,23 +167,15 @@ case class TripleRush(
   //.withLoggingLevel(Logging.DebugLevel)
   console: Boolean = false) extends QueryEngine {
 
-  // Set to ensure that query vertices are placed on the coordinator node.
-  QueryIds.numberOfNodes.set(numberOfNodes)
-  QueryIds.numberOfCoresPerNode.set(numberOfCoresPerNode)
-
-  var canExecute = false
-
-  def prepareExecution {
-    g.awaitIdle
-    g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
-    g.awaitIdle
-    canExecute = true
-  }
-
   // TODO: Handle root pattern(s).
   // TODO: Validate/simplify queries before executing them.
 
   println("Graph engine is initializing ...")
+  // Set to ensure that query vertices are placed on the coordinator node.
+  QueryIds.numberOfNodes.set(numberOfNodes)
+  QueryIds.numberOfCoresPerNode.set(numberOfCoresPerNode)
+  var canExecute = false
+
   private val g = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
     withMapperFactory(TripleMapperFactory).
@@ -212,6 +204,13 @@ case class TripleRush(
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
   println("TripleRush is ready.")
+
+  def prepareExecution {
+    g.awaitIdle
+    g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+    g.awaitIdle
+    canExecute = true
+  }
 
   def loadNtriples(ntriplesFilename: String, placementHint: Option[Any] = None) {
     g.modifyGraph(FileLoaders.loadNtriplesFile(ntriplesFilename) _, placementHint)

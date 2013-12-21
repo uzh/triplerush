@@ -28,22 +28,36 @@ class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends 
 
   def getWorkerIdForVertexId(vertexId: Id): Int = {
     vertexId match {
+      //      case tp: TriplePattern => {
+      //        // Check diagram in paper. The goal is to have binding index vertices placed on the same node as
+      //        // their respective parent index vertex. At the same time index vertices should be load balanced over all workers on a node.
+      //        if (tp.s > 0 && tp.o == 0) {
+      //          // Leftmost on figure.
+      //          workerId(nodeAssignmentId = tp.s, nodeBalanceId = tp.p)
+      //        } else if (tp.o > 0 && tp.p == 0) {
+      //          // Rightmost on figure.
+      //          workerId(nodeAssignmentId = tp.o, nodeBalanceId = tp.s)
+      //        } else {
+      //          // Middle on figure.
+      //          workerId(nodeAssignmentId = tp.p, nodeBalanceId = tp.o)
+      //        }
+      //      }
       case tp: TriplePattern => {
-        // Check diagram in paper. The goal is to have binding index vertices placed on the same node as
-        // their respective parent index vertex. At the same time vertices should be load balanced over all workers on a node.
-        if (tp.s > 0 && tp.o == 0) {
-          // Leftmost on figure.
-          workerId(nodeAssignmentId = tp.s, nodeBalanceId = tp.p)
-        } else if (tp.o > 0 && tp.p == 0) {
-          // Rightmost on figure.
-          workerId(nodeAssignmentId = tp.o, nodeBalanceId = tp.s)
+        val s = tp.s
+        if (s > 0) {
+          s % numberOfWorkers
+        } else if (tp.o > 0) {
+          tp.o % numberOfWorkers
+        } else if (tp.p > 0) {
+          tp.p % numberOfWorkers
         } else {
-          // Middle on figure.
-          workerId(nodeAssignmentId = tp.p, nodeBalanceId = tp.o)
+          // Put it on the last node, so it does not collide with the node which has the coordinator.
+          // Put it on the 1st worker there.
+          workerId(nodeAssignmentId = numberOfNodes - 1, nodeBalanceId = 1)
         }
       }
       case qv: Int => loadBalance(qv, numberOfWorkers)
-      case other   => throw new UnsupportedOperationException("This mapper does not support mapping ids of type " + other.getClass)
+      case other => throw new UnsupportedOperationException("This mapper does not support mapping ids of type " + other.getClass)
     }
   }
 

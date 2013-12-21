@@ -81,7 +81,7 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM KRAKEN Distributed execution."
+  def evalName = s"LUBM KRAKEN Alternative vertex to worker mapper."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //    var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
