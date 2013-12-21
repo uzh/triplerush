@@ -102,7 +102,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
       case TriplePattern(0, 0, 0) =>
         List()
       case TriplePattern(s, 0, 0) =>
-        List(TriplePattern(0, 0, 0))
+        List()
       case TriplePattern(0, p, 0) =>
         List()
       case TriplePattern(0, 0, o) =>

@@ -34,25 +34,25 @@ class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends 
         val s = tp.s
         val p = tp.p
         val o = tp.o
-        if (o > 0) {
+        if (s > 0) {
           if (p > 0) {
-            workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = p)
-          } else if (s > 0) {
-            workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = s)
-          } else {
-            workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o)
-          }
-        } else if (s > 0) {
-          if (p > 0) {
-            workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = p)
+            workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + p)
+          } else if (o > 0) {
+            workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + o)
           } else {
             workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s)
+          }
+        } else if (o > 0) {
+          if (p > 0) {
+            workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o + p)
+          } else {
+            workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o)
           }
         } else if (p > 0) {
           workerIdOptimized(nodeAssignmentId = p, nodeBalanceId = p)
         } else {
-          // Root, put it on the last node, so it does not usually collide with the node which has the coordinator.
-          // Put it on the 1st worker there.
+          // Root, put it on the last node, so it does not collide with the node which has the coordinator, when there are multiple nodes.
+          // Put it on the second worker there.
           workerIdOptimized(nodeAssignmentId = numberOfNodes - 1, nodeBalanceId = 1)
         }
 
