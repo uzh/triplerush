@@ -34,9 +34,7 @@ import com.signalcollect.triplerush.TriplePattern
 import akka.actor.ActorRef
 import akka.actor.actorRef2Scala
 import com.signalcollect.triplerush.QueryParticle
-import rx.lang.scala.subjects.ReplaySubject
 import scala.concurrent.Promise
-import rx.lang.scala.Observer
 
 case object QueryOptimizer {
   val None = 0 // Execute patterns in order passed.

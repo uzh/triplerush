@@ -10,7 +10,7 @@ organization := "com.signalcollect"
 
 scalaVersion := "2.10.3"
 
-scalacOptions ++= Seq("-optimize")
+scalacOptions ++= Seq("-optimize -Yinline-warnings -feature -Xfatal-warnings")
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
 
@@ -28,7 +28,6 @@ excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-library" % "2.10.3"  % "compile",
   "com.google.collections" % "google-collections" % "1.0",
-  "com.netflix.rxjava" % "rxjava-scala" % "0.15.1",
   "junit" % "junit" % "4.8.2"  % "test",
   "org.specs2" %% "specs2" % "2.3.3"  % "test",
   "org.scalacheck" %% "scalacheck" % "1.11.0" % "test",

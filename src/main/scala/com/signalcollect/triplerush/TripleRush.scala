@@ -43,10 +43,6 @@ import com.signalcollect.triplerush.vertices.QueryVertex
 import com.signalcollect.triplerush.vertices.SOIndex
 import com.signalcollect.triplerush.vertices.SPIndex
 import akka.util.Timeout
-import rx.lang.scala.Observable
-import rx.lang.scala.Observer
-import rx.lang.scala.Subscription
-import rx.lang.scala.subjects.ReplaySubject
 import scala.concurrent.Await
 
 case object RegisterQueryResultRecipient
@@ -245,7 +241,7 @@ case class TripleRush(
 
   def executeQuery(q: Array[Int]): Iterable[Array[Int]] = {
     val (resultFuture, statsFuture) = executeAdvancedQuery(q, QueryOptimizer.Clever)
-    val result = Await.result(resultFuture, 7200 seconds)
+    val result = Await.result(resultFuture, 7200.seconds)
     result
   }
 
