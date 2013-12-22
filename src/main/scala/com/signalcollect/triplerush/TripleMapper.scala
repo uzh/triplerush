@@ -28,12 +28,11 @@ class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends 
 
   def getWorkerIdForVertexId(vertexId: Id): Int = {
     vertexId match {
-      case tp: TriplePattern => {
-        // Check diagram in paper. The goal is to have binding index vertices placed on the same node as
-        // their respective parent index vertex. At the same time index vertices should be load balanced over all workers on a node.
-        val s = tp.s
-        val p = tp.p
-        val o = tp.o
+      /**
+       * Try to map things with to a node based on the subject/object, wherever possible.
+       * Load balance over the workers of that node by using other unused triple information.
+       */
+      case TriplePattern(s, p, o) =>
         if (s > 0) {
           if (p > 0) {
             workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + p)
@@ -55,48 +54,13 @@ class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends 
           // Put it on the second worker there.
           workerIdOptimized(nodeAssignmentId = numberOfNodes - 1, nodeBalanceId = 1)
         }
-
-        //        if (tp.s > 0 && tp.o <= 0) {
-        //          // Leftmost on figure.
-        //          workerIdOptimized(nodeAssignmentId = tp.s, nodeBalanceId = tp.p)
-        //        } else if (tp.o > 0 && tp.p <= 0) {
-        //          // Rightmost on figure.
-        //          workerIdOptimized(nodeAssignmentId = tp.o, nodeBalanceId = tp.s)
-        //        } else if (tp.p > 0 && tp.s <= 0) {
-        //          // Middle on figure.
-        //          workerIdOptimized(nodeAssignmentId = tp.p, nodeBalanceId = tp.o)
-        //        } else if (tp.s > 0 && tp.p > 0 && tp.o > 0) {
-        //          // All bound.
-        //          workerIdOptimized(nodeAssignmentId = tp.s, nodeBalanceId = tp.o)
-        //        } else {
-        //          // Root, put it on the last node, so it does not usually collide with the node which has the coordinator.
-        //          // Put it on the 1st worker there.
-        //          workerIdOptimized(nodeAssignmentId = numberOfNodes - 1, nodeBalanceId = 1)
-        //        }
-      }
-      //      case tp: TriplePattern => {
-      //        val s = tp.s
-      //        if (s > 0) {
-      //          s % numberOfWorkers
-      //        } else if (tp.o > 0) {
-      //          tp.o % numberOfWorkers
-      //        } else if (tp.p > 0) {
-      //          tp.p % numberOfWorkers
-      //        } else {
-      //          // Put it on the last node, so it does not collide with the node which has the coordinator.
-      //          // Put it on the 1st worker there.
-      //          workerId(nodeAssignmentId = numberOfNodes - 1, nodeBalanceId = 1)
-      //        }
-      //      }
-      case qv: Int => loadBalance(qv, numberOfWorkers)
+      case qv: Int =>
+        // Avoid issues with mod on negative numbers by cutting off the 2s complement 1 at the front.
+        // This guarantees a 'positive' outcome. :)
+        // Always puts query vertices on node 0.
+        (qv & Int.MaxValue) % workersPerNode
       case other => throw new UnsupportedOperationException("This mapper does not support mapping ids of type " + other.getClass)
     }
-  }
-
-  def workerId(nodeAssignmentId: Int, nodeBalanceId: Int): Int = {
-    val nodeId = loadBalance(nodeAssignmentId, numberOfNodes)
-    val workerOnNode = loadBalance(nodeBalanceId, workersPerNode)
-    nodeId * workersPerNode + workerOnNode
   }
 
   /**
@@ -107,20 +71,6 @@ class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends 
     val nodeId = nodeAssignmentId % numberOfNodes
     val workerOnNode = nodeBalanceId % workersPerNode
     nodeId * workersPerNode + workerOnNode
-  }
-
-  def loadBalance(i: Int, slots: Int) = {
-    val preliminarySlot = i % slots
-    if (preliminarySlot < 0) {
-      if (preliminarySlot == Int.MinValue) {
-        // Special case,-Int.MinValue == Int.MinValue
-        0
-      } else {
-        -preliminarySlot
-      }
-    } else {
-      preliminarySlot
-    }
   }
 
   def getWorkerIdForVertexIdHash(vertexIdHash: Int): Int = throw new UnsupportedOperationException("This mapper does not support mapping by vertex hash.")
