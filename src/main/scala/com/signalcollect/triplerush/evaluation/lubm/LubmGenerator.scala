@@ -20,11 +20,10 @@
 
 package com.signalcollect.triplerush.evaluation.lubm
 import scala.sys.process._
-import com.signalcollect.triplerush.evaluation.KrakenExecutable
 import java.io.File
 
 object LubmGenerator extends KrakenExecutable {
-  runOnKraken(Generator.generate(args(0).toInt) _)
+  run(Generator.generate(args(0).toInt) _)
 }
 
 object Generator {

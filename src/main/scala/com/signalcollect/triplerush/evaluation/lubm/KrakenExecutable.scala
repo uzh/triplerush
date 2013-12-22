@@ -18,35 +18,27 @@
  *  
  */
 
-package com.signalcollect.triplerush.evaluation
-
-import java.io.File
-import org.semanticweb.yars.nx.parser.NxParser
-import com.signalcollect.triplerush.Mapping
-import java.io.FileInputStream
-import com.signalcollect.triplerush.TriplePattern
-import java.io.FileOutputStream
-import java.io.DataOutputStream
-import java.util.HashMap
+package com.signalcollect.triplerush.evaluation.lubm
 import collection.JavaConversions._
-import scala.io.Source
-import java.io.DataInputStream
-import java.io.EOFException
 import com.signalcollect.nodeprovisioning.torque.TorqueHost
 import com.signalcollect.nodeprovisioning.torque.TorqueJobSubmitter
-import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
+import com.signalcollect.triplerush.evaluation.Evaluation
+import com.signalcollect.nodeprovisioning.torque.LocalHost
+import com.signalcollect.nodeprovisioning.torque.ExecutionHost
 
 trait KrakenExecutable extends App {
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
     localJarPath = assemblyPath, priority = TorquePriority.fast)
+  val local = new LocalHost
+  def executionHost: ExecutionHost = kraken
   var evaluation = new Evaluation(
     evaluationName = s"Kraken executable",
-    executionHost = kraken)
+    executionHost = executionHost)
 
-  def runOnKraken(f: () => Unit) {
+  def run(f: () => Unit) {
     evaluation = evaluation.addEvaluationRun(Wrapper.wrapFunctionToReturnEmptyList(f))
     evaluation.execute
   }

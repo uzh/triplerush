@@ -32,6 +32,7 @@ import scala.collection.mutable.HashSet
 
 object DuplicateFilter extends FileTransformation with Serializable {
 
+  override def executionHost = kraken
   def nameOfTransformation = "filtered"
   def sourceFolder = s"${args(0)}-binary-splits"
   override def destinationFolder = sourceFolder.replace("binary", nameOfTransformation)
@@ -47,6 +48,7 @@ object DuplicateFilter extends FileTransformation with Serializable {
         val pId = dis.readInt
         val oId = dis.readInt
         val pattern = TriplePattern(sId, pId, oId)
+        assert(pattern.isFullyBound)
         tripleSet.add(pattern)
       }
     } catch {

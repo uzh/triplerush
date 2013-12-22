@@ -24,7 +24,6 @@ import java.io.File
 import collection.JavaConversions._
 import java.nio.file.Paths
 import java.nio.file.Files
-import com.signalcollect.triplerush.evaluation.KrakenExecutable
 
 abstract class FileTransformation extends KrakenExecutable {
   import FileOperations._
@@ -66,7 +65,7 @@ abstract class FileTransformation extends KrakenExecutable {
 
   }
 
-  runOnKraken(remoteRun(sourceFolder, destinationFolder) _)
+  run(remoteRun(sourceFolder, destinationFolder) _)
   def transform(sourceFile: File, targetFile: File)
 
 }

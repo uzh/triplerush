@@ -84,7 +84,8 @@ case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEdito
       val sId = dis.readInt
       val pId = dis.readInt
       val oId = dis.readInt
-      TriplePattern(sId, pId, oId)
+      val tp = TriplePattern(sId, pId, oId)
+      tp
     } catch {
       case done: EOFException =>
         dis.close
@@ -138,7 +139,12 @@ case object FileLoaders {
       val sId = Mapping.register(subjectString)
       val pId = Mapping.register(predicateString)
       val oId = Mapping.register(objectString)
-      addTriple(TriplePattern(sId, pId, oId), graphEditor)
+      val tp = TriplePattern(sId, pId, oId)
+      if (!tp.isFullyBound) {
+        println(s"Problem: $tp, triple #${triplesLoaded + 1} in file $ntriplesFilename is not fully bound.")
+      } else {
+        addTriple(tp, graphEditor)
+      }
       triplesLoaded += 1
       if (triplesLoaded % 10000 == 0) {
         println(s"Loaded $triplesLoaded triples from file $ntriplesFilename ...")

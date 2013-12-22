@@ -33,6 +33,8 @@ import FileOperations.createFolder
 import FileOperations.filesIn
 import com.signalcollect.triplerush.evaluation.Evaluation
 import scala.Array.canBuildFrom
+import com.signalcollect.triplerush.TripleMapper
+import com.signalcollect.nodeprovisioning.torque.LocalHost
 
 object FileSplitter extends App {
 
@@ -40,6 +42,7 @@ object FileSplitter extends App {
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
     localJarPath = assemblyPath, priority = TorquePriority.superfast)
+  val local = new LocalHost
   var evaluation = new Evaluation(
     evaluationName = s"File splitter",
     executionHost = kraken)
@@ -54,6 +57,7 @@ object FileSplitter extends App {
     import FileOperations._
     println("Modulo is: " + mod)
     val splits = 2880
+    val mapper = new TripleMapper[Any](numberOfNodes = splits, workersPerNode = 1)
     val parallelism = 4
     val sourceFolder = s"./$baseSourceFolderName-binary"
     val destinationFolder = sourceFolder + "-splits"
@@ -89,35 +93,25 @@ object FileSplitter extends App {
       print(s"Processing file ${filesProcessed}/$fileCount ...")
       val triplesSplit = splitFile(file.getAbsolutePath)
       totalTriplesSplit += triplesSplit
-      println(s" Done.")
       println(s"Triples processed so far: $totalTriplesSplit")
     }
     dataOutputStreams.foreach { s => if (s != null) s.close }
     fileOutputStreams.foreach { s => if (s != null) s.close }
 
-      def splitFile(path: String): Int = {
-        val is = new FileInputStream(path)
-        val dis = new DataInputStream(is)
-        var triplesSplit = 0
-        try {
-          while (true) {
-            val sId = dis.readInt
-            val pId = dis.readInt
-            val oId = dis.readInt
-            val pattern = TriplePattern(sId, pId, oId)
-            val patternSplit = {
-              val potentiallyNegativeSplitId = pattern.hashCode % splits
-              if (potentiallyNegativeSplitId >= 0) {
-                potentiallyNegativeSplitId
-              } else {
-                if (potentiallyNegativeSplitId == Int.MinValue) {
-                  // Special case,-Int.MinValue == Int.MinValue
-                  0
-                } else {
-                  -potentiallyNegativeSplitId
-                }
-              }
-            }
+    def splitFile(path: String): Int = {
+      val is = new FileInputStream(path)
+      val dis = new DataInputStream(is)
+      var triplesSplit = 0
+      try {
+        while (true) {
+          val sId = dis.readInt
+          val pId = dis.readInt
+          val oId = dis.readInt
+          val pattern = TriplePattern(sId, pId, oId)
+          if (!pattern.isFullyBound) {
+            println(s"Problem: $pattern, triple #${triplesSplit + 1} in file $path is not fully bound.")
+          } else {
+            val patternSplit = mapper.getWorkerIdForVertexId(pattern)
             if (mod == patternSplit % parallelism) {
               val splitStream = dataOutputStreams(patternSplit)
               splitStream.writeInt(sId)
@@ -126,15 +120,16 @@ object FileSplitter extends App {
               triplesSplit += 1
             }
           }
-        } catch {
-          case done: EOFException =>
-            dis.close
-            is.close
-          case t: Throwable =>
-            throw t
         }
-        triplesSplit
+      } catch {
+        case done: EOFException =>
+          dis.close
+          is.close
+        case t: Throwable =>
+          throw t
       }
+      triplesSplit
+    }
     List()
   }
 }

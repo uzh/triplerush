@@ -30,10 +30,9 @@ import org.semanticweb.yars.nx.parser.NxParser
 import java.io.OutputStreamWriter
 import FileOperations.createFolder
 import FileOperations.filesIn
-import com.signalcollect.triplerush.evaluation.KrakenExecutable
 
 object DictionaryEncoder extends KrakenExecutable with Serializable {
-  runOnKraken(Encoder.encode(args(0)) _)
+  run(Encoder.encode(args(0)) _)
 }
 
 object Encoder {
@@ -45,7 +44,7 @@ object Encoder {
     createFolder(targetFolderName)
     val source = new File(sourceFolderName)
     val target = new File(targetFolderName)
-    var nextId = 0
+    var nextId = 1
     val dictionaryPath = s"$targetFolderName/dictionary.txt"
     val dictionary = new HashMap[String, Int]()
     val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
@@ -96,7 +95,7 @@ object Encoder {
       encodeFile(src, trg)
     }
 
-    println(s"${sourceFiles.length} files have been encoded, ${nextId + 1} unique ids.")
+    println(s"${sourceFiles.length} files have been encoded, ${nextId} unique ids.")
 
     println("Writing dictionary.")
     val dictionaryOs = new FileOutputStream(dictionaryPath)

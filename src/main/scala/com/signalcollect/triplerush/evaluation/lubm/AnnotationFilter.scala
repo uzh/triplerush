@@ -23,13 +23,12 @@ import scala.sys.process._
 import scala.io.Source
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
-import com.signalcollect.triplerush.evaluation.KrakenExecutable
 
 /**
  * Removes annotations from ntriple files.
  */
 object AnnotationFilter extends KrakenExecutable {
-  runOnKraken(Filter.filter(args(0)) _)
+  run(Filter.filter(args(0)) _)
 }
 
 object Filter {
