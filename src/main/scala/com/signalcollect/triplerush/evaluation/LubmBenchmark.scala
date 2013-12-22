@@ -81,7 +81,7 @@ object LubmBenchmark extends App {
   }
 
   /*********/
-  def evalName = s"LUBM KRAKEN Again another VertexToWorkerMapper experiment."
+  def evalName = s"LUBM KRAKEN Rewired index experiment."
   def runs = 1
   var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
   //    var evaluation = new Evaluation(evaluationName = evalName, executionHost = localHost).addResultHandler(googleDocs)
@@ -203,10 +203,7 @@ object LubmBenchmark extends App {
     val graphBuilder = GraphBuilder.
       //      withLoggingLevel(Logging.DebugLevel).
       withNodeProvisioner(new TorqueNodeProvisioner(krakenFromKraken, numberOfNodes, allocateWorkersOnCoordinatorNode = true, copyExecutable = false))
-    val qe = new TripleRush(
-      graphBuilder,
-      numberOfNodes = numberOfNodes,
-      numberOfCoresPerNode = Runtime.getRuntime.availableProcessors)
+    val qe = new TripleRush(graphBuilder)
     def loadLubm {
       val lubmFolderName = s"lubm$universities-filtered-splits"
       for (splitId <- 0 until 2880) {

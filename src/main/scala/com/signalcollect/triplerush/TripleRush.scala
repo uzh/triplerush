@@ -164,8 +164,6 @@ case object FileLoaders {
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
-  numberOfNodes: Int = 1,
-  numberOfCoresPerNode: Int = Runtime.getRuntime.availableProcessors,
   // TODO: Ensure placement of Query vertices on coordinator node.
   //.withLoggingLevel(Logging.DebugLevel)
   console: Boolean = false) extends QueryEngine {
@@ -174,9 +172,7 @@ case class TripleRush(
   // TODO: Validate/simplify queries before executing them.
 
   println("Graph engine is initializing ...")
-  // Set to ensure that query vertices are placed on the coordinator node.
-  QueryIds.numberOfNodes.set(numberOfNodes)
-  QueryIds.numberOfCoresPerNode.set(numberOfCoresPerNode)
+
   var canExecute = false
 
   private val g = graphBuilder.withConsole(console).

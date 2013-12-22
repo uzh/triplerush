@@ -24,21 +24,8 @@ import language.implicitConversions
 import java.util.concurrent.atomic.AtomicInteger
 
 object QueryIds {
-  // Set by TripleRush in order to ensure that query vertices are placed on the coordinator node.
-  val numberOfNodes = new AtomicInteger(1)
-  val numberOfCoresPerNode = new AtomicInteger(Runtime.getRuntime.availableProcessors)
   private val maxFullQueryId = new AtomicInteger(0)
-  def nextFullQueryId: Int = {
-    val coresPerNode = numberOfCoresPerNode.get
-    val nodes = numberOfNodes.get
-    val baseId = maxFullQueryId.incrementAndGet
-    val jumpSize = nodes * coresPerNode
-    val noJumps = (baseId.toDouble / coresPerNode).floor
-    val coordinatorStartIndex = noJumps * jumpSize
-    val workerOnCoordinatorId = baseId % coresPerNode
-    val finalId = coordinatorStartIndex + workerOnCoordinatorId
-    finalId.toInt
-  }
+  def nextFullQueryId: Int = maxFullQueryId.incrementAndGet
 }
 
 object QueryParticle {
