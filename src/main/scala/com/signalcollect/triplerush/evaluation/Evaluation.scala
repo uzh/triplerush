@@ -21,7 +21,7 @@
 package com.signalcollect.triplerush.evaluation
 
 import com.signalcollect.nodeprovisioning.torque._
-import scala.util.Random
+import com.signalcollect.util.RandomString
 
 case class Evaluation(
   evaluationName: String,
@@ -34,7 +34,7 @@ case class Evaluation(
   def addExtraStats(stats: Map[String, String]) = Evaluation(evaluationName, executionHost, evaluationRuns, resultHandlers, extraStats ++ stats)
   def execute {
     val jobs = evaluationRuns map { evaluationRun =>
-      val jobId = Random.nextInt.abs % 1000000
+      val jobId = s"node-0-${RandomString.generate(6)}"
       val jobFunction = () => {
         println(s"Job $jobId is being executed ...")
         val stats = evaluationRun() // Execute evaluation.
