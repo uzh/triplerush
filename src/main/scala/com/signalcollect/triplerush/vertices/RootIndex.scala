@@ -1,6 +1,5 @@
 /*
  *  @author Philip Stutz
- *  @author Mihaela Verman
  *  
  *  Copyright 2013 University of Zurich
  *      
@@ -23,11 +22,11 @@ package com.signalcollect.triplerush.vertices
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryParticle._
 
-class PIndex(id: TriplePattern) extends CardinalityCountingIndex(id)
+class RootIndex extends OptimizedIndexVertex(TriplePattern(0, 0, 0))
   with Forwarding {
 
-  assert(id.s == 0 && id.p != 0 && id.o == 0)
+  assert(id.s == 0 && id.p == 0 && id.o == 0)
 
-  def nextRoutingAddress(childDelta: Int) = TriplePattern(childDelta, id.p, 0)
+  def nextRoutingAddress(childDelta: Int) = TriplePattern(0, childDelta, 0)
 
 }

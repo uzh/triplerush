@@ -47,6 +47,7 @@ import scala.concurrent.Await
 import com.signalcollect.interfaces.AggregationOperation
 import com.signalcollect.Vertex
 import com.signalcollect.interfaces.ModularAggregationOperation
+import com.signalcollect.triplerush.vertices.RootIndex
 
 case object RegisterQueryResultRecipient
 
@@ -208,6 +209,7 @@ case class TripleRush(
   g.setUndeliverableSignalHandler(UndeliverableRerouter.handle _)
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
+  g.addVertex(new RootIndex)
   println("TripleRush is ready.")
 
   def prepareExecution {

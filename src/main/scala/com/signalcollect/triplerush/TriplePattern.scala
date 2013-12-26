@@ -93,7 +93,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     } else if (parentPattern.o == 0 && o != 0) {
       o
     } else {
-      throw new Exception(s"$parentPattern is not a parent pattern of ")
+      throw new Exception(s"$parentPattern is not a parent pattern of $this")
     }
   }
 
@@ -104,15 +104,15 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
       case TriplePattern(s, 0, 0) =>
         List()
       case TriplePattern(0, p, 0) =>
-        List()
+        List(TriplePattern(0, 0, 0))
       case TriplePattern(0, 0, o) =>
         List()
       case TriplePattern(0, p, o) =>
-        List(TriplePattern(0, 0, o), TriplePattern(0, p, 0))
+        List(TriplePattern(0, 0, o))
       case TriplePattern(s, 0, o) =>
         List()
       case TriplePattern(s, p, 0) =>
-        List(TriplePattern(s, 0, 0))
+        List(TriplePattern(s, 0, 0), TriplePattern(0, p, 0))
       case TriplePattern(s, p, o) =>
         List(TriplePattern(0, p, o), TriplePattern(s, 0, o), TriplePattern(s, p, 0))
     }

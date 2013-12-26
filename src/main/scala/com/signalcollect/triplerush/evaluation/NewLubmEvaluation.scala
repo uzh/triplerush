@@ -12,15 +12,15 @@ object NewLubmEvaluation extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
   def local = new LocalHost
   def torquePriority = TorquePriority.superfast
-  def description = s"LUBM Similar to SSWS eval."
-  def runs = 4
+  def description = s"LUBM Distributed eval."
+  def runs = 6
   def warmupRepetitions = 100
-  def shouldCleanGarbage = true
+  def shouldCleanGarbage = false
 
   var evaluation = new Evaluation(evaluationName = description, executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
   //  var evaluation = new Evaluation(evaluationName = description, executionHost = local).addResultHandler(googleDocs)
 
-  for (numberOfNodes <- List(1)) {
+  for (numberOfNodes <- List(2)) {
     for (universities <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
       for (run <- 1 to runs) {
         for (optimizer <- List(QueryOptimizer.Clever)) {

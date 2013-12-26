@@ -40,10 +40,9 @@ trait ParentBuilding[Signal, State] extends BaseVertex[TriplePattern, Signal, St
           case TriplePattern(0, 0, o) => new OIndex(parentId)
         }
         graphEditor.addVertex(indexVertex)
-        // TODO: Add handling for root index vertex.
-        val idDelta = id.parentIdDelta(parentId)
-        graphEditor.addEdge(parentId, new PlaceholderEdge(idDelta))
       }
+      val idDelta = id.parentIdDelta(parentId)
+      graphEditor.addEdge(parentId, new PlaceholderEdge(idDelta))
     }
   }
 
