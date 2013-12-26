@@ -195,7 +195,10 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   @inline private def updatedAttribute(attribute: Int, variable: Int, boundValue: Int) = if (attribute == variable) boundValue else attribute
 
   def bindings: Array[Int] = {
-    r.slice(4, 4 + numberOfBindings)
+    val numBindings = numberOfBindings
+    val b = new Array[Int](numBindings)
+    System.arraycopy(r, 4, b, 0, numBindings)
+    b
   }
   def isResult = numberOfBindings == 0 || r.length == 4 + numberOfBindings
   def queryId: Int = r(0)
