@@ -12,16 +12,16 @@ object NewLubmEvaluation extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
   def local = new LocalHost
   def torquePriority = TorquePriority.superfast
-  def description = s"LUBM Distributed eval."
-  def runs = 6
-  def warmupRepetitions = 100
+  def description = s"LUBM40 new combiner hash maps."
+  def runs = 1
+  def warmupRepetitions = 1000000
   def shouldCleanGarbage = false
 
-  var evaluation = new Evaluation(evaluationName = description, executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
-  //  var evaluation = new Evaluation(evaluationName = description, executionHost = local).addResultHandler(googleDocs)
+  //  var evaluation = new Evaluation(evaluationName = description, executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
+  var evaluation = new Evaluation(evaluationName = description, executionHost = local)//.addResultHandler(googleDocs)
 
-  for (numberOfNodes <- List(2)) {
-    for (universities <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
+  for (numberOfNodes <- List(1)) {
+    for (universities <- List(40)) { //10, 20, 40, 80, 160, 320, 480, 800
       for (run <- 1 to runs) {
         for (optimizer <- List(QueryOptimizer.Clever)) {
           val eval = new LubmEvalRun(
@@ -96,6 +96,8 @@ case class LubmEvalRun(
         println(s"Continuing graph loading...")
       }
     }
+    println("Press any key to start:")
+    readLine
   }
 
 }

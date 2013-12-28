@@ -22,7 +22,7 @@ package com.signalcollect.triplerush.vertices
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryParticle._
 
-class RootIndex extends OptimizedIndexVertex(TriplePattern(0, 0, 0))
+final class RootIndex extends OptimizedIndexVertex(TriplePattern(0, 0, 0))
   with Forwarding {
 
   assert(id.s == 0 && id.p == 0 && id.o == 0)

@@ -58,7 +58,7 @@ class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
 /**
  * Version of bulk message bus that combines tickets of failed queries.
  */
-class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
+final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
   numberOfWorkers: Int,
   numberOfNodes: Int,
   mapper: VertexToWorkerMapper[Id],

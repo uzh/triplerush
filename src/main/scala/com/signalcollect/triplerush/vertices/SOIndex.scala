@@ -27,7 +27,7 @@ import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.CardinalityReply
 
-class SOIndex(id: TriplePattern) extends SearchableIndexVertex(id)
+final class SOIndex(id: TriplePattern) extends SearchableIndexVertex(id)
   with Binding {
 
   assert(id.s != 0 && id.p == 0 && id.o != 0)
@@ -60,10 +60,8 @@ class SOIndex(id: TriplePattern) extends SearchableIndexVertex(id)
    * next destinations.
    */
   override def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
-    val patternS = query.lastPatternS
     val patternP = query.lastPatternP
-    val patternO = query.lastPatternO
-    if (patternS > 0 && patternP > 0 && patternO > 0) {
+    if (patternP > 0 && query.lastPatternS > 0 && query.lastPatternO > 0) {
       // We are looking for a specific, fully bound triple pattern. This means that we have to do a binary search on the targetIds.
       if (new SearchableIntSet(childDeltaArray).contains(patternP)) {
         routeSuccessfullyBound(query.copyWithoutLastPattern, graphEditor)

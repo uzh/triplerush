@@ -88,7 +88,8 @@ trait Binding
     }
   }
 
-  def routeSuccessfullyBound(boundParticle: Array[Int],
+  def routeSuccessfullyBound(
+    boundParticle: Array[Int],
     graphEditor: GraphEditor[Any, Any]) {
     if (boundParticle.isResult) {
       // Query successful, send to query vertex.
