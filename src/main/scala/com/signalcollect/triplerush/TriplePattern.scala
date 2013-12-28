@@ -66,25 +66,6 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     }
   }
 
-  def childPatternRecipe: Int => TriplePattern = {
-    this match {
-      case TriplePattern(0, 0, 0) =>
-        TriplePattern(_, 0, 0)
-      case TriplePattern(0, p, 0) =>
-        TriplePattern(0, p, _)
-      case TriplePattern(0, 0, o) =>
-        TriplePattern(_, 0, o)
-      case TriplePattern(s, 0, 0) =>
-        TriplePattern(s, _, 0)
-      case TriplePattern(0, p, o) =>
-        TriplePattern(_, p, o)
-      case TriplePattern(s, 0, o) =>
-        TriplePattern(s, _, o)
-      case TriplePattern(s, p, 0) =>
-        TriplePattern(s, p, _)
-    }
-  }
-
   def parentIdDelta(parentPattern: TriplePattern): Int = {
     if (parentPattern.s == 0 && s != 0) {
       s

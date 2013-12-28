@@ -27,11 +27,13 @@ import com.signalcollect.messaging.AbstractMessageBus
 import scala.reflect.ClassTag
 import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.messaging.BulkMessageBus
-import scala.collection.mutable.HashMap
 import com.signalcollect.interfaces.SignalMessage
 import com.signalcollect.interfaces.MessageBusFactory
 import QueryParticle._
 import scala.collection.mutable.ArrayBuffer
+import com.signalcollect.util.IntLongHashMap
+import com.signalcollect.util.IntHashMap
+import com.signalcollect.util.IntValueHashMap
 
 class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
   extends MessageBusFactory {
@@ -72,9 +74,9 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     sendCountIncrementorForRequests,
     workerApiFactory) {
 
-  val aggregatedTickets = new HashMap[Int, Long]().withDefaultValue(0)
-  val aggregatedResults = new HashMap[Int, ArrayBuffer[Array[Int]]]().withDefaultValue(null)
-  val aggregatedCardinalities = new HashMap[TriplePattern, Int]().withDefaultValue(0)
+  val aggregatedTickets = new IntLongHashMap(initialSize = 2)
+  val aggregatedResults = new IntHashMap[ArrayBuffer[Array[Int]]](initialSize = 2)
+  val aggregatedCardinalities = new IntValueHashMap[TriplePattern](initialSize = 2)
 
   override def sendSignal(
     signal: Signal,
@@ -129,19 +131,19 @@ class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     // It is important that the results arrive before the tickets, because
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
-      for ((queryVertexId, results) <- aggregatedResults) {
+      aggregatedResults.foreach { (queryVertexId, results) =>
         super.sendSignal(results.toArray.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
       }
       aggregatedResults.clear
     }
     if (!aggregatedTickets.isEmpty) {
-      for ((queryVertexId, tickets) <- aggregatedTickets) {
+      aggregatedTickets.foreach { (queryVertexId, tickets) =>
         super.sendSignal(tickets.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
       }
       aggregatedTickets.clear
     }
     if (!aggregatedCardinalities.isEmpty) {
-      for ((targetId, cardinalityIncrement) <- aggregatedCardinalities) {
+      aggregatedCardinalities.foreach { (targetId, cardinalityIncrement) =>
         super.sendSignal(cardinalityIncrement.asInstanceOf[Signal], targetId.asInstanceOf[Id], null, false)
       }
       aggregatedCardinalities.clear
