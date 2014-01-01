@@ -61,10 +61,10 @@ object LubmBenchmark extends App {
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val assemblyFile = new File(assemblyPath)
   val kraken = new TorqueHost(
-    jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
+    jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), keyPassphrase = args(2), hostname = "kraken.ifi.uzh.ch"),
     localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = TorquePriority.slow)
   val localHost = new LocalHost
-  val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
+  val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush-bibek", "data")
 
   def getRevision: String = {
     try {

@@ -1,15 +1,15 @@
 package com.signalcollect.triplerush
 
-package com.signalcollect.triplerush
+import scala.Array.canBuildFrom
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-trait PatternWithStatistics2 {
+trait PatternWithCardinality {
   def pattern: List[TriplePattern]
   def cardinality(tp: TriplePattern): Int
 }
 
-trait PredicateStatistics2 {
+trait PredicatePairAndBranchingStatistics {
   def cardinalityOutOut(pred1: Int, pred2: Int): Int
   def cardinalityInOut(pred1: Int, pred2: Int): Int
   def cardinalityInIn(pred1: Int, pred2: Int): Int
@@ -17,17 +17,17 @@ trait PredicateStatistics2 {
   def cardinalityBranching(pred: Int): Int
 }
 
-trait QueryOptimizer2 {
-  def optimize(patternsWithStatistics: PatternWithStatistics2, predStatistics: PredicateStatistics2): List[TriplePattern]
+trait QueryOptimizerTrinity {
+  def optimize(patternsWithStatistics: PatternWithCardinality, predStatistics: PredicatePairAndBranchingStatistics): List[TriplePattern]
 }
 
-class JoinStatisticsOptimizer2 extends QueryOptimizer2 {
+class JoinOptimizerWithStatistics extends QueryOptimizerTrinity {
 
-  def optimize(patternsWithStatistics: PatternWithStatistics2, predStatistics: PredicateStatistics2): List[TriplePattern] = {
+  def optimize(patternsWithCardinality: PatternWithCardinality, predStatistics: PredicatePairAndBranchingStatistics): List[TriplePattern] = {
 
     val cardinalities: Map[TriplePattern, Int] = {
-      patternsWithStatistics.pattern.map {
-        p => (p, patternsWithStatistics.cardinality(p))
+      patternsWithCardinality.pattern.map {
+        p => (p, patternsWithCardinality.cardinality(p))
       }
         .toMap
     }
@@ -48,10 +48,10 @@ class JoinStatisticsOptimizer2 extends QueryOptimizer2 {
           var newCardinality = oldCardinality
           for (selectedPattern <- optimizedPatterns) {
             newCardinality = (selectedPattern.s, selectedPattern.o) match {
-              case (pattern.s, _) => cardinalities(selectedPattern) * predStatistics.cardinalityOutOut(selectedPattern.p, pattern.p)
-              case (pattern.o, _) => cardinalities(selectedPattern) * predStatistics.cardinalityOutIn(selectedPattern.p, pattern.p)
-              case (_, pattern.o) => cardinalities(selectedPattern) * predStatistics.cardinalityInIn(selectedPattern.p, pattern.p)
-              case (_, pattern.s) => cardinalities(selectedPattern) * predStatistics.cardinalityInOut(selectedPattern.p, pattern.p)
+              case (pattern.s, _) => updatedCardinalities(selectedPattern) * predStatistics.cardinalityOutOut(selectedPattern.p, pattern.p)
+              case (pattern.o, _) => updatedCardinalities(selectedPattern) * predStatistics.cardinalityOutIn(selectedPattern.p, pattern.p)
+              case (_, pattern.o) => updatedCardinalities(selectedPattern) * predStatistics.cardinalityInIn(selectedPattern.p, pattern.p)
+              case (_, pattern.s) => updatedCardinalities(selectedPattern) * predStatistics.cardinalityInOut(selectedPattern.p, pattern.p)
               case(_, _) => predStatistics.cardinalityBranching(selectedPattern.p) * predStatistics.cardinalityBranching(pattern.p)
             }
             
@@ -74,20 +74,20 @@ class JoinStatisticsOptimizer2 extends QueryOptimizer2 {
   }
 }
 
-case class OptimizableQuery2(
+case class OptimizableQueryWithStats(
   val pattern: List[TriplePattern],
   val cardinalities: Map[TriplePattern, Int])
-  extends PatternWithStatistics2 {
+  extends PatternWithCardinality {
   def cardinality(tp: TriplePattern) = cardinalities(tp)
 }
 
-case class PredPairStatistics(
+case class PredPairAndBranchingStatistics(
   val predOutOut: Map[PredicatePair, Int],
   val predInOut: Map[PredicatePair, Int],
   val predInIn: Map[PredicatePair, Int],
   val predOutIn: Map[PredicatePair, Int],
   val predBranching: Map[Int, Int])
-  extends PredicateStatistics2 {
+  extends PredicatePairAndBranchingStatistics {
   def cardinalityOutOut(pred1: Int, pred2: Int): Int = predOutOut(PredicatePair(pred1, pred2))
   def cardinalityInOut(pred1: Int, pred2: Int): Int = predInOut(PredicatePair(pred1, pred2))
   def cardinalityInIn(pred1: Int, pred2: Int): Int = predInIn(PredicatePair(pred1, pred2))

@@ -108,10 +108,12 @@ class JoinStatisticsOptimizer1 extends QueryOptimizer1 {
     }
 
     var sortedPatterns = cardinalities.toArray sortBy (_._2)
+    val updatedCardinalities: mutable.Map[TriplePattern, Int] = mutable.Map[TriplePattern, Int]()
     val optimizedPatterns = ArrayBuffer[TriplePattern]()
 
     while (!sortedPatterns.isEmpty) {
       val nextPattern = sortedPatterns.head._1
+      updatedCardinalities += nextPattern -> sortedPatterns.head._2
       optimizedPatterns.append(nextPattern)
 
       // why doesn't this work?

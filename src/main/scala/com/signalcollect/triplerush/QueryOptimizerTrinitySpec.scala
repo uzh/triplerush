@@ -11,11 +11,11 @@ import java.io.DataOutputStream
 import java.io.ByteArrayOutputStream
 import org.scalacheck.Arbitrary
 
-class QueryOptimizerSpec1 extends FlatSpec with ShouldMatchers with Checkers {
+class QueryOptimizerSpec2 extends FlatSpec with ShouldMatchers with Checkers {
 
   "QueryOptimizer" should "put the minimum cardinality pattern first" in {
     check(
-      (q: OptimizableQuery1) => {
+      (q: OptimizableQueryWithStats) => {
 
         def randomInRange(low: Int) : Int = {
           val range = low to maxCardinality
@@ -33,7 +33,7 @@ class QueryOptimizerSpec1 extends FlatSpec with ShouldMatchers with Checkers {
 
         val listOfPredicates = q.pattern.map(_.p)
         val range = 100 to 200
-        val statistics = PredStatistics(
+        /*val statistics = PredStatistics2(
             //q.pattern.map(tp => (tp.p, (q.cardinality(tp) to Integer.MAX_VALUE)(Random.nextInt(q.cardinality(tp) to Integer.MAX_VALUE length)))).toMap,
           q.pattern.map(tp => (tp.p, randomInRange(q.cardinality(tp)))).distinct.toMap , 
           		//cardinalities of predicates, should be at least equal to the cardinality
@@ -41,31 +41,35 @@ class QueryOptimizerSpec1 extends FlatSpec with ShouldMatchers with Checkers {
           		//cardinalities of sub-pred, should be at least equal to the cardinality
           q.pattern.map(tp => (tp.p, randomInRangeCeiling(q.cardinality(tp)))).distinct.toMap) 
           		//cardinalities of obj-pred, should be at least equal to the cardinality
-
+		*/
+        
         val listOfPredicatePairs = (for{
           x <- listOfPredicates; y <- listOfPredicates
           //if(listOfPredicates.indexOf(x) != listOfPredicates.indexOf(y))
         } yield(x,y)).distinct
         
         val predOutOut = listOfPredicatePairs.map(
-            pair => (MapKey1(pair._1, pair._2), randomInRangeMax(pair._1, pair._2))).toMap
+            pair => (PredicatePair(pair._1, pair._2), randomInRangeMax(pair._1, pair._2))).toMap
             //pair => (MapKey(pair._1, pair._2), 
               //  (math.max(statistics.cardinalityOfPredicate(pair._1), statistics.cardinalityOfPredicate(pair._2)) to Integer.MAX_VALUE)
                 //	(Random.nextInt(math.max(statistics.cardinalityOfPredicate(pair._1), statistics.cardinalityOfPredicate(pair._2)) to Integer.MAX_VALUE length))))
         val predInOut = listOfPredicatePairs.map(
-            pair => (MapKey1(pair._1, pair._2), randomInRangeMax(pair._1, pair._2))).toMap
+            pair => (PredicatePair(pair._1, pair._2), randomInRangeMax(pair._1, pair._2))).toMap
         val predInIn = listOfPredicatePairs.map(
-            pair => (MapKey1(pair._1, pair._2), randomInRangeMax(pair._1, pair._2))).toMap
+            pair => (PredicatePair(pair._1, pair._2), randomInRangeMax(pair._1, pair._2))).toMap
         val predOutIn = listOfPredicatePairs.map(
-            pair => (MapKey1(pair._1, pair._2), randomInRangeMax(pair._1, pair._2))).toMap
+            pair => (PredicatePair(pair._1, pair._2), randomInRangeMax(pair._1, pair._2))).toMap
         //val listOfPredicates = for (pattern <- q.pattern) yield pattern.map(_.p)
         //val listOfPredicatePairs = for (x <- listOfPredicates.values; y <- listOfPredicates) yield (x,y)
-        
-        val predPairStatistics = PredPairStatistics(predOutOut, predInOut, predInIn, predOutIn)
             
-        val optimizer = new JoinStatisticsOptimizer1
-        val optimizedQ = optimizer.optimize(q)
-        val optimizedQ1 = optimizer.optimizeQ(q, statistics, predPairStatistics)
+        val predicateBranching = q.pattern.map(tp => (tp.p, randomInRange(q.cardinality(tp)))).distinct.toMap
+        //val predicateBranching = listOfPredicates.map(predicate => (predicate, randomInRange(q.cardinality(predicate)))).toMap
+            
+        val predPairStatistics = new PredPairAndBranchingStatistics(predOutOut, predInOut, predInIn, predOutIn, predicateBranching)
+        val optimizer = new JoinOptimizerWithStatistics
+        //val optimizedQ = optimizer.optimize(q)
+        //val optimizedQ1 = optimizer.optimizeQ(q, statistics, predPairStatistics)
+        val optimizedQ1 = optimizer.optimize(q, predPairStatistics)
 
         //if (!q.pattern.isEmpty) {
         if (q.pattern.size > 1) {
@@ -153,7 +157,7 @@ class QueryOptimizerSpec1 extends FlatSpec with ShouldMatchers with Checkers {
   lazy val optimizableQuery = for {
     //patterns <- queryPatterns
     patterns <- resizedQueryPatterns
-  } yield OptimizableQuery1(patterns.distinct,
+  } yield OptimizableQueryWithStats(patterns.distinct,
     patterns.map(tp => (tp, Random.nextInt(maxCardinality))).toMap) // cardinalities
 
   implicit lazy val arbOptimizableQuery = Arbitrary(optimizableQuery)

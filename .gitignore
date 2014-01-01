@@ -1,6 +1,9 @@
 *.class
 *.log
 
+# contains keypassphrase
+src/main/scala/com/signalcollect/triplerush/evaluation/KrakenExecutable.scala
+
 # sbt specific
 dist/*
 target/

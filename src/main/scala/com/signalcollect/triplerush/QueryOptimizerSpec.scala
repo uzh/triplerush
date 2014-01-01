@@ -12,7 +12,7 @@ import java.io.ByteArrayOutputStream
 import org.scalacheck.Arbitrary
 
 class QueryOptimizerSpec extends FlatSpec with ShouldMatchers with Checkers {
-  
+ 
   "QueryOptimizer" should "put the minimum cardinality pattern first" in {
     check(
       (q: OptimizableQuery) => {
