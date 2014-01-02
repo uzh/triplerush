@@ -53,10 +53,6 @@ case object RegisterQueryResultRecipient
 
 case object UndeliverableRerouter {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
-    // TODO: Handle root pattern.
-    if (targetId == TriplePattern(0, 0, 0)) {
-      throw new Exception("Root pattern is not supported.")
-    }
     signal match {
       case queryParticle: Array[Int] =>
         graphEditor.sendSignal(queryParticle.tickets, queryParticle.queryId, None)
@@ -245,7 +241,7 @@ case class TripleRush(
     FileLoaders.addTriple(TriplePattern(sId, pId, oId), g)
   }
 
-  def executeQuery(q: Array[Int]): Iterable[Array[Int]] = {
+  def executeQuery(q: Array[Int]): Traversable[Array[Int]] = {
     val (resultFuture, statsFuture) = executeAdvancedQuery(q, QueryOptimizer.Clever)
     val result = Await.result(resultFuture, 7200.seconds)
     result
@@ -253,16 +249,16 @@ case class TripleRush(
 
   def executeAdvancedQuery(
     q: Array[Int],
-    optimizer: Int = QueryOptimizer.Clever): (Future[UnrolledBuffer[Array[Int]]], Future[Map[Any, Any]]) = {
+    optimizer: Int = QueryOptimizer.Clever): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    val resultPromise = Promise[UnrolledBuffer[Array[Int]]]()
+    val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
     g.addVertex(new QueryVertex(q, resultPromise, statsPromise, optimizer))
     if (!q.isResult) {
       // Only check if result once computation is running.
       (resultPromise.future, statsPromise.future)
     } else {
-      (Future.successful(UnrolledBuffer()), (Future.successful(Map())))
+      (Future.successful(List()), (Future.successful(Map())))
     }
   }
 

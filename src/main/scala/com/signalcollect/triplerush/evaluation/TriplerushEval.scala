@@ -130,7 +130,7 @@ trait TriplerushEval {
     runResult += ((s"queryCopyCount", queryStats("queryCopyCount").toString))
     runResult += ((s"query", queryStats("optimizedQuery").toString))
     runResult += ((s"exception", queryStats("exception").toString))
-    runResult += ((s"results", queryResult.length.toString))
+    runResult += ((s"results", queryResult.size.toString))
     runResult += ((s"executionTime", executionTime.toString))
     runResult += ((s"optimizingTime", optimizingTime.toString))
     runResult += ((s"totalMemory", bytesToGigabytes(Runtime.getRuntime.totalMemory).toString))

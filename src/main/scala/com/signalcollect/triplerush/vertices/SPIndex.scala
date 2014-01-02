@@ -23,7 +23,7 @@ package com.signalcollect.triplerush.vertices
 import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.TriplePattern
 
-class SPIndex(id: TriplePattern) extends OptimizedIndexVertex(id)
+final class SPIndex(id: TriplePattern) extends OptimizedIndexVertex(id)
   with Binding {
 
   assert(id.s != 0 && id.p != 0 && id.o == 0)

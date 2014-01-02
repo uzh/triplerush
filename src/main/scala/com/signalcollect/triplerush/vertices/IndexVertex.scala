@@ -37,8 +37,7 @@ import com.signalcollect.triplerush.CardinalityRequest
  */
 abstract class IndexVertex(id: TriplePattern)
   extends BaseVertex[TriplePattern, Any, Any](id)
-  with ParentBuilding[Any, Any]
-  with Inspectable[TriplePattern, Any] {
+  with ParentBuilding[Any, Any] {
 
   def foreachChildDelta(f: Int => Unit)
 
@@ -56,18 +55,6 @@ abstract class IndexVertex(id: TriplePattern)
   def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
     graphEditor.sendSignal(CardinalityReply(
       c.forPattern, cardinality), c.requestor, None)
-  }
-
-  override def targetIds: Traversable[TriplePattern] = {
-    val buffer = new ArrayBuffer[TriplePattern]
-    foreachChildDelta(delta => buffer.append(id.childPatternRecipe(delta)))
-    buffer
-  }
-
-  override def expose: Map[String, Any] = {
-    var extraInfo: Map[String, Any] = Map("outDegree" -> edgeCount)
-    extraInfo ++= targetIds take 10 map { targetId => "outEdge sample" -> targetId }
-    extraInfo
   }
 
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
