@@ -114,7 +114,6 @@ final class QueryVertex(
     graphEditor: GraphEditor[Any, Any]) = {
     if (cardinality == 0) {
       // 0 cardinality => no results => we're done.
-      println(s"Query vertex $id is giving up, pattern $forPattern has cardinality 0")
       queryDone(graphEditor)
     } else {
       // TODO: If pattern is fully bound and cardinality is one, bind immediately.
