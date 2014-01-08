@@ -44,7 +44,6 @@ object FileSplitter extends App {
     localJarPath = assemblyPath, priority = TorquePriority.superfast)
   val local = new LocalHost
   var evaluation = new Evaluation(
-    evaluationName = s"File splitter",
     executionHost = kraken)
 
   for (modulo <- 0 until 4) { // Has to match parallelism variable inside splitting function.

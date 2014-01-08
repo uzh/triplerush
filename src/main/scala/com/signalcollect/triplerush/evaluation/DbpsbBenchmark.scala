@@ -86,7 +86,7 @@ object DbpsbBenchmark extends App {
   /*********/
   def evalName = s"DBPSB Evaluation."
   def runs = 10
-  var evaluation = new Evaluation(evaluationName = evalName, executionHost = kraken).addResultHandler(googleDocs)
+  var evaluation = new Evaluation(executionHost = kraken).addResultHandler(googleDocs)
   /*********/
 
   for (run <- 1 to runs) {

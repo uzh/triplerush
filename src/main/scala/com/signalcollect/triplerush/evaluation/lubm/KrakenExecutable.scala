@@ -35,7 +35,6 @@ trait KrakenExecutable extends App {
   val local = new LocalHost
   def executionHost: ExecutionHost = kraken
   var evaluation = new Evaluation(
-    evaluationName = s"Kraken executable",
     executionHost = executionHost)
 
   def run(f: () => Unit) {
@@ -49,10 +48,10 @@ trait KrakenExecutable extends App {
  */
 object Wrapper {
   def wrapFunctionToReturnEmptyList(f: () => Unit) = {
-      def wrappedF: List[Map[String, String]] = {
-        f()
-        List()
-      }
+    def wrappedF: List[Map[String, String]] = {
+      f()
+      List()
+    }
     wrappedF _
   }
 

@@ -61,7 +61,7 @@ trait TriplerushEval {
   def optimizer: Int
   def revision: String
   def torquePriority: String
-  
+
   import EvalHelpers._
 
   def evaluationRun: List[Map[String, String]]
@@ -86,6 +86,7 @@ trait TriplerushEval {
 
   def baseStats = Map[String, String](
     ("evaluationDescription", description),
+    ("numberOfNodes", numberOfNodes.toString),
     ("jitRepetitions", warmupRepetitions.toString),
     ("java.runtime.version", System.getProperty("java.runtime.version")))
 
@@ -163,7 +164,7 @@ object EvalHelpers {
   def assemblyFile = new File(assemblyPath)
   def kraken(torquePriority: String) = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = torquePriority)
+    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.8.0/bin/", priority = torquePriority)
   def localHost = new LocalHost
 
   def getRevision: String = {
