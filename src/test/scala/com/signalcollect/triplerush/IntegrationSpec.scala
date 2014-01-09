@@ -99,7 +99,31 @@ class IntegrationSpec extends FlatSpec with Checkers {
   implicit lazy val arbTriples = Arbitrary(genTriples map (_.toSet))
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
-  "TripleRush" should "correctly answer a simple query 1" in {
+  "TripleRush" should "correctly answer a query for data that is not in the store" in {
+    val trResults = TestHelper.execute(
+      new TripleRush,
+      Set(TriplePattern(1, 2, 3)),
+      List(TriplePattern(-1, 4, -1)))
+    assert(Set[Map[Int, Int]]() === trResults)
+  }
+  
+  it should "correctly answer a query for a specific pattern that exists" in {
+    val trResults = TestHelper.execute(
+      new TripleRush,
+      Set(TriplePattern(1, 2, 3)),
+      List(TriplePattern(1, 2, 3)))
+    assert(Set[Map[Int, Int]]() === trResults)
+  }
+  
+  it should "correctly answer a query for a specific pattern that does not exist" in {
+    val trResults = TestHelper.execute(
+      new TripleRush,
+      Set(TriplePattern(1, 2, 3)),
+      List(TriplePattern(1, 4, 3)))
+    assert(Set[Map[Int, Int]]() === trResults)
+  }
+  
+  it should "correctly answer a simple query 1" in {
     val trResults = TestHelper.execute(
       new TripleRush,
       Set(TriplePattern(4, 3, 4)),
