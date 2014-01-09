@@ -62,19 +62,41 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
     val cardinalities = patterns.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
     val queryWithCardinalities = OptimizableQueryWithStats(patterns, cardinalities)
     val optimizedQuery = optimizer.optimize(queryWithCardinalities, statsForOptimizer)
+    assert(optimizedQuery == List(TriplePattern(x, p2, y), TriplePattern(y, p4, z)))
+  }
 
-    println("cardinalities: " + cardinalities.mkString(" "));
-    println("optimized: " + optimizedQuery.mkString(" "))
+  "PredicateSelectivityOptimizer" should "order the patterns in another query " in {
+    val tr = new TripleRush
+    tr.addEncodedTriple(s1, p1, o1)
+    tr.addEncodedTriple(s2, p1, o2)
+    tr.addEncodedTriple(s1, p2, o3)
+    tr.addEncodedTriple(s1, p2, o4)
+    tr.addEncodedTriple(s3, p2, o10)
+    tr.addEncodedTriple(s2, p3, o5)
+    tr.addEncodedTriple(o5, p4, o6)
+    tr.addEncodedTriple(o4, p4, o7)
+    tr.addEncodedTriple(o3, p4, o8)
+    tr.addEncodedTriple(o10, p4, o11)
+    tr.addEncodedTriple(o3, p5, o9)
+    tr.addEncodedTriple(o10, p5, o9)
+    tr.prepareExecution
+
+    def calculateCardinalityOfPattern(tp: TriplePattern): Int = {
+      val queryToGetCardinality = QuerySpecification(List(tp))
+      val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality.toParticle)
+      cardinalityQueryResult.size
+    }
+
+    val stats = new PredicateSelectivity(tr)
+    val optimizer = new PredicateSelectivityOptimizer
+    val statsForOptimizer = PredPairAndBranchingStatistics(stats.mapOutOut, stats.mapInOut, stats.mapInIn, stats.mapOutIn, stats.mapPredicateBranching)
 
     val patterns1 = List(TriplePattern(x, p2, y), TriplePattern(y, p5, z), TriplePattern(x, p1, z1))
     val cardinalities1 = patterns1.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
     val queryWithCardinalities1 = OptimizableQueryWithStats(patterns1, cardinalities1)
     val optimizedQuery1 = optimizer.optimize(queryWithCardinalities1, statsForOptimizer)
 
-    println("cardinalities: " + cardinalities1.mkString(" "));
-    println("optimized: " + optimizedQuery1.mkString(" "))
-
-    assert(true)
+    assert(optimizedQuery1 == List(TriplePattern(x, p1, z1), TriplePattern(x, p2, y), TriplePattern(y, p5, z)))
   }
 
   import TripleGenerators._
