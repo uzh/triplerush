@@ -43,11 +43,11 @@ class PredicateSelectivity(tr: TripleRush) {
   val allPredicateResult = tr.executeQuery(queryToGetAllPredicates.toParticle)
   val bindingsForPredicates = getBindingsFor(p, allPredicateResult)
 
-  val mapOutOut = collection.mutable.Map[(Int, Int), Int]().withDefaultValue(0)
-  val mapInOut = collection.mutable.Map[(Int, Int), Int]().withDefaultValue(0)
-  val mapInIn = collection.mutable.Map[(Int, Int), Int]().withDefaultValue(0)
-  val mapOutIn = collection.mutable.Map[(Int, Int), Int]().withDefaultValue(0)
-  val mapPredicateBranching = collection.mutable.Map[Int, Int]().withDefaultValue(0)
+  var outOut = Map[(Int, Int), Int]().withDefaultValue(0)
+  var inOut = Map[(Int, Int), Int]().withDefaultValue(0)
+  var inIn = Map[(Int, Int), Int]().withDefaultValue(0)
+  var outIn = Map[(Int, Int), Int]().withDefaultValue(0)
+  var triplesWithPredicate = Map[Int, Int]().withDefaultValue(0)
 
   for (p1 <- bindingsForPredicates) {
     for (p2 <- bindingsForPredicates) {
@@ -62,17 +62,17 @@ class PredicateSelectivity(tr: TripleRush) {
       val resultInInQuery = tr.executeQuery(inInQuery.toParticle)
       val resultOutInQuery = tr.executeQuery(outInQuery.toParticle)
 
-      mapOutOut += (p1, p2) -> getBindingsFor(s, resultOutOutQuery).size
-      mapInOut += (p1, p2) -> getBindingsFor(o, resultInOutQuery).size
-      mapInIn += (p1, p2) -> getBindingsFor(o, resultInInQuery).size
-      mapOutIn += (p1, p2) -> getBindingsFor(s, resultOutInQuery).size
+      outOut += (p1, p2) -> getBindingsFor(s, resultOutOutQuery).size
+      inOut += (p1, p2) -> getBindingsFor(o, resultInOutQuery).size
+      inIn += (p1, p2) -> getBindingsFor(o, resultInInQuery).size
+      outIn += (p1, p2) -> getBindingsFor(s, resultOutInQuery).size
       }
     }
 
     /**need predicate branching statistics gathering here*/
     val predicateBranchingQuery = QuerySpecification(List(TriplePattern(s, p1, o)))
     val resultPredicateBranchingQuery = tr.executeQuery(predicateBranchingQuery.toParticle)
-    mapPredicateBranching += p1 -> resultPredicateBranchingQuery.size
+    triplesWithPredicate += p1 -> resultPredicateBranchingQuery.size
 
   }
 }

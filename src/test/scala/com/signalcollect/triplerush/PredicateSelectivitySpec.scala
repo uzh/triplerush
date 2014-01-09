@@ -42,10 +42,10 @@ class PredicateSelectivitySpec extends FlatSpec with Checkers {
     tr.addEncodedTriple(o10, p5, o9)
     tr.prepareExecution
     val stats = new PredicateSelectivity(tr)
-    assert(stats.mapOutIn(p4, p2) == 3)
-    assert(stats.mapOutIn(p5, p2) == 2)
-    assert(stats.mapOutOut(p4, p5) == 2)
-    assert(stats.mapOutOut(p1, p2) == 1)
+    assert(stats.outIn(p4, p2) == 3)
+    assert(stats.outIn(p5, p2) == 2)
+    assert(stats.outOut(p4, p5) == 2)
+    assert(stats.outOut(p1, p2) == 1)
   }
 
   it should "correctly compute predicate selectivity for all two-pattern combinations" in {
@@ -70,10 +70,10 @@ class PredicateSelectivitySpec extends FlatSpec with Checkers {
       val outOutResult = if (first.s == second.s) 1 else 0
       val inInResult = if (first.o == second.o) 1 else 0
       println(combo)
-      assert(stats.mapOutIn(first.p, second.p) == outInResult)
-      assert(stats.mapInOut(first.p, second.p) == inOutResult)
-      assert(stats.mapOutOut(first.p, second.p) == outOutResult)
-      assert(stats.mapInIn(first.p, second.p) == inInResult)
+      assert(stats.outIn(first.p, second.p) == outInResult)
+      assert(stats.inOut(first.p, second.p) == inOutResult)
+      assert(stats.outOut(first.p, second.p) == outOutResult)
+      assert(stats.inIn(first.p, second.p) == inInResult)
       tr.shutdown
     }
   }
@@ -93,7 +93,7 @@ class PredicateSelectivitySpec extends FlatSpec with Checkers {
       val predicates = triples.map(_.p)
       for (predicate <- predicates) {
         val triplesWithPredicate = triples.filter(_.p == predicate).size
-        assert(stats.mapPredicateBranching(predicate) == triplesWithPredicate)
+        assert(stats.triplesWithPredicate(predicate) == triplesWithPredicate)
       }
       tr.shutdown
       true
