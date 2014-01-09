@@ -19,7 +19,11 @@ trait PredicatePairAndBranchingStatistics {
 
 class PredicateSelectivityOptimizer {
 
-  def optimize(patternsWithCardinality: PatternWithCardinality, predStatistics: PredicatePairAndBranchingStatistics): List[TriplePattern] = {
+  /**
+   * returns optimal ordering of patterns based on predicate selectivity.
+   * TODO: if the optimizer can infer that the query will have no result, then it will return an empty list of patterns 
+   */
+  def optimize(patternsWithCardinality: PatternWithCardinality, predStatistics: PredicatePairAndBranchingStatistics, debug: Boolean): List[TriplePattern] = {
 
     val cardinalities: Map[TriplePattern, Int] = {
       patternsWithCardinality.pattern.map {
@@ -29,40 +33,103 @@ class PredicateSelectivityOptimizer {
     }
 
     /**/
-    var pickPattern: (TriplePattern, Int) = (TriplePattern(0,0,0), Integer.MAX_VALUE)
+    var pickPattern: (TriplePattern, Int) = (TriplePattern(0, 0, 0), Integer.MAX_VALUE)
+    var emptyQuery: Boolean = false
     
-    for ((pattern, card) <- cardinalities ; (patternToExplore, cardToExplore) <- cardinalities) {
-    	if (pattern != patternToExplore) {
-    	  var newCardinality = (pattern.s, pattern.o) match {
-              case (patternToExplore.s, _) => {
-                //println("s=s, card(pattern):"+cardinalities(pattern)+", out-out: "+predStatistics.cardinalityOutOut(pattern.p, patternToExplore.p))
-                cardinalities(pattern) * predStatistics.cardinalityOutOut(pattern.p, patternToExplore.p)
-              }
-              case (patternToExplore.o, _) => {
-                //println("s=o, card(pattern):"+cardinalities(pattern)+", out-in: "+predStatistics.cardinalityOutIn(pattern.p, patternToExplore.p))
-                cardinalities(pattern) * predStatistics.cardinalityOutIn(pattern.p, patternToExplore.p)
-              }
-              case (_, patternToExplore.o) => {
-                //println("o=o, card(pattern):"+cardinalities(pattern)+", in-in: "+predStatistics.cardinalityInIn(pattern.p, patternToExplore.p))
-                cardinalities(pattern) * predStatistics.cardinalityInIn(pattern.p, patternToExplore.p)
-              }
-              case (_, patternToExplore.s) => {
-                //println("o=s, card(pattern):"+cardinalities(pattern)+", in-out: "+predStatistics.cardinalityInOut(pattern.p, patternToExplore.p))
-                cardinalities(pattern) * predStatistics.cardinalityInOut(pattern.p, patternToExplore.p)
-              }
-              case (_, _) => {
-                //println("none: "+predStatistics.cardinalityBranching(pattern.p) * predStatistics.cardinalityBranching(patternToExplore.p))
-                predStatistics.cardinalityBranching(pattern.p) * predStatistics.cardinalityBranching(patternToExplore.p)
-              }
+    for ((pattern, card) <- cardinalities; (patternToExplore, cardToExplore) <- cardinalities) {
+      if (pattern != patternToExplore) {
+        if(debug)
+          println(s"pattern: $pattern, patterntocompare: $patternToExplore")
+        var newCardinality = (pattern.s, pattern.o) match {
+          case (patternToExplore.s, _) => {
+            if(debug)
+            	println("s=s, card(pattern):"+cardinalities(pattern)+", out-out: "+predStatistics.cardinalityOutOut(pattern.p, patternToExplore.p))
+            if(predStatistics.cardinalityOutOut(pattern.p, patternToExplore.p) != 0)
+            	cardinalities(pattern) * predStatistics.cardinalityOutOut(pattern.p, patternToExplore.p)
+            else{ 
+              emptyQuery = true
+              cardinalities(pattern) * cardinalities(patternToExplore)
             }
-    	  if(newCardinality < pickPattern._2){
-    	    pickPattern = (pattern, newCardinality)
-    	  }
-    	}
+          }
+          case (patternToExplore.o, _) => {
+            if(debug)
+            	println("s=o, card(pattern):"+cardinalities(pattern)+", out-in: "+predStatistics.cardinalityOutIn(pattern.p, patternToExplore.p))
+            if(predStatistics.cardinalityOutIn(pattern.p, patternToExplore.p) !=0)
+            cardinalities(pattern) * predStatistics.cardinalityOutIn(pattern.p, patternToExplore.p)
+            else{
+              emptyQuery = true
+              cardinalities(pattern)  * cardinalities(patternToExplore)
+            }
+          }
+          case (_, patternToExplore.o) => {
+            if(debug)
+            	println("o=o, card(pattern):"+cardinalities(pattern)+", in-in: "+predStatistics.cardinalityInIn(pattern.p, patternToExplore.p))
+            	if(predStatistics.cardinalityInIn(pattern.p, patternToExplore.p) != 0)
+            cardinalities(pattern) * predStatistics.cardinalityInIn(pattern.p, patternToExplore.p)
+            else {
+              emptyQuery = true
+              cardinalities(pattern) * cardinalities(patternToExplore)
+            }
+          }
+          case (_, patternToExplore.s) => {
+            if(debug)
+            	println("o=s, card(pattern):"+cardinalities(pattern)+", in-out: "+predStatistics.cardinalityInOut(pattern.p, patternToExplore.p))
+            	if(predStatistics.cardinalityInOut(pattern.p, patternToExplore.p) != 0)
+            cardinalities(pattern) * predStatistics.cardinalityInOut(pattern.p, patternToExplore.p)
+            else {
+              emptyQuery = true
+              cardinalities(pattern) * cardinalities(patternToExplore)
+            }
+          }
+          case (_, _) => {
+            if(debug)
+            	println("none: "+predStatistics.cardinalityBranching(pattern.p) * predStatistics.cardinalityBranching(patternToExplore.p))
+            predStatistics.cardinalityBranching(pattern.p) * predStatistics.cardinalityBranching(patternToExplore.p)
+          }
+        }
+        
+        if(emptyQuery)
+          return List()
+        /*
+        if (newCardinality == pickPattern._2 && pattern.p < pickPattern._1.p)
+          pickPattern = (pattern, newCardinality)
+        if (newCardinality < pickPattern._2) {
+          pickPattern = (pattern, newCardinality)
+        }*/
+        if(comparePatterns((pattern, newCardinality), pickPattern))	{
+          if(debug)
+        	  println("found new minimum: "+pattern+"("+newCardinality+")")
+          pickPattern = (pattern, newCardinality)
+          }
+        else{
+          if(debug)
+            println("did not find minimum: "+pattern+"("+newCardinality+")")
+        }
+      }
+    }
+
+    /**
+     * returns true if the first is smaller than the second
+     */
+    def comparePatterns(tp1: (TriplePattern, Int), tp2: (TriplePattern, Int)) = {
+      if (tp1._2 == tp2._2) {
+        if (tp1._1.p == tp2._1.p) {
+          if (tp1._1.s == tp2._1.s) {
+            tp1._1.o < tp2._1.o
+          } else {
+            tp1._1.s < tp2._1.s
+          }
+        } else {
+          tp1._1.p < tp2._1.p
+        }
+      } else {
+        tp1._2 < tp2._2
+      }
     }
 
     //cardinality counts that are updated in each iteration, i.e., after the picking of previous patterns
     var sortedPatterns = cardinalities.toArray sortBy (_._2)
+    //var sortedPatterns = cardinalities.toArray.sortWith(comparePatterns)
     //cardinality of already picked patterns
     val updatedCardinalities: mutable.Map[TriplePattern, Int] = mutable.Map[TriplePattern, Int]()
     //the patterns we pick in each iteration (i.e., the next best pattern)
@@ -70,7 +137,7 @@ class PredicateSelectivityOptimizer {
 
     //add the first best pattern and remove it from sortedPatterns
     optimizedPatterns.append(pickPattern._1)
-    updatedCardinalities += pickPattern._1 -> cardinalities(pickPattern._1) 
+    updatedCardinalities += pickPattern._1 -> cardinalities(pickPattern._1)
     sortedPatterns = sortedPatterns.diff(List((pickPattern._1, cardinalities(pickPattern._1))))
 
     while (!sortedPatterns.isEmpty) {
@@ -80,23 +147,54 @@ class PredicateSelectivityOptimizer {
           var newCardinality = oldCardinality
           for (selectedPattern <- optimizedPatterns) {
             newCardinality = (selectedPattern.s, selectedPattern.o) match {
-              case (pattern.s, _) => updatedCardinalities(selectedPattern) * predStatistics.cardinalityOutOut(selectedPattern.p, pattern.p)
-              case (pattern.o, _) => updatedCardinalities(selectedPattern) * predStatistics.cardinalityInOut(selectedPattern.p, pattern.p)
-              case (_, pattern.o) => updatedCardinalities(selectedPattern) * predStatistics.cardinalityInIn(selectedPattern.p, pattern.p)
-              case (_, pattern.s) => updatedCardinalities(selectedPattern) * predStatistics.cardinalityOutIn(selectedPattern.p, pattern.p)
-              case (_, _) => predStatistics.cardinalityBranching(selectedPattern.p) * predStatistics.cardinalityBranching(pattern.p)
+              case (pattern.s, _) => {
+                if(predStatistics.cardinalityOutOut(selectedPattern.p, pattern.p)!=0)
+                	updatedCardinalities(selectedPattern) * predStatistics.cardinalityOutOut(selectedPattern.p, pattern.p)
+                else {
+                  emptyQuery = true
+                  updatedCardinalities(selectedPattern) * cardinalities(pattern)
+                }
+              }
+              case (pattern.o, _) => {
+                if(predStatistics.cardinalityInOut(selectedPattern.p, pattern.p) != 0)
+                updatedCardinalities(selectedPattern) * predStatistics.cardinalityInOut(selectedPattern.p, pattern.p)
+                else {
+                  emptyQuery = true
+                  updatedCardinalities(selectedPattern) * cardinalities(pattern)
+                }
+              }
+              case (_, pattern.o) => {
+                if(predStatistics.cardinalityInIn(selectedPattern.p, pattern.p) != 0)
+                updatedCardinalities(selectedPattern) * predStatistics.cardinalityInIn(selectedPattern.p, pattern.p)
+                else {
+                  emptyQuery = true
+                  updatedCardinalities(selectedPattern) * cardinalities(pattern)
+                }
+              }
+              case (_, pattern.s) => {
+                if(predStatistics.cardinalityOutIn(selectedPattern.p, pattern.p) != 0)
+                updatedCardinalities(selectedPattern) * predStatistics.cardinalityOutIn(selectedPattern.p, pattern.p)
+                else {
+                  emptyQuery = true
+                  updatedCardinalities(selectedPattern) * cardinalities(pattern)
+                }
+              }
+              case (_, _) => {
+                predStatistics.cardinalityBranching(selectedPattern.p) * predStatistics.cardinalityBranching(pattern.p)
+              }
             }
           }
           (pattern, newCardinality)
       }
-      
+
       sortedPatterns = sortedPatterns sortBy (_._2)
       val nextPattern = sortedPatterns.head._1
       updatedCardinalities += nextPattern -> sortedPatterns.head._2
       optimizedPatterns.append(nextPattern)
       sortedPatterns = sortedPatterns.tail
     }
-    
+    if(emptyQuery)
+      List()
     optimizedPatterns.toList
   }
 }
