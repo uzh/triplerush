@@ -11,7 +11,7 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity, 
    * returns optimal ordering of patterns based on predicate selectivity.
    * TODO: if the optimizer can infer that the query will have no result, then it will return an empty list of patterns
    */
-  def optimize(cardinalities: Map[TriplePattern, Int]): List[TriplePattern] = {
+  def optimize(cardinalities: Map[TriplePattern, Int]): Array[TriplePattern] = {
 
     /**
      * takes a list of optimized patterns and one of unoptimized patterns
@@ -80,6 +80,6 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity, 
       }.toMap
     }
     val (optimized, empty) = optimizePatterns(List(), cardinalities.keySet)
-    optimized.reverse
+    optimized.toArray.reverse
   }
 }
