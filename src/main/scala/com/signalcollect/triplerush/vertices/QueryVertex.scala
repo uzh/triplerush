@@ -35,18 +35,13 @@ import akka.actor.actorRef2Scala
 import com.signalcollect.triplerush.QueryParticle
 import scala.concurrent.Promise
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
-
-case object QueryOptimizer {
-  val None = 0 // Execute patterns in order passed.
-  val Greedy = 1 // Execute patterns in descending order of cardinalities.
-  val Clever = 2 // Uses cardinalities and prefers patterns that contain variables that have been matched in a previous pattern.
-}
+import com.signalcollect.triplerush.Optimizer
 
 final class QueryVertex(
   val query: Array[Int],
   val resultPromise: Promise[Traversable[Array[Int]]],
   val statsPromise: Promise[Map[Any, Any]],
-  val optimizer: Int) extends Vertex[Int, ArrayOfArraysTraversable] {
+  val optimizer: Option[Optimizer]) extends Vertex[Int, ArrayOfArraysTraversable] {
 
   val id = query.queryId
 
@@ -67,8 +62,8 @@ final class QueryVertex(
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     cardinalities = Map()
-    if (optimizer != QueryOptimizer.None && numberOfPatterns > 1) {
-      // Gather pattern cardinalities first.
+    if (optimizer.isDefined && numberOfPatterns > 1) {
+      // Gather pattern cardinalities.
       query.patterns foreach (triplePattern => {
         val responsibleIndexId = triplePattern.routingAddress
         optimizingStartTime = System.nanoTime
@@ -116,7 +111,7 @@ final class QueryVertex(
       // 0 cardinality => no results => we're done.
       queryDone(graphEditor)
     } else {
-      // TODO: If pattern is fully bound and cardinality is one, bind immediately.
+      // TODO: If pattern is fully bound and cardinality is one remove from query.
       cardinalities += forPattern -> cardinality
       if (cardinalities.size == numberOfPatterns) {
         optimizedQuery = optimizeQuery
@@ -129,45 +124,13 @@ final class QueryVertex(
   }
 
   def optimizeQuery: Array[Int] = {
-    var sortedPatterns = cardinalities.toArray.sortBy(_._2)
-    optimizer match {
-      case QueryOptimizer.Greedy =>
-        // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
-        val copy = query.copy
-        copy.writePatterns(sortedPatterns.map(_._1))
-        copy
-      case QueryOptimizer.Clever =>
-        var boundVariables = Set[Int]() // The lower the score, the more constrained the variable.
-        val optimizedPatterns = ArrayBuffer[TriplePattern]()
-        while (!sortedPatterns.isEmpty) {
-          val nextPattern = sortedPatterns.head._1
-          optimizedPatterns.append(nextPattern)
-          val variablesInPattern = nextPattern.variables
-          for (variable <- variablesInPattern) {
-            boundVariables += variable
-          }
-          sortedPatterns = sortedPatterns.tail.map {
-            case (pattern, oldCardinalityEstimate) =>
-              // We don't care about the old estimate.
-              var cardinalityEstimate = cardinalities(pattern).toDouble
-              var foundUnbound = false
-              for (variable <- pattern.variables) {
-                if (boundVariables.contains(variable)) {
-                  cardinalityEstimate = cardinalityEstimate / 100.0
-                } else {
-                  foundUnbound = true
-                }
-              }
-              if (!foundUnbound) {
-                cardinalityEstimate = 1.0 + cardinalityEstimate / 100000000
-              }
-              (pattern, cardinalityEstimate.toInt)
-          }
-          sortedPatterns = sortedPatterns sortBy (_._2)
-        }
-        val c = query.copy
-        c.writePatterns(optimizedPatterns.toArray)
-        c
+    val c = query.copy
+    if (optimizer.isEmpty) {
+      c
+    } else {
+      val optimizedPatterns = optimizer.get.optimize(cardinalities)
+      c.writePatterns(optimizedPatterns)
+      c
     }
   }
 
