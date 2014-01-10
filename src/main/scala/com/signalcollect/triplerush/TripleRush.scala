@@ -40,7 +40,6 @@ import com.signalcollect.configuration.ExecutionMode
 import com.signalcollect.interfaces.AggregationOperation
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.vertices.POIndex
-import com.signalcollect.triplerush.vertices.QueryOptimizer
 import com.signalcollect.triplerush.vertices.QueryVertex
 import com.signalcollect.triplerush.vertices.RootIndex
 import com.signalcollect.triplerush.vertices.SOIndex
@@ -239,14 +238,14 @@ case class TripleRush(
   }
 
   def executeQuery(q: Array[Int]): Traversable[Array[Int]] = {
-    val (resultFuture, statsFuture) = executeAdvancedQuery(q, QueryOptimizer.Clever)
+    val (resultFuture, statsFuture) = executeAdvancedQuery(q, Some(new CleverCardinalityOptimizer))
     val result = Await.result(resultFuture, 7200.seconds)
     result
   }
 
   def executeAdvancedQuery(
     q: Array[Int],
-    optimizer: Int = QueryOptimizer.Clever): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
+    optimizer: Option[Optimizer] = Some(new CleverCardinalityOptimizer)): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
