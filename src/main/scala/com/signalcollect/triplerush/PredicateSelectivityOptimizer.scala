@@ -64,7 +64,6 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity, 
      * if the query has no result, returns none
      */
     def costMapForCandidates(pickedPattern: TriplePattern, candidates: Set[TriplePattern]): Map[TriplePattern, Int] = {
-      println(s"comparing $pickedPattern with " + candidates.mkString(" "));
       val expectedExplorationCostForCandidates = candidates.map { candidate =>
         (pickedPattern.s, pickedPattern.o) match {
           case (candidate.s, _) => {
