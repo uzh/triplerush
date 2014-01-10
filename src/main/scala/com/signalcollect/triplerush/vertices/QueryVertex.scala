@@ -47,7 +47,7 @@ final class QueryVertex(
 
   @transient var state = new ArrayOfArraysTraversable
 
-  val expectedTickets = Long.MaxValue
+  val expectedTickets = query.tickets
   val numberOfPatterns = query.numberOfPatterns
 
   @transient var queryDone = false
@@ -150,6 +150,7 @@ final class QueryVertex(
     if (!queryDone) {
       resultPromise.success(state)
       val stats = Map[Any, Any](
+        "isComplete" -> complete,
         "optimizingDuration" -> optimizingDuration,
         "queryCopyCount" -> queryCopyCount,
         "optimizedQuery" -> ("Pattern matching order: " + new QueryParticle(optimizedQuery).

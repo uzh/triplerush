@@ -2,6 +2,7 @@ package com.signalcollect.triplerush
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import com.signalcollect.triplerush.QueryParticle._
 
 /**
  * special case p1 = p2:
@@ -53,25 +54,54 @@ class PredicateSelectivity(tr: TripleRush) {
 
   val optimizer = Some(new GreedyCardinalityOptimizer)
   val queriesTotal = ps * (ps - 1) * 3
+  val tickets = 10000000
   var queriesSoFar = 0
   for (p1 <- bindingsForPredicates) {
     for (p2 <- bindingsForPredicates) {
       if (p1 != p2) {
         println(s"Stats gathering progress: $queriesSoFar/$queriesTotal ...")
-        val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y)))
-        println(outOutQuery)
-        val (outOutResult, stats1) = tr.executeAdvancedQuery(outOutQuery.toParticle, optimizer)
-        outOut += (p1, p2) -> getBindingsFor(s, Await.result(outOutResult, 7200.seconds)).size
+        val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y))).toParticle
+        outOutQuery.writeTickets(tickets)
+        val (outOutResult, outOutStats) = tr.executeAdvancedQuery(outOutQuery, optimizer)
+        val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y))).toParticle
+        inOutQuery.writeTickets(tickets)
+        val (inOutResult, inOutStats) = tr.executeAdvancedQuery(inOutQuery, optimizer)
+        val inInQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(y, p2, o))).toParticle
+        inInQuery.writeTickets(tickets)
+        val (inInResult, inInStats) = tr.executeAdvancedQuery(inInQuery, optimizer)
 
-        val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y)))
-        println(inOutQuery)
-        val (inOutResult, stats2) = tr.executeAdvancedQuery(inOutQuery.toParticle, optimizer)
-        inOut += (p1, p2) -> getBindingsFor(o, Await.result(inOutResult, 7200.seconds)).size
+        val isCompleteOutOut = Await.result(outOutStats, 7200.seconds)("isComplete").asInstanceOf[Boolean]
+        val isCompleteInOut = Await.result(inOutStats, 7200.seconds)("isComplete").asInstanceOf[Boolean]
+        val isCompleteInIn = Await.result(inInStats, 7200.seconds)("isComplete").asInstanceOf[Boolean]
 
-        val inInQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(y, p2, o)))
-        println(inInQuery)
-        val (inInResult, stats3) = tr.executeAdvancedQuery(inInQuery.toParticle, optimizer)
-        inIn += (p1, p2) -> getBindingsFor(o, Await.result(inInResult, 7200.seconds)).size
+        val outOutResultSize = {
+          val bindingsCount = getBindingsFor(s, Await.result(outOutResult, 7200.seconds)).size
+          if (isCompleteOutOut) {
+            bindingsCount
+          } else {
+            math.max(bindingsCount, 1)
+          }
+        }
+        val inOutResultSize = {
+          val bindingsCount = getBindingsFor(o, Await.result(inOutResult, 7200.seconds)).size
+          if (isCompleteInOut) {
+            bindingsCount
+          } else {
+            math.max(bindingsCount, 1)
+          }
+        }
+        val inInResultSize = {
+          val bindingsCount = getBindingsFor(o, Await.result(inInResult, 7200.seconds)).size
+          if (isCompleteInIn) {
+            bindingsCount
+          } else {
+            math.max(bindingsCount, 1)
+          }
+        }
+
+        outOut += (p1, p2) -> outOutResultSize
+        inOut += (p1, p2) -> inOutResultSize
+        inIn += (p1, p2) -> inInResultSize
 
         queriesSoFar += 3
       }
