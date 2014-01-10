@@ -47,7 +47,6 @@ class PredicateSelectivity(tr: TripleRush) {
   var inOut = Map[(Int, Int), Int]().withDefaultValue(0)
   var inIn = Map[(Int, Int), Int]().withDefaultValue(0)
   var outIn = Map[(Int, Int), Int]().withDefaultValue(0)
-  var triplesWithPredicate = Map[Int, Int]().withDefaultValue(0)
 
   for (p1 <- bindingsForPredicates) {
     for (p2 <- bindingsForPredicates) {
@@ -68,11 +67,6 @@ class PredicateSelectivity(tr: TripleRush) {
       outIn += (p1, p2) -> getBindingsFor(s, resultOutInQuery).size
       }
     }
-
-    /**need predicate branching statistics gathering here*/
-    val predicateBranchingQuery = QuerySpecification(List(TriplePattern(s, p1, o)))
-    val resultPredicateBranchingQuery = tr.executeQuery(predicateBranchingQuery.toParticle)
-    triplesWithPredicate += p1 -> resultPredicateBranchingQuery.size
 
   }
 }

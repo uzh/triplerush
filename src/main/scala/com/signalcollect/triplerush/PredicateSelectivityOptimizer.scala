@@ -23,7 +23,7 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity, 
       optimizedPatterns: List[TriplePattern],
       unoptimizedPatterns: Set[TriplePattern]): (List[TriplePattern], Set[TriplePattern]) = {
 
-      if (unoptimizedPatterns.isEmpty) {
+      if (unoptimizedPatterns.size == 0) {
         (optimizedPatterns, unoptimizedPatterns)
       } else {
         val (newOpt, newUnopt) = movePattern(optimizedPatterns, unoptimizedPatterns)
@@ -38,9 +38,9 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity, 
         val costsMap: Map[(TriplePattern, TriplePattern), Int] = {
           for {
             pickedPattern <- unoptimizedPatterns
-            costs = costMapForCandidates(pickedPattern, unoptimizedPatterns.filter(_ != pickedPattern))
+            costs = costMapForCandidates(List(pickedPattern), unoptimizedPatterns.filter(_ != pickedPattern))
             (best, costForBest) = costs.minBy(_._2)
-          } yield ((pickedPattern, best), costForBest)
+          } yield ((pickedPattern, best), costForBest * cardinalities(pickedPattern))
         }.toMap
         if (costsMap.values.forall(_ == 0))
           (List(), Set())
@@ -49,7 +49,7 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity, 
           (second :: first :: Nil, (unoptimizedPatterns.filter(p => p != first && p != second)))
         }
       } else {
-        val costs = costMapForCandidates(optimizedPatterns.head, unoptimizedPatterns)
+        val costs = costMapForCandidates(optimizedPatterns, unoptimizedPatterns)
         val (best, costForBest) = costs.minBy(_._2)
         if (costForBest == 0) {
           (List(), Set())
@@ -59,33 +59,25 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity, 
       }
     }
 
+    def costForCandidate(prev: TriplePattern, candidate: TriplePattern): Int = {
+      val upperBoundBasedOnPredicateSelectivity = (prev.s, prev.o) match {
+        case (candidate.s, _) => predicateSelectivity.outOut(prev.p, candidate.p)
+        case (candidate.o, _) => predicateSelectivity.outIn(prev.p, candidate.p)
+        case (_, candidate.o) => predicateSelectivity.inIn(prev.p, candidate.p)
+        case (_, candidate.s) => predicateSelectivity.inOut(prev.p, candidate.p)
+        case other => Int.MaxValue
+      }
+      math.min(upperBoundBasedOnPredicateSelectivity, cardinalities(candidate))
+    }
+
     /**
-     * returns the best pattern to execute next, given the picked pattern
-     * if the query has no result, returns none
+     * returns a cost map for all candidates
      */
-    def costMapForCandidates(pickedPattern: TriplePattern, candidates: Set[TriplePattern]): Map[TriplePattern, Int] = {
-      println(s"comparing $pickedPattern with " + candidates.mkString(" "));
-      val expectedExplorationCostForCandidates = candidates.map { candidate =>
-        (pickedPattern.s, pickedPattern.o) match {
-          case (candidate.s, _) => {
-            (candidate, cardinalities(pickedPattern) * predicateSelectivity.outOut(pickedPattern.p, candidate.p))
-          }
-          case (candidate.o, _) => {
-            (candidate, cardinalities(pickedPattern) * predicateSelectivity.outIn(pickedPattern.p, candidate.p))
-          }
-          case (_, candidate.o) => {
-            println("matches _, o")
-            (candidate, cardinalities(pickedPattern) * predicateSelectivity.inIn(pickedPattern.p, candidate.p))
-          }
-          case (_, candidate.s) => {
-            (candidate, cardinalities(pickedPattern) * predicateSelectivity.inOut(pickedPattern.p, candidate.p))
-          }
-          case (_, _) => {
-            (candidate, predicateSelectivity.triplesWithPredicate(pickedPattern.p) * predicateSelectivity.triplesWithPredicate(candidate.p))
-          }
-        }
+    def costMapForCandidates(pickedPatterns: List[TriplePattern], candidates: Set[TriplePattern]): Map[TriplePattern, Int] = {
+      candidates.map { candidate =>
+        val bestCost = pickedPatterns.map(costForCandidate(_, candidate)).min
+        (candidate, bestCost)
       }.toMap
-      expectedExplorationCostForCandidates
     }
     val (optimized, empty) = optimizePatterns(List(), cardinalities.keySet)
     optimized.reverse
