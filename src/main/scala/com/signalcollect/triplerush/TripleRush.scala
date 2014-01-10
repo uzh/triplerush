@@ -245,7 +245,7 @@ case class TripleRush(
 
   def executeAdvancedQuery(
     q: Array[Int],
-    optimizer: Option[Optimizer] = Some(new CleverCardinalityOptimizer)): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
+    optimizer: Option[Optimizer]): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()

@@ -38,7 +38,6 @@ import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import com.signalcollect.triplerush.Mapping
 import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.QueryEngine
-import com.signalcollect.triplerush.vertices.QueryOptimizer
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Mapping
 import akka.event.Logging
@@ -52,18 +51,19 @@ import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import collection.JavaConversions._
 import java.lang.management.GarbageCollectorMXBean
 import com.signalcollect.nodeprovisioning.NodeProvisioner
+import com.signalcollect.triplerush.Optimizer
 
 trait TriplerushEval {
 
   def description: String
   def numberOfNodes: Int
   def warmupRepetitions: Int
-  def optimizer: Int
+  def optimizerCreator: TripleRush => Option[Optimizer]
   def revision: String
   def torquePriority: String
   
   import EvalHelpers._
-
+ 
   def evaluationRun: List[Map[String, String]]
 
   def initializeGraphBuilder: GraphBuilder[Any, Any] = {
@@ -93,7 +93,7 @@ trait TriplerushEval {
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
     localJarPath = "/home/user/stutz/triplerush-assembly-1.0-SNAPSHOT.jar", jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = torquePriority)
 
-  def runEvaluation(query: QuerySpecification, queryDescription: String, tr: TripleRush, commonResults: Map[String, String]): Map[String, String] = {
+  def runEvaluation(query: QuerySpecification, queryDescription: String, optimizer: Option[Optimizer], tr: TripleRush, commonResults: Map[String, String]): Map[String, String] = {
     val gcs = ManagementFactory.getGarbageCollectorMXBeans.toList
     val compilations = ManagementFactory.getCompilationMXBean
     val javaVersion = ManagementFactory.getRuntimeMXBean.getVmVersion
@@ -112,7 +112,7 @@ trait TriplerushEval {
     runResult += ((s"freeMemoryBefore", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
     runResult += ((s"usedMemoryBefore", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
     val startTime = System.nanoTime
-    val (queryResultFuture, queryStatsFuture) = tr.executeAdvancedQuery(particle)
+    val (queryResultFuture, queryStatsFuture) = tr.executeAdvancedQuery(particle, optimizer)
     val queryResult = Await.result(queryResultFuture, 7200 seconds)
     val finishTime = System.nanoTime
     val executionTime = roundToMillisecondFraction(finishTime - startTime)
