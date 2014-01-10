@@ -77,4 +77,27 @@ class PredicateSelectivitySpec extends FlatSpec with Checkers {
       tr.shutdown
     }
   }
+
+  import TripleGenerators._
+  implicit lazy val arbTriples = Arbitrary(genTriples map (_.toSet))
+
+  it should "correctly compute predicate branching for every predicate" in {
+    check((triples: Set[TriplePattern]) => {
+      val tr = new TripleRush
+      for (triple <- triples) {
+        tr.addEncodedTriple(triple.s, triple.p, triple.o)
+      }
+
+      tr.prepareExecution
+      val stats = new PredicateSelectivity(tr)
+      val predicates = triples.map(_.p)
+      for (predicate <- predicates) {
+        val triplesWithPredicate = triples.filter(_.p == predicate).size
+        assert(stats.triplesWithPredicate(predicate) == triplesWithPredicate)
+      }
+      tr.shutdown
+      true
+    }, minSuccessful(20))
+
+  }
 }
