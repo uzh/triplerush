@@ -16,19 +16,19 @@ object NewLubmEvaluation extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
   def local = new LocalHost
   def torquePriority = TorquePriority.fast
-  def runs = 1
-  def warmupRepetitions = 0
+  def runs = 10
+  def warmupRepetitions = 1000
   def shouldCleanGarbage = false
-  def description = "Local investigation."
-
-  //  var evaluation = new Evaluation(
-  //    executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
+  def description = "Battle of the optimizers."
 
   var evaluation = new Evaluation(
-    executionHost = local).addResultHandler(googleDocs)
+    executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
+
+  //  var evaluation = new Evaluation(
+  //    executionHost = local).addResultHandler(googleDocs)
 
   for (numberOfNodes <- List(1)) {
-    for (universities <- List(10)) { //10, 20, 40, 80, 160, 320, 480, 800
+    for (universities <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
       for (run <- 1 to runs) {
         for (optimizer <- List(predicateSelectivity)) { //clever, 
           val eval = new LubmEvalRun(
@@ -109,8 +109,6 @@ case class LubmEvalRun(
         println(s"Continuing graph loading...")
       }
     }
-    println("Press any key to start:")
-    readLine
   }
 
 }
