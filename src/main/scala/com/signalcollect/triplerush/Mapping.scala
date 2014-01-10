@@ -36,21 +36,22 @@ object Mapping {
     abbreviatedString
   }
 
-  def register(s: String): Int = {
+  def register(s: String): Int = synchronized {
     val abbreviation = abbreviate(s)
-    synchronized {
-      if (!string2Id.contains(abbreviation)) {
-        val id = {
-          maxId += 1
-          maxId
-        }
-        string2Id += ((abbreviation, id))
-        id2String += ((id, abbreviation))
-        id
-      } else {
-        string2Id(abbreviation)
+    if (!string2Id.contains(abbreviation)) {
+      val id = {
+        maxId += 1
+        maxId
       }
+      string2Id += ((abbreviation, id))
+      id2String += ((id, abbreviation))
+      id
+    } else {
+      string2Id(abbreviation)
     }
+  }
+  def contains(s: String): Boolean = synchronized {
+    string2Id.contains(abbreviate(s))
   }
   def getId(s: String): Int = {
     string2Id(abbreviate(s))

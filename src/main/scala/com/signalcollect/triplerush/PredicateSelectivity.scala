@@ -27,7 +27,7 @@ class PredicateSelectivity(tr: TripleRush) {
 
   val x = -4
   val y = -5
-
+  
   def bindingsToMap(bindings: Array[Int]): Map[Int, Int] = {
     (((-1 to -bindings.length by -1).zip(bindings))).toMap
   }
@@ -43,8 +43,9 @@ class PredicateSelectivity(tr: TripleRush) {
 
   val queryToGetAllPredicates = QuerySpecification(List(TriplePattern(s, p, o)))
   val allPredicateResult = tr.executeQuery(queryToGetAllPredicates.toParticle)
-  val bindingsForPredicates = getBindingsFor(p, allPredicateResult)
-  val ps = bindingsForPredicates.size
+  val predicates = getBindingsFor(p, allPredicateResult)
+   
+  val ps = predicates.size
   println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
 
   var outOut = Map[(Int, Int), Int]().withDefaultValue(0)
@@ -54,10 +55,10 @@ class PredicateSelectivity(tr: TripleRush) {
 
   val optimizer = Some(new GreedyCardinalityOptimizer)
   val queriesTotal = ps * (ps - 1) * 3
-  val tickets = 10000000
+  val tickets = 1000000
   var queriesSoFar = 0
-  for (p1 <- bindingsForPredicates) {
-    for (p2 <- bindingsForPredicates) {
+  for (p1 <- predicates) {
+    for (p2 <- predicates) {
       if (p1 != p2) {
         println(s"Stats gathering progress: $queriesSoFar/$queriesTotal ...")
         val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y))).toParticle
