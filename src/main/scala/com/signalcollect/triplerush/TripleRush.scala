@@ -23,31 +23,27 @@ package com.signalcollect.triplerush
 import java.io.DataInputStream
 import java.io.EOFException
 import java.io.FileInputStream
-import java.util.concurrent.TimeUnit
-import scala.annotation.elidable
-import scala.annotation.elidable.ASSERTION
-import scala.collection.mutable.UnrolledBuffer
+
+import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import scala.concurrent.duration._
+import scala.concurrent.duration.DurationInt
+
 import org.semanticweb.yars.nx.parser.NxParser
+
 import com.signalcollect.ExecutionConfiguration
 import com.signalcollect.GraphBuilder
 import com.signalcollect.GraphEditor
+import com.signalcollect.Vertex
 import com.signalcollect.configuration.ActorSystemRegistry
 import com.signalcollect.configuration.ExecutionMode
+import com.signalcollect.interfaces.AggregationOperation
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.vertices.POIndex
-import com.signalcollect.triplerush.vertices.QueryOptimizer
 import com.signalcollect.triplerush.vertices.QueryVertex
+import com.signalcollect.triplerush.vertices.RootIndex
 import com.signalcollect.triplerush.vertices.SOIndex
 import com.signalcollect.triplerush.vertices.SPIndex
-import akka.util.Timeout
-import scala.concurrent.Await
-import com.signalcollect.interfaces.AggregationOperation
-import com.signalcollect.Vertex
-import com.signalcollect.interfaces.ModularAggregationOperation
-import com.signalcollect.triplerush.vertices.RootIndex
 
 case object RegisterQueryResultRecipient
 
@@ -242,14 +238,14 @@ case class TripleRush(
   }
 
   def executeQuery(q: Array[Int]): Traversable[Array[Int]] = {
-    val (resultFuture, statsFuture) = executeAdvancedQuery(q, QueryOptimizer.Clever)
+    val (resultFuture, statsFuture) = executeAdvancedQuery(q, Some(new CleverCardinalityOptimizer))
     val result = Await.result(resultFuture, 7200.seconds)
     result
   }
 
   def executeAdvancedQuery(
     q: Array[Int],
-    optimizer: Int = QueryOptimizer.Clever): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
+    optimizer: Option[Optimizer]): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
