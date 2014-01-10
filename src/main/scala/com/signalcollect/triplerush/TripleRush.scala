@@ -45,8 +45,6 @@ import com.signalcollect.triplerush.vertices.RootIndex
 import com.signalcollect.triplerush.vertices.SOIndex
 import com.signalcollect.triplerush.vertices.SPIndex
 
-case object RegisterQueryResultRecipient
-
 case object UndeliverableRerouter {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
     signal match {
@@ -189,7 +187,7 @@ case class TripleRush(
       "com.signalcollect.triplerush.vertices.SOIndex",
       "com.signalcollect.triplerush.TriplePattern",
       "com.signalcollect.triplerush.vertices.QueryVertex",
-      "com.signalcollect.triplerush.vertices.QueryOptimizer",
+      "com.signalcollect.triplerush.Optimizer",
       "com.signalcollect.triplerush.PlaceholderEdge",
       "com.signalcollect.triplerush.CardinalityRequest",
       "com.signalcollect.triplerush.CardinalityReply",

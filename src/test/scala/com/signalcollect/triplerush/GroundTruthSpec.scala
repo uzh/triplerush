@@ -20,22 +20,20 @@
 
 package com.signalcollect.triplerush
 
-import java.util.concurrent.TimeUnit
 import scala.collection.immutable.TreeMap
 import scala.concurrent.Await
-import scala.concurrent.duration.FiniteDuration
 import scala.io.Source
+import scala.concurrent.duration.DurationInt
+
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.SpecificationWithJUnit
+import org.specs2.runner.JUnitRunner
+
 import com.signalcollect.GraphBuilder
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
-import com.signalcollect.triplerush.evaluation.SparqlDsl.SELECT
-import com.signalcollect.triplerush.evaluation.SparqlDsl.dsl2Query
-import com.signalcollect.triplerush.evaluation.SparqlDsl.{ | => | }
-import org.specs2.runner.JUnitRunner
-import com.signalcollect.triplerush.evaluation.SparqlDsl.DslQuery
 import com.signalcollect.triplerush.QueryParticle._
+import com.signalcollect.triplerush.evaluation.SparqlDsl._
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
@@ -324,6 +322,9 @@ WHERE
   }
   qe.prepareExecution
   println("Finished loading LUBM1.")
+  println("Computing predicate selectivities ...")
+  val optimizer = Optimizer.predicateSelectivity(qe)
+  println("Done.")
 
   //  val edgesPerType = qe.edgesPerIndexType
   //  val verticesPerType = qe.countVerticesByType
@@ -339,7 +340,8 @@ WHERE
   println("Done.")
 
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
-    val result = qe.executeQuery(q.toParticle)
+    val (resultFuture, statsFuture) = qe.executeAdvancedQuery(q.toParticle, optimizer)
+    val result = Await.result(resultFuture, DurationInt(7200).seconds)
     val bindings: List[Map[String, String]] = result.
       map(
         bindingsToMap(_).map(entry => (q.getString(entry._1), q.getString(entry._2)))).toList

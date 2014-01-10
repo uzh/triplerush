@@ -52,7 +52,7 @@ case class QuerySpecification(
   }
 
   override def toString = {
-    unmatched.mkString("\n")
+    unmatched.toString
   }
 
 }
