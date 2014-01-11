@@ -42,7 +42,7 @@ trait Forwarding extends IndexVertex {
       if (extras > 0) {
         extras -= 1
         graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress, None)
-      } else if (complete) {
+      } else if (avg > 0) {
         graphEditor.sendSignal(averageTicketQuery, routingAddress, None)
       }
     }

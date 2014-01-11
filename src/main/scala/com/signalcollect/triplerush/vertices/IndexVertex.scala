@@ -64,9 +64,9 @@ abstract class IndexVertex(id: TriplePattern)
   }
 
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
+    println(s"Processing signal ${signal} @$id")
     signal match {
       case query: Array[Int] =>
-        val q = new QueryParticle(query)
         processQuery(query, graphEditor)
       case c: CardinalityRequest =>
         handleCardinalityRequest(c, graphEditor)

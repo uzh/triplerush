@@ -68,7 +68,7 @@ trait Binding
       if (extras > 0) {
         extras -= 1
         handleQueryBinding(childDelta, aboveAverageTicketQuery, graphEditor)
-      } else if (complete) {
+      } else if (avg > 0) {
         handleQueryBinding(childDelta, averageTicketQuery, graphEditor)
       }
     }
