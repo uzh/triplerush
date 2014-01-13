@@ -40,7 +40,8 @@ case class QuerySpecification(
     QueryParticle(
       Long.MaxValue,
       new Array[Int](variableCount),
-      patterns.toArray)
+      patterns.toArray, 
+      isCountingQuery = false)
   }
 
   def extend(p: TriplePattern): QuerySpecification = {
