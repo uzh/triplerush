@@ -25,7 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger
 
 object QueryIds {
   private val maxFullQueryId = new AtomicInteger(0)
-  def nextFullQueryId: Int = maxFullQueryId.incrementAndGet
+  private val minFullQueryId = new AtomicInteger(0)
+  def nextQueryId: Int = maxFullQueryId.incrementAndGet
+  def nextCountQueryId: Int = minFullQueryId.decrementAndGet
 }
 
 object QueryParticle {
@@ -35,7 +37,14 @@ object QueryParticle {
     tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
     bindings: Array[Int],
     unmatched: Array[TriplePattern],
-    queryId: Int = QueryIds.nextFullQueryId): Array[Int] = {
+    isCountingQuery: Boolean): Array[Int] = {
+    val queryId: Int = {
+      if (isCountingQuery) {
+        QueryIds.nextCountQueryId
+      } else {
+        QueryIds.nextQueryId
+      }
+    }
     val ints = 4 + bindings.length + 3 * unmatched.length
     val r = new Array[Int](ints)
     r.writeQueryId(queryId)
@@ -61,6 +70,8 @@ object QueryParticle {
 class QueryParticle(val r: Array[Int]) extends AnyVal {
 
   import QueryParticle._
+
+  def isCountingQuery = queryId < 0
 
   def copy: Array[Int] = {
     val c = new Array[Int](r.length)
@@ -200,7 +211,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     System.arraycopy(r, 4, b, 0, numBindings)
     b
   }
-  def isResult = numberOfBindings == 0 || r.length == 4 + numberOfBindings
+  def isResult = r.length == 4 + numberOfBindings
   def queryId: Int = r(0)
   def writeQueryId(id: Int) = r(0) = id
   def tickets: Long = {
