@@ -118,20 +118,20 @@ case class TripleRush(
     FileLoader.addTriple(TriplePattern(sId, pId, oId), g)
   }
 
-  def executeQuery(q: Array[Int]): Traversable[Array[Int]] = {
+  def executeQuery(q: QuerySpecification): Traversable[Array[Int]] = {
     val (resultFuture, statsFuture) = executeAdvancedQuery(q, Some(new CleverCardinalityOptimizer))
     val result = Await.result(resultFuture, 7200.seconds)
     result
   }
 
   def executeAdvancedQuery(
-    q: Array[Int],
+    q: QuerySpecification,
     optimizer: Option[Optimizer]): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
     g.addVertex(new QueryVertex(q, resultPromise, statsPromise, optimizer))
-    if (!q.isResult) {
+    if (!q.unmatched.isEmpty) {
       // Only check if result once computation is running.
       (resultPromise.future, statsPromise.future)
     } else {

@@ -123,7 +123,7 @@ object TestHelper {
       qe.addEncodedTriple(triple.s, triple.p, triple.o)
     }
     qe.prepareExecution
-    val results = qe.executeQuery(QuerySpecification(query).toParticle)
+    val results = qe.executeQuery(QuerySpecification(query))
     val bindings: Set[Map[Int, Int]] = {
       results.map({ binding: Array[Int] =>
         // Only keep variable bindings that have an assigned value.

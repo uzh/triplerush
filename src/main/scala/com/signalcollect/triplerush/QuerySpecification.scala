@@ -28,7 +28,8 @@ import scala.util.Random
  * Represents a SPARQL query.
  */
 case class QuerySpecification(
-  unmatched: List[TriplePattern]) {
+  unmatched: List[TriplePattern],
+  tickets: Long = Long.MaxValue) {
 
   def toParticle: Array[Int] = {
     val patterns = unmatched.distinct
@@ -38,9 +39,9 @@ case class QuerySpecification(
         math.min(currentMin, minCandidate)
     })
     QueryParticle(
-      Long.MaxValue,
+      tickets,
       new Array[Int](variableCount),
-      patterns.toArray, 
+      patterns.toArray,
       isCountingQuery = false)
   }
 

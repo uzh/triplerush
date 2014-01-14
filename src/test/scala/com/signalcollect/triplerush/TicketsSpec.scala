@@ -41,8 +41,7 @@ class TicketsSpec extends FlatSpec {
     tr.addEncodedTriple(1, 2, 3)
     tr.addEncodedTriple(4, 5, 6)
     tr.prepareExecution
-    val q = QuerySpecification(List(TriplePattern(-1, -2, -3))).toParticle
-    q.writeTickets(1)
+    val q = QuerySpecification(List(TriplePattern(-1, -2, -3)), tickets = 1)
     val results = tr.executeQuery(q)
     val bindings: Set[Map[Int, Int]] = {
       results.map({ binding: Array[Int] =>

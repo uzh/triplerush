@@ -38,10 +38,12 @@ import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 import com.signalcollect.triplerush.Optimizer
 
 final class QueryVertex(
-  val query: Array[Int],
+  val querySpecification: QuerySpecification,
   val resultPromise: Promise[Traversable[Array[Int]]],
   val statsPromise: Promise[Map[Any, Any]],
   val optimizer: Option[Optimizer]) extends Vertex[Int, ArrayOfArraysTraversable] {
+
+  val query = querySpecification.toParticle
 
   val id = query.queryId
 

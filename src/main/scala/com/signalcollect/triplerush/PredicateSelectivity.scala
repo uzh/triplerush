@@ -27,7 +27,7 @@ class PredicateSelectivity(tr: TripleRush) {
 
   val x = -4
   val y = -5
-  
+
   def bindingsToMap(bindings: Array[Int]): Map[Int, Int] = {
     (((-1 to -bindings.length by -1).zip(bindings))).toMap
   }
@@ -42,9 +42,9 @@ class PredicateSelectivity(tr: TripleRush) {
   }
 
   val queryToGetAllPredicates = QuerySpecification(List(TriplePattern(s, p, o)))
-  val allPredicateResult = tr.executeQuery(queryToGetAllPredicates.toParticle)
+  val allPredicateResult = tr.executeQuery(queryToGetAllPredicates)
   val predicates = getBindingsFor(p, allPredicateResult)
-   
+
   val ps = predicates.size
   println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
 
@@ -61,14 +61,11 @@ class PredicateSelectivity(tr: TripleRush) {
     for (p2 <- predicates) {
       if (p1 != p2) {
         println(s"Stats gathering progress: $queriesSoFar/$queriesTotal ...")
-        val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y))).toParticle
-        outOutQuery.writeTickets(tickets)
+        val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y)), tickets)
         val (outOutResult, outOutStats) = tr.executeAdvancedQuery(outOutQuery, optimizer)
-        val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y))).toParticle
-        inOutQuery.writeTickets(tickets)
+        val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y)), tickets)
         val (inOutResult, inOutStats) = tr.executeAdvancedQuery(inOutQuery, optimizer)
-        val inInQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(y, p2, o))).toParticle
-        inInQuery.writeTickets(tickets)
+        val inInQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(y, p2, o)), tickets)
         val (inInResult, inInStats) = tr.executeAdvancedQuery(inInQuery, optimizer)
 
         val isCompleteOutOut = Await.result(outOutStats, 7200.seconds)("isComplete").asInstanceOf[Boolean]
