@@ -44,7 +44,7 @@ abstract class SearchableIndexVertex[SignalType, State](
     }
   }
 
-  def edgeCount = {
+  override def edgeCount = {
     if (childDeltaArray != null) childDeltaArray.length else 0
   }
 

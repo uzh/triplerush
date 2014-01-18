@@ -35,8 +35,8 @@ import com.signalcollect.triplerush.CardinalityRequest
 /**
  * This vertex represents part of the TripleRush index.
  */
-abstract class IndexVertex(id: TriplePattern)
-  extends BaseVertex[TriplePattern, Any, Any](id)
+abstract class IndexVertex(val id: TriplePattern)
+  extends BaseVertex[TriplePattern, Any, Any]
   with ParentBuilding[Any, Any] {
 
   def foreachChildDelta(f: Int => Unit)

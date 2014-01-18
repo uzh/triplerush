@@ -36,7 +36,7 @@ abstract class OptimizedIndexVertex(
 
   @transient var optimizedChildDeltas: SplayIntSet = _
 
-  def edgeCount = {
+  override def edgeCount = {
     if (optimizedChildDeltas != null) optimizedChildDeltas.size else 0
   }
   def cardinality = optimizedChildDeltas.size
