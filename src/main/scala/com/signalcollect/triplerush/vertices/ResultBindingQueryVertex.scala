@@ -32,7 +32,7 @@ import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 
-final class QueryVertex(
+final class ResultBindingQueryVertex(
   val querySpecification: QuerySpecification,
   val resultPromise: Promise[Traversable[Array[Int]]],
   val statsPromise: Promise[Map[Any, Any]],
