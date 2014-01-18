@@ -32,11 +32,13 @@ import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 
-final class ResultBindingQueryVertex(
+/**
+ * If execution is complete returns Some(numberOfResults), else returns None.
+ */
+final class ResultCountingQueryVertex(
   val querySpecification: QuerySpecification,
-  val resultPromise: Promise[Traversable[Array[Int]]],
-  val statsPromise: Promise[Map[Any, Any]],
-  val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, ArrayOfArraysTraversable] {
+  val resultPromise: Promise[Option[Int]],
+  val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, Int] {
 
   val query = querySpecification.toParticle
   val id = query.queryId
@@ -45,23 +47,18 @@ final class ResultBindingQueryVertex(
   val numberOfPatterns = query.numberOfPatterns
 
   @transient var queryDone = false
-  @transient var queryCopyCount: Long = 0
   @transient var receivedTickets: Long = 0
   @transient var complete = true
-
-  @transient var optimizingStartTime = 0l
-  @transient var optimizingDuration = 0l
 
   @transient var optimizedQuery: Array[Int] = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    state = new ArrayOfArraysTraversable
+    state = 0
     cardinalities = Map()
     if (optimizer.isDefined && numberOfPatterns > 1) {
       // Gather pattern cardinalities.
       query.patterns foreach (triplePattern => {
         val responsibleIndexId = triplePattern.routingAddress
-        optimizingStartTime = System.nanoTime
         responsibleIndexId match {
           case root @ TriplePattern(0, 0, 0) =>
             handleCardinalityReply(triplePattern, Int.MaxValue, graphEditor)
@@ -74,7 +71,6 @@ final class ResultBindingQueryVertex(
     } else {
       // Dispatch the query directly.
       graphEditor.sendSignal(query, query.routingAddress, None)
-      optimizedQuery = query
     }
   }
 
@@ -83,14 +79,12 @@ final class ResultBindingQueryVertex(
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
     signal match {
       case tickets: Long =>
-        queryCopyCount += 1
         processTickets(tickets)
         if (receivedTickets == expectedTickets) {
           queryDone(graphEditor)
         }
-      case bindings: Array[_] =>
-        queryCopyCount += 1
-        state.add(bindings.asInstanceOf[Array[Array[Int]]])
+      case resultCount: Int =>
+        state += resultCount
       case CardinalityReply(forPattern, cardinality) =>
         handleCardinalityReply(forPattern, cardinality, graphEditor)
     }
@@ -105,13 +99,9 @@ final class ResultBindingQueryVertex(
       // 0 cardinality => no results => we're done.
       queryDone(graphEditor)
     } else {
-      // TODO: If pattern is fully bound and cardinality is one remove from query.
       cardinalities += forPattern -> cardinality
       if (cardinalities.size == numberOfPatterns) {
         optimizedQuery = optimizeQuery
-        if (optimizingStartTime != 0) {
-          optimizingDuration = System.nanoTime - optimizingStartTime
-        }
         graphEditor.sendSignal(optimizedQuery, optimizedQuery.routingAddress, None)
       }
     }
@@ -138,15 +128,11 @@ final class ResultBindingQueryVertex(
   def queryDone(graphEditor: GraphEditor[Any, Any]) {
     // Only execute this block once.
     if (!queryDone) {
-      resultPromise.success(state)
-      val stats = Map[Any, Any](
-        "isComplete" -> complete,
-        "optimizingDuration" -> optimizingDuration,
-        "queryCopyCount" -> queryCopyCount,
-        "optimizedQuery" -> ("Pattern matching order: " + new QueryParticle(optimizedQuery).
-          patterns.toList + "\nCardinalities: " + cardinalities.toString)).
-        withDefaultValue("")
-      statsPromise.success(stats)
+      if (complete) {
+        resultPromise.success(Some(state))
+      } else {
+        resultPromise.success(None)
+      }
       graphEditor.removeVertex(id)
       queryDone = true
     }

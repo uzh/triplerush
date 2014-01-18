@@ -35,7 +35,7 @@ import com.signalcollect.configuration.ActorSystemRegistry
 import com.signalcollect.configuration.ExecutionMode
 import com.signalcollect.interfaces.AggregationOperation
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
-import com.signalcollect.triplerush.vertices.QueryVertex
+import com.signalcollect.triplerush.vertices.ResultBindingQueryVertex
 import com.signalcollect.triplerush.vertices.RootIndex
 import com.signalcollect.triplerush.loading.FileLoader
 import com.signalcollect.triplerush.loading.BinarySplitLoader
@@ -130,7 +130,7 @@ case class TripleRush(
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
-    g.addVertex(new QueryVertex(q, resultPromise, statsPromise, optimizer))
+    g.addVertex(new ResultBindingQueryVertex(q, resultPromise, statsPromise, optimizer))
     if (!q.unmatched.isEmpty) {
       // Only check if result once computation is running.
       (resultPromise.future, statsPromise.future)
