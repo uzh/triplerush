@@ -54,7 +54,7 @@ class IntegrationSpec extends FlatSpec with Checkers {
       new TripleRush,
       Set(TriplePattern(1, 2, 3)),
       List(TriplePattern(1, 2, 3)))
-    assert(Set[Map[Int, Int]]() === trResults)
+    assert(Set[Map[Int, Int]](Map()) === trResults)
   }
   
   it should "correctly answer a query for a specific pattern that does not exist" in {
