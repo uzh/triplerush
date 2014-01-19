@@ -34,6 +34,7 @@ import scala.collection.mutable.ArrayBuffer
 import com.signalcollect.util.IntLongHashMap
 import com.signalcollect.util.IntHashMap
 import com.signalcollect.util.IntValueHashMap
+import com.signalcollect.util.IntIntHashMap
 
 class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
   extends MessageBusFactory {
@@ -74,9 +75,10 @@ final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     sendCountIncrementorForRequests,
     workerApiFactory) {
 
-  val aggregatedTickets = new IntLongHashMap(initialSize = 2)
-  val aggregatedResults = new IntHashMap[ArrayBuffer[Array[Int]]](initialSize = 2)
-  val aggregatedCardinalities = new IntValueHashMap[TriplePattern](initialSize = 2)
+  val aggregatedTickets = new IntLongHashMap(initialSize = 8)
+  val aggregatedResults = new IntHashMap[ArrayBuffer[Array[Int]]](initialSize = 8)
+  val aggregatedCardinalities = new IntValueHashMap[TriplePattern](initialSize = 8)
+  val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
   override def sendSignal(
     signal: Signal,
@@ -86,7 +88,11 @@ final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     if (targetId.isInstanceOf[Int]) {
       val tId = targetId.asInstanceOf[Int]
       signal match {
-        case tickets: Long => handleTickets(tickets, tId)
+        case resultCount: Int =>
+          val oldResultCount = aggregatedResultCounts(tId)
+          aggregatedResultCounts(tId) = oldResultCount + resultCount
+        case tickets: Long =>
+          handleTickets(tickets, tId)
         case result: Array[Int] =>
           val oldResults = aggregatedResults(tId)
           val bindings = result.bindings
@@ -135,6 +141,12 @@ final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
         super.sendSignal(results.toArray.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
       }
       aggregatedResults.clear
+    }
+    if (!aggregatedResultCounts.isEmpty) {
+      aggregatedResultCounts.foreach { (queryVertexId, resultCount) =>
+        super.sendSignal(resultCount.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
+      }
+      aggregatedResultCounts.clear
     }
     if (!aggregatedTickets.isEmpty) {
       aggregatedTickets.foreach { (queryVertexId, tickets) =>

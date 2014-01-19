@@ -38,7 +38,7 @@ final class ResultBindingQueryVertex(
   val statsPromise: Promise[Map[Any, Any]],
   val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, ArrayOfArraysTraversable] {
 
-  val query = querySpecification.toParticle
+  val query = QueryParticle.fromSpecification(querySpecification, withBindings = true)
   val id = query.queryId
 
   val expectedTickets = query.tickets
@@ -143,9 +143,11 @@ final class ResultBindingQueryVertex(
         "isComplete" -> complete,
         "optimizingDuration" -> optimizingDuration,
         "queryCopyCount" -> queryCopyCount,
-        "optimizedQuery" -> ("Pattern matching order: " + new QueryParticle(optimizedQuery).
-          patterns.toList + "\nCardinalities: " + cardinalities.toString)).
-        withDefaultValue("")
+        "optimizedQuery" -> ("Pattern matching order: " + {
+          if (optimizedQuery != null) {
+            new QueryParticle(optimizedQuery).patterns.toList + "\nCardinalities: " + cardinalities.toString
+          } else { "the optimized was not run, probably one of the patterns had cardinality 0" }
+        })).withDefaultValue("")
       statsPromise.success(stats)
       graphEditor.removeVertex(id)
       queryDone = true

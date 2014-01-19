@@ -323,13 +323,14 @@ WHERE
   qe.prepareExecution
   println("Finished loading LUBM1.")
   println("Computing predicate selectivities ...")
-  val stats = new PredicateSelectivity(qe)
-  val optimizer = new PredicateSelectivityOptimizer(stats, false)
+  //val stats = new PredicateSelectivity(qe)
+  val optimizer = CleverCardinalityOptimizer
+  //val optimizer = new PredicateSelectivityOptimizer(stats, false)
   println("Done.")
-  println(s"${stats.predicates.size} predicates: " + stats.predicates)
-  for (predicate <- stats.predicates) {
-    println(Mapping.getString(predicate))
-  }
+ // println(s"${stats.predicates.size} predicates: " + stats.predicates)
+  //for (predicate <- stats.predicates) {
+  //  println(Mapping.getString(predicate))
+  //}
 
   //  val edgesPerType = qe.edgesPerIndexType
   //  val verticesPerType = qe.countVerticesByType

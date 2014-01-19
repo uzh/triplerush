@@ -12,11 +12,11 @@ object Optimizer {
   }
   val greedy: TripleRush => Option[Optimizer] = {
     tr: TripleRush =>
-      Some(new GreedyCardinalityOptimizer)
+      Some(GreedyCardinalityOptimizer)
   }
   val clever: TripleRush => Option[Optimizer] = {
     tr: TripleRush =>
-      Some(new CleverCardinalityOptimizer)
+      Some(CleverCardinalityOptimizer)
   }
   val predicateSelectivity: TripleRush => Option[Optimizer] = {
     tr: TripleRush =>

@@ -93,7 +93,12 @@ trait Binding
     graphEditor: GraphEditor[Any, Any]) {
     if (boundParticle.isResult) {
       // Query successful, send to query vertex.
-      graphEditor.sendSignal(boundParticle, boundParticle.queryId, None)
+      if (boundParticle.isBindingQuery) {
+        graphEditor.sendSignal(boundParticle, boundParticle.queryId, None)
+      } else {
+        graphEditor.sendSignal(1, boundParticle.queryId, None)
+        graphEditor.sendSignal(boundParticle.tickets, boundParticle.queryId, None)
+      }
     } else {
       graphEditor.sendSignal(boundParticle, boundParticle.routingAddress, None)
     }

@@ -31,20 +31,6 @@ case class QuerySpecification(
   unmatched: List[TriplePattern],
   tickets: Long = Long.MaxValue) {
 
-  def toParticle: Array[Int] = {
-    val patterns = unmatched.distinct
-    val variableCount = math.abs(unmatched.foldLeft(0) {
-      (currentMin, next) =>
-        val minCandidate = math.min(next.o, math.min(next.s, next.p))
-        math.min(currentMin, minCandidate)
-    })
-    QueryParticle(
-      tickets,
-      new Array[Int](variableCount),
-      patterns.toArray,
-      isCountingQuery = false)
-  }
-
   def extend(p: TriplePattern): QuerySpecification = {
     QuerySpecification(p :: unmatched)
   }

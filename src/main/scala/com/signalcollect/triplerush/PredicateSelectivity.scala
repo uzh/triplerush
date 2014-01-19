@@ -53,7 +53,7 @@ class PredicateSelectivity(tr: TripleRush) {
   var inIn = Map[(Int, Int), Int]().withDefaultValue(0)
   def outIn(p1: Int, p2: Int) = inOut((p2, p1))
 
-  val optimizer = Some(new GreedyCardinalityOptimizer)
+  val optimizer = Some(GreedyCardinalityOptimizer)
   val queriesTotal = ps * (ps - 1) * 3
   val tickets = 1000000
   var queriesSoFar = 0

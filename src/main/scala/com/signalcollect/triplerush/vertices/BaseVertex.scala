@@ -44,5 +44,5 @@ abstract class BaseVertex[Id, SignalType, State]
   override def edgeCount = 0
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
   override def removeEdge(targetId: Any, graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
-  override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = throw new UnsupportedOperationException
+  override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = 0
 }

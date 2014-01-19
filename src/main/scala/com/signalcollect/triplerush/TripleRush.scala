@@ -41,6 +41,7 @@ import com.signalcollect.triplerush.loading.FileLoader
 import com.signalcollect.triplerush.loading.BinarySplitLoader
 import com.signalcollect.triplerush.loading.EdgesPerIndexType
 import com.signalcollect.triplerush.loading.CountVerticesByType
+import com.signalcollect.triplerush.vertices.ResultCountingQueryVertex
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
@@ -69,7 +70,8 @@ case class TripleRush(
       "com.signalcollect.triplerush.vertices.POIndex",
       "com.signalcollect.triplerush.vertices.SOIndex",
       "com.signalcollect.triplerush.TriplePattern",
-      "com.signalcollect.triplerush.vertices.QueryVertex",
+      "com.signalcollect.triplerush.vertices.ResultBindingQueryVertex",
+      "com.signalcollect.triplerush.vertices.ResultCountingQueryVertex",
       "com.signalcollect.triplerush.Optimizer",
       "com.signalcollect.triplerush.PlaceholderEdge",
       "com.signalcollect.triplerush.CardinalityRequest",
@@ -118,8 +120,22 @@ case class TripleRush(
     FileLoader.addTriple(TriplePattern(sId, pId, oId), g)
   }
 
+  def executeCountingQuery(
+    q: QuerySpecification,
+    optimizer: Option[Optimizer] = Some(GreedyCardinalityOptimizer)): Future[Option[Int]] = {
+    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    val resultCountPromise = Promise[Option[Int]]()
+    g.addVertex(new ResultCountingQueryVertex(q, resultCountPromise, optimizer))
+    if (!q.unmatched.isEmpty) {
+      // Only check if result once computation is running.
+      resultCountPromise.future
+    } else {
+      Future.successful(Some(0))
+    }
+  }
+
   def executeQuery(q: QuerySpecification): Traversable[Array[Int]] = {
-    val (resultFuture, statsFuture) = executeAdvancedQuery(q, Some(new CleverCardinalityOptimizer))
+    val (resultFuture, statsFuture) = executeAdvancedQuery(q, Some(CleverCardinalityOptimizer))
     val result = Await.result(resultFuture, 7200.seconds)
     result
   }

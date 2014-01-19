@@ -40,7 +40,8 @@ final class ResultCountingQueryVertex(
   val resultPromise: Promise[Option[Int]],
   val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, Int] {
 
-  val query = querySpecification.toParticle
+  val query = QueryParticle.fromSpecification(querySpecification, withBindings = false)
+  println(s"id = ${new QueryParticle(query).queryId}")
   val id = query.queryId
 
   val expectedTickets = query.tickets
