@@ -22,18 +22,20 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
      */
     @tailrec def optimizePatterns(
       optimizedPatterns: List[TriplePattern],
-      unoptimizedPatterns: Set[TriplePattern]): (List[TriplePattern], Set[TriplePattern]) = {
+      unoptimizedPatterns: Set[TriplePattern],
+      boundVariables: Set[Int]): (List[TriplePattern], Set[TriplePattern]) = {
       if (unoptimizedPatterns.size == 0) {
         (optimizedPatterns, unoptimizedPatterns)
       } else {
-        val (newOpt, newUnopt) = movePattern(optimizedPatterns, unoptimizedPatterns)
-        optimizePatterns(newOpt, newUnopt)
+        val (newOpt, newUnopt, newBound) = movePattern(optimizedPatterns, unoptimizedPatterns, boundVariables)
+        optimizePatterns(newOpt, newUnopt, newBound)
       }
     }
 
     def movePattern(
       optimizedPatterns: List[TriplePattern],
-      unoptimizedPatterns: Set[TriplePattern]): (List[TriplePattern], Set[TriplePattern]) = {
+      unoptimizedPatterns: Set[TriplePattern],
+      boundVariables: Set[Int]): (List[TriplePattern], Set[TriplePattern], Set[Int]) = {
       if (optimizedPatterns.isEmpty) {
         val costsMap: Map[(TriplePattern, TriplePattern), Long] = {
           for {
@@ -44,42 +46,45 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
         }.toMap
         val ((first, second), bestCost) = costsMap.minBy(_._2)
         if (bestCost == 0) {
-          (List(), Set())
+          (List(), Set(), Set())
         } else {
-          (second :: first :: Nil, (unoptimizedPatterns - first - second))
+          (second :: first :: Nil, (unoptimizedPatterns - first - second), first.variableSet ++ second.variableSet)
         }
       } else {
-        val boundVars = optimizedPatterns.foldLeft(Set[Int]())((setAppend, tp) => (setAppend + tp.s + tp.o)).filter(_ < 0)
         val costs: Map[(TriplePattern, TriplePattern), Long] = {
           for {
             pickedPattern <- optimizedPatterns
-            costs = costMapForCandidates(List(pickedPattern), unoptimizedPatterns, boundVars)
+            costs = costMapForCandidates(List(pickedPattern), unoptimizedPatterns, boundVariables)
             (best, costForBest) = costs.minBy(_._2)
           } yield ((pickedPattern, best), costForBest)
         }.toMap
 
         val ((bestPrev, bestCandidate), costForBest) = costs.minBy(_._2)
         if (costForBest == 0) {
-          (List(), Set())
+          (List(), Set(), Set())
         } else {
-          (bestCandidate :: optimizedPatterns, unoptimizedPatterns.filter(_ != bestCandidate))
+          (bestCandidate :: optimizedPatterns, unoptimizedPatterns - bestCandidate, boundVariables ++ bestCandidate.variableSet)
         }
       }
     }
 
     /**
-     * this method helps break ties between candidate and previous patterns
-     * the aim is to order the pair so that lower cardinality pattern is followed by a higher cardinality pattern (other things remaining equal)
+     * This method breaks ties between candidate and previous patterns.
+     * The aim is to order the pair such that the lower cardinality pattern is followed
+     * by a higher cardinality pattern (all other things remaining equal).
      */
     def orderPrevAndCandidate(prev: TriplePattern, candidate: TriplePattern): Int = {
-      if (cardinalities(prev) < cardinalities(candidate))
+      if (cardinalities(prev) < cardinalities(candidate)) {
         -1
-      else
+      } else {
         1
+      }
     }
 
-    //method that removes similar code block inside match block of costForCandidate
-    //call this method from match block of costForCandidate to calculate cost for candidate
+    /**
+     * Method that removes similar code block inside match block of costForCandidate.
+     * Call this method from match block of costForCandidate to calculate cost for candidate.
+     */
     def calculateCost(prev: TriplePattern, candidate: TriplePattern, prevBoundOrUnbound: Int, selectivity: Long): Long = {
       val ret =
         if (prevBoundOrUnbound > 0)

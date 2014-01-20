@@ -54,6 +54,38 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     (sOpt :: pOpt :: oOpt :: Nil).flatten
   }
 
+  def variableSet: Set[Int] = {
+    if (s < 0) {
+      if (p < 0) {
+        if (o < 0) {
+          Set(s, p, o)
+        } else {
+          Set(s, p)
+        }
+      } else {
+        if (o < 0) {
+          Set(s, o)
+        } else {
+          Set(s)
+        }
+      }
+    } else {
+      if (p < 0) {
+        if (o < 0) {
+          Set(p, o)
+        } else {
+          Set(p)
+        }
+      } else {
+        if (o < 0) {
+          Set(o)
+        } else {
+          Set()
+        }
+      }
+    }
+  }
+
   def contains(expression: Int): Boolean = {
     if (s == expression) {
       return true
