@@ -129,16 +129,19 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
      * Calculate cost for candidate whose variables are already bound.
      */
     def costForBoundCandidate(prev: TriplePattern, candidate: TriplePattern): Long = {
-      //if variables are bound, we want to order such that the least cost candidate is ordered after the previous patterns
-      //we need to break ties too
+      // If variables are bound, we want to order such that the least cost candidate is ordered after the previous patterns and
+      // we need to break ties as well.
       val vars = (Set[Int]() + prev.s + prev.o).filter(_ < 0)
       val upperBoundOnSelectivity: Long = {
         if (vars.contains(candidate.s) || vars.contains(candidate.o)) {
-          if (cardinalities(prev) > cardinalities(candidate))
+          if (cardinalities(prev) > cardinalities(candidate)) {
             cardinalities(prev)
-          else
+          } else {
             cardinalities(candidate)
-        } else Long.MaxValue
+          }
+        } else {
+          Long.MaxValue
+        }
       }
       math.min(upperBoundOnSelectivity, Long.MaxValue)
     }
@@ -155,7 +158,6 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
               (candidate.s > 0 && boundVariables.contains(candidate.o)) ||
               (boundVariables.contains(candidate.s) && boundVariables.contains(candidate.o))))
             pickedPatterns.map(costForBoundCandidate(_, candidate)).min
-
           else pickedPatterns.map(costForCandidate(_, candidate)).min
         }
         (candidate, bestCost)
