@@ -22,7 +22,7 @@ package com.signalcollect.triplerush
 
 import scala.collection.mutable.ArrayBuffer
 
-class CleverCardinalityOptimizer extends Optimizer {
+object CleverCardinalityOptimizer extends Optimizer {
 
   def optimize(cardinalities: Map[TriplePattern, Int]): Array[TriplePattern] = {
     var sortedPatterns = cardinalities.toArray.sortBy(_._2)

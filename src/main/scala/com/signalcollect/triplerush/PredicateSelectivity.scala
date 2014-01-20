@@ -27,7 +27,7 @@ class PredicateSelectivity(tr: TripleRush) {
 
   val x = -4
   val y = -5
-  
+
   def bindingsToMap(bindings: Array[Int]): Map[Int, Int] = {
     (((-1 to -bindings.length by -1).zip(bindings))).toMap
   }
@@ -42,9 +42,9 @@ class PredicateSelectivity(tr: TripleRush) {
   }
 
   val queryToGetAllPredicates = QuerySpecification(List(TriplePattern(s, p, o)))
-  val allPredicateResult = tr.executeQuery(queryToGetAllPredicates.toParticle)
+  val allPredicateResult = tr.executeQuery(queryToGetAllPredicates)
   val predicates = getBindingsFor(p, allPredicateResult)
-   
+
   val ps = predicates.size
   println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
 
@@ -53,7 +53,7 @@ class PredicateSelectivity(tr: TripleRush) {
   var inIn = Map[(Int, Int), Int]().withDefaultValue(0)
   def outIn(p1: Int, p2: Int) = inOut((p2, p1))
 
-  val optimizer = Some(new GreedyCardinalityOptimizer)
+  val optimizer = Some(GreedyCardinalityOptimizer)
   val queriesTotal = ps * (ps - 1) * 3
   val tickets = 1000000
   var queriesSoFar = 0
@@ -61,44 +61,17 @@ class PredicateSelectivity(tr: TripleRush) {
     for (p2 <- predicates) {
       if (p1 != p2) {
         println(s"Stats gathering progress: $queriesSoFar/$queriesTotal ...")
-        val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y))).toParticle
-        outOutQuery.writeTickets(tickets)
-        val (outOutResult, outOutStats) = tr.executeAdvancedQuery(outOutQuery, optimizer)
-        val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y))).toParticle
-        inOutQuery.writeTickets(tickets)
-        val (inOutResult, inOutStats) = tr.executeAdvancedQuery(inOutQuery, optimizer)
-        val inInQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(y, p2, o))).toParticle
-        inInQuery.writeTickets(tickets)
-        val (inInResult, inInStats) = tr.executeAdvancedQuery(inInQuery, optimizer)
+        val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y)), tickets)
+        val outOutResult = tr.executeCountingQuery(outOutQuery, optimizer)
+        val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y)), tickets)
+        val inOutResult = tr.executeCountingQuery(inOutQuery, optimizer)
+        val inInQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(y, p2, o)), tickets)
+        val inInResult = tr.executeCountingQuery(inInQuery, optimizer)
 
-        val isCompleteOutOut = Await.result(outOutStats, 7200.seconds)("isComplete").asInstanceOf[Boolean]
-        val isCompleteInOut = Await.result(inOutStats, 7200.seconds)("isComplete").asInstanceOf[Boolean]
-        val isCompleteInIn = Await.result(inInStats, 7200.seconds)("isComplete").asInstanceOf[Boolean]
-
-        val outOutResultSize = {
-          val bindingsCount = getBindingsFor(s, Await.result(outOutResult, 7200.seconds)).size
-          if (isCompleteOutOut) {
-            bindingsCount
-          } else {
-            math.max(bindingsCount, 1)
-          }
-        }
-        val inOutResultSize = {
-          val bindingsCount = getBindingsFor(o, Await.result(inOutResult, 7200.seconds)).size
-          if (isCompleteInOut) {
-            bindingsCount
-          } else {
-            math.max(bindingsCount, 1)
-          }
-        }
-        val inInResultSize = {
-          val bindingsCount = getBindingsFor(o, Await.result(inInResult, 7200.seconds)).size
-          if (isCompleteInIn) {
-            bindingsCount
-          } else {
-            math.max(bindingsCount, 1)
-          }
-        }
+        // TODO: Handle the else parts better.
+        val outOutResultSize = Await.result(outOutResult, 7200.seconds).getOrElse(Int.MaxValue)
+        val inOutResultSize = Await.result(inOutResult, 7200.seconds).getOrElse(Int.MaxValue)
+        val inInResultSize = Await.result(inInResult, 7200.seconds).getOrElse(Int.MaxValue)
 
         outOut += (p1, p2) -> outOutResultSize
         inOut += (p1, p2) -> inOutResultSize

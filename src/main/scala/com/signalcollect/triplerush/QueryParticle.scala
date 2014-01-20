@@ -25,17 +25,50 @@ import java.util.concurrent.atomic.AtomicInteger
 
 object QueryIds {
   private val maxFullQueryId = new AtomicInteger(0)
-  def nextFullQueryId: Int = maxFullQueryId.incrementAndGet
+  private val minFullQueryId = new AtomicInteger(0)
+  def nextQueryId: Int = maxFullQueryId.incrementAndGet
+  def nextCountQueryId: Int = minFullQueryId.decrementAndGet
 }
 
 object QueryParticle {
   implicit def arrayToParticle(a: Array[Int]) = new QueryParticle(a)
 
+  def fromSpecification(s: QuerySpecification, withBindings: Boolean = true): Array[Int] = {
+    if (withBindings) {
+      val variableCount = math.abs(s.unmatched.foldLeft(0) {
+        (currentMin, next) =>
+          val minCandidate = math.min(next.o, math.min(next.s, next.p))
+          math.min(currentMin, minCandidate)
+      })
+      QueryParticle(
+        s.tickets,
+        new Array[Int](variableCount),
+        s.unmatched,
+        withBindings = true)
+    } else {
+      val queryId = QueryIds.nextCountQueryId
+      val ints = 4 + 3 * s.unmatched.length
+      val r = new Array[Int](ints)
+      r.writeQueryId(queryId)
+      r.writeTickets(s.tickets)
+      r.writePatterns(s.unmatched)
+      r
+    }
+
+  }
+
   def apply(
     tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
     bindings: Array[Int],
-    unmatched: Array[TriplePattern],
-    queryId: Int = QueryIds.nextFullQueryId): Array[Int] = {
+    unmatched: Seq[TriplePattern],
+    withBindings: Boolean): Array[Int] = {
+    val queryId: Int = {
+      if (withBindings) {
+        QueryIds.nextQueryId
+      } else {
+        QueryIds.nextCountQueryId
+      }
+    }
     val ints = 4 + bindings.length + 3 * unmatched.length
     val r = new Array[Int](ints)
     r.writeQueryId(queryId)
@@ -61,6 +94,8 @@ object QueryParticle {
 class QueryParticle(val r: Array[Int]) extends AnyVal {
 
   import QueryParticle._
+
+  def isBindingQuery = queryId > 0
 
   def copy: Array[Int] = {
     val c = new Array[Int](r.length)
@@ -92,7 +127,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     }
 
     // No conflicts, we bind the value to the variable.
-    val variableIndex = -(variable + 1)
     val currentParticle: Array[Int] = {
       if (copyBeforeWrite) {
         copyWithoutLastPattern
@@ -100,7 +134,10 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
         r
       }
     }
-    currentParticle.writeBinding(variableIndex, boundValue)
+    if (isBindingQuery) {
+      val variableIndex = -(variable + 1)
+      currentParticle.writeBinding(variableIndex, boundValue)
+    }
     currentParticle.bindVariablesInPatterns(variable, boundValue)
     currentParticle.bindPredicate(toMatchP, toMatchO, toBindP, toBindO, false)
     currentParticle
@@ -131,7 +168,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     }
 
     // No conflicts, we bind the value to the variable.
-    val variableIndex = -(variable + 1)
     val currentParticle = {
       if (copyBeforeWrite) {
         copyWithoutLastPattern
@@ -139,7 +175,10 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
         r
       }
     }
-    currentParticle.writeBinding(variableIndex, boundValue)
+    if (isBindingQuery) {
+      val variableIndex = -(variable + 1)
+      currentParticle.writeBinding(variableIndex, boundValue)
+    }
     currentParticle.bindVariablesInPatterns(variable, boundValue)
     currentParticle.bindObject(toMatchO, toBindO, false)
     currentParticle
@@ -175,7 +214,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     val boundValue = toBindO
 
     // No conflicts, we bind the value to the variable.
-    val variableIndex = -(variable + 1)
     val currentParticle = {
       if (copyBeforeWrite) {
         copyWithoutLastPattern
@@ -183,7 +221,10 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
         r
       }
     }
-    currentParticle.writeBinding(variableIndex, boundValue)
+    if (isBindingQuery) {
+      val variableIndex = -(variable + 1)
+      currentParticle.writeBinding(variableIndex, boundValue)
+    }
     currentParticle.bindVariablesInPatterns(variable, boundValue)
     currentParticle
   }
@@ -200,7 +241,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     System.arraycopy(r, 4, b, 0, numBindings)
     b
   }
-  def isResult = numberOfBindings == 0 || r.length == 4 + numberOfBindings
+  def isResult = r.length == 4 + numberOfBindings
   def queryId: Int = r(0)
   def writeQueryId(id: Int) = r(0) = id
   def tickets: Long = {
@@ -211,7 +252,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     r(2) = t.toInt
   }
   def numberOfBindings: Int = r(3)
-  def writeBindings(bindings: Array[Int]) {
+  def writeBindings(bindings: Seq[Int]) {
     r(3) = bindings.length
     var i = 0
     while (i < bindings.length) {
@@ -228,7 +269,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     r(contentIntIndex)
   }
 
-  def writePatterns(unmatched: Array[TriplePattern]) {
+  def writePatterns(unmatched: Seq[TriplePattern]) {
     var i = 0
     var tpByteIndex = r.length - 3 // index of subject of last pattern
     while (i < unmatched.length) {
@@ -319,6 +360,19 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
         TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
       }
     }
+  }
+
+  /**
+   * Checks that the last pattern is not fully bound and that no variable appears multiple times in the last pattern.
+   * The same variable appearing multiple times might cause a binding to fail.
+   */
+  @inline def isSimpleToBind = {
+    val s = lastPatternS
+    val p = lastPatternP
+    val o = lastPatternO
+    !(s > 0 && p > 0 && o > 0) &&
+      (s < 0 || (s != p && s != o)) &&
+      (o < 0 || (o != p))
   }
 
   @inline def lastPatternS = r(r.length - 3)

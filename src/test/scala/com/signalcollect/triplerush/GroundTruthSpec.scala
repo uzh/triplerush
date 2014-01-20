@@ -324,6 +324,7 @@ WHERE
   println("Finished loading LUBM1.")
   println("Computing predicate selectivities ...")
   val stats = new PredicateSelectivity(qe)
+  //val optimizer = CleverCardinalityOptimizer
   val optimizer = new PredicateSelectivityOptimizer(stats, false)
   println("Done.")
   println(s"${stats.predicates.size} predicates: " + stats.predicates)
@@ -345,7 +346,7 @@ WHERE
   println("Done.")
 
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
-    val (resultFuture, statsFuture) = qe.executeAdvancedQuery(q.toParticle, Some(optimizer))
+    val (resultFuture, statsFuture) = qe.executeAdvancedQuery(q, Some(optimizer))
     val result = Await.result(resultFuture, DurationInt(7200).seconds)
     val bindings: List[Map[String, String]] = result.
       map(

@@ -50,7 +50,7 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
 
     def calculateCardinalityOfPattern(tp: TriplePattern): Int = {
       val queryToGetCardinality = QuerySpecification(List(tp))
-      val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality.toParticle)
+      val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality)
       cardinalityQueryResult.size
     }
 
@@ -82,7 +82,7 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
 
     def calculateCardinalityOfPattern(tp: TriplePattern): Int = {
       val queryToGetCardinality = QuerySpecification(List(tp))
-      val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality.toParticle)
+      val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality)
       cardinalityQueryResult.size
     }
 
@@ -112,7 +112,7 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
 
       def calculateCardinalityOfPattern(tp: TriplePattern): Int = {
         val queryToGetCardinality = QuerySpecification(List(tp))
-        val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality.toParticle)
+        val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality)
         cardinalityQueryResult.size
       }
 

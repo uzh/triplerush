@@ -20,32 +20,26 @@
 
 package com.signalcollect.triplerush.vertices
 
-import scala.Array.canBuildFrom
-import scala.collection.mutable.ArrayBuffer
-import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.Edge
+import scala.concurrent.Promise
+
 import com.signalcollect.GraphEditor
-import com.signalcollect.Vertex
 import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
+import com.signalcollect.triplerush.Optimizer
+import com.signalcollect.triplerush.QueryParticle
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TriplePattern
-import akka.actor.ActorRef
-import akka.actor.actorRef2Scala
-import com.signalcollect.triplerush.QueryParticle
-import scala.concurrent.Promise
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
-import com.signalcollect.triplerush.Optimizer
 
-final class QueryVertex(
-  val query: Array[Int],
+final class ResultBindingQueryVertex(
+  val querySpecification: QuerySpecification,
   val resultPromise: Promise[Traversable[Array[Int]]],
   val statsPromise: Promise[Map[Any, Any]],
-  val optimizer: Option[Optimizer]) extends Vertex[Int, ArrayOfArraysTraversable] {
+  val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, ArrayOfArraysTraversable] {
 
+  val query = QueryParticle.fromSpecification(querySpecification, withBindings = true)
   val id = query.queryId
-
-  @transient var state = new ArrayOfArraysTraversable
 
   val expectedTickets = query.tickets
   val numberOfPatterns = query.numberOfPatterns
@@ -61,6 +55,7 @@ final class QueryVertex(
   @transient var optimizedQuery: Array[Int] = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    state = new ArrayOfArraysTraversable
     cardinalities = Map()
     if (optimizer.isDefined && numberOfPatterns > 1) {
       // Gather pattern cardinalities.
@@ -76,7 +71,6 @@ final class QueryVertex(
               responsibleIndexId, None)
         }
       })
-      optimizedQuery = query
     } else {
       // Dispatch the query directly.
       graphEditor.sendSignal(query, query.routingAddress, None)
@@ -141,10 +135,6 @@ final class QueryVertex(
     }
   }
 
-  override def scoreSignal: Double = 0
-
-  override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {}
-
   def queryDone(graphEditor: GraphEditor[Any, Any]) {
     // Only execute this block once.
     if (!queryDone) {
@@ -153,25 +143,15 @@ final class QueryVertex(
         "isComplete" -> complete,
         "optimizingDuration" -> optimizingDuration,
         "queryCopyCount" -> queryCopyCount,
-        "optimizedQuery" -> ("Pattern matching order: " + new QueryParticle(optimizedQuery).
-          patterns.toList + "\nCardinalities: " + cardinalities.toString)).
-        withDefaultValue("")
+        "optimizedQuery" -> ("Pattern matching order: " + {
+          if (optimizedQuery != null) {
+            new QueryParticle(optimizedQuery).patterns.toList + "\nCardinalities: " + cardinalities.toString
+          } else { "the optimized was not run, probably one of the patterns had cardinality 0" }
+        })).withDefaultValue("")
       statsPromise.success(stats)
       graphEditor.removeVertex(id)
       queryDone = true
     }
   }
 
-  def setState(s: ArrayOfArraysTraversable) {
-    state = s
-  }
-
-  def scoreCollect = 0 // Because signals are collected upon delivery.
-  def edgeCount = 0
-  override def toString = s"${this.getClass.getName}(id=$id)"
-  def executeCollectOperation(graphEditor: GraphEditor[Any, Any]) {}
-  def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
-  override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
-  override def removeEdge(targetId: Any, graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
-  override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = 0
 }

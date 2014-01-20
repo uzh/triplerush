@@ -104,7 +104,6 @@ trait TriplerushEval {
     runResult += (("javaVmVersion", javaVersion))
     runResult += (("jvmLibraryPath", jvmLibraryPath))
     runResult += (("jvmArguments", jvmArguments.mkString(" ")))
-    val particle = query.toParticle
     val date: Date = new Date
     val gcTimeBefore = getGcCollectionTime(gcs)
     val gcCountBefore = getGcCollectionCount(gcs)
@@ -113,7 +112,7 @@ trait TriplerushEval {
     runResult += ((s"freeMemoryBefore", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
     runResult += ((s"usedMemoryBefore", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
     val startTime = System.nanoTime
-    val (queryResultFuture, queryStatsFuture) = tr.executeAdvancedQuery(particle, optimizer)
+    val (queryResultFuture, queryStatsFuture) = tr.executeAdvancedQuery(query, optimizer)
     val queryResult = Await.result(queryResultFuture, 7200 seconds)
     val finishTime = System.nanoTime
     val executionTime = roundToMillisecondFraction(finishTime - startTime)
@@ -211,7 +210,7 @@ object EvalHelpers {
   def jitSteadyState(queries: List[QuerySpecification], tr: TripleRush, repetitions: Int = 100) {
     for (i <- 1 to repetitions) {
       for (query <- queries) {
-        tr.executeQuery(query.toParticle)
+        tr.executeQuery(query)
         tr.awaitIdle
       }
     }

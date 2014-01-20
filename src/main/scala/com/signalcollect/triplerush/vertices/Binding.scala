@@ -57,22 +57,31 @@ trait Binding
   }
 
   def bindQueryToAllTriples(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
-    val edges = edgeCount
-    val totalTickets = query.tickets
-    val avg = math.abs(totalTickets) / edges
-    val complete = avg > 0 && totalTickets > 0
-    var extras = math.abs(totalTickets) % edges
-    val averageTicketQuery = query.copyWithTickets(avg, complete)
-    val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
-    def bind(childDelta: Int) {
-      if (extras > 0) {
-        extras -= 1
-        handleQueryBinding(childDelta, aboveAverageTicketQuery, graphEditor)
-      } else if (complete) {
-        handleQueryBinding(childDelta, averageTicketQuery, graphEditor)
+    if (!query.isBindingQuery &&
+      query.numberOfPatterns == 1 &&
+      query.isSimpleToBind) {
+      // Take a shortcut and don't actually do the binding, just send the result count.
+      // The isSimpleToBind check excludes complicated cases, where a binding might fail.
+      graphEditor.sendSignal(edgeCount, query.queryId, None)
+      graphEditor.sendSignal(query.tickets, query.queryId, None)
+    } else {
+      val edges = edgeCount
+      val totalTickets = query.tickets
+      val avg = math.abs(totalTickets) / edges
+      val complete = avg > 0 && totalTickets > 0
+      var extras = math.abs(totalTickets) % edges
+      val averageTicketQuery = query.copyWithTickets(avg, complete)
+      val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
+      def bind(childDelta: Int) {
+        if (extras > 0) {
+          extras -= 1
+          handleQueryBinding(childDelta, aboveAverageTicketQuery, graphEditor)
+        } else if (avg > 0) {
+          handleQueryBinding(childDelta, averageTicketQuery, graphEditor)
+        }
       }
+      foreachChildDelta(bind)
     }
-    foreachChildDelta(bind)
   }
 
   def handleQueryBinding(
@@ -93,7 +102,12 @@ trait Binding
     graphEditor: GraphEditor[Any, Any]) {
     if (boundParticle.isResult) {
       // Query successful, send to query vertex.
-      graphEditor.sendSignal(boundParticle, boundParticle.queryId, None)
+      if (boundParticle.isBindingQuery) {
+        graphEditor.sendSignal(boundParticle, boundParticle.queryId, None)
+      } else {
+        graphEditor.sendSignal(1, boundParticle.queryId, None)
+        graphEditor.sendSignal(boundParticle.tickets, boundParticle.queryId, None)
+      }
     } else {
       graphEditor.sendSignal(boundParticle, boundParticle.routingAddress, None)
     }

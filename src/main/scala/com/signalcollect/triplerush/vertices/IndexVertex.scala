@@ -35,8 +35,8 @@ import com.signalcollect.triplerush.CardinalityRequest
 /**
  * This vertex represents part of the TripleRush index.
  */
-abstract class IndexVertex(id: TriplePattern)
-  extends BaseVertex[TriplePattern, Any, Any](id)
+abstract class IndexVertex(val id: TriplePattern)
+  extends BaseVertex[TriplePattern, Any, Any]
   with ParentBuilding[Any, Any] {
 
   def foreachChildDelta(f: Int => Unit)
@@ -66,7 +66,6 @@ abstract class IndexVertex(id: TriplePattern)
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
     signal match {
       case query: Array[Int] =>
-        val q = new QueryParticle(query)
         processQuery(query, graphEditor)
       case c: CardinalityRequest =>
         handleCardinalityRequest(c, graphEditor)

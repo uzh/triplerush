@@ -25,8 +25,7 @@ import com.signalcollect._
 /**
  * Base implementation for all TripleRush vertices.
  */
-abstract class BaseVertex[Id, SignalType, State](
-  val id: Id)
+abstract class BaseVertex[Id, SignalType, State]
   extends Vertex[Id, State] {
 
   @transient var state: State = _
@@ -35,14 +34,15 @@ abstract class BaseVertex[Id, SignalType, State](
     state = s
   }
 
-  override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) {}
-  override def scoreSignal: Double = 0
-  def scoreCollect = 0 // Because signals are collected upon delivery.
-  override def toString = s"${this.getClass.getName}(state=$state)"
-  def executeCollectOperation(graphEditor: GraphEditor[Any, Any]) {}
-  def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
+  override def scoreCollect = 0
+  override def scoreSignal = 0
+  override def toString = s"${this.getClass.getName}(id=$id)"
+  override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) = throw new Exception("Should not be called, signals on delivery.")
+  override def executeCollectOperation(graphEditor: GraphEditor[Any, Any]) = throw new Exception("Should not be called, collects and signals on delivery.")
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {}
+  override def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
+  override def edgeCount = 0
   override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
   override def removeEdge(targetId: Any, graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
-  override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = throw new UnsupportedOperationException
+  override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = 0
 }

@@ -10,6 +10,7 @@ import com.hp.hpl.jena.rdf.model.RDFNode
 import com.signalcollect.triplerush.QueryEngine
 import com.signalcollect.triplerush.TriplePattern
 import scala.Option.option2Iterable
+import com.signalcollect.triplerush.QuerySpecification
 
 class Jena extends QueryEngine {
   val model = ModelFactory.createDefaultModel
@@ -19,8 +20,8 @@ class Jena extends QueryEngine {
     val obj = model.createResource(intToInsertString(o))
     model.add(resource, prop, obj)
   }
-  def executeQuery(q: Array[Int]): Iterable[Array[Int]] = {
-    val patterns = q.patterns
+  def executeQuery(q: QuerySpecification): Iterable[Array[Int]] = {
+    val patterns = q.unmatched
     val variableNames = {
       val vars = patterns.
         flatMap(p => Set(p.s, p.p, p.o)).

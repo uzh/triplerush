@@ -22,7 +22,7 @@ package com.signalcollect.triplerush
 
 import scala.collection.mutable.ArrayBuffer
 
-class GreedyCardinalityOptimizer extends Optimizer {
+object GreedyCardinalityOptimizer extends Optimizer {
 
   def optimize(cardinalities: Map[TriplePattern, Int]): Array[TriplePattern] = {
     // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
