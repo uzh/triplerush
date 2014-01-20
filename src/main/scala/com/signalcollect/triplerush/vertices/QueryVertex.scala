@@ -42,7 +42,6 @@ final class QueryVertex(
   val resultPromise: Promise[Traversable[Array[Int]]],
   val statsPromise: Promise[Map[Any, Any]],
   val optimizer: Option[Optimizer]) extends Vertex[Int, ArrayOfArraysTraversable] {
-
   val id = query.queryId
 
   @transient var state = new ArrayOfArraysTraversable

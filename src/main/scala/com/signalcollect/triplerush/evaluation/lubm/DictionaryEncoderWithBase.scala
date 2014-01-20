@@ -40,7 +40,7 @@ case object BaseEncoder extends Serializable {
   def encode(sourceFolderBaseName: String)() {
     import FileOperations._
 
-    val sourceFolderName = s"./${sourceFolderBaseName}-nt"
+    val sourceFolderName = s"./lubm${sourceFolderBaseName}-nt"
     val targetFolderName = sourceFolderName.replace("nt", "binary")
     createFolder(targetFolderName)
     val source = new File(sourceFolderName)

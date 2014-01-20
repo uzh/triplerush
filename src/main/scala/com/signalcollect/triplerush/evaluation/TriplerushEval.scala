@@ -92,7 +92,7 @@ trait TriplerushEval {
 
   def krakenFromKraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = "/home/user/stutz/triplerush-assembly-1.0-SNAPSHOT.jar", jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.7.0/bin/", priority = torquePriority)
+    localJarPath = "/home/user/bpaudel/triplerush-assembly-1.0-SNAPSHOT.jar", jvmParameters = jvmParameters, jdkBinPath = "/home/user/bpaudel/jdk1.7.0/bin/", priority = torquePriority)
 
   def runEvaluation(query: QuerySpecification, queryDescription: String, optimizer: Option[Optimizer], tr: TripleRush, commonResults: Map[String, String]): Map[String, String] = {
     val gcs = ManagementFactory.getGarbageCollectorMXBeans.toList
@@ -164,7 +164,7 @@ object EvalHelpers {
   def assemblyFile = new File(assemblyPath)
   def kraken(torquePriority: String) = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.8.0/bin/", priority = torquePriority)
+    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/bpaudel/jdk1.7.0/bin/", priority = torquePriority)
   def localHost = new LocalHost
 
   def getRevision: String = {

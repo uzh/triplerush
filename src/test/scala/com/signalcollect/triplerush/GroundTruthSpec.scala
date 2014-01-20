@@ -246,7 +246,9 @@ WHERE
   "LUBM Query 8" should {
     val queryId = 8
     s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
+      for (profilerRun <- 1 to 1000000)
+        runTest(queryId, sparql = false)
+      true
     }
     s"SPARQL-match the reference results $queryId" in {
       runTest(queryId, sparql = true)
@@ -324,7 +326,7 @@ WHERE
   println("Finished loading LUBM1.")
   println("Computing predicate selectivities ...")
   val stats = new PredicateSelectivity(qe)
-  val optimizer = new PredicateSelectivityOptimizer(stats, false)
+  val optimizer = new PredicateSelectivityOptimizer(stats)
   println("Done.")
   println(s"${stats.predicates.size} predicates: " + stats.predicates)
   for (predicate <- stats.predicates) {

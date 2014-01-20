@@ -5,6 +5,12 @@ import org.scalatest.prop.Checkers
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration.DurationInt
+
+
 class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
 
   val s1 = 1
@@ -32,6 +38,11 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
   val z = -3
   val z1 = -4
 
+  "Moo" should "correctly answer random queries with basic graph patterns" in {
+
+    true
+  }
+
   "PredicateSelectivityOptimizer" should "order the patterns in queries " in {
     val tr = new TripleRush
     tr.addEncodedTriple(s1, p1, o1)
@@ -55,11 +66,15 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
     }
 
     val stats = new PredicateSelectivity(tr)
-    val optimizer = new PredicateSelectivityOptimizer(stats, debug = true)
+    val optimizer = new PredicateSelectivityOptimizer(stats)
 
     val patterns = List(TriplePattern(y, p4, z), TriplePattern(x, p2, y))
     val cardinalities = patterns.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
     val optimizedQuery = optimizer.optimize(cardinalities)
+    
+    val (resultFuture, statsFuture) = tr.executeAdvancedQuery(QuerySpecification(patterns).toParticle, Some(optimizer))
+    val result = Await.result(resultFuture, 7200.seconds)
+    
     assert(optimizedQuery.toList == List(TriplePattern(x, p2, y), TriplePattern(y, p4, z)))
     tr.shutdown
   }
@@ -87,7 +102,8 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
     }
 
     val stats = new PredicateSelectivity(tr)
-    val optimizer = new PredicateSelectivityOptimizer(stats, debug = true)
+
+    val optimizer = new PredicateSelectivityOptimizer(stats)
 
     val patterns1 = List(TriplePattern(x, p2, y), TriplePattern(y, p5, z), TriplePattern(x, p1, z1))
     val cardinalities1 = patterns1.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
@@ -119,18 +135,18 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
       val cardinalities = queries.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
 
       if (cardinalities.forall(_._2 > 0) && cardinalities.size > 1 && cardinalities.forall(_._1.p > 0)) {
-        val optimizer = new PredicateSelectivityOptimizer(stats, debug = true)
+        val optimizer = new PredicateSelectivityOptimizer(stats)
         val optimizedQuery = optimizer.optimize(cardinalities)
         val trueOptimizedQuery = trueOptimizeQuery(cardinalities, stats)
         val sortedPermutations = trueOptimizedQuery.toArray sortBy (_._2)
 
-        println("cardinalities: "+cardinalities.toList.mkString(" "))
-        println("optimized: "+optimizedQuery.toList)
-      if(sortedPermutations.head._2 >= trueOptimizedQuery(optimizedQuery.toList))  
-        println("FOUND")
-      else {
-        println("NOT FOUND: true: "+sortedPermutations.head._1+" ("+sortedPermutations.head._2+"), cost of returned order: "+trueOptimizedQuery(optimizedQuery.toList))
-      }
+        println("cardinalities: " + cardinalities.toList.mkString(" "))
+        println("optimized: " + optimizedQuery.toList)
+        if (sortedPermutations.head._2 >= trueOptimizedQuery(optimizedQuery.toList))
+          println("FOUND")
+        else {
+          println("NOT FOUND: true: " + sortedPermutations.head._1 + " (" + sortedPermutations.head._2 + "), cost of returned order: " + trueOptimizedQuery(optimizedQuery.toList))
+        }
         //assert(sortedPermutations.head._1 == optimizedQuery.toList)
         assert(sortedPermutations.head._2 >= trueOptimizedQuery(optimizedQuery.toList) || (sortedPermutations.head._1.toList == optimizedQuery.toList))
       }

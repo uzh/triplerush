@@ -58,7 +58,7 @@ object FileSplitter extends App {
     val splits = 2880
     val mapper = new TripleMapper[Any](numberOfNodes = splits, workersPerNode = 1)
     val parallelism = 4
-    val sourceFolder = s"./$baseSourceFolderName-binary"
+    val sourceFolder = s"./lubm$baseSourceFolderName-binary"
     val destinationFolder = sourceFolder + "-splits"
     createFolder(destinationFolder)
 

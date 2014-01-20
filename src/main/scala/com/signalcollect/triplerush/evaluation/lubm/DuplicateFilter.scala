@@ -34,7 +34,7 @@ object DuplicateFilter extends FileTransformation with Serializable {
 
   override def executionHost = kraken
   def nameOfTransformation = "filtered"
-  def sourceFolder = s"${args(0)}-binary-splits"
+  def sourceFolder = s"lubm${args(0)}-binary-splits"
   override def destinationFolder = sourceFolder.replace("binary", nameOfTransformation)
   override def shouldTransformFile(f: File) = f.getName.endsWith(".split")
   override def extensionTransformer(fileName: String) = fileName.replace(".split", ".filtered-split")

@@ -80,7 +80,8 @@ class PredicateSelectivity(tr: TripleRush) {
           if (isCompleteOutOut) {
             bindingsCount
           } else {
-            math.max(bindingsCount, 1)
+            -1
+            //math.max(bindingsCount, 1)
           }
         }
         val inOutResultSize = {
@@ -88,7 +89,8 @@ class PredicateSelectivity(tr: TripleRush) {
           if (isCompleteInOut) {
             bindingsCount
           } else {
-            math.max(bindingsCount, 1)
+            -1
+            //math.max(bindingsCount, 1)
           }
         }
         val inInResultSize = {
@@ -96,7 +98,8 @@ class PredicateSelectivity(tr: TripleRush) {
           if (isCompleteInIn) {
             bindingsCount
           } else {
-            math.max(bindingsCount, 1)
+            -1
+            //math.max(bindingsCount, 1)
           }
         }
 

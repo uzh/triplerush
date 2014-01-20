@@ -13,13 +13,13 @@ object NewLubmEvaluation extends App {
   import EvalHelpers._
   import Optimizer._
 
-  val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
+  val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush-bibek", "data")
   def local = new LocalHost
   def torquePriority = TorquePriority.fast
-  def runs = 10
-  def warmupRepetitions = 1000
+  def runs = 12
+  def warmupRepetitions = 10000
   def shouldCleanGarbage = false
-  def description = "Battle of the optimizers."
+  def description = "Battle of the optimizers with clever optimizations lubm160 2"
 
   var evaluation = new Evaluation(
     executionHost = kraken(torquePriority)).addResultHandler(googleDocs)

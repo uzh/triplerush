@@ -27,7 +27,7 @@ import com.signalcollect.triplerush.evaluation.lubm.FileTransformation
 object NtriplesConverter extends FileTransformation with Serializable {
 
   def nameOfTransformation = "nt"
-  def sourceFolder = s"./${args(0)}"
+  def sourceFolder = s"./lubm${args(0)}"
   
   override def shouldTransformFile(f: File) = f.getName.endsWith(".owl")
   override def extensionTransformer(fileName: String) = fileName.replace(".owl", ".nt")

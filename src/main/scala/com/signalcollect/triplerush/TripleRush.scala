@@ -99,10 +99,9 @@ case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEdito
 
   def hasNext = {
     if (!isInitialized) {
-      true
-    } else {
-      nextTriplePattern != null
+      initialize
     }
+    nextTriplePattern != null
   }
 
   def next: GraphEditor[Any, Any] => Unit = {
