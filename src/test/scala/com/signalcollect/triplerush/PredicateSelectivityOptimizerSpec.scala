@@ -55,7 +55,7 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
     }
 
     val stats = new PredicateSelectivity(tr)
-    val optimizer = new PredicateSelectivityOptimizer(stats, debug = true)
+    val optimizer = new PredicateSelectivityOptimizer(stats)
 
     val patterns = List(TriplePattern(y, p4, z), TriplePattern(x, p2, y))
     val cardinalities = patterns.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
@@ -87,7 +87,7 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
     }
 
     val stats = new PredicateSelectivity(tr)
-    val optimizer = new PredicateSelectivityOptimizer(stats, debug = true)
+    val optimizer = new PredicateSelectivityOptimizer(stats)
 
     val patterns1 = List(TriplePattern(x, p2, y), TriplePattern(y, p5, z), TriplePattern(x, p1, z1))
     val cardinalities1 = patterns1.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
@@ -119,7 +119,7 @@ class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
       val cardinalities = queries.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
 
       if (cardinalities.forall(_._2 > 0) && cardinalities.size > 1 && cardinalities.forall(_._1.p > 0)) {
-        val optimizer = new PredicateSelectivityOptimizer(stats, debug = true)
+        val optimizer = new PredicateSelectivityOptimizer(stats)
         val optimizedQuery = optimizer.optimize(cardinalities)
         val trueOptimizedQuery = trueOptimizeQuery(cardinalities, stats)
         val sortedPermutations = trueOptimizedQuery.toArray sortBy (_._2)

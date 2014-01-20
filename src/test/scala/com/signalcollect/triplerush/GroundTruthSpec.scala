@@ -325,7 +325,7 @@ WHERE
   println("Computing predicate selectivities ...")
   val stats = new PredicateSelectivity(qe)
   //val optimizer = CleverCardinalityOptimizer
-  val optimizer = new PredicateSelectivityOptimizer(stats, false)
+  val optimizer = new PredicateSelectivityOptimizer(stats)
   println("Done.")
   println(s"${stats.predicates.size} predicates: " + stats.predicates)
   for (predicate <- stats.predicates) {
