@@ -46,7 +46,6 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
         if (bestCost == 0) {
           (List(), Set())
         } else {
-          val ((first, second), bestCost) = costsMap.minBy(_._2)
           (second :: first :: Nil, (unoptimizedPatterns.filter(p => p != first && p != second)))
         }
       } else {
