@@ -46,7 +46,7 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
         if (bestCost == 0) {
           (List(), Set())
         } else {
-          (second :: first :: Nil, (unoptimizedPatterns.filter(p => p != first && p != second)))
+          (second :: first :: Nil, (unoptimizedPatterns - first - second))
         }
       } else {
         val boundVars = optimizedPatterns.foldLeft(Set[Int]())((setAppend, tp) => (setAppend + tp.s + tp.o)).filter(_ < 0)
