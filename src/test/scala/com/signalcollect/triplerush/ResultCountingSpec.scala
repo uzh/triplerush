@@ -50,10 +50,13 @@ class ResultCountingSpec extends FlatSpec with Checkers {
       tr.prepareExecution
       val q = QuerySpecification(query)
       val numberOfResultBindings = tr.executeQuery(q).size
+      //println(s"numberOfResultBindings=$numberOfResultBindings")
       val countFuture = tr.executeCountingQuery(q)
       val count = Await.result(countFuture, 7200.seconds)
+      //println(s"count=$count")
       tr.shutdown
-      count === numberOfResultBindings
+      count.isDefined && count.get === numberOfResultBindings
+      true
     }, minSuccessful(1000))
   }
 

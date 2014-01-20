@@ -41,16 +41,13 @@ final class ResultCountingQueryVertex(
   val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, Int] {
 
   val query = QueryParticle.fromSpecification(querySpecification, withBindings = false)
-  println(s"id = ${new QueryParticle(query).queryId}")
   val id = query.queryId
-
   val expectedTickets = query.tickets
   val numberOfPatterns = query.numberOfPatterns
 
   @transient var queryDone = false
   @transient var receivedTickets: Long = 0
   @transient var complete = true
-
   @transient var optimizedQuery: Array[Int] = _
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
