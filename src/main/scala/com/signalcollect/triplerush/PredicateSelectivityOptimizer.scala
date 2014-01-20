@@ -16,10 +16,9 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
     println("cardinalities: " + cardinalities.mkString(" "))
 
     /**
-     * takes a list of optimized patterns and one of unoptimized patterns
-     * recursively calls itself until the second list is empty
-     * moves the most selective pattern from the list of unoptimized patterns to the list of optimized patterns
-     * if a query has no solution, returns two empty lists
+     * Takes a list of optimized patterns, a set of unoptimized patterns, and
+     * recursively calls itself until the set of unoptimized patterns is empty.
+     * If a query has no solution, returns an empty list and an empty set.
      */
     @tailrec def optimizePatterns(
       optimizedPatterns: List[TriplePattern],
@@ -43,7 +42,8 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
             (best, costForBest) = costs.minBy(_._2)
           } yield ((pickedPattern, best), costForBest)
         }.toMap
-        if (costsMap exists (_._2 == 0)) {
+        val ((first, second), bestCost) = costsMap.minBy(_._2)
+        if (bestCost == 0) {
           (List(), Set())
         } else {
           val ((first, second), bestCost) = costsMap.minBy(_._2)
@@ -161,7 +161,7 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
       }.toMap
     }
 
-    val (optimized, empty) = optimizePatterns(List(), cardinalities.keySet)
+    val (optimized, _) = optimizePatterns(List(), cardinalities.keySet)
     optimized.toArray.reverse
   }
 }
