@@ -62,40 +62,16 @@ class PredicateSelectivity(tr: TripleRush) {
       if (p1 != p2) {
         println(s"Stats gathering progress: $queriesSoFar/$queriesTotal ...")
         val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y)), tickets)
-        val (outOutResult, outOutStats) = tr.executeAdvancedQuery(outOutQuery, optimizer)
+        val outOutResult = tr.executeCountingQuery(outOutQuery, optimizer)
         val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y)), tickets)
-        val (inOutResult, inOutStats) = tr.executeAdvancedQuery(inOutQuery, optimizer)
+        val inOutResult = tr.executeCountingQuery(inOutQuery, optimizer)
         val inInQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(y, p2, o)), tickets)
-        val (inInResult, inInStats) = tr.executeAdvancedQuery(inInQuery, optimizer)
+        val inInResult = tr.executeCountingQuery(inInQuery, optimizer)
 
-        val isCompleteOutOut = Await.result(outOutStats, 7200.seconds)("isComplete").asInstanceOf[Boolean]
-        val isCompleteInOut = Await.result(inOutStats, 7200.seconds)("isComplete").asInstanceOf[Boolean]
-        val isCompleteInIn = Await.result(inInStats, 7200.seconds)("isComplete").asInstanceOf[Boolean]
-
-        val outOutResultSize = {
-          val bindingsCount = getBindingsFor(s, Await.result(outOutResult, 7200.seconds)).size
-          if (isCompleteOutOut) {
-            bindingsCount
-          } else {
-            math.max(bindingsCount, 1)
-          }
-        }
-        val inOutResultSize = {
-          val bindingsCount = getBindingsFor(o, Await.result(inOutResult, 7200.seconds)).size
-          if (isCompleteInOut) {
-            bindingsCount
-          } else {
-            math.max(bindingsCount, 1)
-          }
-        }
-        val inInResultSize = {
-          val bindingsCount = getBindingsFor(o, Await.result(inInResult, 7200.seconds)).size
-          if (isCompleteInIn) {
-            bindingsCount
-          } else {
-            math.max(bindingsCount, 1)
-          }
-        }
+        // TODO: Handle the else parts better.
+        val outOutResultSize = Await.result(outOutResult, 7200.seconds).getOrElse(Int.MaxValue)
+        val inOutResultSize = Await.result(inOutResult, 7200.seconds).getOrElse(Int.MaxValue)
+        val inInResultSize = Await.result(inInResult, 7200.seconds).getOrElse(Int.MaxValue)
 
         outOut += (p1, p2) -> outOutResultSize
         inOut += (p1, p2) -> inOutResultSize
