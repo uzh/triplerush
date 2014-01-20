@@ -23,9 +23,9 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
     @tailrec def optimizePatterns(
       optimizedPatterns: List[TriplePattern],
       unoptimizedPatterns: Set[TriplePattern],
-      boundVariables: Set[Int]): (List[TriplePattern], Set[TriplePattern]) = {
+      boundVariables: Set[Int]): (List[TriplePattern], Set[TriplePattern], Set[Int]) = {
       if (unoptimizedPatterns.size == 0) {
-        (optimizedPatterns, unoptimizedPatterns)
+        (optimizedPatterns, unoptimizedPatterns, boundVariables)
       } else {
         val (newOpt, newUnopt, newBound) = movePattern(optimizedPatterns, unoptimizedPatterns, boundVariables)
         optimizePatterns(newOpt, newUnopt, newBound)
@@ -98,38 +98,35 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
     }
 
     /**
-     * given a previously picked pattern and a candidate, return the cost for this pair
-     * use heuristics like, if previous pattern has a common variable, and the other one is a constant, etc.
+     * Given a previously picked pattern and a candidate, return the cost for this pair
+     * Use heuristics such as if the previous pattern has a common variable, and the other one is a constant, etc.
      */
     def costForCandidate(prev: TriplePattern, candidate: TriplePattern): Long = {
       val upperBoundBasedOnPredicateSelectivity = (prev.s, prev.o) match {
-        case (candidate.s, _) => {
+        case (candidate.s, _) =>
           calculateCost(prev, candidate, prev.o, predicateSelectivity.outOut(prev.p, candidate.p))
-        }
-        case (candidate.o, _) => {
+        case (candidate.o, _) =>
           calculateCost(prev, candidate, prev.o, predicateSelectivity.outIn(prev.p, candidate.p))
-        }
-        case (_, candidate.o) => {
+        case (_, candidate.o) =>
           calculateCost(prev, candidate, prev.s, predicateSelectivity.inIn(prev.p, candidate.p))
-        }
-        case (_, candidate.s) => {
+        case (_, candidate.s) =>
           calculateCost(prev, candidate, prev.s, predicateSelectivity.inOut(prev.p, candidate.p))
-        }
-        case other => {
+        case other =>
           val ret =
             cardinalities(prev) * cardinalities(candidate) + orderPrevAndCandidate(prev, candidate)
-          if (ret < 0)
+          if (ret < 0) {
             Long.MaxValue
-          else
+          } else {
             ret
-        }
+          }
+
       }
 
       math.min(upperBoundBasedOnPredicateSelectivity, Long.MaxValue)
     }
 
     /**
-     * calculate cost for candidate whose variables are already bound
+     * Calculate cost for candidate whose variables are already bound.
      */
     def costForBoundCandidate(prev: TriplePattern, candidate: TriplePattern): Long = {
       //if variables are bound, we want to order such that the least cost candidate is ordered after the previous patterns
@@ -147,7 +144,7 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
     }
 
     /**
-     * returns a cost map for all candidates
+     * Returns a cost map for all candidates.
      */
     def costMapForCandidates(pickedPatterns: List[TriplePattern], candidates: Set[TriplePattern], boundVariables: Set[Int]): Map[TriplePattern, Long] = {
       candidates.map { candidate =>
@@ -165,7 +162,7 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
       }.toMap
     }
 
-    val (optimized, _) = optimizePatterns(List(), cardinalities.keySet)
+    val (optimized, _, _) = optimizePatterns(List(), cardinalities.keySet, Set())
     optimized.toArray.reverse
   }
 }
