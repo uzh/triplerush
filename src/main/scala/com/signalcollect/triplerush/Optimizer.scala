@@ -21,6 +21,6 @@ object Optimizer {
   val predicateSelectivity: TripleRush => Option[Optimizer] = {
     tr: TripleRush =>
       val stats = new PredicateSelectivity(tr)
-      Some(new PredicateSelectivityOptimizer(stats, debug = false))
+      Some(new PredicateSelectivityOptimizer(stats))
   }
 }
