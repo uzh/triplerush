@@ -42,6 +42,31 @@ class PredicateSelectivity(tr: TripleRush) {
     listOfSetsOfKeysWithVar.foldLeft(Set[Int]())(_ union _)
   }
 
+  def estimateBranchingFactor(explored: TriplePattern, next: TriplePattern): Option[Int] = {
+    if (explored.p > 0 && next.p > 0) {
+      next match {
+        case TriplePattern(explored.s, explored.p, explored.o) =>
+          Some(1)
+        case TriplePattern(explored.s, p, explored.o) =>
+          Some(math.min(outOut(explored.p, p), inIn(explored.p, p)))
+        case TriplePattern(_, p, explored.o) =>
+          Some(inIn(explored.p, p))
+        case TriplePattern(explored.s, p, _) =>
+          Some(outOut(explored.p, p))
+        case TriplePattern(explored.o, p, explored.s) =>
+          Some(math.min(inOut(explored.p, p), outIn(explored.p, p)))
+        case TriplePattern(_, p, explored.s) =>
+          Some(outIn(explored.p, p))
+        case TriplePattern(explored.o, p, _) =>
+          Some(inOut(explored.p, p))
+        case other =>
+          None
+      }
+    } else {
+      None
+    }
+  }
+
   val queryToGetAllPredicates = QuerySpecification(List(TriplePattern(s, p, o)))
   val allPredicateResult = tr.executeQuery(queryToGetAllPredicates)
   val predicates = getBindingsFor(p, allPredicateResult)
@@ -49,9 +74,9 @@ class PredicateSelectivity(tr: TripleRush) {
   val ps = predicates.size
   println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
 
-  var outOut = Map[(Int, Int), Int]().withDefaultValue(0)
-  var inOut = Map[(Int, Int), Int]().withDefaultValue(0)
-  var inIn = Map[(Int, Int), Int]().withDefaultValue(0)
+  var outOut = Map[(Int, Int), Int]() //.withDefaultValue(0)
+  var inOut = Map[(Int, Int), Int]() //.withDefaultValue(0)
+  var inIn = Map[(Int, Int), Int]() //.withDefaultValue(0)
   def outIn(p1: Int, p2: Int) = inOut((p2, p1))
 
   val optimizer = Some(GreedyCardinalityOptimizer)

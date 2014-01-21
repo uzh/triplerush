@@ -6,6 +6,7 @@ import com.signalcollect.nodeprovisioning.torque.LocalHost
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.triplerush.optimizers.Optimizer
+import com.signalcollect.triplerush.Mapping
 
 object NewLubmEvaluation extends App {
 
@@ -14,11 +15,11 @@ object NewLubmEvaluation extends App {
 
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
   def local = new LocalHost
-  def torquePriority = TorquePriority.fast
+  def torquePriority = TorquePriority.superfast
   def runs = 10
   def warmupRepetitions = 1000
   def shouldCleanGarbage = false
-  def description = "Battle of the optimizers."
+  def description = "Fixed new optimizer, yey!"
 
   var evaluation = new Evaluation(
     executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
@@ -29,7 +30,7 @@ object NewLubmEvaluation extends App {
   for (numberOfNodes <- List(1)) {
     for (universities <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
       for (run <- 1 to runs) {
-        for (optimizer <- List(predicateSelectivity)) { //clever, 
+        for (optimizer <- List(predicateSelectivity)) { //clever,predicateSelectivity 
           val eval = new LubmEvalRun(
             description,
             shouldCleanGarbage,
@@ -66,6 +67,7 @@ case class LubmEvalRun(
       loadLubm(universities, tr)
       tr.prepareExecution
     }
+
     val optimizerInitStart = System.nanoTime
     val optimizer = optimizerCreator(tr)
     val optimizerInitEnd = System.nanoTime

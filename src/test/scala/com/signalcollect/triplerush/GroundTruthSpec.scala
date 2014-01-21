@@ -32,7 +32,7 @@ import com.signalcollect.GraphBuilder
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.evaluation.SparqlDsl._
-import com.signalcollect.triplerush.optimizers.PredicateSelectivityOptimizer
+import com.signalcollect.triplerush.optimizers.GreedyPredicateSelectivityOptimizer
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
@@ -324,7 +324,7 @@ WHERE
   println("Computing predicate selectivities ...")
   val stats = new PredicateSelectivity(qe)
   //val optimizer = CleverCardinalityOptimizer
-  val optimizer = new PredicateSelectivityOptimizer(stats)
+  val optimizer = new GreedyPredicateSelectivityOptimizer(stats)
   println("Done.")
   println(s"${stats.predicates.size} predicates: " + stats.predicates)
   for (predicate <- stats.predicates) {

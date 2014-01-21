@@ -21,7 +21,6 @@
 package com.signalcollect.triplerush.vertices
 
 import scala.concurrent.Promise
-
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
@@ -31,6 +30,7 @@ import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
+import com.signalcollect.triplerush.QueryIds
 
 final class ResultBindingQueryVertex(
   val querySpecification: QuerySpecification,
@@ -38,28 +38,28 @@ final class ResultBindingQueryVertex(
   val statsPromise: Promise[Map[Any, Any]],
   val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, ArrayOfArraysTraversable] {
 
-  val query = QueryParticle.fromSpecification(querySpecification, withBindings = true)
-  val id = query.queryId
+  val id = QueryIds.nextQueryId
 
-  val expectedTickets = query.tickets
-  val numberOfPatterns = query.numberOfPatterns
+  val expectedTickets = querySpecification.tickets
+  val numberOfPatternsInOriginalQuery = querySpecification.unmatched.length
+  var receivedCardinalityReplies = 0
+  var queryDone = false
+  var queryCopyCount: Long = 0
+  var receivedTickets: Long = 0
+  var complete = true
 
-  @transient var queryDone = false
-  @transient var queryCopyCount: Long = 0
-  @transient var receivedTickets: Long = 0
-  @transient var complete = true
+  var optimizingStartTime = 0l
+  var optimizingDuration = 0l
 
-  @transient var optimizingStartTime = 0l
-  @transient var optimizingDuration = 0l
-
-  @transient var optimizedQuery: Array[Int] = _
+  var cardinalities: Map[TriplePattern, Int] = _
+  var dispatchedQuery: Option[Array[Int]] = None
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     state = new ArrayOfArraysTraversable
     cardinalities = Map()
-    if (optimizer.isDefined && numberOfPatterns > 1) {
+    if (optimizer.isDefined && numberOfPatternsInOriginalQuery > 1) {
       // Gather pattern cardinalities.
-      query.patterns foreach (triplePattern => {
+      querySpecification.unmatched foreach (triplePattern => {
         val responsibleIndexId = triplePattern.routingAddress
         optimizingStartTime = System.nanoTime
         responsibleIndexId match {
@@ -73,12 +73,15 @@ final class ResultBindingQueryVertex(
       })
     } else {
       // Dispatch the query directly.
-      graphEditor.sendSignal(query, query.routingAddress, None)
-      optimizedQuery = query
+      if (numberOfPatternsInOriginalQuery > 0) {
+        dispatchedQuery = Some(QueryParticle.fromSpecification(id, querySpecification))
+        graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
+      } else {
+        dispatchedQuery = None
+        queryDone(graphEditor)
+      }
     }
   }
-
-  @transient var cardinalities: Map[TriplePattern, Int] = _
 
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
     signal match {
@@ -105,26 +108,29 @@ final class ResultBindingQueryVertex(
       // 0 cardinality => no results => we're done.
       queryDone(graphEditor)
     } else {
-      // TODO: If pattern is fully bound and cardinality is one remove from query.
       cardinalities += forPattern -> cardinality
-      if (cardinalities.size == numberOfPatterns) {
-        optimizedQuery = optimizeQuery
+      receivedCardinalityReplies += 1
+      if (receivedCardinalityReplies == numberOfPatternsInOriginalQuery) {
+        dispatchedQuery = optimizeQuery
         if (optimizingStartTime != 0) {
           optimizingDuration = System.nanoTime - optimizingStartTime
         }
-        graphEditor.sendSignal(optimizedQuery, optimizedQuery.routingAddress, None)
+        if (dispatchedQuery.isDefined) {
+          graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
+        } else {
+          queryDone(graphEditor)
+        }
       }
     }
   }
 
-  def optimizeQuery: Array[Int] = {
-    val c = query.copy
-    if (optimizer.isEmpty) {
-      c
+  def optimizeQuery: Option[Array[Int]] = {
+    val optimizedPatterns = optimizer.get.optimize(cardinalities)
+    if (optimizedPatterns.length > 0) {
+      val optimizedQuery = QueryParticle.fromSpecification(id, querySpecification.withUnmatchedPatterns(optimizedPatterns))
+      Some(optimizedQuery)
     } else {
-      val optimizedPatterns = optimizer.get.optimize(cardinalities)
-      c.writePatterns(optimizedPatterns)
-      c
+      None
     }
   }
 
@@ -144,8 +150,8 @@ final class ResultBindingQueryVertex(
         "optimizingDuration" -> optimizingDuration,
         "queryCopyCount" -> queryCopyCount,
         "optimizedQuery" -> ("Pattern matching order: " + {
-          if (optimizedQuery != null) {
-            new QueryParticle(optimizedQuery).patterns.toList + "\nCardinalities: " + cardinalities.toString
+          if (dispatchedQuery.isDefined) {
+            new QueryParticle(dispatchedQuery.get).patterns.toList + "\nCardinalities: " + cardinalities.toString
           } else { "the optimized was not run, probably one of the patterns had cardinality 0" }
         })).withDefaultValue("")
       statsPromise.success(stats)

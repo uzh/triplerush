@@ -28,14 +28,10 @@ import scala.util.Random
  * Represents a SPARQL query.
  */
 case class QuerySpecification(
-  unmatched: List[TriplePattern],
+  unmatched: Seq[TriplePattern],
   tickets: Long = Long.MaxValue) {
 
-  def extend(p: TriplePattern): QuerySpecification = {
-    QuerySpecification(p :: unmatched)
-  }
-
-  def withUnmatchedPatterns(u: List[TriplePattern]): QuerySpecification = {
+  def withUnmatchedPatterns(u: Seq[TriplePattern]): QuerySpecification = {
     copy(unmatched = u)
   }
 

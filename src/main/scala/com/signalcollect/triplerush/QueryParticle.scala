@@ -33,20 +33,27 @@ object QueryIds {
 object QueryParticle {
   implicit def arrayToParticle(a: Array[Int]) = new QueryParticle(a)
 
-  def fromSpecification(s: QuerySpecification, withBindings: Boolean = true): Array[Int] = {
-    if (withBindings) {
+  //    val queryId: Int = {
+  //      if (withBindings) {
+  //        QueryIds.nextQueryId
+  //      } else {
+  //        QueryIds.nextCountQueryId
+  //      }
+  //    }
+
+  def fromSpecification(queryId: Int, s: QuerySpecification): Array[Int] = {
+    if (queryId > 0) {
       val variableCount = math.abs(s.unmatched.foldLeft(0) {
         (currentMin, next) =>
           val minCandidate = math.min(next.o, math.min(next.s, next.p))
           math.min(currentMin, minCandidate)
       })
       QueryParticle(
+        queryId,
         s.tickets,
         new Array[Int](variableCount),
-        s.unmatched,
-        withBindings = true)
+        s.unmatched)
     } else {
-      val queryId = QueryIds.nextCountQueryId
       val ints = 4 + 3 * s.unmatched.length
       val r = new Array[Int](ints)
       r.writeQueryId(queryId)
@@ -58,17 +65,10 @@ object QueryParticle {
   }
 
   def apply(
+    queryId: Int,
     tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
     bindings: Array[Int],
-    unmatched: Seq[TriplePattern],
-    withBindings: Boolean): Array[Int] = {
-    val queryId: Int = {
-      if (withBindings) {
-        QueryIds.nextQueryId
-      } else {
-        QueryIds.nextCountQueryId
-      }
-    }
+    unmatched: Seq[TriplePattern]): Array[Int] = {
     val ints = 4 + bindings.length + 3 * unmatched.length
     val r = new Array[Int](ints)
     r.writeQueryId(queryId)

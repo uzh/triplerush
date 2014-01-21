@@ -18,11 +18,10 @@
  *  
  */
 
-package com.signalcollect.triplerush.evaluation
+package com.signalcollect.triplerush.evaluation.lubm
 
 import java.io.File
 import scala.sys.process._
-import com.signalcollect.triplerush.evaluation.lubm.FileTransformation
 
 object NtriplesConverter extends FileTransformation with Serializable {
 
