@@ -24,16 +24,15 @@ import scala.collection.immutable.TreeMap
 import scala.concurrent.Await
 import scala.io.Source
 import scala.concurrent.duration.DurationInt
-
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.runner.JUnitRunner
-
 import com.signalcollect.GraphBuilder
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.evaluation.SparqlDsl._
+import com.signalcollect.triplerush.optimizers.PredicateSelectivityOptimizer
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {

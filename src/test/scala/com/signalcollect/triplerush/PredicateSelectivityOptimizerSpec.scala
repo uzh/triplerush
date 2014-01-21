@@ -4,6 +4,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
+import com.signalcollect.triplerush.optimizers.PredicateSelectivityOptimizer
 
 class PredicateSelectivityOptimizerSpec extends FlatSpec with Checkers {
 

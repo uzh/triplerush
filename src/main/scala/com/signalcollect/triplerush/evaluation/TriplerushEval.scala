@@ -51,7 +51,7 @@ import com.signalcollect.nodeprovisioning.torque.TorqueNodeProvisioner
 import collection.JavaConversions._
 import java.lang.management.GarbageCollectorMXBean
 import com.signalcollect.nodeprovisioning.NodeProvisioner
-import com.signalcollect.triplerush.Optimizer
+import com.signalcollect.triplerush.optimizers.Optimizer
 
 trait TriplerushEval {
 

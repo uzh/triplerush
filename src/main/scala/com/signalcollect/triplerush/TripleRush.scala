@@ -42,6 +42,9 @@ import com.signalcollect.triplerush.loading.BinarySplitLoader
 import com.signalcollect.triplerush.loading.EdgesPerIndexType
 import com.signalcollect.triplerush.loading.CountVerticesByType
 import com.signalcollect.triplerush.vertices.ResultCountingQueryVertex
+import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
+import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
+import com.signalcollect.triplerush.optimizers.Optimizer
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,

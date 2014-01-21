@@ -25,7 +25,7 @@ import scala.concurrent.Promise
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.Optimizer
+import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.QuerySpecification

@@ -18,9 +18,11 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.optimizers
 
 import scala.collection.mutable.ArrayBuffer
+import com.signalcollect.triplerush.TriplePattern
+import scala.Array.canBuildFrom
 
 object CleverCardinalityOptimizer extends Optimizer {
 

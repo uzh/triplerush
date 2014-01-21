@@ -3,6 +3,7 @@ package com.signalcollect.triplerush
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import com.signalcollect.triplerush.QueryParticle._
+import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
 
 /**
  * special case p1 = p2:

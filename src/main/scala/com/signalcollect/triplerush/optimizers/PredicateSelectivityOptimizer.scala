@@ -1,9 +1,7 @@
-package com.signalcollect.triplerush
-
-import scala.Array.canBuildFrom
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+package com.signalcollect.triplerush.optimizers
 import scala.annotation.tailrec
+import com.signalcollect.triplerush.PredicateSelectivity
+import com.signalcollect.triplerush.TriplePattern
 
 class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) extends Optimizer {
 

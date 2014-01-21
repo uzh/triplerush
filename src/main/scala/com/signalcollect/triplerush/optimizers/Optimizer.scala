@@ -1,4 +1,8 @@
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.optimizers
+
+import com.signalcollect.triplerush.PredicateSelectivity
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.TripleRush
 
 trait Optimizer {
   def optimize(cardinalities: Map[TriplePattern, Int]): Array[TriplePattern]

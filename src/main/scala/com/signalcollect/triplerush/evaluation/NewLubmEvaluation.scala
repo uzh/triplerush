@@ -3,10 +3,9 @@ package com.signalcollect.triplerush.evaluation
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.nodeprovisioning.torque.TorquePriority
 import com.signalcollect.nodeprovisioning.torque.LocalHost
-import com.signalcollect.triplerush.CleverCardinalityOptimizer
+import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 import com.signalcollect.triplerush.TripleRush
-import com.signalcollect.triplerush.Optimizer
-import com.signalcollect.triplerush.GreedyCardinalityOptimizer
+import com.signalcollect.triplerush.optimizers.Optimizer
 
 object NewLubmEvaluation extends App {
 
