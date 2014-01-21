@@ -125,16 +125,13 @@ case class TripleRush(
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val resultCountPromise = Promise[Option[Int]]()
     g.addVertex(new ResultCountingQueryVertex(q, resultCountPromise, optimizer))
-    if (!q.unmatched.isEmpty) {
-      // Only check if result once computation is running.
-      resultCountPromise.future
-    } else {
-      Future.successful(Some(0))
-    }
+    resultCountPromise.future
   }
 
-  def executeQuery(q: QuerySpecification): Traversable[Array[Int]] = {
-    val (resultFuture, statsFuture) = executeAdvancedQuery(q, Some(CleverCardinalityOptimizer))
+  def executeQuery(q: QuerySpecification) = executeQuery(q, Some(CleverCardinalityOptimizer))
+
+  def executeQuery(q: QuerySpecification, optimizer: Option[Optimizer]): Traversable[Array[Int]] = {
+    val (resultFuture, statsFuture) = executeAdvancedQuery(q, optimizer)
     val result = Await.result(resultFuture, 7200.seconds)
     result
   }
@@ -146,12 +143,7 @@ case class TripleRush(
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
     g.addVertex(new ResultBindingQueryVertex(q, resultPromise, statsPromise, optimizer))
-    if (!q.unmatched.isEmpty) {
-      // Only check if result once computation is running.
-      (resultPromise.future, statsPromise.future)
-    } else {
-      (Future.successful(List()), (Future.successful(Map())))
-    }
+    (resultPromise.future, statsPromise.future)
   }
 
   def awaitIdle {
