@@ -16,19 +16,19 @@ object NewLubmEvaluation extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
   def local = new LocalHost
   def torquePriority = TorquePriority.superfast
-  def runs = 10
-  def warmupRepetitions = 1000
+  def runs = 1
+  def warmupRepetitions = 0
   def shouldCleanGarbage = false
-  def description = "Fixed new optimizer, yey!"
+  def description = "Starting from query 7."
+
+//    var evaluation = new Evaluation(
+//      executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
 
   var evaluation = new Evaluation(
-    executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
-
-  //  var evaluation = new Evaluation(
-  //    executionHost = local).addResultHandler(googleDocs)
+    executionHost = local)//.addResultHandler(googleDocs)
 
   for (numberOfNodes <- List(1)) {
-    for (universities <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
+    for (universities <- List(1)) { //10, 20, 40, 80, 160, 320, 480, 800
       for (run <- 1 to runs) {
         for (optimizer <- List(predicateSelectivity)) { //clever,predicateSelectivity 
           val eval = new LubmEvalRun(
@@ -82,7 +82,7 @@ case class LubmEvalRun(
     commonResults += s"dataSet" -> s"lubm$universities"
 
     println("Starting warm-up...")
-    jitSteadyState(queries, tr, warmupRepetitions)
+    jitSteadyState(queries, optimizer, tr, warmupRepetitions)
     if (shouldCleanGarbage) {
       cleanGarbage
     }

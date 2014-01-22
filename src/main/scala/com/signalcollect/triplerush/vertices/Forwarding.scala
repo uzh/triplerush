@@ -17,8 +17,8 @@
  *  limitations under the License.
  *  
  */
-
 package com.signalcollect.triplerush.vertices
+
 import com.signalcollect.GraphEditor
 import com.signalcollect.DefaultEdge
 import com.signalcollect.triplerush.QueryParticle._

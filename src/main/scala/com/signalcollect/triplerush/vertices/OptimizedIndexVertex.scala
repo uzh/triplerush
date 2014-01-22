@@ -25,6 +25,7 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.util.IntSet
 import com.signalcollect.util.SplayIntSet
 import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.ChildIdReply
 
 abstract class OptimizedIndexVertex(
   id: TriplePattern) extends IndexVertex(id) {
@@ -35,6 +36,10 @@ abstract class OptimizedIndexVertex(
   }
 
   @transient var optimizedChildDeltas: SplayIntSet = _
+
+  def handleChildIdRequest(requestor: Any, graphEditor: GraphEditor[Any, Any]) {
+    graphEditor.sendSignal(ChildIdReply(optimizedChildDeltas.toSet), requestor, None)
+  }
 
   override def edgeCount = {
     if (optimizedChildDeltas != null) optimizedChildDeltas.size else 0

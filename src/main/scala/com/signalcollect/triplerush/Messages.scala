@@ -22,4 +22,5 @@ package com.signalcollect.triplerush
 
 case class CardinalityRequest(forPattern: TriplePattern, requestor: Any)
 case class CardinalityReply(forPattern: TriplePattern, cardinality: Int)
-
+case class ChildIdRequest(requestor: Any)
+case class ChildIdReply(ids: Set[Int])

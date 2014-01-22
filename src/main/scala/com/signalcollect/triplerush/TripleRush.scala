@@ -45,6 +45,8 @@ import com.signalcollect.triplerush.vertices.ResultCountingQueryVertex
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.Optimizer
+import com.signalcollect.triplerush.optimizers.GreedyPredicateSelectivityOptimizer
+import com.signalcollect.triplerush.vertices.IndexQueryVertex
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
@@ -76,6 +78,8 @@ case class TripleRush(
       "com.signalcollect.triplerush.PlaceholderEdge",
       "com.signalcollect.triplerush.CardinalityRequest",
       "com.signalcollect.triplerush.CardinalityReply",
+      "com.signalcollect.triplerush.ChildIdRequest",
+      "com.signalcollect.triplerush.ChildIdReply",
       "Array[com.signalcollect.triplerush.TriplePattern]",
       "com.signalcollect.interfaces.SignalMessage$mcIJ$sp",
       "com.signalcollect.interfaces.AddEdge",
@@ -128,7 +132,31 @@ case class TripleRush(
     resultCountPromise.future
   }
 
-  def executeQuery(q: QuerySpecification) = executeQuery(q, Some(CleverCardinalityOptimizer))
+  var optimizer: Option[Optimizer] = None
+
+  /**
+   * Blocking version of 'executeIndexQuery'.
+   */
+  def childIdsForPattern(indexId: TriplePattern): Set[Int] = {
+    val intSetFuture = executeIndexQuery(indexId)
+    Await.result(intSetFuture, 7200.seconds)
+  }
+
+  def executeIndexQuery(indexId: TriplePattern): Future[Set[Int]] = {
+    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    assert(!indexId.isFullyBound, "There is no index vertex with this id, as the pattern is fully bound.")
+    val childIdPromise = Promise[Set[Int]]()
+    g.addVertex(new IndexQueryVertex(indexId, childIdPromise))
+    childIdPromise.future
+  }
+
+  def executeQuery(q: QuerySpecification) = {
+    if (optimizer.isEmpty) {
+      val stats = new PredicateSelectivity(this)
+      optimizer = Some(new GreedyPredicateSelectivityOptimizer(stats))
+    }
+    executeQuery(q, optimizer)
+  }
 
   def executeQuery(q: QuerySpecification, optimizer: Option[Optimizer]): Traversable[Array[Int]] = {
     val (resultFuture, statsFuture) = executeAdvancedQuery(q, optimizer)

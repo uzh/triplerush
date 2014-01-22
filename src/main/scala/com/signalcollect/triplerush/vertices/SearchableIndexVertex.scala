@@ -24,6 +24,8 @@ import com.signalcollect.util.Ints._
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.util.SearchableIntSet
 import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.ChildIdRequest
+import com.signalcollect.triplerush.ChildIdReply
 
 abstract class SearchableIndexVertex[SignalType, State](
   id: TriplePattern) extends IndexVertex(id) {
@@ -31,6 +33,10 @@ abstract class SearchableIndexVertex[SignalType, State](
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     super.afterInitialization(graphEditor)
     childDeltaArray = Array[Int]()
+  }
+
+  def handleChildIdRequest(requestor: Any, graphEditor: GraphEditor[Any, Any]) {
+    graphEditor.sendSignal(ChildIdReply(childDeltaArray.toSet), requestor, None)
   }
 
   @transient var childDeltaArray: Array[Int] = _

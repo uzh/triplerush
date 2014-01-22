@@ -63,7 +63,7 @@ trait TriplerushEval {
   def torquePriority: String
 
   import EvalHelpers._
- 
+
   def evaluationRun: List[Map[String, String]]
 
   def initializeGraphBuilder: GraphBuilder[Any, Any] = {
@@ -207,10 +207,10 @@ object EvalHelpers {
   /**
    * Go to JVM JIT steady state by executing the queries multiple times.
    */
-  def jitSteadyState(queries: List[QuerySpecification], tr: TripleRush, repetitions: Int = 100) {
+  def jitSteadyState(queries: List[QuerySpecification], optimizer: Option[Optimizer], tr: TripleRush, repetitions: Int = 100) {
     for (i <- 1 to repetitions) {
       for (query <- queries) {
-        tr.executeQuery(query)
+        tr.executeQuery(query, optimizer)
         tr.awaitIdle
       }
     }

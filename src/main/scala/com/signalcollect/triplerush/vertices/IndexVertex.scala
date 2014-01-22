@@ -31,6 +31,8 @@ import com.signalcollect.triplerush.CardinalityRequest
 import scala.collection.mutable.ArrayBuffer
 import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.CardinalityRequest
+import com.signalcollect.triplerush.ChildIdRequest
+import com.signalcollect.triplerush.ChildIdRequest
 
 /**
  * This vertex represents part of the TripleRush index.
@@ -63,12 +65,16 @@ abstract class IndexVertex(val id: TriplePattern)
     wasAdded
   }
 
+  def handleChildIdRequest(requestor: Any, graphEditor: GraphEditor[Any, Any])
+
   override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
     signal match {
       case query: Array[Int] =>
         processQuery(query, graphEditor)
-      case c: CardinalityRequest =>
-        handleCardinalityRequest(c, graphEditor)
+      case cr: CardinalityRequest =>
+        handleCardinalityRequest(cr, graphEditor)
+      case ChildIdRequest(requestor) =>
+        handleChildIdRequest(requestor, graphEditor)
       case cardinalityIncrement: Int =>
         handleCardinalityIncrement(cardinalityIncrement)
       case other => throw new Exception(s"Unexpected signal @ $id: $other")

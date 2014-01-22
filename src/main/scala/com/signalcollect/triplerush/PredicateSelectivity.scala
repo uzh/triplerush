@@ -2,7 +2,7 @@ package com.signalcollect.triplerush
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import com.signalcollect.triplerush.QueryParticle._
+
 import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
 
 /**
@@ -29,19 +29,6 @@ class PredicateSelectivity(tr: TripleRush) {
   val x = -4
   val y = -5
 
-  def bindingsToMap(bindings: Array[Int]): Map[Int, Int] = {
-    (((-1 to -bindings.length by -1).zip(bindings))).toMap
-  }
-
-  def getBindingsFor(variable: Int, bindings: Traversable[Array[Int]]): Set[Int] = {
-    val allBindings: List[Map[Int, Int]] = bindings.toList.map(bindingsToMap(_).map(entry => (entry._1, entry._2)))
-    val listOfSetsOfKeysWithVar: List[Set[Int]] = allBindings.map {
-      bindings: Map[Int, Int] =>
-        bindings.filterKeys(_ == variable).values.toSet
-    }
-    listOfSetsOfKeysWithVar.foldLeft(Set[Int]())(_ union _)
-  }
-
   def estimateBranchingFactor(explored: TriplePattern, next: TriplePattern): Option[Int] = {
     if (explored.p > 0 && next.p > 0) {
       next match {
@@ -67,9 +54,7 @@ class PredicateSelectivity(tr: TripleRush) {
     }
   }
 
-  val queryToGetAllPredicates = QuerySpecification(List(TriplePattern(s, p, o)))
-  val allPredicateResult = tr.executeQuery(queryToGetAllPredicates)
-  val predicates = getBindingsFor(p, allPredicateResult)
+  val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0))
 
   val ps = predicates.size
   println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
