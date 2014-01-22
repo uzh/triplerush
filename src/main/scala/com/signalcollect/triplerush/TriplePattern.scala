@@ -29,15 +29,6 @@ import scala.util.hashing.MurmurHash3._
  */
 case class TriplePattern(s: Int, p: Int, o: Int) {
 
-  /**
-   * When this represents the id of a forwarding index vertex,
-   * and the query pattern has wildcards in it, this function
-   * returns true, if there is a perfect match between them.
-   */
-  def isMatchingDistictQuery(queryPattern: TriplePattern): Boolean = {
-    math.max(queryPattern.s, 0) == s && math.max(queryPattern.p, 0) == p && math.max(queryPattern.o, 0) == o
-  }
-
   override def hashCode: Int = {
     finalizeHash(mixLast(mix(s, p), o), 3)
   }
