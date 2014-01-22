@@ -66,7 +66,7 @@ class PredicateSelectivity(tr: TripleRush) {
 
   val optimizer = Some(GreedyCardinalityOptimizer)
   val queriesTotal = ps * (ps - 1) * 3
-  val tickets = 1000000
+  val tickets = Long.MaxValue
   var queriesSoFar = 0
   for (p1 <- predicates) {
     for (p2 <- predicates) {
