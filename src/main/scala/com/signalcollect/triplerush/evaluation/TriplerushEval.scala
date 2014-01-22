@@ -209,11 +209,13 @@ object EvalHelpers {
    */
   def jitSteadyState(queries: List[QuerySpecification], optimizer: Option[Optimizer], tr: TripleRush, repetitions: Int = 100) {
     for (i <- 1 to repetitions) {
+      println(s"running warmup $i/$repetitions")
       for (query <- queries) {
         tr.executeQuery(query, optimizer)
         tr.awaitIdle
       }
     }
+    println(s"warmup finished")
   }
 
   def getGcCollectionTime(gcs: List[GarbageCollectorMXBean]): Long = {
