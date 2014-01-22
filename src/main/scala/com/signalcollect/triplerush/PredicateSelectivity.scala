@@ -59,9 +59,9 @@ class PredicateSelectivity(tr: TripleRush) {
   val ps = predicates.size
   println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
 
-  var outOut = Map[(Int, Int), Int]() //.withDefaultValue(0)
-  var inOut = Map[(Int, Int), Int]() //.withDefaultValue(0)
-  var inIn = Map[(Int, Int), Int]() //.withDefaultValue(0)
+  var outOut = Map[(Int, Int), Int]().withDefaultValue(0)
+  var inOut = Map[(Int, Int), Int]().withDefaultValue(0)
+  var inIn = Map[(Int, Int), Int]().withDefaultValue(0)
   def outIn(p1: Int, p2: Int) = inOut((p2, p1))
 
   val optimizer = Some(GreedyCardinalityOptimizer)
