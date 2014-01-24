@@ -26,7 +26,7 @@ import scala.Array.canBuildFrom
 
 object CleverCardinalityOptimizer extends Optimizer {
 
-  def optimize(cardinalities: Map[TriplePattern, Int]): Array[TriplePattern] = {
+  def optimize(cardinalities: Map[TriplePattern, Long]): Array[TriplePattern] = {
     var sortedPatterns = cardinalities.toArray.sortBy(_._2)
     var boundVariables = Set[Int]() // The lower the score, the more constrained the variable.
     val optimizedPatterns = ArrayBuffer[TriplePattern]()
@@ -52,7 +52,7 @@ object CleverCardinalityOptimizer extends Optimizer {
           if (!foundUnbound) {
             cardinalityEstimate = 1.0 + cardinalityEstimate / 100000000
           }
-          (pattern, cardinalityEstimate.toInt)
+          (pattern, cardinalityEstimate.toLong)
       }
       sortedPatterns = sortedPatterns sortBy (_._2)
     }

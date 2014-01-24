@@ -37,8 +37,8 @@ import com.signalcollect.triplerush.QueryIds
  */
 final class ResultCountingQueryVertex(
   val querySpecification: QuerySpecification,
-  val resultPromise: Promise[Option[Int]],
-  val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, Int] {
+  val resultPromise: Promise[Option[Long]],
+  val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, Long] {
 
   val id = QueryIds.nextCountQueryId
   val expectedTickets = querySpecification.tickets
@@ -49,7 +49,7 @@ final class ResultCountingQueryVertex(
   var receivedTickets: Long = 0
   var complete = true
 
-  var cardinalities: Map[TriplePattern, Int] = _
+  var cardinalities: Map[TriplePattern, Long] = _
   var dispatchedQuery: Option[Array[Int]] = None
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
@@ -131,6 +131,7 @@ final class ResultCountingQueryVertex(
     if (t < 0) {
       complete = false
     }
+    println(s"@$id: $receivedTickets/$expectedTickets")
   }
 
   def queryDone(graphEditor: GraphEditor[Any, Any]) {

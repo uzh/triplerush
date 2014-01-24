@@ -51,7 +51,7 @@ final class ResultBindingQueryVertex(
   var optimizingStartTime = 0l
   var optimizingDuration = 0l
 
-  var cardinalities: Map[TriplePattern, Int] = _
+  var cardinalities: Map[TriplePattern, Long] = _
   var dispatchedQuery: Option[Array[Int]] = None
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
@@ -128,6 +128,8 @@ final class ResultBindingQueryVertex(
     val optimizedPatterns = optimizer.get.optimize(cardinalities)
     if (optimizedPatterns.length > 0) {
       val optimizedQuery = QueryParticle.fromSpecification(id, querySpecification.withUnmatchedPatterns(optimizedPatterns))
+      println(cardinalities)
+      println("Optimized patterns: " + optimizedPatterns.toList)
       Some(optimizedQuery)
     } else {
       None

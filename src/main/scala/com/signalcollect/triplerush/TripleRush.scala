@@ -20,33 +20,26 @@
 
 package com.signalcollect.triplerush
 
-import java.io.DataInputStream
-import java.io.EOFException
-import java.io.FileInputStream
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import com.signalcollect.ExecutionConfiguration
 import com.signalcollect.GraphBuilder
-import com.signalcollect.GraphEditor
-import com.signalcollect.Vertex
 import com.signalcollect.configuration.ActorSystemRegistry
 import com.signalcollect.configuration.ExecutionMode
-import com.signalcollect.interfaces.AggregationOperation
-import com.signalcollect.triplerush.QueryParticle.arrayToParticle
-import com.signalcollect.triplerush.vertices.ResultBindingQueryVertex
-import com.signalcollect.triplerush.vertices.RootIndex
-import com.signalcollect.triplerush.loading.FileLoader
 import com.signalcollect.triplerush.loading.BinarySplitLoader
-import com.signalcollect.triplerush.loading.EdgesPerIndexType
 import com.signalcollect.triplerush.loading.CountVerticesByType
-import com.signalcollect.triplerush.vertices.ResultCountingQueryVertex
-import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
+import com.signalcollect.triplerush.loading.EdgesPerIndexType
+import com.signalcollect.triplerush.loading.FileLoader
+import com.signalcollect.triplerush.optimizers.CleverPredicateSelectivityOptimizer
 import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.Optimizer
-import com.signalcollect.triplerush.optimizers.GreedyPredicateSelectivityOptimizer
 import com.signalcollect.triplerush.vertices.IndexQueryVertex
+import com.signalcollect.triplerush.vertices.ResultBindingQueryVertex
+import com.signalcollect.triplerush.vertices.ResultCountingQueryVertex
+import com.signalcollect.triplerush.vertices.RootIndex
+import com.signalcollect.triplerush.vertices.AdvancedPlanningQueryVertex
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
@@ -125,9 +118,9 @@ case class TripleRush(
 
   def executeCountingQuery(
     q: QuerySpecification,
-    optimizer: Option[Optimizer] = Some(GreedyCardinalityOptimizer)): Future[Option[Int]] = {
+    optimizer: Option[Optimizer] = Some(GreedyCardinalityOptimizer)): Future[Option[Long]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    val resultCountPromise = Promise[Option[Int]]()
+    val resultCountPromise = Promise[Option[Long]]()
     g.addVertex(new ResultCountingQueryVertex(q, resultCountPromise, optimizer))
     resultCountPromise.future
   }
@@ -153,7 +146,7 @@ case class TripleRush(
   def executeQuery(q: QuerySpecification) = {
     if (optimizer.isEmpty) {
       val stats = new PredicateSelectivity(this)
-      optimizer = Some(new GreedyPredicateSelectivityOptimizer(stats))
+      optimizer = Some(new CleverPredicateSelectivityOptimizer(stats))
     }
     executeQuery(q, optimizer)
   }
@@ -171,6 +164,20 @@ case class TripleRush(
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
     g.addVertex(new ResultBindingQueryVertex(q, resultPromise, statsPromise, optimizer))
+    (resultPromise.future, statsPromise.future)
+  }
+
+  def execute(q: QuerySpecification): Traversable[Array[Int]] = {
+    val (resultFuture, statsFuture) = executeAdvancedPlanningQuery(q)
+    val result = Await.result(resultFuture, 7200.seconds)
+    result
+  }
+
+  def executeAdvancedPlanningQuery(q: QuerySpecification): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
+    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    val resultPromise = Promise[Traversable[Array[Int]]]()
+    val statsPromise = Promise[Map[Any, Any]]()
+    g.addVertex(new AdvancedPlanningQueryVertex(q, resultPromise, statsPromise))
     (resultPromise.future, statsPromise.future)
   }
 

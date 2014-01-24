@@ -117,8 +117,8 @@ object LubmQueries {
     QuerySpecification(List(
       TriplePattern(x, QueryEncoding(s"$ub#worksFor"), QueryEncoding("http://www.Department0.University0.edu")), // ?X ub:worksFor http://www.Department0.University0.edu
       TriplePattern(x, QueryEncoding(s"$rdf#type"), QueryEncoding(s"$ub#FullProfessor")), // ?X rdf:type ub:FullProfessor
-      TriplePattern(x, QueryEncoding(s"$ub#name"), -2), // ?X ub:name ?Y1
-      TriplePattern(x, QueryEncoding(s"$ub#emailAddress"), -3), // ?X ub:emailAddress ?Y2
+      TriplePattern(x, QueryEncoding(s"$ub#name"), y), // ?X ub:name ?Y1
+      TriplePattern(x, QueryEncoding(s"$ub#emailAddress"), z), // ?X ub:emailAddress ?Y2
       TriplePattern(x, QueryEncoding(s"$ub#telephone"), -4) // ?X ub:telephone ?Y3
       )),
     QuerySpecification(List(

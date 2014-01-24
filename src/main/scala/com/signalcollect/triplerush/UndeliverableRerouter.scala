@@ -21,8 +21,8 @@
 package com.signalcollect.triplerush
 
 import com.signalcollect.GraphEditor
-
 import QueryParticle.arrayToParticle
+import com.signalcollect.triplerush.vertices.ResultCount
 
 case object UndeliverableRerouter {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
@@ -31,10 +31,12 @@ case object UndeliverableRerouter {
         graphEditor.sendSignal(queryParticle.tickets, queryParticle.queryId, None)
       case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
-      case CardinalityReply(forPattern, cardinality) =>
-      // Do nothing, query vertex has removed itself already because of a 0 cardinality pattern.
       case ChildIdRequest =>
         graphEditor.sendSignal(ChildIdReply(Set()), sourceId.get, Some(targetId))
+      case CardinalityReply(forPattern, cardinality) =>
+      // Do nothing, query vertex has removed itself already because of a 0 cardinality pattern.
+      case ResultCount(patterns, count) =>
+      // Do nothing, query vertex has removed itself already because of a 0 cardinality pattern.
       case other =>
         println(s"Failed signal delivery of $other of type ${other.getClass} to the vertex with id $targetId and sender id $sourceId.")
     }

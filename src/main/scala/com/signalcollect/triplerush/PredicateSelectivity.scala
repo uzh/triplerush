@@ -29,28 +29,28 @@ class PredicateSelectivity(tr: TripleRush) {
   val x = -4
   val y = -5
 
-  def estimateBranchingFactor(explored: TriplePattern, next: TriplePattern): Option[Int] = {
+  def estimateBranchingFactor(explored: TriplePattern, next: TriplePattern): Long = {
     if (explored.p > 0 && next.p > 0) {
       next match {
         case TriplePattern(explored.s, explored.p, explored.o) =>
-          Some(1)
+          1
         case TriplePattern(explored.s, p, explored.o) =>
-          Some(math.min(outOut(explored.p, p), inIn(explored.p, p)))
+          math.min(outOut(explored.p, p), inIn(explored.p, p))
         case TriplePattern(_, p, explored.o) =>
-          Some(inIn(explored.p, p))
+          inIn(explored.p, p)
         case TriplePattern(explored.s, p, _) =>
-          Some(outOut(explored.p, p))
+          outOut(explored.p, p)
         case TriplePattern(explored.o, p, explored.s) =>
-          Some(math.min(inOut(explored.p, p), outIn(explored.p, p)))
+          math.min(inOut(explored.p, p), outIn(explored.p, p))
         case TriplePattern(_, p, explored.s) =>
-          Some(outIn(explored.p, p))
+          outIn(explored.p, p)
         case TriplePattern(explored.o, p, _) =>
-          Some(inOut(explored.p, p))
+          inOut(explored.p, p)
         case other =>
-          None
+          Long.MaxValue
       }
     } else {
-      None
+      Long.MaxValue
     }
   }
 
@@ -59,9 +59,9 @@ class PredicateSelectivity(tr: TripleRush) {
   val ps = predicates.size
   println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
 
-  var outOut = Map[(Int, Int), Int]().withDefaultValue(0)
-  var inOut = Map[(Int, Int), Int]().withDefaultValue(0)
-  var inIn = Map[(Int, Int), Int]().withDefaultValue(0)
+  var outOut = Map[(Int, Int), Long]().withDefaultValue(0l)
+  var inOut = Map[(Int, Int), Long]().withDefaultValue(0l)
+  var inIn = Map[(Int, Int), Long]().withDefaultValue(0l)
   def outIn(p1: Int, p2: Int) = inOut((p2, p1))
 
   val optimizer = Some(GreedyCardinalityOptimizer)
@@ -80,9 +80,9 @@ class PredicateSelectivity(tr: TripleRush) {
         val inInResult = tr.executeCountingQuery(inInQuery, optimizer)
 
         // TODO: Handle the else parts better.
-        val outOutResultSize = Await.result(outOutResult, 7200.seconds).getOrElse(Int.MaxValue)
-        val inOutResultSize = Await.result(inOutResult, 7200.seconds).getOrElse(Int.MaxValue)
-        val inInResultSize = Await.result(inInResult, 7200.seconds).getOrElse(Int.MaxValue)
+        val outOutResultSize = Await.result(outOutResult, 7200.seconds).getOrElse(Long.MaxValue)
+        val inOutResultSize = Await.result(inOutResult, 7200.seconds).getOrElse(Long.MaxValue)
+        val inInResultSize = Await.result(inInResult, 7200.seconds).getOrElse(Long.MaxValue)
 
         outOut += (p1, p2) -> outOutResultSize
         inOut += (p1, p2) -> inOutResultSize

@@ -41,7 +41,7 @@ object FileSplitter extends App {
   def assemblyPath = "./target/scala-2.10/triplerush-assembly-1.0-SNAPSHOT.jar"
   val kraken = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, priority = TorquePriority.superfast)
+    localJarPath = assemblyPath, priority = TorquePriority.fast)
   val local = new LocalHost
   var evaluation = new Evaluation(
     executionHost = kraken)

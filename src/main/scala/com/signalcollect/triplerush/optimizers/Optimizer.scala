@@ -5,7 +5,7 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TripleRush
 
 trait Optimizer {
-  def optimize(cardinalities: Map[TriplePattern, Int]): Array[TriplePattern]
+  def optimize(cardinalities: Map[TriplePattern, Long]): Array[TriplePattern]
   override def toString = this.getClass.toString
 }
 
@@ -25,6 +25,11 @@ object Optimizer {
   val predicateSelectivity: TripleRush => Option[Optimizer] = {
     tr: TripleRush =>
       val stats = new PredicateSelectivity(tr)
-      Some(new GreedyPredicateSelectivityOptimizer(stats))
+      Some(new CleverPredicateSelectivityOptimizer(stats))
+  }
+  val bibekPredicateSelectivity: TripleRush => Option[Optimizer] = {
+    tr: TripleRush =>
+      val stats = new PredicateSelectivity(tr)
+      Some(new PredicateSelectivityOptimizer(stats))
   }
 }
