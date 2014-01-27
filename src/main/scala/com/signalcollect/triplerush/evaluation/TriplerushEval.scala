@@ -112,7 +112,7 @@ trait TriplerushEval {
     runResult += ((s"freeMemoryBefore", bytesToGigabytes(Runtime.getRuntime.freeMemory).toString))
     runResult += ((s"usedMemoryBefore", bytesToGigabytes(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory).toString))
     val startTime = System.nanoTime
-    val (queryResultFuture, queryStatsFuture) = tr.executeAdvancedPlanningQuery(query)
+    val (queryResultFuture, queryStatsFuture) = tr.executeAdvancedQuery(query, optimizer)
     val queryResult = Await.result(queryResultFuture, 7200 seconds)
     val finishTime = System.nanoTime
     val executionTime = roundToMillisecondFraction(finishTime - startTime)

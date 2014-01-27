@@ -19,7 +19,7 @@ object NewLubmEvaluation extends App {
   def runs = 10
   def warmupRepetitions = 10000
   def shouldCleanGarbage = false
-  def description = "Crazy optimizer with proper warmup."
+  def description = "Normal clever optimizer with cached cardinalities."
 
   var evaluation = new Evaluation(
     executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
@@ -30,7 +30,7 @@ object NewLubmEvaluation extends App {
   for (numberOfNodes <- List(1)) {
     for (universities <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
       for (run <- 1 to runs) {
-        for (optimizer <- List(none)) { //clever,predicateSelectivity,bibekPredicateSelectivity 
+        for (optimizer <- List(clever)) { //clever,predicateSelectivity,bibekPredicateSelectivity 
           val eval = new LubmEvalRun(
             description,
             shouldCleanGarbage,
@@ -86,7 +86,7 @@ case class LubmEvalRun(
     for (i <- 1 to warmupRepetitions) {
       println(s"running warmup $i/$warmupRepetitions")
       for (query <- queries) {
-        tr.execute(query)
+        tr.executeAdvancedQuery(query, optimizer)
         tr.awaitIdle
       }
     }

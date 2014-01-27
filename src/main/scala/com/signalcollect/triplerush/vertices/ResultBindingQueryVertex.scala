@@ -31,6 +31,7 @@ import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.Cardinalities
 
 final class ResultBindingQueryVertex(
   val querySpecification: QuerySpecification,
@@ -42,7 +43,7 @@ final class ResultBindingQueryVertex(
 
   val expectedTickets = querySpecification.tickets
   val numberOfPatternsInOriginalQuery = querySpecification.unmatched.length
-  var receivedCardinalityReplies = 0
+  var gatheredCardinalities = 0
   var queryDone = false
   var queryCopyCount: Long = 0
   var receivedTickets: Long = 0
@@ -56,19 +57,24 @@ final class ResultBindingQueryVertex(
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     state = new ArrayOfArraysTraversable
-    cardinalities = Map()
+    cardinalities = Map.empty[TriplePattern, Long]
     if (optimizer.isDefined && numberOfPatternsInOriginalQuery > 1) {
       // Gather pattern cardinalities.
       querySpecification.unmatched foreach (triplePattern => {
-        val responsibleIndexId = triplePattern.routingAddress
-        optimizingStartTime = System.nanoTime
-        responsibleIndexId match {
-          case root @ TriplePattern(0, 0, 0) =>
-            handleCardinalityReply(triplePattern, Int.MaxValue, graphEditor)
-          case other =>
-            graphEditor.sendSignal(
-              CardinalityRequest(triplePattern, id),
-              responsibleIndexId, None)
+        val fromCache = Cardinalities(triplePattern)
+        if (fromCache.isDefined) {
+          handleCardinalityReply(triplePattern, fromCache.get, graphEditor)
+        } else {
+          val responsibleIndexId = triplePattern.routingAddress
+          optimizingStartTime = System.nanoTime
+          responsibleIndexId match {
+            case root @ TriplePattern(0, 0, 0) =>
+              handleCardinalityReply(triplePattern, Int.MaxValue, graphEditor)
+            case other =>
+              graphEditor.sendSignal(
+                CardinalityRequest(triplePattern, id),
+                responsibleIndexId, None)
+          }
         }
       })
     } else {
@@ -102,15 +108,16 @@ final class ResultBindingQueryVertex(
 
   def handleCardinalityReply(
     forPattern: TriplePattern,
-    cardinality: Int,
+    cardinality: Long,
     graphEditor: GraphEditor[Any, Any]) = {
     if (cardinality == 0) {
       // 0 cardinality => no results => we're done.
       queryDone(graphEditor)
     } else {
+      Cardinalities.add(forPattern, cardinality)
       cardinalities += forPattern -> cardinality
-      receivedCardinalityReplies += 1
-      if (receivedCardinalityReplies == numberOfPatternsInOriginalQuery) {
+      gatheredCardinalities += 1
+      if (gatheredCardinalities == numberOfPatternsInOriginalQuery) {
         dispatchedQuery = optimizeQuery
         if (optimizingStartTime != 0) {
           optimizingDuration = System.nanoTime - optimizingStartTime
@@ -128,8 +135,6 @@ final class ResultBindingQueryVertex(
     val optimizedPatterns = optimizer.get.optimize(cardinalities)
     if (optimizedPatterns.length > 0) {
       val optimizedQuery = QueryParticle.fromSpecification(id, querySpecification.withUnmatchedPatterns(optimizedPatterns))
-      println(cardinalities)
-      println("Optimized patterns: " + optimizedPatterns.toList)
       Some(optimizedQuery)
     } else {
       None

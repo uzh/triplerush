@@ -33,6 +33,7 @@ import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.evaluation.SparqlDsl._
 import com.signalcollect.triplerush.optimizers.CleverPredicateSelectivityOptimizer
+import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
@@ -321,15 +322,15 @@ WHERE
   }
   qe.prepareExecution
   println("Finished loading LUBM1.")
-  println("Computing predicate selectivities ...")
+  //println("Computing predicate selectivities ...")
   //val stats = new PredicateSelectivity(qe)
-  //val optimizer = CleverCardinalityOptimizer
+  val optimizer = CleverCardinalityOptimizer
   //val optimizer = new CleverPredicateSelectivityOptimizer(stats)
   //println("Done.")
   //println(s"${stats.predicates.size} predicates: " + stats.predicates)
-//  for (predicate <- stats.predicates) {
-//    println(Mapping.getString(predicate))
-//  }
+  //  for (predicate <- stats.predicates) {
+  //    println(Mapping.getString(predicate))
+  //  }
 
   //  val edgesPerType = qe.edgesPerIndexType
   //  val verticesPerType = qe.countVerticesByType
@@ -345,9 +346,9 @@ WHERE
   println("Done.")
 
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
-    //val (resultFuture, statsFuture) = qe.executeAdvancedQuery(q, Some(optimizer))
-    //val result = Await.result(resultFuture, DurationInt(7200).seconds)
-    val result = qe.execute(q)
+    val (resultFuture, statsFuture) = qe.executeAdvancedQuery(q, Some(optimizer))
+    val result = Await.result(resultFuture, DurationInt(7200).seconds)
+    //val result = qe.execute(q)
     val bindings: List[Map[String, String]] = result.
       map(
         bindingsToMap(_).map(entry => (q.getString(entry._1), q.getString(entry._2)))).toList
