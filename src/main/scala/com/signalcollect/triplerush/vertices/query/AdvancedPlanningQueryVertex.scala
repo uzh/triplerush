@@ -17,13 +17,12 @@
  *  
  */
 
-package com.signalcollect.triplerush.vertices
+package com.signalcollect.triplerush.vertices.query
 
 import scala.concurrent.Promise
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.QuerySpecification
@@ -31,16 +30,12 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.QuerySpecification
-import scala.concurrent.Future
-import scala.collection.mutable.MapBuilder
-import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
 import com.signalcollect.triplerush.optimizers.AdvancedOptimizer
 import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
+import com.signalcollect.triplerush.vertices.BaseVertex
+import scala.Array.canBuildFrom
 
 final class AdvancedPlanningQueryVertex(
   val querySpecification: QuerySpecification,

@@ -26,6 +26,7 @@ import com.signalcollect.util.IntSet
 import com.signalcollect.util.SplayIntSet
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.ChildIdReply
+import com.signalcollect.triplerush.util.MemoryEfficientSplayIntSet
 
 abstract class OptimizedIndexVertex(
   id: TriplePattern) extends IndexVertex(id) {

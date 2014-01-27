@@ -35,11 +35,11 @@ import com.signalcollect.triplerush.loading.FileLoader
 import com.signalcollect.triplerush.optimizers.CleverPredicateSelectivityOptimizer
 import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.Optimizer
-import com.signalcollect.triplerush.vertices.IndexQueryVertex
-import com.signalcollect.triplerush.vertices.ResultBindingQueryVertex
-import com.signalcollect.triplerush.vertices.ResultCountingQueryVertex
+import com.signalcollect.triplerush.vertices.query.IndexQueryVertex
+import com.signalcollect.triplerush.vertices.query.ResultBindingQueryVertex
+import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
 import com.signalcollect.triplerush.vertices.RootIndex
-import com.signalcollect.triplerush.vertices.AdvancedPlanningQueryVertex
+import com.signalcollect.triplerush.vertices.query.AdvancedPlanningQueryVertex
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,

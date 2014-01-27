@@ -17,21 +17,15 @@
  *  
  */
 
-package com.signalcollect.triplerush.vertices
+package com.signalcollect.triplerush.vertices.query
 
 import scala.concurrent.Promise
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.CardinalityReply
-import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.optimizers.Optimizer
-import com.signalcollect.triplerush.QueryParticle
-import com.signalcollect.triplerush.QueryParticle.arrayToParticle
-import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.ChildIdRequest
 import com.signalcollect.triplerush.ChildIdReply
+import com.signalcollect.triplerush.vertices.BaseVertex
 
 final class IndexQueryVertex(
   val indexId: TriplePattern,

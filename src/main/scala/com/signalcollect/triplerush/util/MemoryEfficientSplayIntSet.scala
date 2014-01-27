@@ -1,4 +1,4 @@
-package com.signalcollect.triplerush.vertices
+package com.signalcollect.triplerush.util
 
 import com.signalcollect.util.SplayIntSet
 
