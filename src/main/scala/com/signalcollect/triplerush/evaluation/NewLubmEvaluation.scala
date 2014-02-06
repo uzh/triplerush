@@ -16,10 +16,10 @@ object NewLubmEvaluation extends App {
   val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
   def local = new LocalHost
   def torquePriority = TorquePriority.fast
-  def runs = 10
-  def warmupRepetitions = 10000
+  def runs = 1
+  def warmupRepetitions = 0
   def shouldCleanGarbage = false
-  def description = "Normal clever optimizer with cached cardinalities."
+  def description = "Clever vs. predicate selectivity on LUBM640."
 
   var evaluation = new Evaluation(
     executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
@@ -27,10 +27,10 @@ object NewLubmEvaluation extends App {
   //    var evaluation = new Evaluation(
   //      executionHost = local).addResultHandler(googleDocs)
 
-  for (numberOfNodes <- List(1)) {
-    for (universities <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
+  for (numberOfNodes <- List(4)) {
+    for (universities <- List(640)) { //10, 20, 40, 80, 160, 320, 480, 800
       for (run <- 1 to runs) {
-        for (optimizer <- List(clever)) { //clever,predicateSelectivity,bibekPredicateSelectivity 
+        for (optimizer <- List(clever, predicateSelectivity)) { //clever,predicateSelectivity,bibekPredicateSelectivity 
           val eval = new LubmEvalRun(
             description,
             shouldCleanGarbage,
