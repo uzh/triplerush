@@ -18,18 +18,12 @@
  *  
  */
 
-package com.signalcollect.triplerush.evaluation
+package com.signalcollect.triplerush
 
-import com.signalcollect.triplerush._
 import language.implicitConversions
 import language.postfixOps
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryIds
-import com.signalcollect.triplerush.QueryParticle
-import com.signalcollect.triplerush.Mapping
-import com.signalcollect.triplerush.QueryIds
 
-object SparqlDsl extends App {
+object SparqlDsl {
   object | {
     def -(s: String): DslS = DslS(s)
   }
