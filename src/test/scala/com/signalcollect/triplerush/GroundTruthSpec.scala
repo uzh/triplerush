@@ -31,7 +31,7 @@ import org.specs2.runner.JUnitRunner
 import com.signalcollect.GraphBuilder
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.triplerush.evaluation.SparqlDsl._
+import com.signalcollect.triplerush.SparqlDsl._
 import com.signalcollect.triplerush.optimizers.CleverPredicateSelectivityOptimizer
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer

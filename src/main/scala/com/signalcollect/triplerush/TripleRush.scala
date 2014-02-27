@@ -53,7 +53,7 @@ case class TripleRush(
 
   var canExecute = false
 
-  private val g = graphBuilder.withConsole(console).
+  val graph = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
     withMapperFactory(TripleMapperFactory).
     //    withMessageSerialization(true).
@@ -76,25 +76,25 @@ case class TripleRush(
       "com.signalcollect.interfaces.SignalMessage$mcIJ$sp",
       "com.signalcollect.interfaces.AddEdge",
       "akka.actor.RepointableActorRef")).build
-  g.setUndeliverableSignalHandler(UndeliverableRerouter.handle _)
+  graph.setUndeliverableSignalHandler(UndeliverableRerouter.handle _)
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
-  g.addVertex(new RootIndex)
+  graph.addVertex(new RootIndex)
   println("TripleRush is ready.")
 
   def prepareExecution {
-    g.awaitIdle
-    g.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
-    g.awaitIdle
+    graph.awaitIdle
+    graph.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+    graph.awaitIdle
     canExecute = true
   }
 
   def loadNtriples(ntriplesFilename: String, placementHint: Option[Any] = None) {
-    g.modifyGraph(FileLoader.loadNtriplesFile(ntriplesFilename) _, placementHint)
+    graph.modifyGraph(FileLoader.loadNtriplesFile(ntriplesFilename) _, placementHint)
   }
 
   def loadBinary(binaryFilename: String, placementHint: Option[Any] = None) {
-    g.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
+    graph.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
   }
 
   /**
@@ -105,14 +105,14 @@ case class TripleRush(
     val pId = Mapping.register(p)
     val oId = Mapping.register(o)
     val tp = TriplePattern(sId, pId, oId)
-    FileLoader.addTriple(tp, g)
+    FileLoader.addTriple(tp, graph)
   }
 
   /**
    * Slow, only use for debugging purposes.
    */
   def addEncodedTriple(sId: Int, pId: Int, oId: Int) {
-    FileLoader.addTriple(TriplePattern(sId, pId, oId), g)
+    FileLoader.addTriple(TriplePattern(sId, pId, oId), graph)
   }
 
   def executeCountingQuery(
@@ -120,7 +120,7 @@ case class TripleRush(
     optimizer: Option[Optimizer] = Some(GreedyCardinalityOptimizer)): Future[Option[Long]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val resultCountPromise = Promise[Option[Long]]()
-    g.addVertex(new ResultCountingQueryVertex(q, resultCountPromise, optimizer))
+    graph.addVertex(new ResultCountingQueryVertex(q, resultCountPromise, optimizer))
     resultCountPromise.future
   }
 
@@ -138,7 +138,7 @@ case class TripleRush(
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     assert(!indexId.isFullyBound, "There is no index vertex with this id, as the pattern is fully bound.")
     val childIdPromise = Promise[Set[Int]]()
-    g.addVertex(new IndexQueryVertex(indexId, childIdPromise))
+    graph.addVertex(new IndexQueryVertex(indexId, childIdPromise))
     childIdPromise.future
   }
 
@@ -162,24 +162,41 @@ case class TripleRush(
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
-    g.addVertex(new ResultBindingQueryVertex(q, resultPromise, statsPromise, optimizer))
+    graph.addVertex(new ResultBindingQueryVertex(q, resultPromise, statsPromise, optimizer))
     (resultPromise.future, statsPromise.future)
   }
 
+<<<<<<< HEAD
+=======
+  def execute(q: QuerySpecification): Traversable[Array[Int]] = {
+    val (resultFuture, statsFuture) = executeAdvancedPlanningQuery(q)
+    val result = Await.result(resultFuture, 7200.seconds)
+    result
+  }
+
+  def executeAdvancedPlanningQuery(q: QuerySpecification): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
+    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    val resultPromise = Promise[Traversable[Array[Int]]]()
+    val statsPromise = Promise[Map[Any, Any]]()
+    graph.addVertex(new AdvancedPlanningQueryVertex(q, resultPromise, statsPromise))
+    (resultPromise.future, statsPromise.future)
+  }
+
+>>>>>>> master
   def awaitIdle {
-    g.awaitIdle
+    graph.awaitIdle
   }
 
   def shutdown = {
-    g.shutdown
+    graph.shutdown
   }
 
   def edgesPerIndexType: Map[String, Int] = {
-    g.aggregate(new EdgesPerIndexType)
+    graph.aggregate(new EdgesPerIndexType)
   }
 
   def countVerticesByType: Map[String, Int] = {
-    g.aggregate(new CountVerticesByType)
+    graph.aggregate(new CountVerticesByType)
   }
 
 }

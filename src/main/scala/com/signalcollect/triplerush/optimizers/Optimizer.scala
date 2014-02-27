@@ -10,6 +10,7 @@ trait Optimizer {
   override def toString = this.getClass.toString
 }
 
+<<<<<<< HEAD
 object Optimizer {
   val none: TripleRush => Option[Optimizer] = {
     tr: TripleRush =>
@@ -39,4 +40,16 @@ object Optimizer {
       val stats = new PredicateSelectivity(tr)
       Some(new PredicateSelectivityOptimizer(stats))
   }
+=======
+object NoOptimizerCreator extends Function1[TripleRush, Option[Optimizer]] {
+  def apply(tr: TripleRush) = None
+}
+
+object GreedyOptimizerCreator extends Function1[TripleRush, Option[Optimizer]] {
+  def apply(tr: TripleRush) = Some(GreedyCardinalityOptimizer)
+}
+
+object CleverOptimizerCreator extends Function1[TripleRush, Option[Optimizer]] {
+  def apply(tr: TripleRush) = Some(CleverCardinalityOptimizer)
+>>>>>>> master
 }
