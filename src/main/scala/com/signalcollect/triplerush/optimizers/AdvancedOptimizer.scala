@@ -3,10 +3,12 @@ package com.signalcollect.triplerush.optimizers
 import scala.annotation.tailrec
 import com.signalcollect.triplerush.PredicateSelectivity
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.TriplePattern
 
 class AdvancedOptimizer(pairwisePatternCardinalities: Map[Set[TriplePattern], Option[Long]]) extends Optimizer {
 
-  def optimize(cardinality: Map[TriplePattern, Long]): Array[TriplePattern] = {
+  //bpo::
+  def optimize(cardinality: Map[TriplePattern, Long], edgeCounts: Option[Map[TriplePattern, Long]]): Array[TriplePattern] = {
 
     /**
      * Takes a list of optimized patterns, a set of unoptimized patterns, and

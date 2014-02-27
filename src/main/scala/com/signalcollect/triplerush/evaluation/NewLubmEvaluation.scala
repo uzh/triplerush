@@ -13,13 +13,14 @@ object NewLubmEvaluation extends App {
   import EvalHelpers._
   import Optimizer._
 
-  val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush", "data")
+  val googleDocs = new GoogleDocsResultHandler(args(0), args(1), "triplerush-bibek", "data")
   def local = new LocalHost
   def torquePriority = TorquePriority.fast
   def runs = 10
   def warmupRepetitions = 10000
   def shouldCleanGarbage = false
-  def description = "Normal clever optimizer with cached cardinalities."
+  //def description = "Normal clever optimizer with cached cardinalities."
+  def description = "PredicateSelectivityEdgeCountsOptimizer-type"
 
   var evaluation = new Evaluation(
     executionHost = kraken(torquePriority)).addResultHandler(googleDocs)
@@ -30,7 +31,8 @@ object NewLubmEvaluation extends App {
   for (numberOfNodes <- List(1)) {
     for (universities <- List(160)) { //10, 20, 40, 80, 160, 320, 480, 800
       for (run <- 1 to runs) {
-        for (optimizer <- List(clever)) { //clever,predicateSelectivity,bibekPredicateSelectivity 
+        //for (optimizer <- List(clever)) { //clever,predicateSelectivity,bibekPredicateSelectivity
+        for (optimizer <- List(predicateSelectivityEdgeCounts)) { //clever,predicateSelectivity,bibekPredicateSelectivity  
           val eval = new LubmEvalRun(
             description,
             shouldCleanGarbage,
@@ -71,7 +73,8 @@ case class LubmEvalRun(
     val optimizerInitStart = System.nanoTime
     val optimizer = optimizerCreator(tr)
     val optimizerInitEnd = System.nanoTime
-    val queries = LubmQueries.fullQueries
+    //val queries = LubmQueries.fullQueries
+    val queries = LubmQueriesRdfType.fullQueries
     var finalResults = List[Map[String, String]]()
     var commonResults = baseStats
 
@@ -109,7 +112,8 @@ case class LubmEvalRun(
   }
 
   def loadLubm(universities: Int, triplerush: TripleRush) {
-    val lubmFolderName = s"lubm$universities-filtered-splits"
+    //val lubmFolderName = s"lubm$universities-filtered-splits"
+    val lubmFolderName = s"lubm$universities-type-filtered-splits"
     for (splitId <- 0 until 2880) {
       val splitFile = s"./$lubmFolderName/$splitId.filtered-split"
       triplerush.loadBinary(splitFile, Some(splitId))

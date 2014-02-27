@@ -39,7 +39,6 @@ import com.signalcollect.triplerush.vertices.query.IndexQueryVertex
 import com.signalcollect.triplerush.vertices.query.ResultBindingQueryVertex
 import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
 import com.signalcollect.triplerush.vertices.RootIndex
-import com.signalcollect.triplerush.vertices.query.AdvancedPlanningQueryVertex
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
@@ -164,20 +163,6 @@ case class TripleRush(
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
     g.addVertex(new ResultBindingQueryVertex(q, resultPromise, statsPromise, optimizer))
-    (resultPromise.future, statsPromise.future)
-  }
-
-  def execute(q: QuerySpecification): Traversable[Array[Int]] = {
-    val (resultFuture, statsFuture) = executeAdvancedPlanningQuery(q)
-    val result = Await.result(resultFuture, 7200.seconds)
-    result
-  }
-
-  def executeAdvancedPlanningQuery(q: QuerySpecification): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
-    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    val resultPromise = Promise[Traversable[Array[Int]]]()
-    val statsPromise = Promise[Map[Any, Any]]()
-    g.addVertex(new AdvancedPlanningQueryVertex(q, resultPromise, statsPromise))
     (resultPromise.future, statsPromise.future)
   }
 

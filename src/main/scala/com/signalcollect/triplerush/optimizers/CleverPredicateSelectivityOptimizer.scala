@@ -6,7 +6,8 @@ import com.signalcollect.triplerush.TriplePattern
 
 class CleverPredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) extends Optimizer {
 
-  def optimize(cardinality: Map[TriplePattern, Long]): Array[TriplePattern] = {
+  //bpo::
+  def optimize(cardinality: Map[TriplePattern, Long], edgeCounts: Option[Map[TriplePattern, Long]]): Array[TriplePattern] = {
 
     /**
      * Takes a list of optimized patterns, a set of unoptimized patterns, and

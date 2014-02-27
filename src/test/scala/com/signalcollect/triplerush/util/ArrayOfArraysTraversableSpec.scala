@@ -1,6 +1,5 @@
 /*
  *  @author Philip Stutz
- *  @author Mihaela Verman
  *  
  *  Copyright 2013 University of Zurich
  *      
@@ -18,18 +17,16 @@
  *  
  */
 
-package com.signalcollect.triplerush.optimizers
+package com.signalcollect.triplerush.util
 
-import com.signalcollect.triplerush.TriplePattern
-import scala.Array.canBuildFrom
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
 
-object GreedyCardinalityOptimizer extends Optimizer {
+class ArrayOfArraysTraversableSpec extends FlatSpec with Matchers {
 
-  //bpo::
-  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Option[Map[TriplePattern, Long]]): Array[TriplePattern] = {
-    // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
-    var sortedPatterns = cardinalities.toArray.sortBy(_._2)
-    sortedPatterns.map(_._1)
+  "ArrayOfArraysTraversable" should "have size 0 when no results are added" in {
+    val aoat = new ArrayOfArraysTraversable()
+    assert(aoat.size === 0)
   }
 
 }

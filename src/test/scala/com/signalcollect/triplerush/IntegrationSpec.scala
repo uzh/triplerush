@@ -48,7 +48,7 @@ class IntegrationSpec extends FlatSpec with Checkers {
       List(TriplePattern(-1, 4, -1)))
     assert(Set[Map[Int, Int]]() === trResults)
   }
-  
+
   it should "correctly answer a query for a specific pattern that exists" in {
     val trResults = TestHelper.execute(
       new TripleRush,
@@ -56,7 +56,7 @@ class IntegrationSpec extends FlatSpec with Checkers {
       List(TriplePattern(1, 2, 3)))
     assert(Set[Map[Int, Int]](Map()) === trResults)
   }
-  
+
   it should "correctly answer a query for a specific pattern that does not exist" in {
     val trResults = TestHelper.execute(
       new TripleRush,
@@ -64,7 +64,7 @@ class IntegrationSpec extends FlatSpec with Checkers {
       List(TriplePattern(1, 4, 3)))
     assert(Set[Map[Int, Int]]() === trResults)
   }
-  
+
   it should "correctly answer a simple query 1" in {
     val trResults = TestHelper.execute(
       new TripleRush,
@@ -82,6 +82,27 @@ class IntegrationSpec extends FlatSpec with Checkers {
       List(TriplePattern(-2, -1, 3)))
     assert(Set(Map(-1 -> 3, -2 -> 2), Map(-1 -> 3, -2 -> 3),
       Map(-1 -> 4, -2 -> 4)) === trResults)
+  }
+
+  it should "correctly answer a simple query, where one pattern is fully bound and that triple exists" in {
+    val trResults = TestHelper.execute(
+      new TripleRush,
+      Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
+        TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
+        TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
+      List(TriplePattern(3, 4, 2), TriplePattern(-2, -1, -3)))
+    assert(Set(Map(-1 -> 3, -2 -> 2), Map(-1 -> 3, -2 -> 3),
+      Map(-1 -> 4, -2 -> 4)) === trResults)
+  }
+
+  it should "correctly answer a simple query, where one pattern is fully bound and that triple does not exist" in {
+    val trResults = TestHelper.execute(
+      new TripleRush,
+      Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
+        TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
+        TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
+      List(TriplePattern(1, 2, 3), TriplePattern(-2, -1, 3)))
+    assert(Set[Map[Int, Int]]() === trResults)
   }
 
   it should "correctly answer a simple query over a lot of data" in {

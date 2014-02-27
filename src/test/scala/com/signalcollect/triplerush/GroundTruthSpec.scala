@@ -34,6 +34,7 @@ import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.evaluation.SparqlDsl._
 import com.signalcollect.triplerush.optimizers.CleverPredicateSelectivityOptimizer
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
+import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
@@ -41,6 +42,8 @@ class GroundTruthSpec extends SpecificationWithJUnit {
   sequential
 
   val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+  //val enabledQueries = Set(1, 7)
+  //val enabledQueries = Set(2, 4, 6, 7, 8, 9, 12, 14)
   //  val enabledQueries = Set(2)
   val dslEnabled = true
   val sparqlEnabled = false
@@ -323,8 +326,12 @@ WHERE
   qe.prepareExecution
   println("Finished loading LUBM1.")
   //println("Computing predicate selectivities ...")
-  //val stats = new PredicateSelectivity(qe)
-  val optimizer = CleverCardinalityOptimizer
+  val stats = new PredicateSelectivity(qe)
+  
+  //bpo::
+  //val optimizer = CleverCardinalityOptimizer
+  val optimizer = new PredicateSelectivityEdgeCountsOptimizer(stats)
+  
   //val optimizer = new CleverPredicateSelectivityOptimizer(stats)
   //println("Done.")
   //println(s"${stats.predicates.size} predicates: " + stats.predicates)
@@ -366,6 +373,7 @@ WHERE
   type QuerySolution = List[Bindings]
 
   def runTest(queryId: Int, sparql: Boolean = false): MatchResult[Any] = {
+    println(s"executing query: $queryId");
     if (enabledQueries.contains(queryId) && (dslEnabled && !sparql || sparqlEnabled && sparql)) {
       val referenceResult = referenceResults(queryId)
       val ourResult = executeOnQueryEngine(dslQueries(queryId - 1))

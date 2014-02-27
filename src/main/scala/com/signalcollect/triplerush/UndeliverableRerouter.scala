@@ -22,7 +22,6 @@ package com.signalcollect.triplerush
 
 import com.signalcollect.GraphEditor
 import QueryParticle.arrayToParticle
-import com.signalcollect.triplerush.vertices.query.ResultCount
 
 case object UndeliverableRerouter {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {

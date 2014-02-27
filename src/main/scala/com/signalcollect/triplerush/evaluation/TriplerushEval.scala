@@ -163,7 +163,8 @@ object EvalHelpers {
   def assemblyFile = new File(assemblyPath)
   def kraken(torquePriority: String) = new TorqueHost(
     jobSubmitter = new TorqueJobSubmitter(username = System.getProperty("user.name"), hostname = "kraken.ifi.uzh.ch"),
-    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.8.0/bin/", priority = torquePriority)
+    //localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/stutz/jdk1.8.0/bin/", priority = torquePriority)
+    localJarPath = assemblyPath, jvmParameters = jvmParameters, jdkBinPath = "/home/user/bpaudel/jdk1.7.0/bin/", priority = torquePriority)
   def localHost = new LocalHost
 
   def getRevision: String = {
