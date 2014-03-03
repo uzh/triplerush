@@ -34,6 +34,7 @@ import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.ChildIdRequest
 import com.signalcollect.triplerush.ChildIdRequest
 import com.signalcollect.triplerush.CardinalityAndEdgeCountReply
+import com.signalcollect.triplerush.TriplePattern
 
 /**
  * This vertex represents part of the TripleRush index.
@@ -56,13 +57,10 @@ abstract class IndexVertex(val id: TriplePattern)
    * Default reply, is only overridden by SOIndex.
    */
   def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
-    //bpo::
-    /*
-    if((id.s == id.o) && (id.p > 0))
-      graphEditor.sendSignal(CardinalityAndEdgeCountReply(
-      c.forPattern, cardinality, edgeCount), c.requestor, None)
-    else*/
     //TODO: add test case for fully bound pattern in a query that has at least one variable
+    if (c.forPattern == TriplePattern(0,-3,0)) {
+      println(s"Index vertex $id is handling the problematic request for ${c.forPattern}")
+    }
     graphEditor.sendSignal(CardinalityReply(
       c.forPattern, cardinality), c.requestor, None)
   }

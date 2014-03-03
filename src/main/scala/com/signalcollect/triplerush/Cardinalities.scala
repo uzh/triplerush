@@ -31,4 +31,8 @@ object Cardinalities {
     cachedCardinalities += ((tp, cardinality))
   }
 
+  def clear {
+    cachedCardinalities = Map.empty[TriplePattern, Long]
+  }
+  
 }

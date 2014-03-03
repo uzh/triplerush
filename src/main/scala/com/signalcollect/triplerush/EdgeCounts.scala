@@ -31,4 +31,8 @@ object EdgeCounts {
     cachedEdgeCounts += ((tp, edgeCount))
   }
 
+  def clear {
+    cachedEdgeCounts = Map.empty[TriplePattern, Long]
+  }
+  
 }

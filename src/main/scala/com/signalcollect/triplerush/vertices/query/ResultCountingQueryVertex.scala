@@ -31,7 +31,6 @@ import com.signalcollect.triplerush.optimizers.Optimizer
  * If execution is complete returns Some(numberOfResults), else returns None.
  */
 
-//bpo::
 final class ResultCountingQueryVertex(
   querySpecification: QuerySpecification,
   resultPromise: Promise[Option[Long]],

@@ -138,6 +138,10 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     s < 0 && p < 0 && o < 0
   }
 
+  def withVariablesAsWildcards: TriplePattern = {
+    TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
+  }
+
   /**
    * Returns the id of the index/triple vertex to which this pattern should be routed.
    * Any variables (<0) should be converted to "unbound", which is represented by a wildcard.
@@ -146,7 +150,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     if (s > 0 && p > 0 && o > 0) {
       TriplePattern(s, 0, o)
     } else {
-      TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
+      withVariablesAsWildcards
     }
   }
 

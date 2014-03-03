@@ -60,32 +60,38 @@ abstract class AbstractQueryVertex[StateType](
   var optimizingDuration = 0l
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    println(s"Query vertex $id is executing query ${querySpecification.unmatched}")
     optimizingStartTime = System.nanoTime
+    //TODO: Should we run an optimizer even for one-pattern queries?
     if (optimizer.isDefined && numberOfPatternsInOriginalQuery > 1) {
       // Gather pattern cardinalities.
       querySpecification.unmatched foreach (triplePattern => {
-        val fromCache = Cardinalities(triplePattern)
-        val pIndexForPattern = TriplePattern(0, triplePattern.p, 0)
+        val patternWithWildcards = triplePattern.withVariablesAsWildcards
+        val fromCache = Cardinalities(patternWithWildcards)
+        val pIndexForPattern = TriplePattern(0, patternWithWildcards.p, 0)
+        // TODO: What if p is not bound, will this do the right thing?
         val edgeCountsCache = EdgeCounts(pIndexForPattern)
         if (fromCache.isDefined && edgeCountsCache.isDefined) {
-          //println(s"caches defined, tp: $triplePattern, pindex: $pIndexForPattern")
+          //caches defined
           handleCardinalityReply(triplePattern, fromCache.get, edgeCountsCache, graphEditor)
         } else {
-          //println(s"caches not defined, tp: $triplePattern, pindex: $pIndexForPattern")
-          val responsibleIndexId = triplePattern.routingAddress
+          //at least one of the caches not defined
+          val responsibleIndexId = patternWithWildcards.routingAddress
+          println(s"responsible index id for $triplePattern is $responsibleIndexId")
           responsibleIndexId match {
             case root @ TriplePattern(0, 0, 0) =>
               handleCardinalityReply(triplePattern, Int.MaxValue, None, graphEditor)
             case other =>
-              //println(s"sending cardinalityrequest, responsibleIndex: $responsibleIndexId")
+              //sending cardinalityrequest to responsibleIndex
+              println(s"Sending cardinality request for pattern $triplePattern to index vertex with id $responsibleIndexId")
               graphEditor.sendSignal(
                 CardinalityRequest(triplePattern, id),
                 responsibleIndexId, None)
               if (!edgeCountsCache.isDefined && responsibleIndexId != pIndexForPattern) {
-                //println("also sending cardinality request for pIndex")
+                //also sending cardinality request for pIndex
                 graphEditor.sendSignal(CardinalityRequest(pIndexForPattern, id), pIndexForPattern, None)
               } else if (edgeCountsCache.isDefined) {
-                //println(s"edgecount cache seems populated, lets check: $pIndexForPattern: ${edgeCountsCache}")
+                //edgecount cache seems populated
                 edgeCounts += pIndexForPattern -> edgeCountsCache.get
               }
           }
@@ -100,6 +106,7 @@ abstract class AbstractQueryVertex[StateType](
         graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
       } else {
         dispatchedQuery = None
+        println(s"Query $id done because it has no patterns.")
         queryDone(graphEditor)
       }
     }
@@ -110,6 +117,7 @@ abstract class AbstractQueryVertex[StateType](
       case tickets: Long =>
         processTickets(tickets)
         if (receivedTickets == expectedTickets) {
+          println(s"Query $id done because it received all tickets")
           queryDone(graphEditor)
         }
       case bindings: Array[_] =>
@@ -118,10 +126,10 @@ abstract class AbstractQueryVertex[StateType](
         // TODO, Wrap the msg and also make this a long.
         handleResultCount(resultCount)
       case CardinalityReply(forPattern, cardinality) =>
-        //println(s"received cardinality reply from: $forPattern")
+        //received cardinality reply from: forPattern
         handleCardinalityReply(forPattern, cardinality, None, graphEditor)
       case CardinalityAndEdgeCountReply(forPattern, cardinality, edgeCount) =>
-        //println(s"received cardinalityandedgecount reply from: $forPattern")
+        //received cardinalityandedgecount reply from: forPattern
         handleCardinalityReply(forPattern, cardinality, Some(edgeCount), graphEditor)
     }
     true
@@ -137,30 +145,28 @@ abstract class AbstractQueryVertex[StateType](
     edgeCountOption: Option[Long],
     graphEditor: GraphEditor[Any, Any]) = {
 
-    //println(s"abstractquery vertex: pattern: $forPattern, cardinality: $cardinality")
-
     if (edgeCountOption.isDefined) {
       // TODO(Bibek): Make more elegant. 
       val edgeCount = edgeCountOption.get
       val pIndexForPattern = TriplePattern(0, forPattern.p, 0)
-      //println(s"abstractquery vertex: pattern: $forPattern, cardinality: $cardinality, edgecount of $pIndexForPattern: $edgeCount")
       edgeCounts += pIndexForPattern -> edgeCount
       EdgeCounts.add(pIndexForPattern, edgeCount)
     }
 
+    cardinalities += forPattern -> cardinality
+    Cardinalities.add(forPattern.withVariablesAsWildcards, cardinality)
     if (cardinality == 0) {
       // 0 cardinality => no results => we're done.
+      println(s"Query $id done because it received cardinality 0 for pattern $forPattern")
       queryDone(graphEditor)
     } else {
-      cardinalities += forPattern -> cardinality
-      Cardinalities.add(forPattern, cardinality)
-
       gatheredCardinalities += 1
-      if (gatheredCardinalities == numberOfPatternsInOriginalQuery) {
+      if (!isQueryDone && gatheredCardinalities == numberOfPatternsInOriginalQuery) {
         dispatchedQuery = optimizeQuery
         if (dispatchedQuery.isDefined) {
           graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
         } else {
+          println("Query done because the optimizer got rid of it.")
           queryDone(graphEditor)
         }
       }

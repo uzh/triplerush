@@ -32,11 +32,12 @@ final class PIndex(id: TriplePattern) extends CardinalityCountingIndex(id)
   assert(id.s == 0 && id.p != 0 && id.o == 0)
   def nextRoutingAddress(childDelta: Int) = TriplePattern(childDelta, id.p, 0)
 
-  
   override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
-    //bpo::
+    if (c.forPattern == TriplePattern(0, -3, 0)) {
+      println(s"Index vertex $id is handling the problematic request for ${c.forPattern}")
+    }
     graphEditor.sendSignal(CardinalityAndEdgeCountReply(
-        c.forPattern, cardinality, edgeCount), c.requestor, None)
+      c.forPattern, cardinality, edgeCount), c.requestor, None)
   }
-	
+
 }

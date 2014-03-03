@@ -33,6 +33,7 @@ import org.scalacheck.Prop
 import org.openrdf.query.QueryResult
 import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
+import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
 
 class IntegrationSpec extends FlatSpec with Checkers {
 
@@ -88,11 +89,10 @@ class IntegrationSpec extends FlatSpec with Checkers {
     val trResults = TestHelper.execute(
       new TripleRush,
       Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
-        TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
-        TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
-      List(TriplePattern(3, 4, 2), TriplePattern(-2, -1, -3)))
-    assert(Set(Map(-1 -> 3, -2 -> 2), Map(-1 -> 3, -2 -> 3),
-      Map(-1 -> 4, -2 -> 4)) === trResults)
+        TriplePattern(3, 3, 3)),
+      List(TriplePattern(3, 4, 2), TriplePattern(-1, -2, -3)))
+    assert(Set(Map(-1 -> 3, -2 -> 4, -3 -> 2), Map(-1 -> 3, -2 -> 4, -3 -> 4),
+      Map(-1 -> 2, -2 -> 3, -3 -> 3), Map(-1 -> 3, -2 -> 3, -3 -> 3)) === trResults)
   }
 
   it should "correctly answer a simple query, where one pattern is fully bound and that triple does not exist" in {
@@ -108,8 +108,8 @@ class IntegrationSpec extends FlatSpec with Checkers {
   it should "correctly answer a simple query over a lot of data" in {
     val triples = {
       for {
-        s <- 1 to 25
-        p <- 1 to 25
+        s <- 1 to 2
+        p <- 1 to 2
         o <- 1 to 25
       } yield TriplePattern(s, p, o)
     }.toSet
@@ -126,6 +126,7 @@ class IntegrationSpec extends FlatSpec with Checkers {
 
   it should "correctly answer random queries with basic graph patterns" in {
     check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
+      println(s"Query = $query")
       val jenaResults = TestHelper.execute(new Jena, triples, query)
       val trResults = TestHelper.execute(new TripleRush, triples, query)
       assert(jenaResults === trResults, "TR should have the same result as Jena.")
@@ -136,29 +137,50 @@ class IntegrationSpec extends FlatSpec with Checkers {
 }
 
 object TestHelper {
+  def count(
+    tr: TripleRush,
+    triples: Set[TriplePattern],
+    query: List[TriplePattern],
+    shouldShutdownAfterExecution: Boolean): Long = {
+    for (triple <- triples) {
+      tr.addEncodedTriple(triple.s, triple.p, triple.o)
+    }
+
+    tr.prepareExecution
+    val resultFuture = tr.executeCountingQuery(QuerySpecification(query), Some(GreedyCardinalityOptimizer))
+    val result = Await.result(resultFuture, 7200.seconds).get //we assume the query execution is complete
+    if (shouldShutdownAfterExecution) {
+      tr.shutdown
+    }
+    result
+  }
+
   def execute(
     qe: QueryEngine,
     triples: Set[TriplePattern],
     query: List[TriplePattern]): Set[Map[Int, Int]] = {
-    for (triple <- triples) {
-      qe.addEncodedTriple(triple.s, triple.p, triple.o)
+    try {
+      for (triple <- triples) {
+        qe.addEncodedTriple(triple.s, triple.p, triple.o)
+      }
+      qe.prepareExecution
+      val results = qe.executeQuery(QuerySpecification(query))
+      val bindings: Set[Map[Int, Int]] = {
+        results.map({ binding: Array[Int] =>
+          // Only keep variable bindings that have an assigned value.
+          val filtered: Map[Int, Int] = {
+            (-1 to -binding.length by -1).
+              zip(binding).
+              filter(_._2 > 0).
+              toMap
+          }
+          filtered
+        }).toSet
+      }
+      bindings
+    } finally {
+      qe.shutdown
     }
-    qe.prepareExecution
-    val results = qe.executeQuery(QuerySpecification(query))
-    val bindings: Set[Map[Int, Int]] = {
-      results.map({ binding: Array[Int] =>
-        // Only keep variable bindings that have an assigned value.
-        val filtered: Map[Int, Int] = {
-          (-1 to -binding.length by -1).
-            zip(binding).
-            filter(_._2 > 0).
-            toMap
-        }
-        filtered
-      }).toSet
-    }
-    qe.shutdown
-    bindings
   }
 }
 
