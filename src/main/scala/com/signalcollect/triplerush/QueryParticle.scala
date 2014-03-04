@@ -43,11 +43,20 @@ object ParticleDebug {
   }
 
   def validate(p: Array[Int], msg: String) {
-    import QueryParticle._
-    val valid = (p.length - 4 - p.numberOfBindings) % 3 == 0
-    if (!valid) {
-      val debug = ParticleDebug(p)
-      throw new Exception(s"$msg invalid particle: $debug")
+    if (p != null) {
+      import QueryParticle._
+      val validTotalLength = (p.length - 4 - p.numberOfBindings) % 3 == 0
+      val validNumberOfBindingsLength = (p.length - 4 - p.numberOfBindings) >= 0
+      if (!validTotalLength) {
+        val debug = ParticleDebug(p)
+        throw new Exception(s"$msg remaining length after numberofbindings not divisible by 3 (cannot represent TP): $debug")
+      }
+      if (!validNumberOfBindingsLength) {
+        val debug = ParticleDebug(p)
+        throw new Exception(s"$msg array too short to accomodate bindings $debug")
+      }
+    } else {
+      throw new Exception(s"$msg validate particle was null")
     }
   }
 }
@@ -99,6 +108,12 @@ object QueryParticle {
     tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
     bindings: Array[Int],
     unmatched: Seq[TriplePattern]): Array[Int] = {
+    
+    //TODO: check where this method is used from and move validation outside
+    if(!unmatched.forall(tp => tp.s != 0 && tp.p != 0 && tp.o != 0)){
+      throw new Exception("TriplePatterns in queries can only contain variables and constants, never a wildcard.")
+    }
+    
     val ints = 4 + bindings.length + 3 * unmatched.length
     val r = new Array[Int](ints)
     r.writeQueryId(queryId)
@@ -170,11 +185,19 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
         r
       }
     }
+    ParticleDebug.validate(currentParticle, "post-PotentialCopy")
+
     if (isBindingQuery) {
       val variableIndex = -(variable + 1)
+      ParticleDebug.validate(currentParticle, s"pre-writeBinding $variableIndex")
       currentParticle.writeBinding(variableIndex, boundValue)
+      ParticleDebug.validate(currentParticle, s"post-writeBinding $variableIndex")
     }
+
+    ParticleDebug.validate(currentParticle, "pre-bindVariablesinPatterns")
     currentParticle.bindVariablesInPatterns(variable, boundValue)
+    ParticleDebug.validate(currentParticle, "post-bindVariablesinPatterns")
+
     val result = currentParticle.bindPredicate(toMatchP, toMatchO, toBindP, toBindO, false)
     ParticleDebug.validate(result, "post-bindSubject")
     result
@@ -277,6 +300,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
 
   def bindings: Array[Int] = {
     val numBindings = numberOfBindings
+    //ParticleDebug.validate(r, "pre-bindingExtraction")
     val b = new Array[Int](numBindings)
     System.arraycopy(r, 4, b, 0, numBindings)
     b

@@ -89,7 +89,7 @@ abstract class AbstractQueryVertex[StateType](
                 responsibleIndexId, None)
               if (!edgeCountsCache.isDefined && responsibleIndexId != pIndexForPattern) {
                 //also sending cardinality request for pIndex
-                graphEditor.sendSignal(CardinalityRequest(pIndexForPattern, id), pIndexForPattern, None)
+                graphEditor.sendSignal(CardinalityRequest(triplePattern, id), pIndexForPattern, None)
               } else if (edgeCountsCache.isDefined) {
                 //edgecount cache seems populated
                 edgeCounts += pIndexForPattern -> edgeCountsCache.get
@@ -138,13 +138,17 @@ abstract class AbstractQueryVertex[StateType](
   def handleBindings(bindings: Array[Array[Int]])
 
   def handleResultCount(resultCount: Long)
-
+  
   def handleCardinalityReply(
     forPattern: TriplePattern,
     cardinality: Long,
     edgeCountOption: Option[Long],
     graphEditor: GraphEditor[Any, Any]) = {
 
+    if(!forPattern.isValidQueryPattern){
+    	throw new Exception(s"Query Pattern: $forPattern is not valid and contains wildcards.")
+    }
+    
     if (edgeCountOption.isDefined) {
       // TODO(Bibek): Make more elegant. 
       val edgeCount = edgeCountOption.get
@@ -177,6 +181,7 @@ abstract class AbstractQueryVertex[StateType](
     val optimizedPatterns = optimizer.get.optimize(cardinalities, Some(edgeCounts))
     optimizingDuration = System.nanoTime - optimizingStartTime
     if (optimizedPatterns.length > 0) {
+      println(s"optimized patterns from query vertex $id: ${optimizedPatterns.toList}")
       val optimizedQuery = QueryParticle.fromSpecification(id, querySpecification.withUnmatchedPatterns(optimizedPatterns))
       Some(optimizedQuery)
     } else {

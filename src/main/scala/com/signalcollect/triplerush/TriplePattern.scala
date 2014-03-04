@@ -143,6 +143,13 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
   }
 
   /**
+   * Returns true if this pattern does not contain any wildcards.
+   */
+  def isValidQueryPattern: Boolean = {
+    s != 0 && p != 0 && o != 0
+  }
+
+  /**
    * Returns the id of the index/triple vertex to which this pattern should be routed.
    * Any variables (<0) should be converted to "unbound", which is represented by a wildcard.
    */
