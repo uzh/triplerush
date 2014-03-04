@@ -26,7 +26,6 @@ import com.signalcollect.util.SearchableIntSet
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.CardinalityReply
-import com.signalcollect.triplerush.ParticleDebug
 
 final class SOIndex(id: TriplePattern) extends SearchableIndexVertex(id)
   with Binding {
@@ -37,7 +36,6 @@ final class SOIndex(id: TriplePattern) extends SearchableIndexVertex(id)
    * Need to check if the pattern is fully bound, then answer with appropriate cardinality.
    */
   override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
-    println(s"SO index $id is answering the cardinality request for ${c.forPattern}")
     val pattern = c.forPattern
     if (pattern.isFullyBound) {
       val exists = new SearchableIntSet(childDeltaArray).contains(pattern.p)
@@ -62,15 +60,10 @@ final class SOIndex(id: TriplePattern) extends SearchableIndexVertex(id)
    * next destinations.
    */
   override def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
-    val debug = ParticleDebug(query)
-    println(s"vertex $id is handling query $debug")
     val patternP = query.lastPatternP
     if (patternP > 0 && query.lastPatternS > 0 && query.lastPatternO > 0) {
-      println(s"SO index vertex $id is processing query $debug")
       // We are looking for a specific, fully bound triple pattern. This means that we have to do a binary search on the targetIds.
       if (new SearchableIntSet(childDeltaArray).contains(patternP)) {
-        println(s"SO index vertex $id has a match for $debug reporting a result")
-        println(s"vertex $id is handling query $debug")
         routeSuccessfullyBound(query.copyWithoutLastPattern, graphEditor)
       } else {
         // Failed query

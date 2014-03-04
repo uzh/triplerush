@@ -58,9 +58,6 @@ abstract class IndexVertex(val id: TriplePattern)
    */
   def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
     //TODO: add test case for fully bound pattern in a query that has at least one variable
-    if (c.forPattern == TriplePattern(0,-3,0)) {
-      println(s"Index vertex $id is handling the problematic request for ${c.forPattern}")
-    }
     graphEditor.sendSignal(CardinalityReply(
       c.forPattern, cardinality), c.requestor, None)
   }

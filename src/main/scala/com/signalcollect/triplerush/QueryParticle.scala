@@ -108,12 +108,7 @@ object QueryParticle {
     tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
     bindings: Array[Int],
     unmatched: Seq[TriplePattern]): Array[Int] = {
-    
-    //TODO: check where this method is used from and move validation outside
-    if(!unmatched.forall(tp => tp.s != 0 && tp.p != 0 && tp.o != 0)){
-      throw new Exception("TriplePatterns in queries can only contain variables and constants, never a wildcard.")
-    }
-    
+        
     val ints = 4 + bindings.length + 3 * unmatched.length
     val r = new Array[Int](ints)
     r.writeQueryId(queryId)
@@ -146,10 +141,8 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   def isBindingQuery = queryId > 0
 
   def copy: Array[Int] = {
-    validate("pre-copy")
     val c = new Array[Int](r.length)
     System.arraycopy(r, 0, c, 0, r.length)
-    ParticleDebug.validate(c, "post-copy")
     c
   }
 
@@ -161,7 +154,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     toBindP: Int,
     toBindO: Int,
     copyBeforeWrite: Boolean): Array[Int] = {
-    validate("pre-bindSubject")
     // Subject is conflicting constant. No binding possible.
     if (toMatchS > 0) {
       return QueryParticle.failed
@@ -185,21 +177,14 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
         r
       }
     }
-    ParticleDebug.validate(currentParticle, "post-PotentialCopy")
 
     if (isBindingQuery) {
       val variableIndex = -(variable + 1)
-      ParticleDebug.validate(currentParticle, s"pre-writeBinding $variableIndex")
       currentParticle.writeBinding(variableIndex, boundValue)
-      ParticleDebug.validate(currentParticle, s"post-writeBinding $variableIndex")
     }
 
-    ParticleDebug.validate(currentParticle, "pre-bindVariablesinPatterns")
     currentParticle.bindVariablesInPatterns(variable, boundValue)
-    ParticleDebug.validate(currentParticle, "post-bindVariablesinPatterns")
-
     val result = currentParticle.bindPredicate(toMatchP, toMatchO, toBindP, toBindO, false)
-    ParticleDebug.validate(result, "post-bindSubject")
     result
   }
 
@@ -209,7 +194,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     toBindP: Int,
     toBindO: Int,
     copyBeforeWrite: Boolean): Array[Int] = {
-    validate("pre-bindPredicate")
     if (toMatchP == toBindP) { // Predicate is compatible constant. No binding necessary. 
       return bindObject(toMatchO, toBindO, copyBeforeWrite)
     }
@@ -242,7 +226,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     }
     currentParticle.bindVariablesInPatterns(variable, boundValue)
     val result = currentParticle.bindObject(toMatchO, toBindO, false)
-    ParticleDebug.validate(result, "post-bindPredicate")
     result
   }
 
@@ -250,7 +233,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     toMatchO: Int,
     toBindO: Int,
     copyBeforeWrite: Boolean): Array[Int] = {
-    validate("pre-bindObject")
     if (toMatchO == toBindO) { // Object is compatible constant. No binding necessary. 
       //      val result = {
       //        if (copyBeforeWrite) {
@@ -288,7 +270,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
       currentParticle.writeBinding(variableIndex, boundValue)
     }
     currentParticle.bindVariablesInPatterns(variable, boundValue)
-    ParticleDebug.validate(currentParticle, "post-bindObject")
     currentParticle
   }
 
@@ -300,7 +281,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
 
   def bindings: Array[Int] = {
     val numBindings = numberOfBindings
-    //ParticleDebug.validate(r, "pre-bindingExtraction")
     val b = new Array[Int](numBindings)
     System.arraycopy(r, 4, b, 0, numBindings)
     b
@@ -354,14 +334,12 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   def copyWithTickets(t: Long, complete: Boolean): Array[Int] = {
-    validate("pre-copyWithTickets")
     val newR = r.clone
     if (complete) {
       newR.writeTickets(t)
     } else {
       newR.writeTickets(-t)
     }
-    ParticleDebug.validate(newR, "post-copyWithTickets")
     newR
   }
 
@@ -379,10 +357,6 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   def lastPattern: TriplePattern = {
-    if (r.length < 7 + numberOfBindings) {
-      throw new Exception(s"There is no last pattern to access:" +
-        s"queryId=$queryId, tickets=$tickets numberOfBindings=$numberOfBindings length=${r.length}")
-    }
     val sIndex = r.length - 3
     val pIndex = r.length - 2
     val oIndex = r.length - 1
@@ -393,16 +367,9 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   def copyWithoutLastPattern: Array[Int] = {
-    validate("pre-copyWithoutLastPattern")
-    //assert(r.length >= 7 + numberOfBindings, "There is no TriplePattern to remove left.")
-    if (r.length < 7 + numberOfBindings) {
-      val debug = ParticleDebug(r)
-      throw new Exception(s"There is no TriplePattern to remove left: $r")
-    }
     val copyLength = r.length - 3
     val rCopy = new Array[Int](copyLength)
     System.arraycopy(r, 0, rCopy, 0, copyLength)
-    validate("post-copyWithoutLastPattern")
     rCopy
   }
 

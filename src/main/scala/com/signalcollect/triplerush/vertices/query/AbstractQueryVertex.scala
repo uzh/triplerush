@@ -60,7 +60,6 @@ abstract class AbstractQueryVertex[StateType](
   var optimizingDuration = 0l
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    println(s"Query vertex $id is executing query ${querySpecification.unmatched}")
     optimizingStartTime = System.nanoTime
     //TODO: Should we run an optimizer even for one-pattern queries?
     if (optimizer.isDefined && numberOfPatternsInOriginalQuery > 1) {
@@ -77,13 +76,11 @@ abstract class AbstractQueryVertex[StateType](
         } else {
           //at least one of the caches not defined
           val responsibleIndexId = patternWithWildcards.routingAddress
-          println(s"responsible index id for $triplePattern is $responsibleIndexId")
           responsibleIndexId match {
             case root @ TriplePattern(0, 0, 0) =>
               handleCardinalityReply(triplePattern, Int.MaxValue, None, graphEditor)
             case other =>
               //sending cardinalityrequest to responsibleIndex
-              println(s"Sending cardinality request for pattern $triplePattern to index vertex with id $responsibleIndexId")
               graphEditor.sendSignal(
                 CardinalityRequest(triplePattern, id),
                 responsibleIndexId, None)
@@ -106,7 +103,7 @@ abstract class AbstractQueryVertex[StateType](
         graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
       } else {
         dispatchedQuery = None
-        println(s"Query $id done because it has no patterns.")
+        //println(s"Query $id done because it has no patterns.")
         queryDone(graphEditor)
       }
     }
@@ -117,7 +114,7 @@ abstract class AbstractQueryVertex[StateType](
       case tickets: Long =>
         processTickets(tickets)
         if (receivedTickets == expectedTickets) {
-          println(s"Query $id done because it received all tickets")
+          //println(s"Query $id done because it received all tickets")
           queryDone(graphEditor)
         }
       case bindings: Array[_] =>
@@ -144,10 +141,6 @@ abstract class AbstractQueryVertex[StateType](
     cardinality: Long,
     edgeCountOption: Option[Long],
     graphEditor: GraphEditor[Any, Any]) = {
-
-    if(!forPattern.isValidQueryPattern){
-    	throw new Exception(s"Query Pattern: $forPattern is not valid and contains wildcards.")
-    }
     
     if (edgeCountOption.isDefined) {
       // TODO(Bibek): Make more elegant. 
@@ -161,7 +154,7 @@ abstract class AbstractQueryVertex[StateType](
     Cardinalities.add(forPattern.withVariablesAsWildcards, cardinality)
     if (cardinality == 0) {
       // 0 cardinality => no results => we're done.
-      println(s"Query $id done because it received cardinality 0 for pattern $forPattern")
+      //println(s"Query $id done because it received cardinality 0 for pattern $forPattern")
       queryDone(graphEditor)
     } else {
       gatheredCardinalities += 1
@@ -170,7 +163,7 @@ abstract class AbstractQueryVertex[StateType](
         if (dispatchedQuery.isDefined) {
           graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
         } else {
-          println("Query done because the optimizer got rid of it.")
+          //println("Query done because the optimizer got rid of it.")
           queryDone(graphEditor)
         }
       }
@@ -181,7 +174,6 @@ abstract class AbstractQueryVertex[StateType](
     val optimizedPatterns = optimizer.get.optimize(cardinalities, Some(edgeCounts))
     optimizingDuration = System.nanoTime - optimizingStartTime
     if (optimizedPatterns.length > 0) {
-      println(s"optimized patterns from query vertex $id: ${optimizedPatterns.toList}")
       val optimizedQuery = QueryParticle.fromSpecification(id, querySpecification.withUnmatchedPatterns(optimizedPatterns))
       Some(optimizedQuery)
     } else {

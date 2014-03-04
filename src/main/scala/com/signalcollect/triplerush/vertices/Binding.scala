@@ -25,7 +25,6 @@ import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.interfaces.Inspectable
 import com.signalcollect.Edge
-import com.signalcollect.triplerush.ParticleDebug
 
 trait Binding
   extends IndexVertex
@@ -101,10 +100,8 @@ trait Binding
   def routeSuccessfullyBound(
     boundParticle: Array[Int],
     graphEditor: GraphEditor[Any, Any]) {
-    val debug = ParticleDebug(boundParticle)
-    println(s"vertex $id successfully bound query $debug")
+
     if (boundParticle.isResult) {
-      println(s"${boundParticle.patterns} is considered a result")
       // Query successful, send to query vertex.
       if (boundParticle.isBindingQuery) {
         graphEditor.sendSignal(boundParticle, boundParticle.queryId, None)
@@ -113,7 +110,6 @@ trait Binding
         graphEditor.sendSignal(boundParticle.tickets, boundParticle.queryId, None)
       }
     } else {
-      println(s"$debug is not a result")
       graphEditor.sendSignal(boundParticle, boundParticle.routingAddress, None)
     }
   }

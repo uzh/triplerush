@@ -45,12 +45,9 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
         (patterns.toList, card, card, card)
       } else {
         val splits: Array[(TriplePattern, Set[TriplePattern])] = generateCombinations(patterns)
-        println(s"\tsplits: ${splits.mkString(" ")}")
         val minCostPossibilities = for (
           disjointOrder <- splits
         ) yield (costOfPatternGivenPrevious(disjointOrder._1, lookup(disjointOrder._2)))
-        
-        println(s"\tminCostPossibilities: ${minCostPossibilities.mkString(" ")}")
         
         val bestCost = minCostPossibilities.minBy(_._4)._4
         val multiplePatternListWithBestCost = minCostPossibilities.filter(_._4 == bestCost)
@@ -90,9 +87,7 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
         if (res._3 == 0) {
           (candidate :: previous._1, 0, 0, 0)
         } else {
-          (candidate :: previous._1, res._1, res._2, res._3)
-          //(candidate :: previous._1, res._1 + previous._2, res._2 + previous._3, res._3 + previous._4)
-          //(candidate :: previous._1, res._1 + previous._2, res._2 + previous._3, res._1 + previous._2 + res._2 + previous._3)
+          (candidate :: previous._1, res._1, res._2, previous._4 + res._3)
         }
       }
       cost
@@ -106,12 +101,8 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
      * 		cost of the order: size of frontier, exploration cost, totalcost
      */
     def costForPattern(candidate: TriplePattern, previous: (List[TriplePattern], Double, Double, Double)): (Double, Double, Double) = {
-      println(s"\tcost for candidate: $candidate, previous: ${previous._1.mkString(" ")}")
-      
       val exploreCost = previous._2 * exploreCostForCandidatePattern(candidate, previous._1)
-      println(s"\texploreCost: f(-1) * explore: $exploreCost")
       val frontierSize = frontierSizeForCandidatePattern(candidate, exploreCost, previous._1)
-      println(s"\tfrontier: $frontierSize")
       if (frontierSize == 0) {
         (0, 0, 0)
       } else {
@@ -127,19 +118,15 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
       val intersectionVariables = boundVariables.intersect(candidate.variableSet)
       //if all bound
       if ((intersectionVariables.size == candidate.variableSet.size) && candidate.p > 0) {
-        println("\t  explore: everthing bound: 1")
         1
       } //if o,p bound
       else if ((candidate.o > 0 || intersectionVariables.contains(candidate.o)) && candidate.p > 0) {
-        println(s"\t  explore: o,p bound, min(card, edgeCount): ${math.min(cardinalities(candidate), edgeCounts.get(TriplePattern(0, candidate.p, 0)))}")
         math.min(cardinalities(candidate), edgeCounts.get(TriplePattern(0, candidate.p, 0)))
       } //if s,p bound
       else if ((candidate.s > 0 || intersectionVariables.contains(candidate.s)) && candidate.p > 0) {
         val numberOfSubjects = 1 + (cardinalities(candidate) / edgeCounts.get(TriplePattern(0, candidate.p, 0)))
-        println(s"\t  explore: s,p bound, min(card, card/edgeCount): ${math.min(cardinalities(candidate), numberOfSubjects)}")
         math.min(cardinalities(candidate), numberOfSubjects)
       } else {
-        println(s"\t  explore: nothing bound, card: ${cardinalities(candidate)}")
         cardinalities(candidate)
       }
     }
@@ -149,15 +136,12 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
      */
     def frontierSizeForCandidatePattern(candidate: TriplePattern, exploreCostOfCandidate: Double, pickedPatterns: List[TriplePattern]): Double = {
       val boundVariables = pickedPatterns.foldLeft(Set.empty[Int]) { case (result, current) => result.union(current.variableSet) }
-
       //if either s or o is bound
       if ((candidate.o > 0 || candidate.s > 0 || boundVariables.contains(candidate.s) || boundVariables.contains(candidate.o)) && (candidate.p > 0)) {
         val minimumPredicateSelectivityCost = pickedPatterns.map { prev => calculatePredicateSelectivityCost(prev, candidate) }.min
-        println(s"\t  frontier: s or o bound, min(explore, selectivity($minimumPredicateSelectivityCost)): ${math.min(exploreCostOfCandidate, minimumPredicateSelectivityCost)}")
         math.min(exploreCostOfCandidate, minimumPredicateSelectivityCost)
       } //otherwise
       else {
-        println(s"\t  frontier: nothing bound, explore $exploreCostOfCandidate")
         exploreCostOfCandidate
       }
     }
@@ -208,11 +192,11 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
     val resultOrder = optimalOrder.toArray
     reverseMutableArray(resultOrder)
     
-    println(s"\tALL ORDERS: ${lookupTable.mkString("\n\t")}")
-    println(s"optimal order: ${resultOrder.mkString(" ")}")
-    println(s"cost of optimal order: ${optimalCombination._2}, ${optimalCombination._3}, ${optimalCombination._4}")
-    println(s"cardinalities: ${cardinalities.mkString(" ")}")
-    println("edgeCounts: " + edgeCounts.mkString(" ") + "\n")
+    //println(s"\tALL ORDERS: ${lookupTable.mkString("\n\t")}")
+    //println(s"optimal order: ${resultOrder.mkString(" ")}")
+    //println(s"cost of optimal order: ${optimalCombination._2}, ${optimalCombination._3}, ${optimalCombination._4}")
+    //println(s"cardinalities: ${cardinalities.mkString(" ")}")
+    //println("edgeCounts: " + edgeCounts.mkString(" ") + "\n")
     
     resultOrder
   }

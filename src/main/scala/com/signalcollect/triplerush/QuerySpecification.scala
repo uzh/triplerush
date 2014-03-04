@@ -32,10 +32,6 @@ case class QuerySpecification(
   tickets: Long = Long.MaxValue) {
 
   def withUnmatchedPatterns(u: Seq[TriplePattern]): QuerySpecification = {
-    if(!u.forall(tp => tp.s != 0 && tp.p != 0 && tp.o != 0)){
-      throw new Exception("TriplePatterns in queries can only contain variables and constants, never a wildcard.")
-    }
-    
     copy(unmatched = u)
   }
 
