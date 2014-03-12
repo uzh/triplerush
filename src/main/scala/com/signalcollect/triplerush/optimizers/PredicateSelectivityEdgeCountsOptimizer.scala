@@ -10,13 +10,15 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
    * returns optimal ordering of patterns based on predicate selectivity.
    * TODO: if the optimizer can infer that the query will have no result, then it will return an empty list of patterns
    */
-  
-  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Option[Map[TriplePattern, Long]]): Array[TriplePattern] = {
+
+  case class CostEstimate(frontier: Double, lastExploration: Double, explorationSum: Double)
+
+  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[TriplePattern, Long], maxObjectCounts: Map[TriplePattern, Long], maxSubjectCounts: Map[TriplePattern, Long]): Array[TriplePattern] = {
 
     def reverseMutableArray(arr: Array[TriplePattern]) {
       var fromStart = 0
       var fromEnd = arr.length - 1
-      while(fromStart < fromEnd){
+      while (fromStart < fromEnd) {
         val t = arr(fromStart)
         arr(fromStart) = arr(fromEnd)
         arr(fromEnd) = t
@@ -24,7 +26,7 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
         fromEnd -= 1
       }
     }
-    
+
     def generateCombinations(ps: Array[TriplePattern]): Array[(TriplePattern, Set[TriplePattern])] = {
       val s = ps.toSet
       for (item <- ps) yield (item, s - item)
@@ -38,35 +40,38 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
      * returns:
      * 		optimal ordering for the list of k-length pattern, and the following values: size of frontier, exploration cost, totalcost
      */
-    def costOfCombination(patterns: Array[TriplePattern], lookup: Map[Set[TriplePattern], (List[TriplePattern], Double, Double, Double)]): (List[TriplePattern], Double, Double, Double) = {
+    def costOfCombination(patterns: Array[TriplePattern], lookup: Map[Set[TriplePattern], (List[TriplePattern], CostEstimate)]): (List[TriplePattern], CostEstimate) = {
 
       if (patterns.length == 1) {
         val card = cardinalities(patterns(0))
-        (patterns.toList, card, card, card)
+        val exploreCost = exploreCostForCandidatePattern(patterns(0), List())
+        val frontier = frontierSizeForCandidatePattern(patterns(0), exploreCost, List())
+        (patterns.toList, CostEstimate(frontier, exploreCost, exploreCost))
       } else {
         val splits: Array[(TriplePattern, Set[TriplePattern])] = generateCombinations(patterns)
         val minCostPossibilities = for (
           disjointOrder <- splits
         ) yield (costOfPatternGivenPrevious(disjointOrder._1, lookup(disjointOrder._2)))
-        
-        val bestCost = minCostPossibilities.minBy(_._4)._4
-        val multiplePatternListWithBestCost = minCostPossibilities.filter(_._4 == bestCost)
+
+        val bestCost = minCostPossibilities.minBy(_._2.explorationSum)._2.explorationSum
+        val multiplePatternListWithBestCost = minCostPossibilities.filter(_._2.explorationSum == bestCost)
         val patternListWithBestCost = {
-          if (multiplePatternListWithBestCost.size > 1)
+          if (multiplePatternListWithBestCost.size > 1) {
             multiplePatternListWithBestCost.min(OrderingOfListOfTriplePattern)
-          else
-            minCostPossibilities.minBy(_._4)
+          } else {
+            minCostPossibilities.minBy(_._2.explorationSum)
+          }
         }
         if (bestCost == 0) {
-          (patternListWithBestCost._1, 0, 0, 0)
+          (patternListWithBestCost._1, CostEstimate(0, 0, 0))
         } else {
           patternListWithBestCost
         }
       }
     }
 
-    implicit object OrderingOfListOfTriplePattern extends Ordering[(List[TriplePattern], Double, Double, Double)] {
-      def compare(one: (List[TriplePattern], Double, Double, Double), other: (List[TriplePattern], Double, Double, Double)): Int = {
+    implicit object OrderingOfListOfTriplePattern extends Ordering[(List[TriplePattern], CostEstimate)] {
+      def compare(one: (List[TriplePattern], CostEstimate), other: (List[TriplePattern], CostEstimate)): Int = {
         if (cardinalities(one._1(0)) == cardinalities(other._1(0))) {
           cardinalities(one._1(1)).compare(cardinalities(other._1(1)))
         } else
@@ -81,13 +86,13 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
      * returns:
      * 		optimal ordering of candidate with previously picked patterns, together with the corresponding costs: size of frontier, exploration cost, totalcost
      */
-    def costOfPatternGivenPrevious(candidate: TriplePattern, previous: (List[TriplePattern], Double, Double, Double)): (List[TriplePattern], Double, Double, Double) = {
-      val cost: (List[TriplePattern], Double, Double, Double) = {
+    def costOfPatternGivenPrevious(candidate: TriplePattern, previous: (List[TriplePattern], CostEstimate)): (List[TriplePattern], CostEstimate) = {
+      val cost: (List[TriplePattern], CostEstimate) = {
         val res = costForPattern(candidate, previous)
-        if (res._3 == 0) {
-          (candidate :: previous._1, 0, 0, 0)
+        if (res.lastExploration == 0) {
+          (candidate :: previous._1, CostEstimate(0, 0, 0))
         } else {
-          (candidate :: previous._1, res._1, res._2, previous._4 + res._3)
+          (candidate :: previous._1, CostEstimate(res.frontier, res.lastExploration, res.explorationSum + previous._2.explorationSum))
         }
       }
       cost
@@ -100,13 +105,13 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
      * returns:
      * 		cost of the order: size of frontier, exploration cost, totalcost
      */
-    def costForPattern(candidate: TriplePattern, previous: (List[TriplePattern], Double, Double, Double)): (Double, Double, Double) = {
-      val exploreCost = previous._2 * exploreCostForCandidatePattern(candidate, previous._1)
+    def costForPattern(candidate: TriplePattern, previous: (List[TriplePattern], CostEstimate)): CostEstimate = {
+      val exploreCost = previous._2.frontier * exploreCostForCandidatePattern(candidate, previous._1)
       val frontierSize = frontierSizeForCandidatePattern(candidate, exploreCost, previous._1)
       if (frontierSize == 0) {
-        (0, 0, 0)
+        CostEstimate(0, 0, 0)
       } else {
-        (frontierSize, exploreCost, exploreCost)
+        CostEstimate(frontierSize, exploreCost, exploreCost)
       }
     }
 
@@ -116,17 +121,29 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
     def exploreCostForCandidatePattern(candidate: TriplePattern, pickedPatterns: List[TriplePattern]): Double = {
       val boundVariables = pickedPatterns.foldLeft(Set.empty[Int]) { case (result, current) => result.union(current.variableSet) }
       val intersectionVariables = boundVariables.intersect(candidate.variableSet)
+      val numberOfPredicates = predicateSelectivity.predicates.size
+      val predicateIndexForCandidate = TriplePattern(0, candidate.p, 0)
+      
+      val isSubjectBound = (candidate.s > 0 || intersectionVariables.contains(candidate.s))
+      val isObjectBound = (candidate.o > 0 || intersectionVariables.contains(candidate.o))
+
       //if all bound
       if ((intersectionVariables.size == candidate.variableSet.size) && candidate.p > 0) {
         1
-      } //if o,p bound
-      else if ((candidate.o > 0 || intersectionVariables.contains(candidate.o)) && candidate.p > 0) {
-        math.min(cardinalities(candidate), edgeCounts.get(TriplePattern(0, candidate.p, 0)))
-      } //if s,p bound
-      else if ((candidate.s > 0 || intersectionVariables.contains(candidate.s)) && candidate.p > 0) {
-        val numberOfSubjects = 1 + (cardinalities(candidate) / edgeCounts.get(TriplePattern(0, candidate.p, 0)))
-        math.min(cardinalities(candidate), numberOfSubjects)
-      } else {
+      } //s,p,*
+      else if (isSubjectBound && candidate.p > 0 && candidate.o < 0) {
+        math.min(cardinalities(candidate), maxObjectCounts(predicateIndexForCandidate))
+      } //*,p,o
+      else if (isObjectBound && candidate.p > 0 && candidate.s < 0) {
+        math.min(cardinalities(candidate), maxSubjectCounts(predicateIndexForCandidate))
+      } //s,*,o
+      else if (isSubjectBound && candidate.p < 0 && isObjectBound) {
+        math.min(cardinalities(candidate), numberOfPredicates)
+      } //*,p,*
+      else if (!isSubjectBound && candidate.p > 0 && !isObjectBound) {
+        math.min(cardinalities(candidate), edgeCounts(predicateIndexForCandidate) * maxSubjectCounts(predicateIndexForCandidate))
+      } //otherwise
+      else {
         cardinalities(candidate)
       }
     }
@@ -136,9 +153,15 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
      */
     def frontierSizeForCandidatePattern(candidate: TriplePattern, exploreCostOfCandidate: Double, pickedPatterns: List[TriplePattern]): Double = {
       val boundVariables = pickedPatterns.foldLeft(Set.empty[Int]) { case (result, current) => result.union(current.variableSet) }
-      //if either s or o is bound
-      if ((candidate.o > 0 || candidate.s > 0 || boundVariables.contains(candidate.s) || boundVariables.contains(candidate.o)) && (candidate.p > 0)) {
-        val minimumPredicateSelectivityCost = pickedPatterns.map { prev => calculatePredicateSelectivityCost(prev, candidate) }.min
+      
+      if(pickedPatterns.isEmpty){
+        exploreCostOfCandidate
+      }
+      //if either s or o is bound)
+      else if ((candidate.o > 0 || candidate.s > 0 || boundVariables.contains(candidate.s) || boundVariables.contains(candidate.o)) && (candidate.p > 0)) {
+        val minimumPredicateSelectivityCost = {
+          pickedPatterns.map { prev => calculatePredicateSelectivityCost(prev, candidate) }.min
+        }
         math.min(exploreCostOfCandidate, minimumPredicateSelectivityCost)
       } //otherwise
       else {
@@ -150,12 +173,18 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
       val upperBoundBasedOnPredicateSelectivity = (prev.s, prev.o) match {
         case (candidate.s, _) =>
           predicateSelectivity.outOut(prev.p, candidate.p)
+        //val edgeCountEstimate = math.min(edgeCounts.get(TriplePattern(0, prev.p, 0)), edgeCounts.get(TriplePattern(0, candidate.p, 0)))
+        //math.min(predicateSelectivity.outOut(prev.p, candidate.p), edgeCountEstimate)
         case (candidate.o, _) =>
           predicateSelectivity.outIn(prev.p, candidate.p)
+        //val edgeCountEstimate = edgeCounts.get(TriplePattern(0, prev.p, 0))
+        //math.min(predicateSelectivity.outIn(prev.p, candidate.p), edgeCountEstimate)
         case (_, candidate.o) =>
           predicateSelectivity.inIn(prev.p, candidate.p)
         case (_, candidate.s) =>
           predicateSelectivity.inOut(prev.p, candidate.p)
+        //val edgeCountEstimate = edgeCounts.get(TriplePattern(0, candidate.p, 0))
+        //math.min(predicateSelectivity.inOut(prev.p, candidate.p), edgeCountEstimate)
         case other =>
           Double.MaxValue
       }
@@ -176,14 +205,14 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
     /**
      * create a lookup table for optimal ordering and cost for each plan
      */
-    val lookupTable = patternWindows.foldLeft(Map.empty[Set[TriplePattern], (List[TriplePattern], Double, Double, Double)]) { case (result, current) => result + (current.toSet -> costOfCombination(current, result)) }
+    val lookupTable = patternWindows.foldLeft(Map.empty[Set[TriplePattern], (List[TriplePattern], CostEstimate)]) { case (result, current) => result + (current.toSet -> costOfCombination(current, result)) }
 
     /**
      * the optimal ordering for the query is the corresponding entry in the lookup table for the set of all patterns
      */
     val optimalCombination = lookupTable(triplePatterns.toSet)
     val optimalOrder = {
-      if (optimalCombination._4 == 0)
+      if (optimalCombination._2.explorationSum == 0)
         List()
       else
         optimalCombination._1
@@ -191,12 +220,16 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
 
     val resultOrder = optimalOrder.toArray
     reverseMutableArray(resultOrder)
-    
-    //println(s"\tALL ORDERS: ${lookupTable.mkString("\n\t")}")
-    //println(s"optimal order: ${resultOrder.mkString(" ")}")
-    //println(s"cost of optimal order: ${optimalCombination._2}, ${optimalCombination._3}, ${optimalCombination._4}")
-    //println(s"cardinalities: ${cardinalities.mkString(" ")}")
-    //println("edgeCounts: " + edgeCounts.mkString(" ") + "\n")
+
+    /*
+    println(s"\tALL ORDERS:\n\t${lookupTable.mkString("\n\t")}")
+    println(s"optimal order: ${resultOrder.mkString(" ")}")
+    println(s"cost of optimal order: ${optimalCombination._2}")
+    println(s"cardinalities: ${cardinalities.mkString(" ")}")
+    println("edgeCounts: " + edgeCounts.mkString(" "))
+    println("maxObjectCounts: " + maxObjectCounts.mkString(" "))
+    println("maxSubjectCounts: " + maxSubjectCounts.mkString(" ") + "\n")
+	*/
     
     resultOrder
   }

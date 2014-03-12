@@ -23,6 +23,8 @@ package com.signalcollect.triplerush.vertices
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.util.IntSet
+import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.SubjectCountSignal
 
 final class POIndex(id: TriplePattern) extends OptimizedIndexVertex(id)
   with Binding {
@@ -31,5 +33,12 @@ final class POIndex(id: TriplePattern) extends OptimizedIndexVertex(id)
 
   @inline def bindIndividualQuery(childDelta: Int, query: Array[Int]): Array[Int] = {
     query.bind(childDelta, id.p, id.o)
+  }
+
+  override def incrementParentIndexCardinalities(ge: GraphEditor[Any, Any]) {
+    for (parent <- id.parentPatterns) {
+      ge.sendSignal(1, parent, None)
+    }
+    ge.sendSignal(SubjectCountSignal(edgeCount), TriplePattern(0, id.p, 0), None)
   }
 }

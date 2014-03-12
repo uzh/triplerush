@@ -172,6 +172,8 @@ case class TripleRush(
   def shutdown = {
     Cardinalities.clear
     EdgeCounts.clear
+    ObjectCounts.clear
+    SubjectCounts.clear
     graph.shutdown
   }
 

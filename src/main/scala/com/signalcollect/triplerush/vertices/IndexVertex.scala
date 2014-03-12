@@ -35,6 +35,8 @@ import com.signalcollect.triplerush.ChildIdRequest
 import com.signalcollect.triplerush.ChildIdRequest
 import com.signalcollect.triplerush.CardinalityAndEdgeCountReply
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.ObjectCountSignal
+import com.signalcollect.triplerush.SubjectCountSignal
 
 /**
  * This vertex represents part of the TripleRush index.
@@ -50,6 +52,10 @@ abstract class IndexVertex(val id: TriplePattern)
   def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any])
 
   def handleCardinalityIncrement(i: Int) = {}
+  
+  def handleObjectCount(count: ObjectCountSignal) = {}
+  
+  def handleSubjectCount(count: SubjectCountSignal) = {}
 
   def cardinality: Int
 
@@ -80,6 +86,10 @@ abstract class IndexVertex(val id: TriplePattern)
         handleChildIdRequest(requestor, graphEditor)
       case cardinalityIncrement: Int =>
         handleCardinalityIncrement(cardinalityIncrement)
+      case count: ObjectCountSignal =>
+        handleObjectCount(count)
+      case count: SubjectCountSignal =>
+        handleSubjectCount(count)
       case other => throw new Exception(s"Unexpected signal @ $id: $other")
     }
     true

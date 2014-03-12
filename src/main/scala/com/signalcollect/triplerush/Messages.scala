@@ -22,6 +22,8 @@ package com.signalcollect.triplerush
 
 case class CardinalityRequest(forPattern: TriplePattern, requestor: Any)
 case class CardinalityReply(forPattern: TriplePattern, cardinality: Int)
-case class CardinalityAndEdgeCountReply(forPattern: TriplePattern, cardinality: Int, edgeCount: Int)
+case class CardinalityAndEdgeCountReply(forPattern: TriplePattern, cardinality: Int, edgeCount: Int, maxObjectCount: Int, maxSubjectCount: Int)
+case class ObjectCountSignal(count: Int)
+case class SubjectCountSignal(count: Int)
 case class ChildIdRequest(requestor: Any)
 case class ChildIdReply(ids: Set[Int])

@@ -7,8 +7,7 @@ import com.signalcollect.triplerush.TriplePattern
 
 class AdvancedOptimizer(pairwisePatternCardinalities: Map[Set[TriplePattern], Option[Long]]) extends Optimizer {
 
-  //bpo::
-  def optimize(cardinality: Map[TriplePattern, Long], edgeCounts: Option[Map[TriplePattern, Long]]): Array[TriplePattern] = {
+  def optimize(cardinality: Map[TriplePattern, Long], edgeCounts: Map[TriplePattern, Long], maxObjectCounts: Map[TriplePattern, Long], maxSubjectCounts: Map[TriplePattern, Long]): Array[TriplePattern] = {
 
     /**
      * Takes a list of optimized patterns, a set of unoptimized patterns, and

@@ -25,6 +25,8 @@ import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.CardinalityAndEdgeCountReply
+import com.signalcollect.triplerush.ObjectCountSignal
+import com.signalcollect.triplerush.SubjectCountSignal
 
 final class PIndex(id: TriplePattern) extends CardinalityCountingIndex(id)
   with Forwarding {
@@ -32,9 +34,20 @@ final class PIndex(id: TriplePattern) extends CardinalityCountingIndex(id)
   assert(id.s == 0 && id.p != 0 && id.o == 0)
   def nextRoutingAddress(childDelta: Int) = TriplePattern(childDelta, id.p, 0)
 
+  @transient var objectCountMap = Map[Int, Int]()
+  var maxObjectCount = 1
+  var maxSubjectCount = 1
+
   override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
     graphEditor.sendSignal(CardinalityAndEdgeCountReply(
-      c.forPattern, cardinality, edgeCount), c.requestor, None)
+      c.forPattern, cardinality, edgeCount, maxObjectCount, maxSubjectCount), c.requestor, None)
   }
-
+  
+  override def handleObjectCount(objCount: ObjectCountSignal) = {
+    if(objCount.count > maxObjectCount) maxObjectCount = objCount.count
+  }
+  
+  override def handleSubjectCount(subCount: SubjectCountSignal) = {
+    if(subCount.count > maxSubjectCount) maxSubjectCount = subCount.count
+  }
 }
