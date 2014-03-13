@@ -3,4 +3,4 @@ scala:
    - 2.10.3
 before_install:
   - git clone git://github.com/uzh/signal-collect.git ../signal-collect
-  - git clone git://github.com/uzh/signal-collect.git ../signal-collect-torque
+  - git clone git://github.com/uzh/signal-collect-torque.git ../signal-collect-torque
