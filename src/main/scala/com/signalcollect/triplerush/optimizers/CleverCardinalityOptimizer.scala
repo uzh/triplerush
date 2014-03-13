@@ -26,7 +26,7 @@ import scala.Array.canBuildFrom
 
 object CleverCardinalityOptimizer extends Optimizer {
 
-  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[TriplePattern, Long], maxObjectCounts: Map[TriplePattern, Long], maxSubjectCounts: Map[TriplePattern, Long]): Array[TriplePattern] = {
+  @inline def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[TriplePattern, Long], maxObjectCounts: Map[TriplePattern, Long], maxSubjectCounts: Map[TriplePattern, Long]): Array[TriplePattern] = {
     var sortedPatterns = cardinalities.toArray.sortBy(_._2)
     var boundVariables = Set[Int]() // The lower the score, the more constrained the variable.
     val optimizedPatterns = ArrayBuffer[TriplePattern]()

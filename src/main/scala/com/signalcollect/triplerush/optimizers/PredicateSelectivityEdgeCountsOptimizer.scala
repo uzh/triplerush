@@ -4,8 +4,9 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TriplePattern
+import scala.annotation.tailrec
 
-class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSelectivity) extends Optimizer {
+final class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSelectivity) extends Optimizer {
   /**
    * returns optimal ordering of patterns based on predicate selectivity.
    * TODO: if the optimizer can infer that the query will have no result, then it will return an empty list of patterns
@@ -13,9 +14,9 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
 
   case class CostEstimate(frontier: Double, lastExploration: Double, explorationSum: Double)
 
-  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[TriplePattern, Long], maxObjectCounts: Map[TriplePattern, Long], maxSubjectCounts: Map[TriplePattern, Long]): Array[TriplePattern] = {
+  @inline def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[TriplePattern, Long], maxObjectCounts: Map[TriplePattern, Long], maxSubjectCounts: Map[TriplePattern, Long]): Array[TriplePattern] = {
 
-    def reverseMutableArray(arr: Array[TriplePattern]) {
+    @inline def reverseMutableArray(arr: Array[TriplePattern]) {
       var fromStart = 0
       var fromEnd = arr.length - 1
       while (fromStart < fromEnd) {
@@ -27,7 +28,7 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
       }
     }
 
-    def generateCombinations(ps: Array[TriplePattern]): Array[(TriplePattern, Set[TriplePattern])] = {
+    @inline def generateCombinations(ps: Array[TriplePattern]): Array[(TriplePattern, Set[TriplePattern])] = {
       val s = ps.toSet
       for (item <- ps) yield (item, s - item)
     }
@@ -123,7 +124,7 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
       val intersectionVariables = boundVariables.intersect(candidate.variableSet)
       val numberOfPredicates = predicateSelectivity.predicates.size
       val predicateIndexForCandidate = TriplePattern(0, candidate.p, 0)
-      
+
       val isSubjectBound = (candidate.s > 0 || intersectionVariables.contains(candidate.s))
       val isObjectBound = (candidate.o > 0 || intersectionVariables.contains(candidate.o))
 
@@ -153,11 +154,10 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
      */
     def frontierSizeForCandidatePattern(candidate: TriplePattern, exploreCostOfCandidate: Double, pickedPatterns: List[TriplePattern]): Double = {
       val boundVariables = pickedPatterns.foldLeft(Set.empty[Int]) { case (result, current) => result.union(current.variableSet) }
-      
-      if(pickedPatterns.isEmpty){
+
+      if (pickedPatterns.isEmpty) {
         exploreCostOfCandidate
-      }
-      //if either s or o is bound)
+      } //if either s or o is bound)
       else if ((candidate.o > 0 || candidate.s > 0 || boundVariables.contains(candidate.s) || boundVariables.contains(candidate.o)) && (candidate.p > 0)) {
         val minimumPredicateSelectivityCost = {
           pickedPatterns.map { prev => calculatePredicateSelectivityCost(prev, candidate) }.min
@@ -185,37 +185,49 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
       upperBoundBasedOnPredicateSelectivity
     }
 
-    val triplePatterns = cardinalities.keys.toArray
+    if (cardinalities.size == 2) {
+      val i = cardinalities.iterator
+      val (k1, v1) = i.next
+      val (k2, v2) = i.next
+      val sel = calculatePredicateSelectivityCost(k1, k2)
+      if (sel == 0.0) {
+        Array()
+      } else if (v1 < v2) Array(k1, k2) else Array(k2, k1)
+    } else {
 
-    /**
-     * find all plans whose cost have to be calculated
-     * we'll store them in a lookup table
-     */
-    val patternWindows = for (
-      size <- 1 to triplePatterns.size;
-      window <- triplePatterns.combinations(size)
-    ) yield window
+      val triplePatterns = cardinalities.keys.toArray
 
-    /**
-     * create a lookup table for optimal ordering and cost for each plan
-     */
-    val lookupTable = patternWindows.foldLeft(Map.empty[Set[TriplePattern], (List[TriplePattern], CostEstimate)]) { case (result, current) => result + (current.toSet -> costOfCombination(current, result)) }
+      /**
+       * find all plans whose cost have to be calculated
+       * we'll store them in a lookup table
+       */
+      val patternWindows = for {
+        size <- 1 to triplePatterns.size
+        window <- triplePatterns.combinations(size)
+      } yield window
 
-    /**
-     * the optimal ordering for the query is the corresponding entry in the lookup table for the set of all patterns
-     */
-    val optimalCombination = lookupTable(triplePatterns.toSet)
-    val optimalOrder = {
-      if (optimalCombination._2.explorationSum == 0)
-        List()
-      else
-        optimalCombination._1
-    }
+      /**
+       * create a lookup table for optimal ordering and cost for each plan
+       */
+      val lookupTable = patternWindows.foldLeft(Map.empty[Set[TriplePattern], (List[TriplePattern], CostEstimate)]) {
+        case (result, current) => result + (current.toSet -> costOfCombination(current, result))
+      }
 
-    val resultOrder = optimalOrder.toArray
-    reverseMutableArray(resultOrder)
+      /**
+       * the optimal ordering for the query is the corresponding entry in the lookup table for the set of all patterns
+       */
+      val optimalCombination = lookupTable(triplePatterns.toSet)
+      val optimalOrder = {
+        if (optimalCombination._2.explorationSum == 0)
+          List()
+        else
+          optimalCombination._1
+      }
 
-    /*
+      val resultOrder = optimalOrder.toArray
+      reverseMutableArray(resultOrder)
+
+      /*
     println(s"\tALL ORDERS:\n\t${lookupTable.mkString("\n\t")}")
     println(s"optimal order: ${resultOrder.mkString(" ")}")
     println(s"cost of optimal order: ${optimalCombination._2}")
@@ -224,7 +236,8 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
     println("maxObjectCounts: " + maxObjectCounts.mkString(" "))
     println("maxSubjectCounts: " + maxSubjectCounts.mkString(" ") + "\n")
 	*/
-    
-    resultOrder
+
+      resultOrder
+    }
   }
 }
