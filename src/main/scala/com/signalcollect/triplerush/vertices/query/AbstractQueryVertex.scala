@@ -54,9 +54,9 @@ abstract class AbstractQueryVertex[StateType](
   var complete = true
 
   var cardinalities = Map.empty[TriplePattern, Long]
-  var subjectCounts = Map.empty[TriplePattern, Long]
-  var maxObjectCounts = Map.empty[TriplePattern, Long]
-  var maxSubjectCounts = Map.empty[TriplePattern, Long]
+  var subjectCounts = Map.empty[Int, Long]
+  var maxObjectCounts = Map.empty[Int, Long]
+  var maxSubjectCounts = Map.empty[Int, Long]
 
   var dispatchedQuery: Option[Array[Int]] = None
 
@@ -71,7 +71,7 @@ abstract class AbstractQueryVertex[StateType](
       querySpecification.unmatched foreach (triplePattern => {
         val patternWithWildcards = triplePattern.withVariablesAsWildcards
         val fromCache = Cardinalities(patternWithWildcards)
-        val pIndexForPattern = TriplePattern(0, patternWithWildcards.p, 0)
+        val pIndexForPattern = patternWithWildcards.p
         // TODO: What if p is not bound, will this do the right thing?
         val edgeCountsCache = EdgeCounts(pIndexForPattern)
         val objectCountsCache = ObjectCounts(pIndexForPattern)
@@ -159,7 +159,8 @@ abstract class AbstractQueryVertex[StateType](
       val maxObjectCount = maxObjectCountOption.get
       val maxSubjectCount = maxSubjectCountOption.get
       
-      val pIndexForPattern = TriplePattern(0, forPattern.p, 0)
+      val pIndexForPattern = forPattern.p
+      
       subjectCounts += pIndexForPattern -> edgeCount
       maxObjectCounts += pIndexForPattern -> maxObjectCount
       maxSubjectCounts += pIndexForPattern -> maxSubjectCount

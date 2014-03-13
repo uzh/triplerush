@@ -5,7 +5,7 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TripleRush
 
 trait Optimizer {
-  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[TriplePattern, Long], maxObjectCounts: Map[TriplePattern, Long], maxSubjectCounts: Map[TriplePattern, Long]): Array[TriplePattern]
+  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern]
   override def toString = this.getClass.toString
 }
 

@@ -26,7 +26,7 @@ import scala.Array.canBuildFrom
 object GreedyCardinalityOptimizer extends Optimizer {
 
   //bpo::
-  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[TriplePattern, Long], maxObjectCounts: Map[TriplePattern, Long], maxSubjectCounts: Map[TriplePattern, Long]): Array[TriplePattern] = {
+  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
     // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
     var sortedPatterns = cardinalities.toArray.sortBy(_._2)
     sortedPatterns.map(_._1)

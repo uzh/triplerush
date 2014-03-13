@@ -1,18 +1,18 @@
 package com.signalcollect.triplerush
 
 object SubjectCounts {
-  var cachedSubjectCounts = Map.empty[TriplePattern, Long]
+  var cachedSubjectCounts = Map.empty[Int, Long]
 
-  def apply(tp: TriplePattern): Option[Long] = {
-    cachedSubjectCounts.get(tp)
+  def apply(predicate: Int): Option[Long] = {
+    cachedSubjectCounts.get(predicate)
   }
 
-  def add(tp: TriplePattern, count: Long) {
-    cachedSubjectCounts += ((tp, count))
+  def add(predicate: Int, count: Long) {
+    cachedSubjectCounts += ((predicate, count))
   }
 
   def clear {
-    cachedSubjectCounts = Map.empty[TriplePattern, Long]
+    cachedSubjectCounts = Map.empty[Int, Long]
   }
  
 }

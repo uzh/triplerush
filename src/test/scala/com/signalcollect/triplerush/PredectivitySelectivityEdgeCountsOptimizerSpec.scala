@@ -110,9 +110,9 @@ class PredectivitySelectivityEdgeCountsOptimizerSpec extends FlatSpec with Check
     //val patterns = List(TriplePattern(s1, p1, z), TriplePattern(z, p4, y), TriplePattern(y, p3, x))
     val patterns = List(TriplePattern(s1, p1, z), TriplePattern(z, p4, y))
     val cardinalities = patterns.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
-    val edgeCounts = Map(TriplePattern(0, p1, 0) -> 2l, TriplePattern(0, p3, 0) -> 8l, TriplePattern(0, p4, 0) -> 6l)
-    val objectCounts = Map(TriplePattern(0, p1, 0) -> 9l, TriplePattern(0, p3, 0) -> 5l, TriplePattern(0, p4, 0) -> 9l)
-    val subjectCounts = Map(TriplePattern(0, p1, 0) -> 2l, TriplePattern(0, p3, 0) -> 8l, TriplePattern(0, p4, 0) -> 6l)
+    val edgeCounts = Map(p1 -> 2l, p3 -> 8l, p4 -> 6l)
+    val objectCounts = Map(p1 -> 9l, p3 -> 5l, p4 -> 9l)
+    val subjectCounts = Map(p1 -> 2l, p3 -> 8l, p4 -> 6l)
 
     val optimizedQuery = optimizer.optimize(cardinalities, edgeCounts, objectCounts, subjectCounts)
 
@@ -201,9 +201,9 @@ class PredectivitySelectivityEdgeCountsOptimizerSpec extends FlatSpec with Check
     val patterns = List(TriplePattern(s1, p1, z), TriplePattern(z, p4, y), TriplePattern(y, p3, x))
     //val patterns = List(TriplePattern(s1, p1, z), TriplePattern(z, p4, y))
     val cardinalities = patterns.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
-    val edgeCounts = Map(TriplePattern(0, p1, 0) -> 2l, TriplePattern(0, p3, 0) -> 8l, TriplePattern(0, p4, 0) -> 6l)
-    val objectCounts = Map(TriplePattern(0, p1, 0) -> 9l, TriplePattern(0, p3, 0) -> 5l, TriplePattern(0, p4, 0) -> 9l)
-    val subjectCounts = Map(TriplePattern(0, p1, 0) -> 2l, TriplePattern(0, p3, 0) -> 8l, TriplePattern(0, p4, 0) -> 6l)
+    val edgeCounts = Map(p1 -> 2l, p3 -> 8l, p4 -> 6l)
+    val objectCounts = Map(p1 -> 9l, p3 -> 5l, p4 -> 9l)
+    val subjectCounts = Map(p1 -> 2l, p3 -> 8l, p4 -> 6l)
     
     val optimizedQuery = optimizer.optimize(cardinalities, edgeCounts, objectCounts, subjectCounts)
     val costMap = computePlanAndCosts(stats, edgeCounts, objectCounts, subjectCounts, cardinalities)
@@ -236,20 +236,20 @@ class PredectivitySelectivityEdgeCountsOptimizerSpec extends FlatSpec with Check
         val stats = new PredicateSelectivity(tr)
         val optimizer = new PredicateSelectivityEdgeCountsOptimizer(stats)
 
-        def calculateEdgeCountOfPattern(tp: TriplePattern): Long = {
-          val pIndices = triples.filter(x => x.p == tp.p)
+        def calculateEdgeCountOfPattern(predicate: Int): Long = {
+          val pIndices = triples.filter(x => x.p == predicate)
           val setOfSubjects = pIndices.foldLeft(Set.empty[Int]) { case (result, current) => result + current.s }
           setOfSubjects.size
         }
         
-        def calculateObjectCountOfPattern(tp: TriplePattern): Long = {
-          val pIndices = triples.filter(x => x.p == tp.p)
+        def calculateObjectCountOfPattern(predicate: Int): Long = {
+          val pIndices = triples.filter(x => x.p == predicate)
           val setOfObjects = pIndices.foldLeft(Set.empty[Int]) { case (result, current) => result + current.o }
           setOfObjects.size
         }
         
-        def calculateSubjectCountOfPattern(tp: TriplePattern): Long = {
-          val pIndices = triples.filter(x => x.p == tp.p)
+        def calculateSubjectCountOfPattern(predicate: Int): Long = {
+          val pIndices = triples.filter(x => x.p == predicate)
           val setOfObjects = pIndices.foldLeft(Set.empty[Int]) { case (result, current) => result + current.s }
           setOfObjects.size
         }
@@ -261,9 +261,9 @@ class PredectivitySelectivityEdgeCountsOptimizerSpec extends FlatSpec with Check
         }
 
         val cardinalities = queries.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
-        val edgeCounts = queries.map(tp => (TriplePattern(0, tp.p, 0), calculateEdgeCountOfPattern(TriplePattern(0, tp.p, 0)))).toMap
-        val objectCounts = queries.map(tp => (TriplePattern(0, tp.p, 0), calculateObjectCountOfPattern(TriplePattern(0, tp.p, 0)))).toMap
-        val subjectCounts = queries.map(tp => (TriplePattern(0, tp.p, 0), calculateSubjectCountOfPattern(TriplePattern(0, tp.p, 0)))).toMap
+        val edgeCounts = queries.map(tp => (tp.p, calculateEdgeCountOfPattern(tp.p))).toMap
+        val objectCounts = queries.map(tp => (tp.p, calculateObjectCountOfPattern(tp.p))).toMap
+        val subjectCounts = queries.map(tp => (tp.p, calculateSubjectCountOfPattern(tp.p))).toMap
 
         if (cardinalities.forall(_._2 > 0) && cardinalities.size > 1 && cardinalities.forall(_._1.p > 0)) {
           val optimizedQuery = optimizer.optimize(cardinalities, edgeCounts, objectCounts, subjectCounts)
@@ -281,9 +281,9 @@ class PredectivitySelectivityEdgeCountsOptimizerSpec extends FlatSpec with Check
 
   def computePlanAndCosts(
       selectivityStats: PredicateSelectivity, 
-      edgeCounts: Map[TriplePattern, Long], 
-      objectCounts: Map[TriplePattern, Long],
-      subjectCounts: Map[TriplePattern, Long],
+      edgeCounts: Map[Int, Long], 
+      objectCounts: Map[Int, Long],
+      subjectCounts: Map[Int, Long],
       cardinalities: Map[TriplePattern, Long]
   ): Map[List[TriplePattern], CostEstimate] = {
     var costMap = Map[List[TriplePattern], CostEstimate]()
@@ -305,7 +305,7 @@ class PredectivitySelectivityEdgeCountsOptimizerSpec extends FlatSpec with Check
             val intersectingVariables = boundVariables.intersect(candidate.variableSet)
             def isSubjectBound = (candidate.s > 0 || intersectingVariables.contains(candidate.s))
             def isObjectBound = (candidate.o > 0 || intersectingVariables.contains(candidate.o))
-            val pIndex = TriplePattern(0, candidate.p, 0)
+            val pIndex = candidate.p
             
             val candidateFrontier = {
               //everything bound already

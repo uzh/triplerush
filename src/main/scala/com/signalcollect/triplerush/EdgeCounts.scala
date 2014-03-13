@@ -21,18 +21,18 @@ package com.signalcollect.triplerush
 
 object EdgeCounts {
 
-  var cachedEdgeCounts = Map.empty[TriplePattern, Long]
+  var cachedEdgeCounts = Map.empty[Int, Long]
 
-  def apply(tp: TriplePattern): Option[Long] = {
-    cachedEdgeCounts.get(tp)
+  def apply(predicate: Int): Option[Long] = {
+    cachedEdgeCounts.get(predicate)
   }
 
-  def add(tp: TriplePattern, edgeCount: Long) {
-    cachedEdgeCounts += ((tp, edgeCount))
+  def add(predicate: Int, edgeCount: Long) {
+    cachedEdgeCounts += ((predicate, edgeCount))
   }
 
   def clear {
-    cachedEdgeCounts = Map.empty[TriplePattern, Long]
+    cachedEdgeCounts = Map.empty[Int, Long]
   }
   
 }

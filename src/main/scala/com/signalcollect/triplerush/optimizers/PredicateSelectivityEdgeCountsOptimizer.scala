@@ -13,7 +13,7 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
 
   case class CostEstimate(frontier: Double, lastExploration: Double, explorationSum: Double)
 
-  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[TriplePattern, Long], maxObjectCounts: Map[TriplePattern, Long], maxSubjectCounts: Map[TriplePattern, Long]): Array[TriplePattern] = {
+  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
 
     def reverseMutableArray(arr: Array[TriplePattern]) {
       var fromStart = 0
@@ -122,7 +122,7 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
       val boundVariables = pickedPatterns.foldLeft(Set.empty[Int]) { case (result, current) => result.union(current.variableSet) }
       val intersectionVariables = boundVariables.intersect(candidate.variableSet)
       val numberOfPredicates = predicateSelectivity.predicates.size
-      val predicateIndexForCandidate = TriplePattern(0, candidate.p, 0)
+      val predicateIndexForCandidate = candidate.p
       
       val isSubjectBound = (candidate.s > 0 || intersectionVariables.contains(candidate.s))
       val isObjectBound = (candidate.o > 0 || intersectionVariables.contains(candidate.o))
