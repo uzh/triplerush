@@ -173,18 +173,12 @@ class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: PredicateSel
       val upperBoundBasedOnPredicateSelectivity = (prev.s, prev.o) match {
         case (candidate.s, _) =>
           predicateSelectivity.outOut(prev.p, candidate.p)
-        //val edgeCountEstimate = math.min(edgeCounts.get(TriplePattern(0, prev.p, 0)), edgeCounts.get(TriplePattern(0, candidate.p, 0)))
-        //math.min(predicateSelectivity.outOut(prev.p, candidate.p), edgeCountEstimate)
         case (candidate.o, _) =>
           predicateSelectivity.outIn(prev.p, candidate.p)
-        //val edgeCountEstimate = edgeCounts.get(TriplePattern(0, prev.p, 0))
-        //math.min(predicateSelectivity.outIn(prev.p, candidate.p), edgeCountEstimate)
         case (_, candidate.o) =>
           predicateSelectivity.inIn(prev.p, candidate.p)
         case (_, candidate.s) =>
           predicateSelectivity.inOut(prev.p, candidate.p)
-        //val edgeCountEstimate = edgeCounts.get(TriplePattern(0, candidate.p, 0))
-        //math.min(predicateSelectivity.inOut(prev.p, candidate.p), edgeCountEstimate)
         case other =>
           Double.MaxValue
       }
