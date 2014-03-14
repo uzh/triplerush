@@ -93,7 +93,7 @@ abstract class AbstractQueryVertex[StateType](
                 responsibleIndexId, None)
               if ((!edgeCountsCache.isDefined || !objectCountsCache.isDefined || !subjectCountsCache.isDefined) && responsibleIndexId != pIndexForPattern) {
                 //also sending cardinality request for pIndex
-                graphEditor.sendSignal(CardinalityRequest(triplePattern, id), pIndexForPattern, None)
+                graphEditor.sendSignal(CardinalityRequest(triplePattern, id), TriplePattern(0, pIndexForPattern, 0), None)
               } else if (edgeCountsCache.isDefined && objectCountsCache.isDefined && subjectCountsCache.isDefined) {
                 //edgecount cache seems populated
                 subjectCounts += pIndexForPattern -> edgeCountsCache.get
