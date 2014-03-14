@@ -34,7 +34,7 @@ case class QueryPlan(
  * the same id, if the newly inserted plan has a lower cost.
  *
  * Insert and remove are both O(log(n)).
- * 
+ *
  * If the heap is full, then the item in the last slot is dropped.
  */
 final class QueryPlanMinHeap(maxSize: Int) {
@@ -94,15 +94,16 @@ final class QueryPlanMinHeap(maxSize: Int) {
         // We need to drop an existing element.
         val droppedElement = r(index)
         indexMap -= droppedElement.id
-        indexMap += element.id -> index
-        r(index) = element
-        siftUp(index)
       } else {
-        indexMap += element.id -> index
-        r(index) = element
+        if (r(index) != NOTHING) {
+          println("last slot not free: " + r.toVector)
+        }
+        assert(r(index) == NOTHING)
         numberOfElements += 1
-        siftUp(index)
       }
+      indexMap += element.id -> index
+      r(index) = element
+      siftUp(index)
     }
   }
 
@@ -148,12 +149,14 @@ final class QueryPlanMinHeap(maxSize: Int) {
           }
         }
       } else if (left != NOTHING) {
+        // right == NOTHING
         val leftValue = left.cost
         if (leftValue < currentValue) {
           swap(index, leftIndex)
           siftDown(leftIndex)
         }
       } else if (right != NOTHING) {
+        // left == NOTHING
         val rightValue = right.cost
         if (rightValue < currentValue) {
           swap(index, rightIndex)
@@ -180,6 +183,9 @@ final class QueryPlanMinHeap(maxSize: Int) {
     if (index > 0) {
       val currentValue = r(index).cost
       val parentIndex = (index - 1) / 2
+      if (r(parentIndex) == null) {
+        println(r.toVector)
+      }
       val parentValue = r(parentIndex).cost
       if (parentValue > currentValue) {
         swap(index, parentIndex)
