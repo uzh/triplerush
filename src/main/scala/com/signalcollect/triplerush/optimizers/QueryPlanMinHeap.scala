@@ -34,6 +34,8 @@ case class QueryPlan(
  * the same id, if the newly inserted plan has a lower cost.
  *
  * Insert and remove are both O(log(n)).
+ * 
+ * If the heap is full, then the item in the last slot is dropped.
  */
 final class QueryPlanMinHeap(maxSize: Int) {
 
@@ -50,20 +52,14 @@ final class QueryPlanMinHeap(maxSize: Int) {
 
   // Removes all elements from the heap.
   def toSortedArray: Array[QueryPlan] = {
-    try {
-      val size = numberOfElements
-      val sorted = new Array[QueryPlan](size)
-      var i = 0
-      while (i < size) {
-        sorted(i) = remove
-        i += 1
-      }
-      sorted
-    } catch {
-      case t: Throwable =>
-        t.printStackTrace
-        throw t
+    val size = numberOfElements
+    val sorted = new Array[QueryPlan](size)
+    var i = 0
+    while (i < size) {
+      sorted(i) = remove
+      i += 1
     }
+    sorted
   }
 
   val r = new Array[QueryPlan](maxSize)
@@ -94,11 +90,19 @@ final class QueryPlanMinHeap(maxSize: Int) {
       }
     } else {
       val index = numberOfElements
-      assert(r(index) == NOTHING)
-      indexMap += element.id -> index
-      r(index) = element
-      numberOfElements += 1
-      siftUp(index)
+      if (numberOfElements == maxSize) {
+        // We need to drop an existing element.
+        val droppedElement = r(index)
+        indexMap -= droppedElement.id
+        indexMap += element.id -> index
+        r(index) = element
+        siftUp(index)
+      } else {
+        indexMap += element.id -> index
+        r(index) = element
+        numberOfElements += 1
+        siftUp(index)
+      }
     }
   }
 

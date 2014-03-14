@@ -134,7 +134,6 @@ final class GreedyExplorationOptimizer(predicateSelectivity: PredicateSelectivit
 
     val sizeOfFullPlan = cardinalities.size
 
-    // TODO: Ensure graceful dropping of bad plans when this is not enough.
     val planHeap = new QueryPlanMinHeap(100 * sizeOfFullPlan * sizeOfFullPlan)
 
     triplePatterns.foreach { tp =>
