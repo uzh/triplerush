@@ -30,6 +30,45 @@ object QueryIds {
   def nextCountQueryId: Int = minFullQueryId.decrementAndGet
 }
 
+object ParticleDebug {
+  def apply(p: Array[Int]): ParticleDebug = {
+    val particle = new QueryParticle(p)
+    ParticleDebug(
+      particle.queryId,
+      particle.tickets,
+      (-1 to -particle.bindings.length by -1).zip(particle.bindings).filter(_._2 != 0).toMap,
+      particle.patterns.toList.reverse,
+      particle.numberOfBindings,
+      particle.r.length - 4)
+  }
+
+  def validate(p: Array[Int], msg: String) {
+    if (p != null) {
+      import QueryParticle._
+      val validTotalLength = (p.length - 4 - p.numberOfBindings) % 3 == 0
+      val validNumberOfBindingsLength = (p.length - 4 - p.numberOfBindings) >= 0
+      if (!validTotalLength) {
+        val debug = ParticleDebug(p)
+        throw new Exception(s"$msg remaining length after numberofbindings not divisible by 3 (cannot represent TP): $debug")
+      }
+      if (!validNumberOfBindingsLength) {
+        val debug = ParticleDebug(p)
+        throw new Exception(s"$msg array too short to accomodate bindings $debug")
+      }
+    } else {
+      throw new Exception(s"$msg validate particle was null")
+    }
+  }
+}
+
+case class ParticleDebug(
+  id: Int,
+  tickets: Long,
+  bindings: Map[Int, Int],
+  unmatched: List[TriplePattern],
+  numberOfBindings: Int,
+  intsForBindingsAndUnmatched: Int)
+
 object QueryParticle {
   implicit def arrayToParticle(a: Array[Int]) = new QueryParticle(a)
 
@@ -69,12 +108,14 @@ object QueryParticle {
     tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
     bindings: Array[Int],
     unmatched: Seq[TriplePattern]): Array[Int] = {
+        
     val ints = 4 + bindings.length + 3 * unmatched.length
     val r = new Array[Int](ints)
     r.writeQueryId(queryId)
     r.writeTickets(tickets)
     r.writeBindings(bindings)
     r.writePatterns(unmatched)
+
     r
   }
 
@@ -94,6 +135,8 @@ object QueryParticle {
 class QueryParticle(val r: Array[Int]) extends AnyVal {
 
   import QueryParticle._
+
+  def validate(msg: String) = ParticleDebug.validate(r, msg)
 
   def isBindingQuery = queryId > 0
 
@@ -134,13 +177,15 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
         r
       }
     }
+
     if (isBindingQuery) {
       val variableIndex = -(variable + 1)
       currentParticle.writeBinding(variableIndex, boundValue)
     }
+
     currentParticle.bindVariablesInPatterns(variable, boundValue)
-    currentParticle.bindPredicate(toMatchP, toMatchO, toBindP, toBindO, false)
-    currentParticle
+    val result = currentParticle.bindPredicate(toMatchP, toMatchO, toBindP, toBindO, false)
+    result
   }
 
   def bindPredicate(
@@ -180,15 +225,14 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
       currentParticle.writeBinding(variableIndex, boundValue)
     }
     currentParticle.bindVariablesInPatterns(variable, boundValue)
-    currentParticle.bindObject(toMatchO, toBindO, false)
-    currentParticle
+    val result = currentParticle.bindObject(toMatchO, toBindO, false)
+    result
   }
 
   def bindObject(
     toMatchO: Int,
     toBindO: Int,
     copyBeforeWrite: Boolean): Array[Int] = {
-
     if (toMatchO == toBindO) { // Object is compatible constant. No binding necessary. 
       //      val result = {
       //        if (copyBeforeWrite) {

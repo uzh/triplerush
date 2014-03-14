@@ -32,14 +32,13 @@ import com.signalcollect.triplerush.loading.BinarySplitLoader
 import com.signalcollect.triplerush.loading.CountVerticesByType
 import com.signalcollect.triplerush.loading.EdgesPerIndexType
 import com.signalcollect.triplerush.loading.FileLoader
-import com.signalcollect.triplerush.optimizers.CleverPredicateSelectivityOptimizer
 import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.vertices.query.IndexQueryVertex
 import com.signalcollect.triplerush.vertices.query.ResultBindingQueryVertex
 import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
 import com.signalcollect.triplerush.vertices.RootIndex
-import com.signalcollect.triplerush.vertices.query.AdvancedPlanningQueryVertex
+import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
@@ -145,8 +144,7 @@ case class TripleRush(
 
   def executeQuery(q: QuerySpecification) = {
     if (optimizer.isEmpty) {
-      val stats = new PredicateSelectivity(this)
-      optimizer = Some(new CleverPredicateSelectivityOptimizer(stats))
+      optimizer = Some(CleverCardinalityOptimizer)
     }
     executeQuery(q, optimizer)
   }
@@ -167,25 +165,15 @@ case class TripleRush(
     (resultPromise.future, statsPromise.future)
   }
 
-  def execute(q: QuerySpecification): Traversable[Array[Int]] = {
-    val (resultFuture, statsFuture) = executeAdvancedPlanningQuery(q)
-    val result = Await.result(resultFuture, 7200.seconds)
-    result
-  }
-
-  def executeAdvancedPlanningQuery(q: QuerySpecification): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
-    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    val resultPromise = Promise[Traversable[Array[Int]]]()
-    val statsPromise = Promise[Map[Any, Any]]()
-    graph.addVertex(new AdvancedPlanningQueryVertex(q, resultPromise, statsPromise))
-    (resultPromise.future, statsPromise.future)
-  }
-
   def awaitIdle {
     graph.awaitIdle
   }
 
   def shutdown = {
+    Cardinalities.clear
+    EdgeCounts.clear
+    ObjectCounts.clear
+    SubjectCounts.clear
     graph.shutdown
   }
 

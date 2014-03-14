@@ -85,6 +85,7 @@ final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     targetId: Id,
     sourceId: Option[Id],
     blocking: Boolean = false) {
+    // If message is sent to a Query Vertex 
     if (targetId.isInstanceOf[Int]) {
       val tId = targetId.asInstanceOf[Int]
       signal match {
@@ -106,7 +107,9 @@ final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
         case other =>
           super.sendSignal(signal, targetId, sourceId, blocking)
       }
-    } else if (signal.isInstanceOf[Int]) {
+    } 
+    // If message is sent to an Index Vertex
+    else if (signal.isInstanceOf[Int]) {
       val t = targetId.asInstanceOf[TriplePattern]
       val oldCardinalities = aggregatedCardinalities(t)
       aggregatedCardinalities(t) = oldCardinalities + signal.asInstanceOf[Int]

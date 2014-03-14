@@ -34,6 +34,7 @@ final class ResultBindingQueryVertex(
   resultPromise: Promise[Traversable[Array[Int]]],
   statsPromise: Promise[Map[Any, Any]],
   optimizer: Option[Optimizer])
+  
   extends AbstractQueryVertex[ArrayOfArraysTraversable](querySpecification, optimizer) {
 
   val id = QueryIds.nextQueryId
@@ -63,7 +64,7 @@ final class ResultBindingQueryVertex(
         "optimizedQuery" -> ("Pattern matching order: " + {
           if (dispatchedQuery.isDefined) {
             new QueryParticle(dispatchedQuery.get).patterns.toList + "\nCardinalities: " + cardinalities.toString
-          } else { "the optimized was not run, probably one of the patterns had cardinality 0" }
+          } else { "the optimizer was not run, probably one of the patterns had cardinality 0" }
         })).withDefaultValue("")
       statsPromise.success(stats)
       super.queryDone(graphEditor)

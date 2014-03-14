@@ -29,7 +29,7 @@ class PredicateSelectivity(tr: TripleRush) {
   val x = -4
   val y = -5
 
-  def estimateBranchingFactor(explored: TriplePattern, next: TriplePattern): Long = {
+  /*def estimateBranchingFactor(explored: TriplePattern, next: TriplePattern): Long = {
     if (explored.p > 0 && next.p > 0) {
       next match {
         case TriplePattern(explored.s, explored.p, explored.o) =>
@@ -52,7 +52,7 @@ class PredicateSelectivity(tr: TripleRush) {
     } else {
       Long.MaxValue
     }
-  }
+  }*/
 
   val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0))
 

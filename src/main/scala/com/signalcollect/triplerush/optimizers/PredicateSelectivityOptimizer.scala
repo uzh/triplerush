@@ -9,7 +9,8 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
    * returns optimal ordering of patterns based on predicate selectivity.
    * TODO: if the optimizer can infer that the query will have no result, then it will return an empty list of patterns
    */
-  def optimize(cardinalities: Map[TriplePattern, Long]): Array[TriplePattern] = {
+  
+  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
 
     println("cardinalities: " + cardinalities.mkString(" "))
 

@@ -22,13 +22,23 @@ package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.ObjectCountSignal
 
 final class SPIndex(id: TriplePattern) extends OptimizedIndexVertex(id)
   with Binding {
 
   assert(id.s != 0 && id.p != 0 && id.o == 0)
-  
+
   @inline def bindIndividualQuery(childDelta: Int, query: Array[Int]): Array[Int] = {
     query.bind(id.s, id.p, childDelta)
+  }
+
+  override def incrementParentIndexCardinalities(ge: GraphEditor[Any, Any]) {
+    for (parent <- id.parentPatterns) {
+      ge.sendSignal(1, parent, None)
+    }
+    ge.sendSignal(ObjectCountSignal(edgeCount), TriplePattern(0, id.p, 0), None)
   }
 }

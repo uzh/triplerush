@@ -32,6 +32,14 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.vertices.BaseVertex
 import com.signalcollect.triplerush.Cardinalities
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.CardinalityAndEdgeCountReply
+import com.signalcollect.triplerush.EdgeCounts
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.CardinalityRequest
+import com.signalcollect.triplerush.ObjectCounts
+import com.signalcollect.triplerush.SubjectCounts
 
 abstract class AbstractQueryVertex[StateType](
   val querySpecification: QuerySpecification,
@@ -46,6 +54,10 @@ abstract class AbstractQueryVertex[StateType](
   var complete = true
 
   var cardinalities = Map.empty[TriplePattern, Long]
+  var subjectCounts = Map.empty[Int, Long]
+  var maxObjectCounts = Map.empty[Int, Long]
+  var maxSubjectCounts = Map.empty[Int, Long]
+
   var dispatchedQuery: Option[Array[Int]] = None
 
   var optimizingStartTime = 0l
@@ -53,23 +65,44 @@ abstract class AbstractQueryVertex[StateType](
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     optimizingStartTime = System.nanoTime
+    //TODO: Should we run an optimizer even for one-pattern queries?
     if (optimizer.isDefined && numberOfPatternsInOriginalQuery > 1) {
       // Gather pattern cardinalities.
       querySpecification.unmatched foreach (triplePattern => {
-        val fromCache = Cardinalities(triplePattern)
-        if (fromCache.isDefined) {
-          handleCardinalityReply(triplePattern, fromCache.get, graphEditor)
+        val patternWithWildcards = triplePattern.withVariablesAsWildcards
+        val fromCache = Cardinalities(patternWithWildcards)
+        val pIndexForPattern = patternWithWildcards.p
+        // TODO: What if p is not bound, will this do the right thing?
+        val edgeCountsCache = EdgeCounts(pIndexForPattern)
+        val objectCountsCache = ObjectCounts(pIndexForPattern)
+        val subjectCountsCache = SubjectCounts(pIndexForPattern)
+
+        if (fromCache.isDefined && edgeCountsCache.isDefined && subjectCountsCache.isDefined && objectCountsCache.isDefined) {
+          //caches defined
+          handleCardinalityReply(triplePattern, fromCache.get, edgeCountsCache, objectCountsCache, subjectCountsCache, graphEditor)
         } else {
-          val responsibleIndexId = triplePattern.routingAddress
+          //at least one of the caches not defined
+          val responsibleIndexId = patternWithWildcards.routingAddress
           responsibleIndexId match {
             case root @ TriplePattern(0, 0, 0) =>
-              handleCardinalityReply(triplePattern, Int.MaxValue, graphEditor)
+              handleCardinalityReply(triplePattern, Int.MaxValue, None, None, None, graphEditor)
             case other =>
+              //sending cardinalityrequest to responsibleIndex
               graphEditor.sendSignal(
                 CardinalityRequest(triplePattern, id),
                 responsibleIndexId, None)
+              if ((!edgeCountsCache.isDefined || !objectCountsCache.isDefined || !subjectCountsCache.isDefined) && responsibleIndexId != pIndexForPattern) {
+                //also sending cardinality request for pIndex
+                graphEditor.sendSignal(CardinalityRequest(triplePattern, id), TriplePattern(0, pIndexForPattern, 0), None)
+              } else if (edgeCountsCache.isDefined && objectCountsCache.isDefined && subjectCountsCache.isDefined) {
+                //edgecount cache seems populated
+                subjectCounts += pIndexForPattern -> edgeCountsCache.get
+                maxObjectCounts += pIndexForPattern -> objectCountsCache.get
+                maxSubjectCounts += pIndexForPattern -> subjectCountsCache.get
+              }
           }
         }
+
       })
     } else {
       // Dispatch the query directly.
@@ -79,6 +112,7 @@ abstract class AbstractQueryVertex[StateType](
         graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
       } else {
         dispatchedQuery = None
+        //println(s"Query $id done because it has no patterns.")
         queryDone(graphEditor)
       }
     }
@@ -89,6 +123,7 @@ abstract class AbstractQueryVertex[StateType](
       case tickets: Long =>
         processTickets(tickets)
         if (receivedTickets == expectedTickets) {
+          //println(s"Query $id done because it received all tickets")
           queryDone(graphEditor)
         }
       case bindings: Array[_] =>
@@ -97,7 +132,11 @@ abstract class AbstractQueryVertex[StateType](
         // TODO, Wrap the msg and also make this a long.
         handleResultCount(resultCount)
       case CardinalityReply(forPattern, cardinality) =>
-        handleCardinalityReply(forPattern, cardinality, graphEditor)
+        //received cardinality reply from: forPattern
+        handleCardinalityReply(forPattern, cardinality, None, None, None, graphEditor)
+      case CardinalityAndEdgeCountReply(forPattern, cardinality, edgeCount, maxObjectCount, maxSubjectCount) =>
+        //received cardinalityandedgecount reply from: forPattern
+        handleCardinalityReply(forPattern, cardinality, Some(edgeCount), Some(maxObjectCount), Some(maxSubjectCount), graphEditor)
     }
     true
   }
@@ -105,22 +144,46 @@ abstract class AbstractQueryVertex[StateType](
   def handleBindings(bindings: Array[Array[Int]])
 
   def handleResultCount(resultCount: Long)
-
+  
   def handleCardinalityReply(
     forPattern: TriplePattern,
     cardinality: Long,
+    edgeCountOption: Option[Long],
+    maxObjectCountOption: Option[Long],
+    maxSubjectCountOption: Option[Long],
     graphEditor: GraphEditor[Any, Any]) = {
+    
+    if (edgeCountOption.isDefined && maxObjectCountOption.isDefined) {
+      // TODO(Bibek): Make more elegant. 
+      val edgeCount = edgeCountOption.get
+      val maxObjectCount = maxObjectCountOption.get
+      val maxSubjectCount = maxSubjectCountOption.get
+      
+      val pIndexForPattern = forPattern.p
+      
+      subjectCounts += pIndexForPattern -> edgeCount
+      maxObjectCounts += pIndexForPattern -> maxObjectCount
+      maxSubjectCounts += pIndexForPattern -> maxSubjectCount
+      
+      EdgeCounts.add(pIndexForPattern, edgeCount)
+      ObjectCounts.add(pIndexForPattern, maxObjectCount)
+      SubjectCounts.add(pIndexForPattern, maxSubjectCount)
+    }
+
+    cardinalities += forPattern -> cardinality
+    Cardinalities.add(forPattern.withVariablesAsWildcards, cardinality)
     if (cardinality == 0) {
       // 0 cardinality => no results => we're done.
+      //println(s"Query $id done because it received cardinality 0 for pattern $forPattern")
       queryDone(graphEditor)
     } else {
-      cardinalities += forPattern -> cardinality
       gatheredCardinalities += 1
-      if (gatheredCardinalities == numberOfPatternsInOriginalQuery) {
+      if (!isQueryDone && gatheredCardinalities == numberOfPatternsInOriginalQuery) {
         dispatchedQuery = optimizeQuery
         if (dispatchedQuery.isDefined) {
           graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
         } else {
+          //println("Query done because the optimizer got rid of it.")
           queryDone(graphEditor)
         }
       }
@@ -128,7 +191,7 @@ abstract class AbstractQueryVertex[StateType](
   }
 
   def optimizeQuery: Option[Array[Int]] = {
-    val optimizedPatterns = optimizer.get.optimize(cardinalities)
+    val optimizedPatterns = optimizer.get.optimize(cardinalities, subjectCounts, maxObjectCounts, maxSubjectCounts)
     optimizingDuration = System.nanoTime - optimizingStartTime
     if (optimizedPatterns.length > 0) {
       val optimizedQuery = QueryParticle.fromSpecification(id, querySpecification.withUnmatchedPatterns(optimizedPatterns))

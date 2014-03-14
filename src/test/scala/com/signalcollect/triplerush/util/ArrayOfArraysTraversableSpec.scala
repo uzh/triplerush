@@ -1,6 +1,5 @@
 /*
  *  @author Philip Stutz
- *  @author Mihaela Verman
  *  
  *  Copyright 2013 University of Zurich
  *      
@@ -18,12 +17,16 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.util
 
-case class CardinalityRequest(forPattern: TriplePattern, requestor: Any)
-case class CardinalityReply(forPattern: TriplePattern, cardinality: Int)
-case class CardinalityAndEdgeCountReply(forPattern: TriplePattern, cardinality: Int, edgeCount: Int, maxObjectCount: Int, maxSubjectCount: Int)
-case class ObjectCountSignal(count: Int)
-case class SubjectCountSignal(count: Int)
-case class ChildIdRequest(requestor: Any)
-case class ChildIdReply(ids: Set[Int])
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+
+class ArrayOfArraysTraversableSpec extends FlatSpec with Matchers {
+
+  "ArrayOfArraysTraversable" should "have size 0 when no results are added" in {
+    val aoat = new ArrayOfArraysTraversable()
+    assert(aoat.size === 0)
+  }
+
+}
