@@ -29,42 +29,50 @@ class IgnoredBindingsSpec extends FlatSpec with Checkers {
 
   "Wildcards in a query" should "result in getting all the bindings for the non-ignored variables" in {
     val tr = new TripleRush
-    tr.addEncodedTriple(s1, p1, o1)
-    tr.addEncodedTriple(s2, p1, o2)
-    tr.addEncodedTriple(s1, p2, o3)
-    tr.addEncodedTriple(s1, p2, o4)
-    tr.addEncodedTriple(s3, p2, o10)
-    tr.addEncodedTriple(s2, p3, o5)
-    tr.addEncodedTriple(o5, p4, o6)
-    tr.addEncodedTriple(o4, p4, o7)
-    tr.addEncodedTriple(o3, p4, o8)
-    tr.addEncodedTriple(o10, p4, o11)
-    tr.addEncodedTriple(o3, p5, o9)
-    tr.addEncodedTriple(o10, p5, o9)
-    tr.prepareExecution
-    val queryToGetAllPredicates = QuerySpecification(List(TriplePattern(0, -1, 0)))
-    val allPredicateResult = tr.executeQuery(queryToGetAllPredicates, Some(CleverCardinalityOptimizer))
-    val predicates = getBindingsFor(-1, allPredicateResult)
-    predicates === Set(p1, p2, p3, p4, p5)
+    try {
+      tr.addEncodedTriple(s1, p1, o1)
+      tr.addEncodedTriple(s2, p1, o2)
+      tr.addEncodedTriple(s1, p2, o3)
+      tr.addEncodedTriple(s1, p2, o4)
+      tr.addEncodedTriple(s3, p2, o10)
+      tr.addEncodedTriple(s2, p3, o5)
+      tr.addEncodedTriple(o5, p4, o6)
+      tr.addEncodedTriple(o4, p4, o7)
+      tr.addEncodedTriple(o3, p4, o8)
+      tr.addEncodedTriple(o10, p4, o11)
+      tr.addEncodedTriple(o3, p5, o9)
+      tr.addEncodedTriple(o10, p5, o9)
+      tr.prepareExecution
+      val queryToGetAllPredicates = QuerySpecification(List(TriplePattern(0, -1, 0)))
+      val allPredicateResult = tr.executeQuery(queryToGetAllPredicates, Some(CleverCardinalityOptimizer))
+      val predicates = getBindingsFor(-1, allPredicateResult)
+      predicates === Set(p1, p2, p3, p4, p5)
+    } finally {
+      tr.shutdown
+    }
   }
 
   "An index query" should "be able to retrieve all predicates" in {
     val tr = new TripleRush
-    tr.addEncodedTriple(s1, p1, o1)
-    tr.addEncodedTriple(s2, p1, o2)
-    tr.addEncodedTriple(s1, p2, o3)
-    tr.addEncodedTriple(s1, p2, o4)
-    tr.addEncodedTriple(s3, p2, o10)
-    tr.addEncodedTriple(s2, p3, o5)
-    tr.addEncodedTriple(o5, p4, o6)
-    tr.addEncodedTriple(o4, p4, o7)
-    tr.addEncodedTriple(o3, p4, o8)
-    tr.addEncodedTriple(o10, p4, o11)
-    tr.addEncodedTriple(o3, p5, o9)
-    tr.addEncodedTriple(o10, p5, o9)
-    tr.prepareExecution
-    val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0))
-    predicates === Set(p1, p2, p3, p4, p5)
+    try {
+      tr.addEncodedTriple(s1, p1, o1)
+      tr.addEncodedTriple(s2, p1, o2)
+      tr.addEncodedTriple(s1, p2, o3)
+      tr.addEncodedTriple(s1, p2, o4)
+      tr.addEncodedTriple(s3, p2, o10)
+      tr.addEncodedTriple(s2, p3, o5)
+      tr.addEncodedTriple(o5, p4, o6)
+      tr.addEncodedTriple(o4, p4, o7)
+      tr.addEncodedTriple(o3, p4, o8)
+      tr.addEncodedTriple(o10, p4, o11)
+      tr.addEncodedTriple(o3, p5, o9)
+      tr.addEncodedTriple(o10, p5, o9)
+      tr.prepareExecution
+      val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0))
+      predicates === Set(p1, p2, p3, p4, p5)
+    } finally {
+      tr.shutdown
+    }
   }
 
   def getBindingsFor(variable: Int, bindings: Traversable[Array[Int]]): Set[Int] = {
