@@ -35,11 +35,12 @@ import com.signalcollect.triplerush.SparqlDsl._
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer
 import com.signalcollect.triplerush.optimizers.ExplorationOptimizer
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
 
 @RunWith(classOf[JUnitRunner])
-class GroundTruthSpec extends SpecificationWithJUnit {
-
-  sequential
+class GroundTruthSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
   //val enabledQueries = Set(1, 7)
@@ -180,143 +181,124 @@ WHERE
   ?X ub:telephone ?Y3}
 """)
 
-  "LUBM Query 1" should {
-    val queryId = 1
-    s"DSL-match the reference results $queryId" in {
-      //      print("Press any key to continue ...")
-      //      readLine
-      //      println(" Running.")
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 2" should {
-    val queryId = 2
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 3" should {
-    val queryId = 3
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 4" should {
-    val queryId = 4
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 5" should {
-    val queryId = 5
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 6" should {
-    val queryId = 6
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 7" should {
-    val queryId = 7
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 8" should {
-    val queryId = 8
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 9" should {
-    val queryId = 9
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 10" should {
-    val queryId = 10
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 11" should {
-    val queryId = 11
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 12" should {
-    val queryId = 12
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 13" should {
-    val queryId = 13
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
-  }
-  "LUBM Query 14" should {
-    val queryId = 14
-    s"DSL-match the reference results $queryId" in {
-      runTest(queryId, sparql = false)
-    }
-    s"SPARQL-match the reference results $queryId" in {
-      runTest(queryId, sparql = true)
-    }
+  "LUBM Query 1" should "DSL-match the reference results" in {
+    runTest(1, sparql = false)
   }
 
-  //  def toQuery(s: String): PatternQuery = PatternQueryParser.build(s) match {
-  //    case Left(q) => q
-  //    case Right(error) => throw new Exception(error)
-  //  }
+  it should "SPARQL-match the reference results" in {
+    runTest(1, sparql = true)
+  }
+
+  "LUBM Query 2" should "DSL-match the reference results" in {
+    runTest(2, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(2, sparql = true)
+  }
+
+  "LUBM Query 3" should "DSL-match the reference results" in {
+    runTest(3, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(3, sparql = true)
+  }
+
+  "LUBM Query 4" should "DSL-match the reference results" in {
+    runTest(4, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(4, sparql = true)
+  }
+
+  "LUBM Query 5" should "DSL-match the reference results" in {
+    runTest(5, sparql = false)
+  }
+
+  it should s"SPARQL-match the reference results" in {
+    runTest(5, sparql = true)
+  }
+
+  "LUBM Query 6" should "DSL-match the reference results" in {
+    runTest(6, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(6, sparql = true)
+  }
+
+  "LUBM Query 7" should "DSL-match the reference results" in {
+    runTest(7, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(7, sparql = true)
+  }
+
+  "LUBM Query 8" should "DSL-match the reference results" in {
+    runTest(8, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(8, sparql = true)
+  }
+
+  "LUBM Query 9" should "DSL-match the reference results" in {
+    runTest(9, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(9, sparql = true)
+  }
+
+  "LUBM Query 10" should "DSL-match the reference results" in {
+    runTest(10, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(10, sparql = true)
+  }
+
+  "LUBM Query 11" should "DSL-match the reference results" in {
+    runTest(11, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(11, sparql = true)
+  }
+
+  "LUBM Query 12" should "DSL-match the reference results" in {
+    runTest(12, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(12, sparql = true)
+  }
+
+  "LUBM Query 13" should "DSL-match the reference results" in {
+    runTest(13, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(13, sparql = true)
+  }
+
+  "LUBM Query 14" should "DSL-match the reference results" in {
+    runTest(14, sparql = false)
+  }
+
+  it should "SPARQL-match the reference results" in {
+    runTest(14, sparql = true)
+  }
 
   val qe = new TripleRush(graphBuilder = GraphBuilder.
     withMessageSerialization(false))
+
+  override def afterAll {
+    qe.shutdown
+  }
 
   println("Loading LUBM1 ... ")
   for (fileNumber <- 0 to 14) {
@@ -325,32 +307,11 @@ WHERE
   }
   qe.prepareExecution
   println("Finished loading LUBM1.")
-  //println("Computing predicate selectivities ...")
   val stats = new PredicateSelectivity(qe)
-  
-  //bpo::
+
   //val optimizer = CleverCardinalityOptimizer
-  val optimizer = new ExplorationOptimizer(stats)
-  
   //val optimizer = new CleverPredicateSelectivityOptimizer(stats)
-  //println("Done.")
-  //println(s"${stats.predicates.size} predicates: " + stats.predicates)
-  //  for (predicate <- stats.predicates) {
-  //    println(Mapping.getString(predicate))
-  //  }
-
-  //  val edgesPerType = qe.edgesPerIndexType
-  //  val verticesPerType = qe.countVerticesByType
-  //  println("Total edge count by vertex type:")
-  //  println(edgesPerType)
-  //  println("Cardinalities by vertex type:")
-  //  println(verticesPerType)
-  //  println("Avg. edge count per vertex type:")
-  //  val vertexTypes = edgesPerType.keys
-  //  val avgEdgeCount = vertexTypes.map(k => (k, edgesPerType(k).toDouble / verticesPerType(k)))
-  //  println(avgEdgeCount)
-
-  println("Done.")
+  val optimizer = new ExplorationOptimizer(stats)
 
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
     val (resultFuture, statsFuture) = qe.executeAdvancedQuery(q, Some(optimizer))
@@ -372,14 +333,11 @@ WHERE
   type Bindings = TreeMap[String, String]
   type QuerySolution = List[Bindings]
 
-  def runTest(queryId: Int, sparql: Boolean = false): MatchResult[Any] = {
-    println(s"executing query: $queryId");
+  def runTest(queryId: Int, sparql: Boolean = false) {
     if (enabledQueries.contains(queryId) && (dslEnabled && !sparql || sparqlEnabled && sparql)) {
       val referenceResult = referenceResults(queryId)
       val ourResult = executeOnQueryEngine(dslQueries(queryId - 1))
-      ourResult === referenceResult
-    } else {
-      "Test was not enabled" === "Test was not enabled"
+      assert(ourResult === referenceResult, s"TR result $ourResult for query $queryId did not match reference result $referenceResult.")
     }
   }
 
