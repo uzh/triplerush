@@ -39,9 +39,9 @@ class QueryPlanMinHeapSpec extends FlatSpec with ShouldMatchers with Checkers {
   "QueryPlanMinHeap" should "correctly sort query plans" in {
     check(
       (plans: Set[QueryPlan]) => {
-        val heap = new QueryPlanMinHeap(plans.size)
+        try {
+        val heap = new QueryPlanMinHeap(1)
         plans.foreach(heap.insert(_))
-        heap.validateIndexMap
         val byId: Map[_, List[QueryPlan]] = plans.toList.groupBy(_.id)
         val minPerId = byId.map(_._2.minBy(_.cost))
         val defaultSorted = minPerId.toList.sortBy(_.cost).map(_.cost)
@@ -49,6 +49,10 @@ class QueryPlanMinHeapSpec extends FlatSpec with ShouldMatchers with Checkers {
         val sortedWithHeap = heap.toSortedArray.toList.map(_.cost)
         //println("With heap: " + sortedWithHeap)
         sortedWithHeap === defaultSorted
+        } catch {
+          case t: Throwable => t.printStackTrace
+        }
+        true
       },
       minSuccessful(10000))
   }

@@ -6,7 +6,7 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TriplePattern
 import scala.annotation.tailrec
 
-final class GreedyExplorationOptimizer(predicateSelectivity: PredicateSelectivity) extends Optimizer {
+final class ExplorationOptimizer(predicateSelectivity: PredicateSelectivity) extends Optimizer {
 
   case class CostEstimate(frontier: Double, lastExploration: Double, explorationSum: Double)
 

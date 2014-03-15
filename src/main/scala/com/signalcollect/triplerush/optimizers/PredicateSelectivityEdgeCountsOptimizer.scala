@@ -14,7 +14,7 @@ final class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: Predic
 
   case class CostEstimate(frontier: Double, lastExploration: Double, explorationSum: Double)
 
-  @inline def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
+  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
 
   @inline def reverseMutableArray(arr: Array[TriplePattern]) {
       var fromStart = 0

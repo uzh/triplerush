@@ -22,6 +22,7 @@ package com.signalcollect.triplerush.optimizers
 import scala.annotation.tailrec
 import collection.mutable.Map
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.util.IntValueHashMap
 
 case class QueryPlan(
   id: Set[TriplePattern],
@@ -35,20 +36,15 @@ case class QueryPlan(
  *
  * Insert and remove are both O(log(n)).
  *
- * If the heap is full, then the item in the last slot is dropped.
  */
-final class QueryPlanMinHeap(maxSize: Int) {
+final class QueryPlanMinHeap(initialSize: Int) {
+
+  // TODO: Use IntValueHashMap instead?
+  //  var indexMap = new IntValueHashMap[Set[TriplePattern]](
+  //    initialSize = (initialSize * 1.3333).toInt,
+  //    rehashFraction = 0.75f)
 
   var indexMap = Map.empty[Set[TriplePattern], Int]
-
-  def validateIndexMap {
-    for ((key, value) <- indexMap) {
-      if (r(value).id != key) {
-        println(r.toVector + "\n" + indexMap)
-        throw new Exception("Mooh")
-      }
-    }
-  }
 
   // Removes all elements from the heap.
   def toSortedArray: Array[QueryPlan] = {
@@ -62,7 +58,7 @@ final class QueryPlanMinHeap(maxSize: Int) {
     sorted
   }
 
-  val r = new Array[QueryPlan](maxSize)
+  var r = new Array[QueryPlan](initialSize)
 
   var numberOfElements: Int = 0
   val NOTHING: QueryPlan = null.asInstanceOf[QueryPlan]
@@ -70,12 +66,21 @@ final class QueryPlanMinHeap(maxSize: Int) {
   def isEmpty: Boolean = numberOfElements == 0
 
   def remove: QueryPlan = {
-    assert(r(0) != NOTHING)
+    // Retrieve min.
     numberOfElements -= 1
     val result = r(0)
     indexMap -= result.id
-    r(0) = NOTHING
+
+    // Restore heap.
+    val lastElementIndex = numberOfElements
+    val lastElement = r(lastElementIndex)
+    // Move last element to the top of the heap and let it sift down.
+    r(0) = lastElement
+    r(lastElementIndex) = NOTHING
+    indexMap(lastElement.id) = 0
     siftDown(0)
+
+    // Return min.
     result
   }
 
@@ -89,18 +94,15 @@ final class QueryPlanMinHeap(maxSize: Int) {
         siftUp(indexOfExisting)
       }
     } else {
-      val index = numberOfElements
-      if (numberOfElements == maxSize) {
-        // We need to drop an existing element.
-        val droppedElement = r(index)
-        indexMap -= droppedElement.id
-      } else {
-        if (r(index) != NOTHING) {
-          println("last slot not free: " + r.toVector)
-        }
-        assert(r(index) == NOTHING)
-        numberOfElements += 1
+      if (numberOfElements == r.length) {
+        // Double heap size.
+        val newSize = r.length * 2
+        val oldR = r
+        r = new Array[QueryPlan](newSize)
+        System.arraycopy(oldR, 0, r, 0, numberOfElements)
       }
+      val index = numberOfElements
+      numberOfElements += 1
       indexMap += element.id -> index
       r(index) = element
       siftUp(index)
@@ -108,33 +110,14 @@ final class QueryPlanMinHeap(maxSize: Int) {
   }
 
   @tailrec def siftDown(index: Int) {
-    val leftIndex = 2 * index + 1
-    val rightIndex = leftIndex + 1
-    val current = r(index)
-    val left = if (leftIndex < maxSize) r(leftIndex) else NOTHING
-    val right = if (rightIndex < maxSize) r(rightIndex) else NOTHING
-    if (current == NOTHING) {
-      if (left != NOTHING && right != NOTHING) {
-        val leftValue = left.cost
-        val rightValue = right.cost
-        if (leftValue < rightValue) {
-          swap(index, leftIndex)
-          siftDown(leftIndex)
-        } else {
-          swap(index, rightIndex)
-          siftDown(rightIndex)
-        }
-      } else if (left != NOTHING) {
-        val leftValue = left.cost
-        swap(index, leftIndex)
-        siftDown(leftIndex)
-      } else if (right != NOTHING) {
-        swap(index, rightIndex)
-        siftDown(rightIndex)
-      }
-    } else {
+    if (index < numberOfElements) {
+      val leftIndex = 2 * index + 1
+      val rightIndex = leftIndex + 1
+      val current = r(index)
       val currentValue = r(index).cost
-      if (left != NOTHING && right != NOTHING) {
+      if (rightIndex < numberOfElements) {
+        val left = r(leftIndex)
+        val right = r(rightIndex)
         val leftValue = left.cost
         val rightValue = right.cost
         if (leftValue < rightValue) {
@@ -148,19 +131,13 @@ final class QueryPlanMinHeap(maxSize: Int) {
             siftDown(rightIndex)
           }
         }
-      } else if (left != NOTHING) {
+      } else if (leftIndex < numberOfElements) {
         // right == NOTHING
+        val left = r(leftIndex)
         val leftValue = left.cost
         if (leftValue < currentValue) {
           swap(index, leftIndex)
-          siftDown(leftIndex)
-        }
-      } else if (right != NOTHING) {
-        // left == NOTHING
-        val rightValue = right.cost
-        if (rightValue < currentValue) {
-          swap(index, rightIndex)
-          siftDown(rightIndex)
+          // No sift down necessary anymore, the element to the right is already null.
         }
       }
     }
@@ -170,22 +147,15 @@ final class QueryPlanMinHeap(maxSize: Int) {
     val r1 = r(i1)
     val r2 = r(i2)
     r(i1) = r2
-    if (r1 != NOTHING) {
-      indexMap(r1.id) = i2
-    }
     r(i2) = r1
-    if (r2 != NOTHING) {
-      indexMap(r2.id) = i1
-    }
+    indexMap(r1.id) = i2
+    indexMap(r2.id) = i1
   }
 
   @tailrec def siftUp(index: Int) {
     if (index > 0) {
       val currentValue = r(index).cost
       val parentIndex = (index - 1) / 2
-      if (r(parentIndex) == null) {
-        println(r.toVector)
-      }
       val parentValue = r(parentIndex).cost
       if (parentValue > currentValue) {
         swap(index, parentIndex)
