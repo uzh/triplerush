@@ -1,8 +1,10 @@
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.optimizers
 
 import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
-import org.scalacheck.Arbitrary
+import com.signalcollect.triplerush.PredicateSelectivity
+import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.triplerush.TriplePattern
 
 class PredicateSelectivitySpec extends FlatSpec with Checkers {
 
@@ -49,7 +51,7 @@ class PredicateSelectivitySpec extends FlatSpec with Checkers {
     tr.shutdown
   }
 
-    "PredicateSelectivity" should "correctly find the selectivity statistics" in {
+  "PredicateSelectivity" should "correctly find the selectivity statistics" in {
     val tr = new TripleRush
     tr.addEncodedTriple(s1, p1, o1)
     tr.addEncodedTriple(s1, p1, o2)
@@ -106,17 +108,17 @@ class PredicateSelectivitySpec extends FlatSpec with Checkers {
     tr.addEncodedTriple(o9, p3, o4)
     tr.addEncodedTriple(o10, p3, o3)
     tr.addEncodedTriple(o11, p3, o4)
-    
+
     tr.addEncodedTriple(o3, p5, o9)
     tr.addEncodedTriple(o10, p5, o9)
-    
+
     tr.prepareExecution
 
     val stats = new PredicateSelectivity(tr)
-    println(stats.inOut(p1,p4))
+    println(stats.inOut(p1, p4))
     tr.shutdown
-    }
-  
+  }
+
   it should "correctly compute predicate selectivity for all two-pattern combinations" in {
     val patternCombos = for {
       sFirst <- List(s1, s2)
@@ -128,22 +130,25 @@ class PredicateSelectivitySpec extends FlatSpec with Checkers {
     for (combo <- patternCombos) {
       // Test if stats are correct for this combo.
       val tr = new TripleRush
-      val (first, second) = combo
-      tr.addEncodedTriple(first.s, first.p, first.o)
-      tr.addEncodedTriple(second.s, second.p, second.o)
-      tr.prepareExecution
-      val stats = new PredicateSelectivity(tr)
-      // Ensure counts are correct for this pattern combo.
-      val outInResult = if (first.s == second.o) 1 else 0
-      val inOutResult = if (first.o == second.s) 1 else 0
-      val outOutResult = if (first.s == second.s) 1 else 0
-      val inInResult = if (first.o == second.o) 1 else 0
-      println(combo)
-      assert(stats.outIn(first.p, second.p) == outInResult)
-      assert(stats.inOut(first.p, second.p) == inOutResult)
-      assert(stats.outOut(first.p, second.p) == outOutResult)
-      assert(stats.inIn(first.p, second.p) == inInResult)
-      tr.shutdown
+      try {
+        val (first, second) = combo
+        tr.addEncodedTriple(first.s, first.p, first.o)
+        tr.addEncodedTriple(second.s, second.p, second.o)
+        tr.prepareExecution
+        val stats = new PredicateSelectivity(tr)
+        // Ensure counts are correct for this pattern combo.
+        val outInResult = if (first.s == second.o) 1 else 0
+        val inOutResult = if (first.o == second.s) 1 else 0
+        val outOutResult = if (first.s == second.s) 1 else 0
+        val inInResult = if (first.o == second.o) 1 else 0
+        println(combo)
+        assert(stats.outIn(first.p, second.p) == outInResult)
+        assert(stats.inOut(first.p, second.p) == inOutResult)
+        assert(stats.outOut(first.p, second.p) == outOutResult)
+        assert(stats.inIn(first.p, second.p) == inInResult)
+      } finally {
+        tr.shutdown
+      }
     }
   }
 }
