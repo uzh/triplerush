@@ -34,6 +34,7 @@ import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.SparqlDsl._
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer
+import com.signalcollect.triplerush.optimizers.ExplorationOptimizer
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends SpecificationWithJUnit {
@@ -329,7 +330,7 @@ WHERE
   
   //bpo::
   //val optimizer = CleverCardinalityOptimizer
-  val optimizer = new PredicateSelectivityEdgeCountsOptimizer(stats)
+  val optimizer = new ExplorationOptimizer(stats)
   
   //val optimizer = new CleverPredicateSelectivityOptimizer(stats)
   //println("Done.")
