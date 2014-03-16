@@ -49,8 +49,6 @@ case class TripleRush(
   // TODO: Handle root pattern(s).
   // TODO: Validate/simplify queries before executing them.
 
-  println("Graph engine is initializing ...")
-
   var canExecute = false
 
   val graph = graphBuilder.withConsole(console).
@@ -80,7 +78,6 @@ case class TripleRush(
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
-  println("TripleRush is ready.")
 
   def prepareExecution {
     graph.awaitIdle
