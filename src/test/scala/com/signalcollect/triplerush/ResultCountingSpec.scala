@@ -44,20 +44,23 @@ class ResultCountingSpec extends FlatSpec with Checkers {
   "Counting queries" should "report the same number of results as a normal query" in {
     check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
       val tr = new TripleRush
-      for (triple <- triples) {
-        tr.addEncodedTriple(triple.s, triple.p, triple.o)
+      try {
+        for (triple <- triples) {
+          tr.addEncodedTriple(triple.s, triple.p, triple.o)
+        }
+        tr.prepareExecution
+        val q = QuerySpecification(query)
+        val numberOfResultBindings = tr.executeQuery(q).size
+        //println(s"numberOfResultBindings=$numberOfResultBindings")
+        val countFuture = tr.executeCountingQuery(q)
+        val count = Await.result(countFuture, 7200.seconds)
+        //println(s"count=$count")
+        assert(count.isDefined && count.get === numberOfResultBindings)
+      } finally {
+        tr.shutdown
       }
-      tr.prepareExecution
-      val q = QuerySpecification(query)
-      val numberOfResultBindings = tr.executeQuery(q).size
-      //println(s"numberOfResultBindings=$numberOfResultBindings")
-      val countFuture = tr.executeCountingQuery(q)
-      val count = Await.result(countFuture, 7200.seconds)
-      //println(s"count=$count")
-      tr.shutdown
-      count.isDefined && count.get === numberOfResultBindings
       true
-    }, minSuccessful(1000))
+    }, minSuccessful(100))
   }
 
 }
