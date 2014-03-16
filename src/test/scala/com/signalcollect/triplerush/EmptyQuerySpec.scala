@@ -11,15 +11,14 @@ import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 class EmptyQuerySpec extends FlatSpec with Matchers {
 
   it should "correctly answer result counts for queries with zero results" in {
-
     val tr = new TripleRush
-
-    tr.prepareExecution
-    val query = List(TriplePattern(-1, 2, 3))
-    val result = tr.executeQuery(QuerySpecification(query), Some(CleverCardinalityOptimizer))
-
-    tr.shutdown
-    assert (result.size == 0)
+    try {
+      tr.prepareExecution
+      val query = List(TriplePattern(-1, 2, 3))
+      val result = tr.executeQuery(QuerySpecification(query), Some(CleverCardinalityOptimizer))
+    } finally {
+      tr.shutdown
+    }
   }
 
 }
