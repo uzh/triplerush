@@ -414,7 +414,7 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
       }
       tr.shutdown
       true
-    }, minSuccessful(10000))
+    }, minSuccessful(100))
   }
   * */
 

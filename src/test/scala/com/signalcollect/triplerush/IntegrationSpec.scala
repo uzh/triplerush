@@ -131,7 +131,7 @@ class IntegrationSpec extends FlatSpec with Checkers {
       val trResults = TestHelper.execute(new TripleRush, triples, query)
       assert(jenaResults === trResults, "TR should have the same result as Jena.")
       jenaResults === trResults
-    }, minSuccessful(1000))
+    }, minSuccessful(10))
   }
 
 }
