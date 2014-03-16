@@ -121,7 +121,7 @@ class IntegrationSpec extends FlatSpec with Checkers {
       new Jena,
       triples,
       List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25)))
-    assert(jenaResults === trResults)
+    assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
   }
 
   it should "correctly answer random queries with basic graph patterns" in {
@@ -129,7 +129,7 @@ class IntegrationSpec extends FlatSpec with Checkers {
       println(s"Query = $query")
       val jenaResults = TestHelper.execute(new Jena, triples, query)
       val trResults = TestHelper.execute(new TripleRush, triples, query)
-      assert(jenaResults === trResults, "TR should have the same result as Jena.")
+      assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
       jenaResults === trResults
     }, minSuccessful(10))
   }
