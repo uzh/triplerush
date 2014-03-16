@@ -68,10 +68,16 @@ class PredicateSelectivity(tr: TripleRush) {
   val queriesTotal = ps * (ps - 1) * 3
   val tickets = Long.MaxValue
   var queriesSoFar = 0
+  println(s"Gathering index statistics ...")
+  var lastPrintedProgressPercentage = 0.0
   for (p1 <- predicates) {
     for (p2 <- predicates) {
       if (p1 != p2) {
-        println(s"Stats gathering progress: $queriesSoFar/$queriesTotal ...")
+        val currentProgressPercentage = queriesSoFar / queriesTotal.toDouble
+        if (currentProgressPercentage - lastPrintedProgressPercentage >= 0.1) {
+          println(s"${(currentProgressPercentage * 100).toInt}%")
+          lastPrintedProgressPercentage = currentProgressPercentage
+        }
         val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y)), tickets)
         val outOutResult = tr.executeCountingQuery(outOutQuery, optimizer)
         val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y)), tickets)
@@ -91,6 +97,6 @@ class PredicateSelectivity(tr: TripleRush) {
         queriesSoFar += 3
       }
     }
-
   }
+  println(s"Index statistics complete, $queriesTotal queries were executed.")
 }
