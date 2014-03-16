@@ -43,20 +43,28 @@ class CountingQuerySpec extends FlatSpec with Checkers {
 
   "Counting Query" should "correctly answer a query for data that is not in the store" in {
     val tr = new TripleRush
-    val triples = Set(TriplePattern(1, 2, 3))
-    val query = List(TriplePattern(-1, 4, -1))
-    val trCount = TestHelper.count(tr, triples, query, false)
-    val trResults = TestHelper.execute(tr, triples, query)
-    assert(trResults.size === trCount)
+    try {
+      val triples = Set(TriplePattern(1, 2, 3))
+      val query = List(TriplePattern(-1, 4, -1))
+      val trCount = TestHelper.count(tr, triples, query, false)
+      val trResults = TestHelper.execute(tr, triples, query)
+      assert(trResults.size === trCount)
+    } finally {
+      tr.shutdown
+    }
   }
 
   it should "correctly answer a query for a specific pattern that exists" in {
     val tr = new TripleRush
-    val triples = Set(TriplePattern(1, 2, 3))
-    val query = List(TriplePattern(1, 2, 3))
-    val trCount = TestHelper.count(tr, triples, query, false)
-    val trResults = TestHelper.execute(tr, triples, query)
-    assert(trResults.size === trCount)
+    try {
+      val triples = Set(TriplePattern(1, 2, 3))
+      val query = List(TriplePattern(1, 2, 3))
+      val trCount = TestHelper.count(tr, triples, query, false)
+      val trResults = TestHelper.execute(tr, triples, query)
+      assert(trResults.size === trCount)
+    } finally {
+      tr.shutdown
+    }
   }
 
   it should "correctly answer a query for a specific pattern that does not exist" in {
@@ -70,44 +78,60 @@ class CountingQuerySpec extends FlatSpec with Checkers {
 
   it should "correctly answer a simple query 1" in {
     val tr = new TripleRush
-    val triples = Set(TriplePattern(4, 3, 4))
-    val query = List(TriplePattern(-1, 3, -1))
-    val trCount = TestHelper.count(tr, triples, query, false)
-    val trResults = TestHelper.execute(tr, triples, query)
-    assert(trResults.size === trCount)
+    try {
+      val triples = Set(TriplePattern(4, 3, 4))
+      val query = List(TriplePattern(-1, 3, -1))
+      val trCount = TestHelper.count(tr, triples, query, false)
+      val trResults = TestHelper.execute(tr, triples, query)
+      assert(trResults.size === trCount)
+    } finally {
+      tr.shutdown
+    }
   }
 
   it should "correctly answer a simple query 2" in {
     val tr = new TripleRush
-    val triples = Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
-      TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
-      TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
-    val query = List(TriplePattern(-2, -1, 3))
-    val trCount = TestHelper.count(tr, triples, query, false)
-    val trResults = TestHelper.execute(tr, triples, query)
-    assert(trResults.size === trCount)
+    try {
+      val triples = Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
+        TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
+        TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
+      val query = List(TriplePattern(-2, -1, 3))
+      val trCount = TestHelper.count(tr, triples, query, false)
+      val trResults = TestHelper.execute(tr, triples, query)
+      assert(trResults.size === trCount)
+    } finally {
+      tr.shutdown
+    }
   }
 
   it should "correctly answer a simple query, where one pattern is fully bound and that triple exists" in {
     val tr = new TripleRush
-    val triples = Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
-      TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
-      TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
-    val query = List(TriplePattern(3, 4, 2), TriplePattern(-2, -1, -3))
-    val trCount = TestHelper.count(tr, triples, query, false)
-    val trResults = TestHelper.execute(tr, triples, query)
-    assert(trResults.size === trCount)
+    try {
+      val triples = Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
+        TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
+        TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
+      val query = List(TriplePattern(3, 4, 2), TriplePattern(-2, -1, -3))
+      val trCount = TestHelper.count(tr, triples, query, false)
+      val trResults = TestHelper.execute(tr, triples, query)
+      assert(trResults.size === trCount)
+    } finally {
+      tr.shutdown
+    }
   }
 
   it should "correctly answer a simple query, where one pattern is fully bound and that triple does not exist" in {
     val tr = new TripleRush
-    val triples = Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
-      TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
-      TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
-    val query = List(TriplePattern(1, 2, 3), TriplePattern(-2, -1, 3))
-    val trCount = TestHelper.count(tr, triples, query, false)
-    val trResults = TestHelper.execute(tr, triples, query)
-    assert(trResults.size === trCount)
+    try {
+      val triples = Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
+        TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
+        TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
+      val query = List(TriplePattern(1, 2, 3), TriplePattern(-2, -1, 3))
+      val trCount = TestHelper.count(tr, triples, query, false)
+      val trResults = TestHelper.execute(tr, triples, query)
+      assert(trResults.size === trCount)
+    } finally {
+      tr.shutdown
+    }
   }
 
   it should "correctly answer a simple query over a lot of data" in {
@@ -132,7 +156,7 @@ class CountingQuerySpec extends FlatSpec with Checkers {
       val trCount = TestHelper.count(tr, triples, query, false)
       val trResults = TestHelper.execute(tr, triples, query)
       trResults.size === trCount
-    }, minSuccessful(1000))
+    }, minSuccessful(10))
   }
 
 }
