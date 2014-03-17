@@ -79,14 +79,14 @@ abstract class AbstractQueryVertex[StateType](
 
         if (fromCache.isDefined && edgeCountsCache.isDefined && subjectCountsCache.isDefined && objectCountsCache.isDefined) {
           //caches defined
-          handleCardinalityReply(triplePattern, fromCache.get, edgeCountsCache, objectCountsCache, subjectCountsCache, graphEditor)
+          handlePredicateStatsReply(triplePattern, fromCache.get, edgeCountsCache.get, objectCountsCache.get, subjectCountsCache.get, graphEditor)
         } else {
           //at least one of the caches not defined
           val responsibleIndexId = patternWithWildcards.routingAddress
           responsibleIndexId match {
             case TriplePattern(0, 0, 0) =>
               // root
-              handleCardinalityReply(triplePattern, Int.MaxValue, None, None, None, graphEditor)
+              handleCardinalityReply(triplePattern, Int.MaxValue, graphEditor)
             case other =>
               //sending cardinalityrequest to responsibleIndex
               graphEditor.sendSignal(
@@ -134,10 +134,10 @@ abstract class AbstractQueryVertex[StateType](
         handleResultCount(resultCount)
       case CardinalityReply(forPattern, cardinality) =>
         //received cardinality reply from: forPattern
-        handleCardinalityReply(forPattern, cardinality, None, None, None, graphEditor)
+        handleCardinalityReply(forPattern, cardinality, graphEditor)
       case CardinalityAndEdgeCountReply(forPattern, cardinality, edgeCount, maxObjectCount, maxSubjectCount) =>
         //received cardinalityandedgecount reply from: forPattern
-        handleCardinalityReply(forPattern, cardinality, Some(edgeCount), Some(maxObjectCount), Some(maxSubjectCount), graphEditor)
+        handlePredicateStatsReply(forPattern, cardinality, edgeCount, maxObjectCount, maxSubjectCount, graphEditor)
     }
     true
   }
@@ -146,31 +146,27 @@ abstract class AbstractQueryVertex[StateType](
 
   def handleResultCount(resultCount: Long)
 
+  def handlePredicateStatsReply(
+    forPattern: TriplePattern,
+    cardinality: Long,
+    edgeCount: Long,
+    maxObjectCount: Long,
+    maxSubjectCount: Long,
+    graphEditor: GraphEditor[Any, Any]) {
+    val pIndexForPattern = forPattern.p
+    subjectCounts += pIndexForPattern -> edgeCount
+    maxObjectCounts += pIndexForPattern -> maxObjectCount
+    maxSubjectCounts += pIndexForPattern -> maxSubjectCount
+    EdgeCounts.add(pIndexForPattern, edgeCount)
+    ObjectCounts.add(pIndexForPattern, maxObjectCount)
+    SubjectCounts.add(pIndexForPattern, maxSubjectCount)
+    handleCardinalityReply(forPattern, cardinality, graphEditor)
+  }
+
   def handleCardinalityReply(
     forPattern: TriplePattern,
     cardinality: Long,
-    edgeCountOption: Option[Long],
-    maxObjectCountOption: Option[Long],
-    maxSubjectCountOption: Option[Long],
     graphEditor: GraphEditor[Any, Any]) = {
-
-    if (edgeCountOption.isDefined && maxObjectCountOption.isDefined) {
-      // TODO(Bibek): Make more elegant. 
-      val edgeCount = edgeCountOption.get
-      val maxObjectCount = maxObjectCountOption.get
-      val maxSubjectCount = maxSubjectCountOption.get
-
-      val pIndexForPattern = forPattern.p
-
-      subjectCounts += pIndexForPattern -> edgeCount
-      maxObjectCounts += pIndexForPattern -> maxObjectCount
-      maxSubjectCounts += pIndexForPattern -> maxSubjectCount
-
-      EdgeCounts.add(pIndexForPattern, edgeCount)
-      ObjectCounts.add(pIndexForPattern, maxObjectCount)
-      SubjectCounts.add(pIndexForPattern, maxSubjectCount)
-    }
-
     cardinalities += forPattern -> cardinality
     Cardinalities.add(forPattern.withVariablesAsWildcards, cardinality)
     if (cardinality == 0) {
