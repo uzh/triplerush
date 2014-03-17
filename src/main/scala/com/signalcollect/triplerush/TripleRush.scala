@@ -70,6 +70,8 @@ case class TripleRush(
       "com.signalcollect.triplerush.CardinalityReply",
       "com.signalcollect.triplerush.ChildIdRequest",
       "com.signalcollect.triplerush.ChildIdReply",
+      "com.signalcollect.triplerush.SubjectCountSignal",
+      "com.signalcollect.triplerush.ObjectCountSignal",
       "Array[com.signalcollect.triplerush.TriplePattern]",
       "com.signalcollect.interfaces.SignalMessage$mcIJ$sp",
       "com.signalcollect.interfaces.AddEdge",
