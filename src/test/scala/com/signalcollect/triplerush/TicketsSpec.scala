@@ -38,25 +38,28 @@ class TicketsSpec extends FlatSpec with TestAnnouncements {
 
   "TripleRush" should "correctly answer a query with a limited number of tickets" in {
     val tr = new TripleRush
-    tr.addEncodedTriple(1, 2, 3)
-    tr.addEncodedTriple(4, 5, 6)
-    tr.prepareExecution
-    val q = QuerySpecification(List(TriplePattern(-1, -2, -3)), tickets = 1)
-    val results = tr.executeQuery(q)
-    val bindings: Set[Map[Int, Int]] = {
-      results.map({ binding: Array[Int] =>
-        // Only keep variable bindings that have an assigned value.
-        val filtered: Map[Int, Int] = {
-          (-1 to -binding.length by -1).
-            zip(binding).
-            filter(_._2 > 0).
-            toMap
-        }
-        filtered
-      }).toSet
+    try {
+      tr.addEncodedTriple(1, 2, 3)
+      tr.addEncodedTriple(4, 5, 6)
+      tr.prepareExecution
+      val q = QuerySpecification(List(TriplePattern(-1, -2, -3)), tickets = 1)
+      val results = tr.executeQuery(q)
+      val bindings: Set[Map[Int, Int]] = {
+        results.map({ binding: Array[Int] =>
+          // Only keep variable bindings that have an assigned value.
+          val filtered: Map[Int, Int] = {
+            (-1 to -binding.length by -1).
+              zip(binding).
+              filter(_._2 > 0).
+              toMap
+          }
+          filtered
+        }).toSet
+      }
+      assert(bindings.size === 1)
+    } finally {
+      tr.shutdown
     }
-    tr.shutdown
-    assert(bindings.size === 1)
   }
 
 }
