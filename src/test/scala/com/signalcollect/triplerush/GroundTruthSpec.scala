@@ -307,16 +307,9 @@ WHERE
   }
   qe.prepareExecution
   println("Finished loading LUBM1.")
-  val stats = new PredicateSelectivity(qe)
-
-  //val optimizer = CleverCardinalityOptimizer
-  //val optimizer = new CleverPredicateSelectivityOptimizer(stats)
-  val optimizer = new ExplorationOptimizer(stats)
 
   def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
-    val (resultFuture, statsFuture) = qe.executeAdvancedQuery(q, Some(optimizer))
-    val result = Await.result(resultFuture, DurationInt(7200).seconds)
-    //val result = qe.execute(q)
+    val result = qe.executeQuery(q)
     val bindings: List[Map[String, String]] = result.
       map(
         bindingsToMap(_).map(entry => (q.getString(entry._1), q.getString(entry._2)))).toList

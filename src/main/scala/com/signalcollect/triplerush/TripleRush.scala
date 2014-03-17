@@ -39,15 +39,12 @@ import com.signalcollect.triplerush.vertices.query.ResultBindingQueryVertex
 import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
 import com.signalcollect.triplerush.vertices.RootIndex
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
+import com.signalcollect.triplerush.optimizers.ExplorationOptimizerCreator
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
-  // TODO: Ensure placement of Query vertices on coordinator node.
-  //.withLoggingLevel(Logging.DebugLevel)
+  optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
   console: Boolean = false) extends QueryEngine {
-
-  // TODO: Handle root pattern(s).
-  // TODO: Validate/simplify queries before executing them.
 
   var canExecute = false
 
@@ -80,12 +77,14 @@ case class TripleRush(
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
+  var optimizer: Option[Optimizer] = None
 
   def prepareExecution {
     graph.awaitIdle
     graph.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
     graph.awaitIdle
     canExecute = true
+    optimizer = optimizerCreator(this)
   }
 
   def loadNtriples(ntriplesFilename: String, placementHint: Option[Any] = None) {
@@ -123,8 +122,6 @@ case class TripleRush(
     resultCountPromise.future
   }
 
-  var optimizer: Option[Optimizer] = None
-
   /**
    * Blocking version of 'executeIndexQuery'.
    */
@@ -142,9 +139,6 @@ case class TripleRush(
   }
 
   def executeQuery(q: QuerySpecification) = {
-    if (optimizer.isEmpty) {
-      optimizer = Some(CleverCardinalityOptimizer)
-    }
     executeQuery(q, optimizer)
   }
 

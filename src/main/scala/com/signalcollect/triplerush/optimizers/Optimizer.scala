@@ -21,7 +21,7 @@ object CleverOptimizerCreator extends Function1[TripleRush, Option[Optimizer]] {
   def apply(tr: TripleRush) = Some(CleverCardinalityOptimizer)
 }
 
-object GreedyExplorationOptimizerCreator extends Function1[TripleRush, Option[Optimizer]] {
+object ExplorationOptimizerCreator extends Function1[TripleRush, Option[Optimizer]] {
   def apply(tr: TripleRush) = {
     val stats = new PredicateSelectivity(tr)
     val optimizer = new ExplorationOptimizer(stats)
