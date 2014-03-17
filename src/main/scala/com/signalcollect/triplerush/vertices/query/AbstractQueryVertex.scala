@@ -49,7 +49,6 @@ abstract class AbstractQueryVertex[StateType](
   val numberOfPatternsInOriginalQuery = querySpecification.unmatched.length
 
   var gatheredCardinalities = 0
-  var isQueryDone = false
   var receivedTickets = 0l
   var complete = true
 
@@ -113,8 +112,9 @@ abstract class AbstractQueryVertex[StateType](
         graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
       } else {
         dispatchedQuery = None
-        //println(s"Query $id done because it has no patterns.")
-        queryDone(graphEditor)
+        // All stats processed, but no results, we can safely remove the query vertex now.
+        reportResults
+        requestQueryVertexRemoval(graphEditor)
       }
     }
   }
@@ -124,8 +124,8 @@ abstract class AbstractQueryVertex[StateType](
       case tickets: Long =>
         processTickets(tickets)
         if (receivedTickets == expectedTickets) {
-          //println(s"Query $id done because it received all tickets")
-          queryDone(graphEditor)
+          reportResults
+          requestQueryVertexRemoval(graphEditor)
         }
       case bindings: Array[_] =>
         handleBindings(bindings.asInstanceOf[Array[Array[Int]]])
@@ -163,26 +163,28 @@ abstract class AbstractQueryVertex[StateType](
     handleCardinalityReply(forPattern, cardinality, graphEditor)
   }
 
+  var queryMightHaveResults = true
+
   def handleCardinalityReply(
     forPattern: TriplePattern,
     cardinality: Long,
     graphEditor: GraphEditor[Any, Any]) = {
     cardinalities += forPattern -> cardinality
     Cardinalities.add(forPattern.withVariablesAsWildcards, cardinality)
+    gatheredCardinalities += 1
     if (cardinality == 0) {
       // 0 cardinality => no results => we're done.
-      //println(s"Query $id done because it received cardinality 0 for pattern $forPattern")
-      queryDone(graphEditor)
-    } else {
-      gatheredCardinalities += 1
-      if (!isQueryDone && gatheredCardinalities == numberOfPatternsInOriginalQuery) {
+      queryMightHaveResults = false
+      reportResults
+    } else if (gatheredCardinalities == numberOfPatternsInOriginalQuery) {
+      if (queryMightHaveResults) {
         dispatchedQuery = optimizeQuery
         if (dispatchedQuery.isDefined) {
           graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
-        } else {
-          //println("Query done because the optimizer got rid of it.")
-          queryDone(graphEditor)
         }
+      } else {
+        reportResults
+        requestQueryVertexRemoval(graphEditor)
       }
     }
   }
@@ -205,11 +207,19 @@ abstract class AbstractQueryVertex[StateType](
     }
   }
 
-  def queryDone(graphEditor: GraphEditor[Any, Any]) {
-    if (!isQueryDone) {
-      isQueryDone = true
+  var queryVertexRemovalRequested = false
+
+  def requestQueryVertexRemoval(graphEditor: GraphEditor[Any, Any]) {
+    if (!queryVertexRemovalRequested) {
       graphEditor.removeVertex(id)
     }
+    queryVertexRemovalRequested = true
+  }
+
+  var resultsReported = false
+
+  def reportResults {
+    resultsReported = true
   }
 
 }

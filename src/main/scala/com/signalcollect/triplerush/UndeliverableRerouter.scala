@@ -31,11 +31,7 @@ case object UndeliverableRerouter {
       case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
       case ChildIdRequest =>
-        graphEditor.sendSignal(ChildIdReply(Set()), sourceId.get, Some(targetId))
-      case c @ CardinalityReply =>
-      // Do nothing, query vertex has removed itself already because of a 0 cardinality pattern.
-      case c @ CardinalityAndEdgeCountReply =>
-      // Do nothing, query vertex has removed itself already because of a 0 cardinality pattern.      
+        graphEditor.sendSignal(ChildIdReply(Set()), sourceId.get, Some(targetId))    
       case other =>
         println(s"Failed signal delivery of $other of type ${other.getClass} to the vertex with id $targetId and sender id $sourceId.")
     }

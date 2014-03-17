@@ -54,8 +54,9 @@ final class ResultBindingQueryVertex(
     throw new UnsupportedOperationException("Result binding vertex should never receive a result count.")
   }
 
-  override def queryDone(graphEditor: GraphEditor[Any, Any]) {
-    if (!isQueryDone) {
+  override def reportResults {
+    if (!resultsReported) {
+      super.reportResults
       resultPromise.success(state)
       val stats = Map[Any, Any](
         "isComplete" -> complete,
@@ -67,7 +68,6 @@ final class ResultBindingQueryVertex(
           } else { "the optimizer was not run, probably one of the patterns had cardinality 0" }
         })).withDefaultValue("")
       statsPromise.success(stats)
-      super.queryDone(graphEditor)
     }
   }
 

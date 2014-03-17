@@ -51,14 +51,14 @@ final class ResultCountingQueryVertex(
     state += resultCount
   }
 
-  override def queryDone(graphEditor: GraphEditor[Any, Any]) {
-    if (!isQueryDone) {
+  override def reportResults {
+    if (!resultsReported) {
+      super.reportResults
       if (complete) {
         resultPromise.success(Some(state))
       } else {
         resultPromise.success(None)
       }
-      super.queryDone(graphEditor)
     }
   }
 
