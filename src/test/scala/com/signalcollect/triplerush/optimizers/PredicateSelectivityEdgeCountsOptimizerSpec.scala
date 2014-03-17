@@ -1,19 +1,18 @@
 package com.signalcollect.triplerush.optimizers
 
 import scala.annotation.migration
-
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen.containerOfN
 import org.scalatest.Finders
 import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
-
 import com.signalcollect.triplerush.PredicateSelectivity
 import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TripleGenerators.genTriple
 import com.signalcollect.triplerush.TripleGenerators.queryPatterns
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.triplerush.TripleGenerators._
 
 class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers {
 
@@ -245,7 +244,6 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
     }
   }
 
-  import TripleGenerators._
   lazy val genTriplesMore = containerOfN[List, TriplePattern](500, genTriple)
   implicit lazy val arbTriples = Arbitrary(genTriplesMore map (_.toSet))
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
