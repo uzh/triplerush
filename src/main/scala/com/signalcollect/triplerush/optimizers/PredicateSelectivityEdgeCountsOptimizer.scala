@@ -16,7 +16,7 @@ final class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: Predic
 
   def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
 
-  @inline def reverseMutableArray(arr: Array[TriplePattern]) {
+    @inline def reverseMutableArray(arr: Array[TriplePattern]) {
       var fromStart = 0
       var fromEnd = arr.length - 1
       while (fromStart < fromEnd) {
@@ -184,49 +184,39 @@ final class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: Predic
       upperBoundBasedOnPredicateSelectivity
     }
 
-    if (cardinalities.size == 2) {
-      val i = cardinalities.iterator
-      val (k1, v1) = i.next
-      val (k2, v2) = i.next
-      val sel = calculatePredicateSelectivityCost(k1, k2)
-      if (sel == 0.0) {
-        Array()
-      } else if (v1 < v2) Array(k1, k2) else Array(k2, k1)
-    } else {
+    val triplePatterns = cardinalities.keys.toArray
 
-      val triplePatterns = cardinalities.keys.toArray
+    /**
+     * find all plans whose cost have to be calculated
+     * we'll store them in a lookup table
+     */
+    val patternWindows = for {
+      size <- 1 to triplePatterns.size
+      window <- triplePatterns.combinations(size)
+    } yield window
 
-      /**
-       * find all plans whose cost have to be calculated
-       * we'll store them in a lookup table
-       */
-      val patternWindows = for {
-        size <- 1 to triplePatterns.size
-        window <- triplePatterns.combinations(size)
-      } yield window
+    /**
+     * create a lookup table for optimal ordering and cost for each plan
+     */
+    val lookupTable = patternWindows.foldLeft(Map.empty[Set[TriplePattern], (List[TriplePattern], CostEstimate)]) {
+      case (result, current) => result + (current.toSet -> costOfCombination(current, result))
+    }
 
-      /**
-       * create a lookup table for optimal ordering and cost for each plan
-       */
-      val lookupTable = patternWindows.foldLeft(Map.empty[Set[TriplePattern], (List[TriplePattern], CostEstimate)]) {
-        case (result, current) => result + (current.toSet -> costOfCombination(current, result))
-      }
+    /**
+     * the optimal ordering for the query is the corresponding entry in the lookup table for the set of all patterns
+     */
+    val optimalCombination = lookupTable(triplePatterns.toSet)
+    val optimalOrder = {
+      if (optimalCombination._2.explorationSum == 0)
+        List()
+      else
+        optimalCombination._1
+    }
 
-      /**
-       * the optimal ordering for the query is the corresponding entry in the lookup table for the set of all patterns
-       */
-      val optimalCombination = lookupTable(triplePatterns.toSet)
-      val optimalOrder = {
-        if (optimalCombination._2.explorationSum == 0)
-          List()
-        else
-          optimalCombination._1
-      }
+    val resultOrder = optimalOrder.toArray
+    reverseMutableArray(resultOrder)
 
-      val resultOrder = optimalOrder.toArray
-      reverseMutableArray(resultOrder)
-
-      /*
+    /*
     println(s"\tALL ORDERS:\n\t${lookupTable.mkString("\n\t")}")
     println(s"optimal order: ${resultOrder.mkString(" ")}")
     println(s"cost of optimal order: ${optimalCombination._2}")
@@ -236,7 +226,6 @@ final class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: Predic
     println("maxSubjectCounts: " + maxSubjectCounts.mkString(" ") + "\n")
 	*/
 
-      resultOrder
-    }
+    resultOrder
   }
 }
