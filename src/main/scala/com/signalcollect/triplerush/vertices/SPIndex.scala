@@ -35,10 +35,13 @@ final class SPIndex(id: TriplePattern) extends OptimizedIndexVertex(id)
     query.bind(id.s, id.p, childDelta)
   }
 
-  override def incrementParentIndexCardinalities(ge: GraphEditor[Any, Any]) {
-    for (parent <- id.parentPatterns) {
-      ge.sendSignal(1, parent, None)
-    }
+  override def onEdgeAdded(ge: GraphEditor[Any, Any]) {
+    incrementParentIndexCardinalities(ge)
+    updatePredicateObjectCount(ge)
+  }
+  
+  def updatePredicateObjectCount(ge: GraphEditor[Any, Any]) {
     ge.sendSignal(ObjectCountSignal(edgeCount), TriplePattern(0, id.p, 0), None)
   }
+
 }

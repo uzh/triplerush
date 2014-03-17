@@ -33,6 +33,8 @@ import org.scalacheck.Prop
 import org.openrdf.query.QueryResult
 import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
+import com.signalcollect.triplerush.optimizers.CleverOptimizerCreator
+import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 
 class ResultCountingSpec extends FlatSpec with Checkers with TestAnnouncements {
 

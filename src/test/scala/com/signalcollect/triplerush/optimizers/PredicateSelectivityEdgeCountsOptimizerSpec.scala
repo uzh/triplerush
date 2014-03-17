@@ -245,7 +245,7 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
     }
   }
 
-  lazy val genTriplesMore = containerOfN[List, TriplePattern](500, genTriple)
+  lazy val genTriplesMore = containerOfN[List, TriplePattern](100, genTriple)
   implicit lazy val arbTriples = Arbitrary(genTriplesMore map (_.toSet))
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
   //implicit lazy val genQueries = containerOfN[List, TriplePattern](10, genQueryPattern)

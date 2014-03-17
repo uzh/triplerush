@@ -57,7 +57,7 @@ class PredicateSelectivity(tr: TripleRush) {
   val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0))
 
   val ps = predicates.size
-  println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
+//  println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
 
   var outOut = Map[(Int, Int), Long]().withDefaultValue(0l)
   var inOut = Map[(Int, Int), Long]().withDefaultValue(0l)
@@ -68,16 +68,16 @@ class PredicateSelectivity(tr: TripleRush) {
   val queriesTotal = ps * (ps - 1) * 3
   val tickets = Long.MaxValue
   var queriesSoFar = 0
-  println(s"Gathering index statistics ...")
-  var lastPrintedProgressPercentage = 0.0
+  //println(s"Gathering index statistics ...")
+//  var lastPrintedProgressPercentage = 0.0
   for (p1 <- predicates) {
     for (p2 <- predicates) {
       if (p1 != p2) {
-        val currentProgressPercentage = queriesSoFar / queriesTotal.toDouble
-        if (currentProgressPercentage - lastPrintedProgressPercentage >= 0.1) {
-          println(s"${(currentProgressPercentage * 100).toInt}%")
-          lastPrintedProgressPercentage = currentProgressPercentage
-        }
+//        val currentProgressPercentage = queriesSoFar / queriesTotal.toDouble
+//        if (currentProgressPercentage - lastPrintedProgressPercentage >= 0.1) {
+//          //println(s"${(currentProgressPercentage * 100).toInt}%")
+//          lastPrintedProgressPercentage = currentProgressPercentage
+//        }
         val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y)), tickets)
         val outOutResult = tr.executeCountingQuery(outOutQuery, optimizer)
         val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y)), tickets)
@@ -98,5 +98,5 @@ class PredicateSelectivity(tr: TripleRush) {
       }
     }
   }
-  println(s"Index statistics complete, $queriesTotal queries were executed.")
+  //println(s"Index statistics complete, $queriesTotal queries were executed.")
 }

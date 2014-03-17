@@ -30,6 +30,8 @@ trait Binding
   extends IndexVertex
   with ParentBuilding[Any, Any] {
 
+  def onEdgeAdded(ge: GraphEditor[Any, Any])
+
   def incrementParentIndexCardinalities(ge: GraphEditor[Any, Any]) {
     for (parent <- id.parentPatterns) {
       ge.sendSignal(1, parent, None)
@@ -45,7 +47,7 @@ trait Binding
   override def addEdge(e: Edge[_], ge: GraphEditor[Any, Any]): Boolean = {
     val wasAdded = super.addEdge(e, ge)
     if (wasAdded) {
-      incrementParentIndexCardinalities(ge)
+      onEdgeAdded(ge)
     }
     wasAdded
   }

@@ -35,10 +35,20 @@ final class POIndex(id: TriplePattern) extends OptimizedIndexVertex(id)
     query.bind(childDelta, id.p, id.o)
   }
 
-  override def incrementParentIndexCardinalities(ge: GraphEditor[Any, Any]) {
-    for (parent <- id.parentPatterns) {
-      ge.sendSignal(1, parent, None)
-    }
+  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    super.afterInitialization(graphEditor)
+    // We need to create the pIndex to ensure it exists before the index cardinalities are updated.
+    val pIndex = new PIndex(TriplePattern(0, id.p, 0))
+    graphEditor.addVertex(pIndex)
+  }
+
+  override def onEdgeAdded(ge: GraphEditor[Any, Any]) {
+    incrementParentIndexCardinalities(ge)
+    updatePredicateSubjectCount(ge)
+  }
+
+  def updatePredicateSubjectCount(ge: GraphEditor[Any, Any]) {
     ge.sendSignal(SubjectCountSignal(edgeCount), TriplePattern(0, id.p, 0), None)
   }
+
 }

@@ -32,6 +32,8 @@ final class SOIndex(id: TriplePattern) extends SearchableIndexVertex(id)
 
   assert(id.s != 0 && id.p == 0 && id.o != 0)
 
+  override def onEdgeAdded(ge: GraphEditor[Any, Any]) {}
+
   /**
    * Need to check if the pattern is fully bound, then answer with appropriate cardinality.
    */
