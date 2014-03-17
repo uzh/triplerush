@@ -64,9 +64,6 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
     val node1 = nodeId(m.getWorkerIdForVertexId(TriplePattern(1, 2, 0)))
     val node2 = nodeId(m.getWorkerIdForVertexId(TriplePattern(2, 5, 0)))
     val node3 = nodeId(m.getWorkerIdForVertexId(TriplePattern(3, 5, 0)))
-    println(node1)
-    println(node2)
-    println(node3)
     node1 != node2
     node2 != node3
     node1 != node3
