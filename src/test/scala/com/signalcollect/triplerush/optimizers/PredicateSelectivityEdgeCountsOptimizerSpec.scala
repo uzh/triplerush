@@ -1,14 +1,19 @@
 package com.signalcollect.triplerush.optimizers
 
+import scala.annotation.migration
+
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen.containerOfN
+import org.scalatest.Finders
 import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
-import org.scalacheck.Arbitrary
-import org.scalacheck.Gen._
+
 import com.signalcollect.triplerush.PredicateSelectivity
+import com.signalcollect.triplerush.QuerySpecification
+import com.signalcollect.triplerush.TripleGenerators.genTriple
+import com.signalcollect.triplerush.TripleGenerators.queryPatterns
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TripleRush
-import com.signalcollect.triplerush.QuerySpecification
-import com.signalcollect.triplerush.TripleGenerators
 
 class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers {
 
@@ -37,7 +42,23 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
   val z = -3
   val z1 = -4
 
-  "PredicateSelectivityEdgeCountsOptimizer" should "correctly find the optimal query order" in {
+  "PredicateSelectivityEdgeCountsOptimizer" should "correctly handle fully bound patterns" in {
+    val tr = new TripleRush
+    try {
+      tr.addEncodedTriple(s1, p1, o1)
+      tr.prepareExecution
+      val stats = new PredicateSelectivity(tr)
+      val optimizer = new PredicateSelectivityEdgeCountsOptimizer(stats)
+      val tripleExists = tr.executeQuery(QuerySpecification(List(TriplePattern(s1, p1, o1))), Some(optimizer))
+      val tripleNotFound = tr.executeQuery(QuerySpecification(List(TriplePattern(s1, p2, o1))), Some(optimizer))
+      assert(tripleExists.size == 1)
+      assert(tripleNotFound.size == 0)
+    } finally {
+      tr.shutdown
+    }
+  }
+
+  it should "correctly find the optimal query order" in {
     val tr = new TripleRush
     try {
       tr.addEncodedTriple(s1, p1, o1)
@@ -225,14 +246,13 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
   }
 
   import TripleGenerators._
-  lazy val genTriplesMore = containerOfN[List, TriplePattern](10000, genTriple)
+  lazy val genTriplesMore = containerOfN[List, TriplePattern](500, genTriple)
   implicit lazy val arbTriples = Arbitrary(genTriplesMore map (_.toSet))
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
   //implicit lazy val genQueries = containerOfN[List, TriplePattern](10, genQueryPattern)
   //implicit lazy val arbQuery = Arbitrary(genQueries)
 
   it should "correctly answer random queries with basic graph patterns" in {
-
     check((triples: Set[TriplePattern], queries: List[TriplePattern]) => {
       val tr = new TripleRush
       try {
@@ -283,7 +303,7 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
         tr.shutdown
       }
       true
-    }, minSuccessful(10))
+    }, minSuccessful(3))
   }
 
   def computePlanAndCosts(
@@ -375,47 +395,5 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
     }
     upperBoundBasedOnPredicateSelectivity
   }
-
-  /*
-  import TripleGenerators._
-  lazy val genTriplesMore = containerOfN[List, TriplePattern](10000, genTriple)
-  implicit lazy val arbTriples = Arbitrary(genTriplesMore map (_.toSet))
-  implicit lazy val genQueries = containerOfN[List, TriplePattern](10, genQueryPattern)
-  implicit lazy val arbQuery = Arbitrary(genQueries)
-
-  it should "correctly answer random queries with basic graph patterns" in {
-    readLine
-
-    check((triples: Set[TriplePattern], queries: List[TriplePattern]) => {
-      val tr = new TripleRush
-      for (triple <- triples) {
-        tr.addEncodedTriple(triple.s, triple.p, triple.o)
-      }
-      tr.prepareExecution
-      val stats = new PredicateSelectivity(tr)
-
-      def calculateCardinalityOfPattern(tp: TriplePattern): Long = {
-        val queryToGetCardinality = QuerySpecification(List(tp))
-        val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality)
-        cardinalityQueryResult.size
-      }
-
-      val r = new scala.util.Random(1000L)
-      val cardinalities = queries.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
-      val edgeCounts = queries.map(tp => (TriplePattern(0, tp.p, 0), r.nextInt(100).toLong)).toMap
-
-      if (cardinalities.forall(_._2 > 0) && cardinalities.size > 1 && cardinalities.forall(_._1.p > 0)) {
-        val optimizer = new PredicateSelectivityEdgeCountsOptimizer(stats)
-        val optimizedQuery = optimizer.optimize(cardinalities, Some(edgeCounts))
-
-        println("cardinalities: " + cardinalities.toList.mkString(" "))
-        println("edgeCounts: " + edgeCounts.toList.mkString(" "))
-        println("optimized: " + optimizedQuery.toList)
-      }
-      tr.shutdown
-      true
-    }, minSuccessful(100))
-  }
-  * */
 
 }
