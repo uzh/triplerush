@@ -30,7 +30,6 @@ import com.signalcollect.triplerush.optimizers.Optimizer
 /**
  * If execution is complete returns Some(numberOfResults), else returns None.
  */
-
 final class ResultCountingQueryVertex(
   querySpecification: QuerySpecification,
   resultPromise: Promise[Option[Long]],
@@ -40,8 +39,8 @@ final class ResultCountingQueryVertex(
   val id = QueryIds.nextCountQueryId
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    super.afterInitialization(graphEditor)
     state = 0
+    super.afterInitialization(graphEditor)
   }
 
   def handleBindings(bindings: Array[Array[Int]]) {

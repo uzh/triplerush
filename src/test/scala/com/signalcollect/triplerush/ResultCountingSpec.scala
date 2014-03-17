@@ -41,7 +41,26 @@ class ResultCountingSpec extends FlatSpec with Checkers with TestAnnouncements {
   implicit lazy val arbTriples = Arbitrary(genTriples map (_.toSet))
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
-  "Counting queries" should "report the same number of results as a normal query" in {
+  "A counting query" should "report count zero for an empty query" in {
+    val triples = Set(TriplePattern(8, 23, 19), TriplePattern(13, 25, 5), TriplePattern(6, 23, 18))
+    val query = List()
+    val tr = new TripleRush
+    try {
+      for (triple <- triples) {
+        tr.addEncodedTriple(triple.s, triple.p, triple.o)
+      }
+      tr.prepareExecution
+      val q = QuerySpecification(query)
+      val numberOfResultBindings = tr.executeQuery(q).size
+      val countFuture = tr.executeCountingQuery(q)
+      val count = Await.result(countFuture, 7200.seconds)
+      assert(count.isDefined && count.get === numberOfResultBindings)
+    } finally {
+      tr.shutdown
+    }
+  }
+
+  it should "report the same number of results as a normal query" in {
     check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
       val tr = new TripleRush
       try {

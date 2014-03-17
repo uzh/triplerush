@@ -138,7 +138,7 @@ case class TripleRush(
     childIdPromise.future
   }
 
-  def executeQuery(q: QuerySpecification) = {
+  def executeQuery(q: QuerySpecification): Traversable[Array[Int]] = {
     executeQuery(q, optimizer)
   }
 

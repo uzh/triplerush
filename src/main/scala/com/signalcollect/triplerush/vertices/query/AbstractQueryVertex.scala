@@ -84,7 +84,8 @@ abstract class AbstractQueryVertex[StateType](
           //at least one of the caches not defined
           val responsibleIndexId = patternWithWildcards.routingAddress
           responsibleIndexId match {
-            case root @ TriplePattern(0, 0, 0) =>
+            case TriplePattern(0, 0, 0) =>
+              // root
               handleCardinalityReply(triplePattern, Int.MaxValue, None, None, None, graphEditor)
             case other =>
               //sending cardinalityrequest to responsibleIndex
@@ -144,7 +145,7 @@ abstract class AbstractQueryVertex[StateType](
   def handleBindings(bindings: Array[Array[Int]])
 
   def handleResultCount(resultCount: Long)
-  
+
   def handleCardinalityReply(
     forPattern: TriplePattern,
     cardinality: Long,
@@ -152,19 +153,19 @@ abstract class AbstractQueryVertex[StateType](
     maxObjectCountOption: Option[Long],
     maxSubjectCountOption: Option[Long],
     graphEditor: GraphEditor[Any, Any]) = {
-    
+
     if (edgeCountOption.isDefined && maxObjectCountOption.isDefined) {
       // TODO(Bibek): Make more elegant. 
       val edgeCount = edgeCountOption.get
       val maxObjectCount = maxObjectCountOption.get
       val maxSubjectCount = maxSubjectCountOption.get
-      
+
       val pIndexForPattern = forPattern.p
-      
+
       subjectCounts += pIndexForPattern -> edgeCount
       maxObjectCounts += pIndexForPattern -> maxObjectCount
       maxSubjectCounts += pIndexForPattern -> maxSubjectCount
-      
+
       EdgeCounts.add(pIndexForPattern, edgeCount)
       ObjectCounts.add(pIndexForPattern, maxObjectCount)
       SubjectCounts.add(pIndexForPattern, maxSubjectCount)
