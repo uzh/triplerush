@@ -118,7 +118,6 @@ class PredicateSelectivitySpec extends FlatSpec with Checkers with TestAnnouncem
       tr.prepareExecution
 
       val stats = new PredicateSelectivity(tr)
-      println(stats.inOut(p1, p4))
     } finally {
       tr.shutdown
     }

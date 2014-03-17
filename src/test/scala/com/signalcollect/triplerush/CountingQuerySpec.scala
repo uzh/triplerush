@@ -46,7 +46,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     try {
       val triples = Set(TriplePattern(1, 2, 3))
       val query = List(TriplePattern(-1, 4, -1))
-      val trCount = TestHelper.count(tr, triples, query, false)
+      val trCount = TestHelper.count(tr, triples, query)
       val trResults = TestHelper.execute(tr, triples, query)
       assert(trResults.size === trCount)
     } finally {
@@ -59,7 +59,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     try {
       val triples = Set(TriplePattern(1, 2, 3))
       val query = List(TriplePattern(1, 2, 3))
-      val trCount = TestHelper.count(tr, triples, query, false)
+      val trCount = TestHelper.count(tr, triples, query)
       val trResults = TestHelper.execute(tr, triples, query)
       assert(trResults.size === trCount)
     } finally {
@@ -69,11 +69,15 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
 
   it should "correctly answer a query for a specific pattern that does not exist" in {
     val tr = new TripleRush
-    val triples = Set(TriplePattern(1, 2, 3))
-    val query = List(TriplePattern(1, 4, 3))
-    val trCount = TestHelper.count(tr, triples, query, false)
-    val trResults = TestHelper.execute(tr, triples, query)
-    assert(trResults.size === trCount)
+    try {
+      val triples = Set(TriplePattern(1, 2, 3))
+      val query = List(TriplePattern(1, 4, 3))
+      val trCount = TestHelper.count(tr, triples, query)
+      val trResults = TestHelper.execute(tr, triples, query)
+      assert(trResults.size === trCount)
+    } finally {
+      tr.shutdown
+    }
   }
 
   it should "correctly answer a simple query 1" in {
@@ -81,7 +85,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     try {
       val triples = Set(TriplePattern(4, 3, 4))
       val query = List(TriplePattern(-1, 3, -1))
-      val trCount = TestHelper.count(tr, triples, query, false)
+      val trCount = TestHelper.count(tr, triples, query)
       val trResults = TestHelper.execute(tr, triples, query)
       assert(trResults.size === trCount)
     } finally {
@@ -96,7 +100,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
         TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
         TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
       val query = List(TriplePattern(-2, -1, 3))
-      val trCount = TestHelper.count(tr, triples, query, false)
+      val trCount = TestHelper.count(tr, triples, query)
       val trResults = TestHelper.execute(tr, triples, query)
       assert(trResults.size === trCount)
     } finally {
@@ -111,7 +115,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
         TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
         TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
       val query = List(TriplePattern(3, 4, 2), TriplePattern(-2, -1, -3))
-      val trCount = TestHelper.count(tr, triples, query, false)
+      val trCount = TestHelper.count(tr, triples, query)
       val trResults = TestHelper.execute(tr, triples, query)
       assert(trResults.size === trCount)
     } finally {
@@ -126,7 +130,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
         TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
         TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
       val query = List(TriplePattern(1, 2, 3), TriplePattern(-2, -1, 3))
-      val trCount = TestHelper.count(tr, triples, query, false)
+      val trCount = TestHelper.count(tr, triples, query)
       val trResults = TestHelper.execute(tr, triples, query)
       assert(trResults.size === trCount)
     } finally {
@@ -144,18 +148,26 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     }.toSet
 
     val tr = new TripleRush
-    val query = List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25))
-    val trCount = TestHelper.count(tr, triples, query, false)
-    val trResults = TestHelper.execute(tr, triples, query)
-    assert(trResults.size === trCount)
+    try {
+      val query = List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25))
+      val trCount = TestHelper.count(tr, triples, query)
+      val trResults = TestHelper.execute(tr, triples, query)
+      assert(trResults.size === trCount)
+    } finally {
+      tr.shutdown
+    }
   }
 
   it should "correctly answer random queries with basic graph patterns" in {
     check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
       val tr = new TripleRush
-      val trCount = TestHelper.count(tr, triples, query, false)
-      val trResults = TestHelper.execute(tr, triples, query)
-      trResults.size === trCount
+      try {
+        val trCount = TestHelper.count(tr, triples, query)
+        val trResults = TestHelper.execute(tr, triples, query)
+        trResults.size === trCount
+      } finally {
+        tr.shutdown
+      }
     }, minSuccessful(10))
   }
 
