@@ -5,7 +5,7 @@ import org.scalatest.prop.Checkers
 import org.scalacheck.Arbitrary
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 
-class IgnoredBindingsSpec extends FlatSpec with Checkers {
+class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements {
 
   val s1 = 1
   val s2 = 2

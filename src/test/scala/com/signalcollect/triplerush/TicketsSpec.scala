@@ -34,7 +34,7 @@ import org.openrdf.query.QueryResult
 import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
 
-class TicketsSpec extends FlatSpec {
+class TicketsSpec extends FlatSpec with TestAnnouncements {
 
   "TripleRush" should "correctly answer a query with a limited number of tickets" in {
     val tr = new TripleRush

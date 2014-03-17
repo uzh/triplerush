@@ -19,20 +19,15 @@
 
 package com.signalcollect.triplerush
 
-import org.scalatest.FlatSpec
-import com.signalcollect.GraphBuilder
-import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.Suite
 
-class SerializationSpec extends FlatSpec with TestAnnouncements {
-
-  "TripleRush" should "run when messages are serialized" in {
-    val tr = new TripleRush(GraphBuilder.withMessageSerialization(true))
-    try {
-      tr.addEncodedTriple(1, 2, 3)
-      tr.prepareExecution
-    } finally {
-      tr.shutdown
-    }
+trait TestAnnouncements extends BeforeAndAfterAll {
+  this: Suite =>
+  override def beforeAll {
+    println(s"Running ${this.getClass.getName} ...")
   }
-
+  override def afterAll {
+    println(s"Finshed ${this.getClass.getName}.")
+  }
 }

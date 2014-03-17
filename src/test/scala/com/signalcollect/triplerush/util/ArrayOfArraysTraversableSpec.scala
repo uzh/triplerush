@@ -21,8 +21,9 @@ package com.signalcollect.triplerush.util
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
+import com.signalcollect.triplerush.TestAnnouncements
 
-class ArrayOfArraysTraversableSpec extends FlatSpec with Matchers {
+class ArrayOfArraysTraversableSpec extends FlatSpec with Matchers with TestAnnouncements {
 
   "ArrayOfArraysTraversable" should "have size 0 when no results are added" in {
     val aoat = new ArrayOfArraysTraversable()

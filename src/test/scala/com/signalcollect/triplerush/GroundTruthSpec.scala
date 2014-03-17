@@ -40,7 +40,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 @RunWith(classOf[JUnitRunner])
-class GroundTruthSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
+class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
 
   val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
   //val enabledQueries = Set(1, 7)
@@ -298,6 +298,7 @@ WHERE
 
   override def afterAll {
     qe.shutdown
+    super.afterAll
   }
 
   println("Loading LUBM1 ... ")

@@ -21,7 +21,7 @@ package com.signalcollect.triplerush
 
 import org.scalatest.FlatSpec
 
-class IndexSpec extends FlatSpec {
+class IndexSpec extends FlatSpec with TestAnnouncements {
 
   "TripleRush" should "correctly answer all 1 pattern queries when there is only 1 triple in the store" in {
     val queries = {

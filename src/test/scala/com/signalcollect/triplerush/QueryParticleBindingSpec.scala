@@ -9,7 +9,7 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Gen._
 
-class QueryParticleBindingSpec extends FlatSpec with ShouldMatchers with Checkers {
+class QueryParticleBindingSpec extends FlatSpec with ShouldMatchers with Checkers with TestAnnouncements {
 
   "QueryParticle" should "correctly bind a problematic triple to a pattern" in {
     val toBindPattern = TriplePattern(1, 1, 1)

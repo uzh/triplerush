@@ -8,7 +8,7 @@ import org.scalatest.prop.Checkers
 import org.scalacheck.Gen._
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 
-class EmptyQuerySpec extends FlatSpec with Matchers {
+class EmptyQuerySpec extends FlatSpec with Matchers with TestAnnouncements {
 
   it should "correctly answer result counts for queries with zero results" in {
     val tr = new TripleRush

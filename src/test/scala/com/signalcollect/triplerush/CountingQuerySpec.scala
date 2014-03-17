@@ -34,7 +34,7 @@ import org.openrdf.query.QueryResult
 import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
 
-class CountingQuerySpec extends FlatSpec with Checkers {
+class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
 
   import TripleGenerators._
 

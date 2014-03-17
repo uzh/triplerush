@@ -29,7 +29,7 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Gen._
 
-class QueryParticleSpec extends FlatSpec with ShouldMatchers with Checkers {
+class QueryParticleSpec extends FlatSpec with ShouldMatchers with Checkers with TestAnnouncements {
 
   val maxId = 4
 

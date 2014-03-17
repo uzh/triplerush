@@ -35,7 +35,7 @@ import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
 import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
 
-class IntegrationSpec extends FlatSpec with Checkers {
+class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
 
   import TripleGenerators._
 

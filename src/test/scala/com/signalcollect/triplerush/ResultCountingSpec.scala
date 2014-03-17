@@ -34,7 +34,7 @@ import org.openrdf.query.QueryResult
 import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
 
-class ResultCountingSpec extends FlatSpec with Checkers {
+class ResultCountingSpec extends FlatSpec with Checkers with TestAnnouncements {
 
   import TripleGenerators._
 
@@ -51,16 +51,14 @@ class ResultCountingSpec extends FlatSpec with Checkers {
         tr.prepareExecution
         val q = QuerySpecification(query)
         val numberOfResultBindings = tr.executeQuery(q).size
-        //println(s"numberOfResultBindings=$numberOfResultBindings")
         val countFuture = tr.executeCountingQuery(q)
         val count = Await.result(countFuture, 7200.seconds)
-        //println(s"count=$count")
         assert(count.isDefined && count.get === numberOfResultBindings)
       } finally {
         tr.shutdown
       }
       true
-    }, minSuccessful(100))
+    }, minSuccessful(10))
   }
 
 }

@@ -13,8 +13,9 @@ import com.signalcollect.triplerush.TripleGenerators.queryPatterns
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.triplerush.TripleGenerators._
+import com.signalcollect.triplerush.TestAnnouncements
 
-class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers {
+class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers with TestAnnouncements {
 
   val s1 = 1
   val s2 = 2

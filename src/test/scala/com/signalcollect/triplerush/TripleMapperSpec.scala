@@ -5,7 +5,7 @@ import org.scalacheck.Prop._
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-class TripleMapperSpec extends FlatSpec with Matchers with Checkers {
+class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnnouncements {
 
   val numberOfNodes = 8
   val workersPerNode = 24

@@ -27,8 +27,9 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Gen._
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.TestAnnouncements
 
-class QueryPlanMinHeapSpec extends FlatSpec with ShouldMatchers with Checkers {
+class QueryPlanMinHeapSpec extends FlatSpec with ShouldMatchers with Checkers with TestAnnouncements {
 
   lazy val genPlan: Gen[QueryPlan] = for {
     id <- arbitrary[Int]
