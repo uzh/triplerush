@@ -54,11 +54,6 @@ abstract class AbstractQueryVertex[StateType](
   var receivedTickets = 0l
   var complete = true
 
-  var cardinalities = Map.empty[TriplePattern, Long]
-  var subjectCounts = Map.empty[Int, Long]
-  var maxObjectCounts = Map.empty[Int, Long]
-  var maxSubjectCounts = Map.empty[Int, Long]
-
   var dispatchedQuery: Option[Array[Int]] = None
 
   var optimizingStartTime = 0l
@@ -132,11 +127,6 @@ abstract class AbstractQueryVertex[StateType](
             // Also sending cardinality request for pIndex.
             requestedPredicateStats += pIndexForPattern
             graphEditor.sendSignal(CardinalityRequest(triplePattern, id), TriplePattern(0, pIndexForPattern, 0), None)
-          } else if (edgeCountsCache.isDefined && objectCountsCache.isDefined && subjectCountsCache.isDefined) {
-            // Edge count cache is populated.
-            subjectCounts += pIndexForPattern -> edgeCountsCache.get
-            maxObjectCounts += pIndexForPattern -> objectCountsCache.get
-            maxSubjectCounts += pIndexForPattern -> subjectCountsCache.get
           }
       }
     }
@@ -188,9 +178,6 @@ abstract class AbstractQueryVertex[StateType](
     maxObjectCount: Long,
     maxSubjectCount: Long,
     graphEditor: GraphEditor[Any, Any]) {
-    subjectCounts += pIndexForPattern -> edgeCount
-    maxObjectCounts += pIndexForPattern -> maxObjectCount
-    maxSubjectCounts += pIndexForPattern -> maxSubjectCount
     EdgeCounts.add(pIndexForPattern, edgeCount)
     ObjectCounts.add(pIndexForPattern, maxObjectCount)
     SubjectCounts.add(pIndexForPattern, maxSubjectCount)
@@ -202,7 +189,6 @@ abstract class AbstractQueryVertex[StateType](
     forPattern: TriplePattern,
     cardinality: Long,
     graphEditor: GraphEditor[Any, Any]) = {
-    cardinalities += forPattern -> cardinality
     Cardinalities.add(forPattern.withVariablesAsWildcards, cardinality)
     receivedCardinalityReplies += 1
     if (cardinality == 0) {
@@ -223,7 +209,11 @@ abstract class AbstractQueryVertex[StateType](
   }
 
   def optimizeQuery: Option[Array[Int]] = {
-    val optimizedPatterns = optimizer.get.optimize(cardinalities, subjectCounts, maxObjectCounts, maxSubjectCounts)
+    val optimizedPatterns = optimizer.get.optimize(
+      Cardinalities.cachedCardinalities,
+      EdgeCounts.cachedEdgeCounts,
+      ObjectCounts.cachedObjectCounts,
+      SubjectCounts.cachedSubjectCounts)
     optimizingDuration = System.nanoTime - optimizingStartTime
     if (optimizedPatterns.length > 0) {
       val optimizedQuery = QueryParticle.fromSpecification(id, querySpecification.withUnmatchedPatterns(optimizedPatterns))

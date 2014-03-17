@@ -64,8 +64,8 @@ final class ResultBindingQueryVertex(
         "queryCopyCount" -> queryCopyCount,
         "optimizedQuery" -> ("Pattern matching order: " + {
           if (dispatchedQuery.isDefined) {
-            new QueryParticle(dispatchedQuery.get).patterns.toList + "\nCardinalities: " + cardinalities.toString
-          } else { "the optimizer was not run, probably one of the patterns had cardinality 0" }
+            new QueryParticle(dispatchedQuery.get).patterns.toList
+          } else { "Inferred that the query has no results before it was dispatched." }
         })).withDefaultValue("")
       statsPromise.success(stats)
     }
