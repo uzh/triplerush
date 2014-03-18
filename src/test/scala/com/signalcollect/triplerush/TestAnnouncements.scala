@@ -64,7 +64,7 @@ trait TestAnnouncements extends BeforeAndAfterAll {
     if (totalTime.isDefined) {
       println(s"Finshed tests in ${this.getClass.getSimpleName} @ $currentTime, ran for a total of ${timeSinceStart.getOrElse()}.")
     } else {
-      println(s"Finshed tests in ${this.getClass.getSimpleName} @ $currentTime, finished immediately.")
+      println(s"Finshed tests in ${this.getClass.getSimpleName} @ $currentTime, ran for less than a second.")
     }
   }
 
