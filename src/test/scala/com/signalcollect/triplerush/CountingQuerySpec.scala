@@ -67,6 +67,19 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     }
   }
 
+  it should "count zero results for an empty query" in {
+    val tr = new TripleRush
+    try {
+      val triples = Set(TriplePattern(8, 23, 19), TriplePattern(13, 25, 5), TriplePattern(6, 23, 18))
+      val query = List()
+      val trCount = TestHelper.count(tr, triples, query)
+      val trResults = TestHelper.execute(tr, triples, query)
+      assert(trResults.size === trCount)
+    } finally {
+      tr.shutdown
+    }
+  }
+
   it should "correctly answer a query for a specific pattern that does not exist" in {
     val tr = new TripleRush
     try {
@@ -165,7 +178,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
           val tr = new TripleRush
           try {
             val trCount = TestHelper.count(tr, triples, query)
-            val trResults = TestHelper.execute(tr, triples, query)
+            val trResults = TestHelper.execute(tr, Set(), query)
             trResults.size === trCount
           } finally {
             tr.shutdown

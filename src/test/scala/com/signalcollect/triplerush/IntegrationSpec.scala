@@ -266,7 +266,7 @@ object TripleGenerators {
     o <- smallId
   } yield TriplePattern(s, p, o)
 
-  lazy val genTriples = containerOfN[List, TriplePattern](300, genTriple)
+  lazy val genTriples = containerOfN[List, TriplePattern](100, genTriple)
   lazy val tripleSet = genTriples map (_.toSet)
 
   lazy val genQueryPattern: Gen[TriplePattern] = {
