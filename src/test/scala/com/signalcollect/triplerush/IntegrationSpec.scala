@@ -169,8 +169,9 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
         (triples: Set[TriplePattern], query: List[TriplePattern]) =>
           val tr = new TripleRush
+          val jena = new Jena
           try {
-            val jenaResults = TestHelper.execute(new Jena, triples, query)
+            val jenaResults = TestHelper.execute(jena, triples, query)
             val trResults = TestHelper.execute(tr, triples, query)
             assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
             jenaResults === trResults
