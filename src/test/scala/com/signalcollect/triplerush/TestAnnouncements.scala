@@ -62,9 +62,9 @@ trait TestAnnouncements extends BeforeAndAfterAll {
   override def afterAll {
     val totalTime = timeSinceStart
     if (totalTime.isDefined) {
-      println(s"Finshed tests in ${this.getClass.getSimpleName} @ $currentTime, ran for a total of ${timeSinceStart.getOrElse()}.")
+      println(s"Finished tests in ${this.getClass.getSimpleName} @ $currentTime, ran for a total of ${timeSinceStart.getOrElse()}.")
     } else {
-      println(s"Finshed tests in ${this.getClass.getSimpleName} @ $currentTime, ran for less than a second.")
+      println(s"Finished tests in ${this.getClass.getSimpleName} @ $currentTime, ran for less than a second.")
     }
   }
 
