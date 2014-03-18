@@ -30,7 +30,7 @@ libraryDependencies ++= Seq(
   "junit" % "junit" % "4.8.2"  % "test",
   "org.specs2" %% "specs2" % "2.3.3"  % "test",
   "org.scalacheck" %% "scalacheck" % "1.11.0" % "test",
-  "org.scalatest" %% "scalatest" % "2.0.1-SNAP" % "test",
+  "org.scalatest" %% "scalatest" % "2.1.0" % "test",
   "org.easymock" % "easymock" % "3.2" % "test",
   "org.apache.jena" % "apache-jena-libs" % "2.11.0" % "test",
   "org.openrdf.sesame" % "sesame-runtime" % "2.7.8" % "test"
