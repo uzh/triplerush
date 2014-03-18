@@ -410,13 +410,13 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
    * Checks that the last pattern is not fully bound and that no variable appears multiple times in the last pattern.
    * The same variable appearing multiple times might cause a binding to fail.
    */
-  @inline def isSimpleToBind = {
+  def isSimpleToBind = {
     val s = lastPatternS
     val p = lastPatternP
     val o = lastPatternO
     !(s > 0 && p > 0 && o > 0) &&
-      (s < 0 || (s != p && s != o)) &&
-      (o < 0 || (o != p))
+      (s > 0 || (s != p && s != o)) &&
+      (o > 0 || (o != p))
   }
 
   @inline def lastPatternS = r(r.length - 3)

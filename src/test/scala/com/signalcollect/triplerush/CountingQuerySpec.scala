@@ -93,6 +93,54 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     }
   }
 
+  it should "correctly answer a query that successfully binds the same variable twice" in {
+    val tr = new TripleRush
+    try {
+      val triples = Set(TriplePattern(1, 2, 1))
+      val query = List(TriplePattern(-1, 2, -1))
+      val trCount = TestHelper.count(tr, triples, query)
+      assert(1 === trCount)
+    } finally {
+      tr.shutdown
+    }
+  }
+
+  it should "correctly answer a query that successfully binds the same variable three times" in {
+    val tr = new TripleRush
+    try {
+      val triples = Set(TriplePattern(1, 1, 1))
+      val query = List(TriplePattern(-1, -1, -1))
+      val trCount = TestHelper.count(tr, triples, query)
+      assert(trCount === 1)
+    } finally {
+      tr.shutdown
+    }
+  }
+
+  it should "correctly answer a query that unsuccessfully binds the same variable twice" in {
+    val tr = new TripleRush
+    try {
+      val triples = Set(TriplePattern(1, 2, 3))
+      val query = List(TriplePattern(-1, 2, -1))
+      val trCount = TestHelper.count(tr, triples, query)
+      assert(trCount === 0)
+    } finally {
+      tr.shutdown
+    }
+  }
+
+  it should "correctly answer a query that unsuccessfully binds the same variable three times" in {
+    val tr = new TripleRush
+    try {
+      val triples = Set(TriplePattern(1, 1, 2))
+      val query = List(TriplePattern(-1, -1, -1))
+      val trCount = TestHelper.count(tr, triples, query)
+      assert(trCount === 0)
+    } finally {
+      tr.shutdown
+    }
+  }
+
   it should "correctly answer a simple query 1" in {
     val tr = new TripleRush
     try {
