@@ -98,6 +98,8 @@ WHERE {
     }
   }
   def awaitIdle {}
-  def shutdown {}
+  def shutdown {
+    model.close
+  }
   def prepareExecution {}
 }
