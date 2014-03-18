@@ -63,7 +63,6 @@ abstract class IndexVertex(val id: TriplePattern)
    * Default reply, is only overridden by SOIndex.
    */
   def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
-    //TODO: add test case for fully bound pattern in a query that has at least one variable
     graphEditor.sendSignal(CardinalityReply(
       c.forPattern, cardinality), c.requestor, None)
   }
