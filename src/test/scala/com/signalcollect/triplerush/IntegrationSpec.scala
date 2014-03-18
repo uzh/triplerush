@@ -140,24 +140,24 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
     }
   }
 
-  it should "correctly answer a simple query over a lot of data" in {
+  it should "correctly answer a simple query over a reasonable amount of data" in {
     val tr = new TripleRush
     try {
       val triples = {
         for {
           s <- 1 to 2
           p <- 1 to 2
-          o <- 1 to 25
+          o <- 1 to 10
         } yield TriplePattern(s, p, o)
       }.toSet
       val trResults = TestHelper.execute(
         tr,
         triples,
-        List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25)))
+        List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 10)))
       val jenaResults = TestHelper.execute(
         new Jena,
         triples,
-        List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25)))
+        List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 10)))
       assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
     } finally {
       tr.shutdown
@@ -263,7 +263,7 @@ object TripleGenerators {
     o <- smallId
   } yield TriplePattern(s, p, o)
 
-  lazy val genTriples = containerOfN[List, TriplePattern](500, genTriple)
+  lazy val genTriples = containerOfN[List, TriplePattern](300, genTriple)
 
   lazy val genQueryPattern: Gen[TriplePattern] = {
     for {
