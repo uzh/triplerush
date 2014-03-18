@@ -4,3 +4,5 @@ scala:
 before_install:
   - git clone git://github.com/uzh/signal-collect.git ../signal-collect
   - git clone git://github.com/uzh/signal-collect-torque.git ../signal-collect-torque
+before_script:
+  - "export JAVA_OPTS=-Xmx2048m"
