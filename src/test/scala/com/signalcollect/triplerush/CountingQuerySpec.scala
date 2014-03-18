@@ -159,16 +159,18 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer random queries with basic graph patterns" in {
-    check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
-      val tr = new TripleRush
-      try {
-        val trCount = TestHelper.count(tr, triples, query)
-        val trResults = TestHelper.execute(tr, triples, query)
-        trResults.size === trCount
-      } finally {
-        tr.shutdown
-      }
-    }, minSuccessful(10))
+    check(
+      Prop.forAllNoShrink(tripleSet, queryPatterns) {
+        (triples: Set[TriplePattern], query: List[TriplePattern]) =>
+          val tr = new TripleRush
+          try {
+            val trCount = TestHelper.count(tr, triples, query)
+            val trResults = TestHelper.execute(tr, triples, query)
+            trResults.size === trCount
+          } finally {
+            tr.shutdown
+          }
+      }, minSuccessful(10))
   }
 
 }

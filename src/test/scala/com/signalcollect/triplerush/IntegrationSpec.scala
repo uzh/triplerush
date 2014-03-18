@@ -39,7 +39,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
 
   import TripleGenerators._
 
-  implicit lazy val arbTriples = Arbitrary(genTriples map (_.toSet))
+  implicit lazy val arbTriples = Arbitrary(tripleSet)
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
   "TripleRush" should "correctly answer a query for data that is not in the store" in {
@@ -165,17 +165,19 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer random queries with basic graph patterns" in {
-    check((triples: Set[TriplePattern], query: List[TriplePattern]) => {
-      val tr = new TripleRush
-      try {
-        val jenaResults = TestHelper.execute(new Jena, triples, query)
-        val trResults = TestHelper.execute(tr, triples, query)
-        assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
-        jenaResults === trResults
-      } finally {
-        tr.shutdown
-      }
-    }, minSuccessful(10))
+    check(
+      Prop.forAllNoShrink(tripleSet, queryPatterns) {
+        (triples: Set[TriplePattern], query: List[TriplePattern]) =>
+          val tr = new TripleRush
+          try {
+            val jenaResults = TestHelper.execute(new Jena, triples, query)
+            val trResults = TestHelper.execute(tr, triples, query)
+            assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
+            jenaResults === trResults
+          } finally {
+            tr.shutdown
+          }
+      }, minSuccessful(10))
   }
 
 }
@@ -264,6 +266,7 @@ object TripleGenerators {
   } yield TriplePattern(s, p, o)
 
   lazy val genTriples = containerOfN[List, TriplePattern](300, genTriple)
+  lazy val tripleSet = genTriples map (_.toSet)
 
   lazy val genQueryPattern: Gen[TriplePattern] = {
     for {

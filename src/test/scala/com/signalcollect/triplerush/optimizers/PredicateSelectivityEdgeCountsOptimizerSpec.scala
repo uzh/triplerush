@@ -14,6 +14,7 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.triplerush.TripleGenerators._
 import com.signalcollect.triplerush.TestAnnouncements
+import org.scalacheck.Prop
 
 class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers with TestAnnouncements {
 
@@ -248,61 +249,61 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
   lazy val genTriplesMore = containerOfN[List, TriplePattern](100, genTriple)
   implicit lazy val arbTriples = Arbitrary(genTriplesMore map (_.toSet))
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
-  //implicit lazy val genQueries = containerOfN[List, TriplePattern](10, genQueryPattern)
-  //implicit lazy val arbQuery = Arbitrary(genQueries)
 
   it should "correctly answer random queries with basic graph patterns" in {
-    check((triples: Set[TriplePattern], queries: List[TriplePattern]) => {
-      val tr = new TripleRush
-      try {
-        for (triple <- triples) {
-          tr.addEncodedTriple(triple.s, triple.p, triple.o)
-        }
-        tr.prepareExecution
-        val stats = new PredicateSelectivity(tr)
-        val optimizer = new PredicateSelectivityEdgeCountsOptimizer(stats)
+    check(
+      Prop.forAllNoShrink(tripleSet, queryPatterns) {
+        (triples: Set[TriplePattern], query: List[TriplePattern]) =>
+          val tr = new TripleRush
+          try {
+            for (triple <- triples) {
+              tr.addEncodedTriple(triple.s, triple.p, triple.o)
+            }
+            tr.prepareExecution
+            val stats = new PredicateSelectivity(tr)
+            val optimizer = new PredicateSelectivityEdgeCountsOptimizer(stats)
 
-        def calculateEdgeCountOfPattern(predicate: Int): Long = {
-          val pIndices = triples.filter(x => x.p == predicate)
-          val setOfSubjects = pIndices.foldLeft(Set.empty[Int]) { case (result, current) => result + current.s }
-          setOfSubjects.size
-        }
+            def calculateEdgeCountOfPattern(predicate: Int): Long = {
+              val pIndices = triples.filter(x => x.p == predicate)
+              val setOfSubjects = pIndices.foldLeft(Set.empty[Int]) { case (result, current) => result + current.s }
+              setOfSubjects.size
+            }
 
-        def calculateObjectCountOfPattern(predicate: Int): Long = {
-          val pIndices = triples.filter(x => x.p == predicate)
-          val setOfObjects = pIndices.foldLeft(Set.empty[Int]) { case (result, current) => result + current.o }
-          setOfObjects.size
-        }
+            def calculateObjectCountOfPattern(predicate: Int): Long = {
+              val pIndices = triples.filter(x => x.p == predicate)
+              val setOfObjects = pIndices.foldLeft(Set.empty[Int]) { case (result, current) => result + current.o }
+              setOfObjects.size
+            }
 
-        def calculateSubjectCountOfPattern(predicate: Int): Long = {
-          val pIndices = triples.filter(x => x.p == predicate)
-          val setOfObjects = pIndices.foldLeft(Set.empty[Int]) { case (result, current) => result + current.s }
-          setOfObjects.size
-        }
+            def calculateSubjectCountOfPattern(predicate: Int): Long = {
+              val pIndices = triples.filter(x => x.p == predicate)
+              val setOfObjects = pIndices.foldLeft(Set.empty[Int]) { case (result, current) => result + current.s }
+              setOfObjects.size
+            }
 
-        def calculateCardinalityOfPattern(tp: TriplePattern): Long = {
-          val queryToGetCardinality = QuerySpecification(List(tp))
-          val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality)
-          cardinalityQueryResult.size
-        }
+            def calculateCardinalityOfPattern(tp: TriplePattern): Long = {
+              val queryToGetCardinality = QuerySpecification(List(tp))
+              val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality)
+              cardinalityQueryResult.size
+            }
 
-        val cardinalities = queries.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
-        val edgeCounts = queries.map(tp => (tp.p, calculateEdgeCountOfPattern(tp.p))).toMap
-        val objectCounts = queries.map(tp => (tp.p, calculateObjectCountOfPattern(tp.p))).toMap
-        val subjectCounts = queries.map(tp => (tp.p, calculateSubjectCountOfPattern(tp.p))).toMap
+            val cardinalities = query.map(tp => (tp, calculateCardinalityOfPattern(tp))).toMap
+            val edgeCounts = query.map(tp => (tp.p, calculateEdgeCountOfPattern(tp.p))).toMap
+            val objectCounts = query.map(tp => (tp.p, calculateObjectCountOfPattern(tp.p))).toMap
+            val subjectCounts = query.map(tp => (tp.p, calculateSubjectCountOfPattern(tp.p))).toMap
 
-        if (cardinalities.forall(_._2 > 0) && cardinalities.size > 1 && cardinalities.forall(_._1.p > 0)) {
-          val optimizedQuery = optimizer.optimize(cardinalities, edgeCounts, objectCounts, subjectCounts)
-          val costMap = computePlanAndCosts(stats, edgeCounts, objectCounts, subjectCounts, cardinalities)
-          val costMapForQuery = costMap.filter(p => p._1.size == queries.size).reduceLeft(minCostEstimate)
-          val bestPatternOrderFromCostMap = costMapForQuery._1.reverse
-          assert(optimizedQuery.toList == bestPatternOrderFromCostMap)
-        }
-      } finally {
-        tr.shutdown
-      }
-      true
-    }, minSuccessful(3))
+            if (cardinalities.forall(_._2 > 0) && cardinalities.size > 1 && cardinalities.forall(_._1.p > 0)) {
+              val optimizedQuery = optimizer.optimize(cardinalities, edgeCounts, objectCounts, subjectCounts)
+              val costMap = computePlanAndCosts(stats, edgeCounts, objectCounts, subjectCounts, cardinalities)
+              val costMapForQuery = costMap.filter(p => p._1.size == query.size).reduceLeft(minCostEstimate)
+              val bestPatternOrderFromCostMap = costMapForQuery._1.reverse
+              assert(optimizedQuery.toList == bestPatternOrderFromCostMap)
+            }
+          } finally {
+            tr.shutdown
+          }
+          true
+      }, minSuccessful(10))
   }
 
   def computePlanAndCosts(
