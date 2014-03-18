@@ -219,6 +219,28 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     }
   }
 
+  it should "compute predicate selectivities over some triples" in {
+    val tr = new TripleRush
+    val jena = new Jena
+    try {
+      val triples = {
+        for {
+          s <- 1 to 2
+          p <- 1 to 2
+          o <- 1 to 10
+        } yield TriplePattern(s, p, o)
+      }.toSet
+      val query = List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 10))
+      val trResults = TestHelper.execute(
+        tr,
+        triples,
+        query)
+    } finally {
+      tr.shutdown
+      jena.shutdown
+    }
+  }
+
   it should "correctly answer random queries with basic graph patterns" in {
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {

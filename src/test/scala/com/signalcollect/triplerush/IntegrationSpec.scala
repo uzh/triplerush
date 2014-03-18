@@ -142,7 +142,9 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
 
   it should "correctly answer a simple query over a reasonable amount of data" in {
     val tr = new TripleRush
+    val jena = new Jena
     try {
+      val query = List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 10))
       val triples = {
         for {
           s <- 1 to 2
@@ -153,14 +155,15 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
       val trResults = TestHelper.execute(
         tr,
         triples,
-        List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 10)))
+        query)
       val jenaResults = TestHelper.execute(
-        new Jena,
+        jena,
         triples,
-        List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 10)))
+        query)
       assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
     } finally {
       tr.shutdown
+      jena.shutdown
     }
   }
 
