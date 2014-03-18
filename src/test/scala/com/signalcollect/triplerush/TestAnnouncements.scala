@@ -21,13 +21,51 @@ package com.signalcollect.triplerush
 
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Suite
+import java.util.Calendar
+import java.text.SimpleDateFormat
+import java.util.Date
 
 trait TestAnnouncements extends BeforeAndAfterAll {
   this: Suite =>
+
+  var startTime: Long = System.currentTimeMillis
+
+  println(s"Starting test setup for ${this.getClass.getSimpleName} @ $currentTime.")
+
+  def timeSinceStart: Option[String] = {
+    val delta = ((System.currentTimeMillis - startTime) / 1000).toInt
+    val seconds = delta % 60
+    val minutes = (delta / 60).floor.toInt
+    if (minutes > 0) {
+      Some(s"$seconds seconds and $minutes minutes")
+    } else if (seconds > 0) {
+      Some(s"$seconds seconds")
+    } else {
+      None
+    }
+  }
+
+  def currentTime: String = {
+    val now = Calendar.getInstance.getTime
+    val formatter = new SimpleDateFormat("HH:mm")
+    val timeString = formatter.format(now)
+    timeString
+  }
+
   override def beforeAll {
-    println(s"Running ${this.getClass.getName} ...")
+    val totalTime = timeSinceStart
+    if (totalTime.isDefined) {
+      println(s"Setup took ${timeSinceStart.get}, starting test execution.")
+    }
   }
+
   override def afterAll {
-    println(s"Finshed ${this.getClass.getName}.")
+    val totalTime = timeSinceStart
+    if (totalTime.isDefined) {
+      println(s"Finshed tests in ${this.getClass.getName} @ $currentTime, ran for a total of ${timeSinceStart.getOrElse()}.")
+    } else {
+      println(s"Finshed tests in ${this.getClass.getName} @ $currentTime, finished immediately.")
+    }
   }
+
 }
