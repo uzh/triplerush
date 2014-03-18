@@ -131,27 +131,30 @@ class PredicateSelectivitySpec extends FlatSpec with Checkers with TestAnnouncem
       oSecond <- List(s1, s2)
     } yield (TriplePattern(sFirst, p1, oFirst), TriplePattern(sSecond, p2, oSecond))
 
-    for (combo <- patternCombos) {
-      // Test if stats are correct for this combo.
-      val tr = new TripleRush
-      try {
+    val tr = new TripleRush(optimizerCreator = NoOptimizerCreator)
+    try {
+      for (combo <- patternCombos) {
+        // Test if stats are correct for this combo.
         val (first, second) = combo
         tr.addEncodedTriple(first.s, first.p, first.o)
         tr.addEncodedTriple(second.s, second.p, second.o)
-        tr.prepareExecution
-        val stats = new PredicateSelectivity(tr)
+      }
+      tr.prepareExecution
+      val stats = new PredicateSelectivity(tr)
+      for (combo <- patternCombos) {
+        val (first, second) = combo
         // Ensure counts are correct for this pattern combo.
-        val outInResult = if (first.s == second.o) 1 else 0
-        val inOutResult = if (first.o == second.s) 1 else 0
-        val outOutResult = if (first.s == second.s) 1 else 0
-        val inInResult = if (first.o == second.o) 1 else 0
+        val outInResult = 8
+        val inOutResult = 8
+        val outOutResult = 8
+        val inInResult = 8
         assert(stats.outIn(first.p, second.p) == outInResult, s"Problematic outIn stat for $combo: Is ${stats.outIn(first.p, second.p)}, should be $outInResult.")
         assert(stats.inOut(first.p, second.p) == inOutResult, s"Problematic inOut stat for $combo: Is ${stats.inOut(first.p, second.p)}, should be $inOutResult.")
         assert(stats.outOut(first.p, second.p) == outOutResult, s"Problematic outOut stat for $combo: Is ${stats.outOut(first.p, second.p)}, should be $outOutResult.")
         assert(stats.inIn(first.p, second.p) == inInResult, s"Problematic inIn stat for $combo: Is ${stats.inIn(first.p, second.p)}, should be $inInResult.")
-      } finally {
-        tr.shutdown
       }
+    } finally {
+      tr.shutdown
     }
   }
 }
