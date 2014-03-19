@@ -22,11 +22,11 @@ package com.signalcollect.triplerush.optimizers
 
 import com.signalcollect.triplerush.TriplePattern
 import scala.Array.canBuildFrom
+import com.signalcollect.triplerush.PredicateStats
 
 object GreedyCardinalityOptimizer extends Optimizer {
 
-  //bpo::
-  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
+  def optimize(cardinalities: Map[TriplePattern, Long], predicateStats: Map[Int, PredicateStats]): Array[TriplePattern] = {
     // Sort triple patterns by cardinalities and send the query to the most selective pattern first.
     var sortedPatterns = cardinalities.toArray.sortBy(_._2)
     sortedPatterns.map(_._1)

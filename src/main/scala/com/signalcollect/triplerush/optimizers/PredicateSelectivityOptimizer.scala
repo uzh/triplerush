@@ -2,6 +2,7 @@ package com.signalcollect.triplerush.optimizers
 import scala.annotation.tailrec
 import com.signalcollect.triplerush.PredicateSelectivity
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.PredicateStats
 
 class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) extends Optimizer {
 
@@ -9,8 +10,8 @@ class PredicateSelectivityOptimizer(predicateSelectivity: PredicateSelectivity) 
    * returns optimal ordering of patterns based on predicate selectivity.
    * TODO: if the optimizer can infer that the query will have no result, then it will return an empty list of patterns
    */
-  
-  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
+
+  def optimize(cardinalities: Map[TriplePattern, Long], predicateStats: Map[Int, PredicateStats]): Array[TriplePattern] = {
 
     println("cardinalities: " + cardinalities.mkString(" "))
 

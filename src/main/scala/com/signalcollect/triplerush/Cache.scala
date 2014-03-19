@@ -19,20 +19,29 @@
 
 package com.signalcollect.triplerush
 
-object EdgeCounts {
+object CardinalityCache extends Cache[TriplePattern, Long]
+object PredicateStatsCache extends Cache[Int, PredicateStats]
 
-  var cachedEdgeCounts = Map.empty[Int, Long]
+case class PredicateStats(edgeCount: Long, subjectCount: Long, objectCount: Long)
 
-  def apply(predicate: Int): Option[Long] = {
-    cachedEdgeCounts.get(predicate)
+class Cache[K, V] {
+
+  var implementation = Map.empty[K, V]
+
+  def apply(tp: K): Option[V] = {
+    implementation.get(tp)
   }
 
-  def add(predicate: Int, edgeCount: Long) {
-    cachedEdgeCounts += ((predicate, edgeCount))
+  def add(key: K, value: V) {
+    this.synchronized {
+      implementation += key -> value
+    }
   }
 
   def clear {
-    cachedEdgeCounts = Map.empty[Int, Long]
+    this.synchronized {
+      implementation = Map.empty[K, V]
+    }
   }
-  
+
 }

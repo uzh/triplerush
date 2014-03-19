@@ -3,9 +3,10 @@ package com.signalcollect.triplerush.optimizers
 import com.signalcollect.triplerush.PredicateSelectivity
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.triplerush.PredicateStats
 
 trait Optimizer {
-  def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern]
+  def optimize(cardinalities: Map[TriplePattern, Long], predicateStats: Map[Int, PredicateStats]): Array[TriplePattern]
   override def toString = this.getClass.toString
 }
 

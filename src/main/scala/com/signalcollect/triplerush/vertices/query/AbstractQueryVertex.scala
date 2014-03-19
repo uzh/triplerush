@@ -31,15 +31,13 @@ import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.vertices.BaseVertex
-import com.signalcollect.triplerush.Cardinalities
 import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.CardinalityAndEdgeCountReply
-import com.signalcollect.triplerush.EdgeCounts
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.ObjectCounts
-import com.signalcollect.triplerush.SubjectCounts
+import com.signalcollect.triplerush.CardinalityCache
+import com.signalcollect.triplerush.PredicateStatsCache
+import com.signalcollect.triplerush.PredicateStatsReply
 
 abstract class AbstractQueryVertex[StateType](
   val querySpecification: QuerySpecification,
@@ -83,7 +81,7 @@ abstract class AbstractQueryVertex[StateType](
 
   def gatherZeroPredicateStatsForPattern(triplePattern: TriplePattern, graphEditor: GraphEditor[Any, Any]) {
     val patternWithWildcards = triplePattern.withVariablesAsWildcards
-    val fromCache = Cardinalities(patternWithWildcards)
+    val fromCache = CardinalityCache(patternWithWildcards)
     val cardinalityInCache = fromCache.isDefined
     if (cardinalityInCache) {
       handleCardinalityReply(triplePattern, fromCache.get)
@@ -99,17 +97,15 @@ abstract class AbstractQueryVertex[StateType](
   def gatherPredicateStatsForPattern(triplePattern: TriplePattern, graphEditor: GraphEditor[Any, Any]) {
     val patternWithWildcards = triplePattern.withVariablesAsWildcards
     val pIndexForPattern = patternWithWildcards.p
-    val fromCache = Cardinalities(patternWithWildcards)
-    val edgeCountsCache = EdgeCounts(pIndexForPattern)
-    val objectCountsCache = ObjectCounts(pIndexForPattern)
-    val subjectCountsCache = SubjectCounts(pIndexForPattern)
+    val fromCache = CardinalityCache(patternWithWildcards)
+    val predicateStats = PredicateStatsCache(pIndexForPattern)
     val cardinalityInCache = fromCache.isDefined
-    val predicateStatsInCache = edgeCountsCache.isDefined && objectCountsCache.isDefined && subjectCountsCache.isDefined
+    val predicateStatsInCache = predicateStats.isDefined
     if (cardinalityInCache && predicateStatsInCache) {
       // Answer with stats from cache.
       handleCardinalityReply(triplePattern, fromCache.get)
     } else if (cardinalityInCache && !requestedPredicateStats.contains(pIndexForPattern)) {
-      // Need to gather predicate stats.  
+      // Need to gather predicate stats.
       requestedPredicateStats += pIndexForPattern
       graphEditor.sendSignal(CardinalityRequest(triplePattern, id), TriplePattern(0, pIndexForPattern, 0), None)
     } else if (predicateStatsInCache) {
@@ -157,18 +153,16 @@ abstract class AbstractQueryVertex[StateType](
         handleResultCount(resultCount)
       case CardinalityReply(forPattern, cardinality) =>
         //received cardinality reply from: forPattern
-        Cardinalities.add(forPattern.withVariablesAsWildcards, cardinality)
+        CardinalityCache.add(forPattern.withVariablesAsWildcards, cardinality)
         handleCardinalityReply(forPattern, cardinality)
         if (areStatsGathered) {
           handleQueryDispatch(graphEditor)
         }
-      case CardinalityAndEdgeCountReply(forPattern, cardinality, edgeCount, maxObjectCount, maxSubjectCount) =>
+      case PredicateStatsReply(forPattern, cardinality, predicateStats) =>
         //received cardinalityandedgecount reply from: forPattern
-        Cardinalities.add(forPattern.withVariablesAsWildcards, cardinality)
+        CardinalityCache.add(forPattern.withVariablesAsWildcards, cardinality)
         val pIndexForPattern = forPattern.p
-        EdgeCounts.add(pIndexForPattern, edgeCount)
-        ObjectCounts.add(pIndexForPattern, maxObjectCount)
-        SubjectCounts.add(pIndexForPattern, maxSubjectCount)
+        PredicateStatsCache.add(pIndexForPattern, predicateStats)
         handleCardinalityReply(forPattern, cardinality)
         if (areStatsGathered) {
           handleQueryDispatch(graphEditor)
@@ -215,10 +209,7 @@ abstract class AbstractQueryVertex[StateType](
 
   def optimizeQuery: Option[Array[Int]] = {
     val optimizedPatterns = optimizer.get.optimize(
-      cardinalities,
-      EdgeCounts.cachedEdgeCounts,
-      ObjectCounts.cachedObjectCounts,
-      SubjectCounts.cachedSubjectCounts)
+      cardinalities, PredicateStatsCache.implementation)
     optimizingDuration = System.nanoTime - optimizingStartTime
     if (optimizedPatterns.length > 0) {
       val optimizedQuery = QueryParticle.fromSpecification(id, querySpecification.withUnmatchedPatterns(optimizedPatterns))

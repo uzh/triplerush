@@ -4,10 +4,11 @@ import scala.annotation.tailrec
 import com.signalcollect.triplerush.PredicateSelectivity
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.PredicateStats
 
 class AdvancedOptimizer(pairwisePatternCardinalities: Map[Set[TriplePattern], Option[Long]]) extends Optimizer {
 
-  def optimize(cardinality: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
+  def optimize(cardinalities: Map[TriplePattern, Long], predicateStats: Map[Int, PredicateStats]): Array[TriplePattern] = {
 
     /**
      * Takes a list of optimized patterns, a set of unoptimized patterns, and
@@ -27,7 +28,7 @@ class AdvancedOptimizer(pairwisePatternCardinalities: Map[Set[TriplePattern], Op
       }
     }
 
-    val (optimized, _, _) = optimizePatterns(List(), cardinality.keySet, cardinality, Set())
+    val (optimized, _, _) = optimizePatterns(List(), cardinalities.keySet, cardinalities, Set())
     val bestOrdering = optimized.toArray.reverse
     bestOrdering
   }

@@ -23,10 +23,11 @@ package com.signalcollect.triplerush.optimizers
 import scala.collection.mutable.ArrayBuffer
 import com.signalcollect.triplerush.TriplePattern
 import scala.Array.canBuildFrom
+import com.signalcollect.triplerush.PredicateStats
 
 object CleverCardinalityOptimizer extends Optimizer {
 
-  @inline def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
+  def optimize(cardinalities: Map[TriplePattern, Long], predicateStats: Map[Int, PredicateStats]): Array[TriplePattern] = {
     var sortedPatterns = cardinalities.toArray.sortBy(_._2)
     var boundVariables = Set[Int]() // The lower the score, the more constrained the variable.
     val optimizedPatterns = ArrayBuffer[TriplePattern]()

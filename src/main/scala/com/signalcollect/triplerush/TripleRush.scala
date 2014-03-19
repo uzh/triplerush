@@ -65,6 +65,7 @@ case class TripleRush(
       "com.signalcollect.triplerush.PlaceholderEdge",
       "com.signalcollect.triplerush.CardinalityRequest",
       "com.signalcollect.triplerush.CardinalityReply",
+      "com.signalcollect.triplerush.PredicateStatsReply",
       "com.signalcollect.triplerush.ChildIdRequest",
       "com.signalcollect.triplerush.ChildIdReply",
       "com.signalcollect.triplerush.SubjectCountSignal",
@@ -165,10 +166,8 @@ case class TripleRush(
   def shutdown = {
     graph.awaitIdle
     graph.shutdown
-    Cardinalities.clear
-    EdgeCounts.clear
-    ObjectCounts.clear
-    SubjectCounts.clear
+    CardinalityCache.clear
+    PredicateStatsCache.clear
     QueryIds.reset
   }
 

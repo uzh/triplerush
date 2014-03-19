@@ -33,7 +33,6 @@ import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.ChildIdRequest
 import com.signalcollect.triplerush.ChildIdRequest
-import com.signalcollect.triplerush.CardinalityAndEdgeCountReply
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.ObjectCountSignal
 import com.signalcollect.triplerush.SubjectCountSignal

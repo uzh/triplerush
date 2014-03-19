@@ -5,12 +5,13 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TriplePattern
 import scala.annotation.tailrec
+import com.signalcollect.triplerush.PredicateStats
 
 final class ExplorationOptimizer(predicateSelectivity: PredicateSelectivity) extends Optimizer {
 
   case class CostEstimate(frontier: Double, lastExploration: Double, explorationSum: Double)
 
-  @inline def optimize(cardinalities: Map[TriplePattern, Long], edgeCounts: Map[Int, Long], maxObjectCounts: Map[Int, Long], maxSubjectCounts: Map[Int, Long]): Array[TriplePattern] = {
+  def optimize(cardinalities: Map[TriplePattern, Long], predicateStats: Map[Int, PredicateStats]): Array[TriplePattern] = {
 
     @inline def reverseMutableArray(arr: Array[TriplePattern]) {
       var fromStart = 0
@@ -71,25 +72,30 @@ final class ExplorationOptimizer(predicateSelectivity: PredicateSelectivity) ext
       val isSubjectBound = (candidate.s > 0 || intersectionVariables.contains(candidate.s))
       val isObjectBound = (candidate.o > 0 || intersectionVariables.contains(candidate.o))
 
-      //if all bound
-      if ((intersectionVariables.size == candidate.variableSet.size) && candidate.p > 0) {
-        1
-      } //s,p,*
-      else if (isSubjectBound && candidate.p > 0 && candidate.o < 0) {
-        math.min(cardinalities(candidate), maxObjectCounts(predicateIndexForCandidate))
-      } //*,p,o
-      else if (isObjectBound && candidate.p > 0 && candidate.s < 0) {
-        math.min(cardinalities(candidate), maxSubjectCounts(predicateIndexForCandidate))
-      } //s,*,o
-      else if (isSubjectBound && candidate.p < 0 && isObjectBound) {
-        math.min(cardinalities(candidate), numberOfPredicates)
-      } //*,p,*
-      else if (!isSubjectBound && candidate.p > 0 && !isObjectBound) {
-        math.min(cardinalities(candidate), edgeCounts(predicateIndexForCandidate) * maxSubjectCounts(predicateIndexForCandidate))
-      } //otherwise
-      else {
+      if (candidate.p > 0) {
+        val stats = predicateStats(predicateIndexForCandidate)
+        //if all bound
+        if ((intersectionVariables.size == candidate.variableSet.size)) {
+          1
+        } //s,p,*
+        else if (isSubjectBound && candidate.o < 0) {
+          math.min(cardinalities(candidate), stats.objectCount)
+        } //*,p,o
+        else if (isObjectBound && candidate.s < 0) {
+          math.min(cardinalities(candidate), stats.subjectCount)
+        } //s,*,o
+        else if (isSubjectBound && isObjectBound) {
+          math.min(cardinalities(candidate), numberOfPredicates)
+        } //*,p,*
+        else if (!isSubjectBound && !isObjectBound) {
+          math.min(cardinalities(candidate), stats.edgeCount * stats.subjectCount)
+        } else {
+          cardinalities(candidate)
+        }
+      } else {
         cardinalities(candidate)
       }
+
     }
 
     /**
