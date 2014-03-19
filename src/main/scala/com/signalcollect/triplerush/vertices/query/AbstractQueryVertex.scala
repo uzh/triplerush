@@ -178,7 +178,9 @@ abstract class AbstractQueryVertex[StateType](
   }
 
   def areStatsGathered: Boolean = {
-    expectedCardinalityReplies + requestedPredicateStats.size == receivedCardinalityReplies
+    val expectedReplies = expectedCardinalityReplies + requestedPredicateStats.size
+    //println(s"$id: q: ${querySpecification.unmatched}	$receivedCardinalityReplies/$expectedReplies")
+    expectedReplies == receivedCardinalityReplies
   }
 
   def handleQueryDispatch(graphEditor: GraphEditor[Any, Any]) {

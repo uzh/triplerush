@@ -163,11 +163,13 @@ case class TripleRush(
   }
 
   def shutdown = {
+    graph.awaitIdle
+    graph.shutdown
     Cardinalities.clear
     EdgeCounts.clear
     ObjectCounts.clear
     SubjectCounts.clear
-    graph.shutdown
+    QueryIds.reset
   }
 
   def edgesPerIndexType: Map[String, Int] = {

@@ -28,6 +28,10 @@ object QueryIds {
   private val minFullQueryId = new AtomicInteger(0)
   def nextQueryId: Int = maxFullQueryId.incrementAndGet
   def nextCountQueryId: Int = minFullQueryId.decrementAndGet
+  def reset {
+    maxFullQueryId.set(0)
+    minFullQueryId.set(0)
+  }
 }
 
 object ParticleDebug {
@@ -108,7 +112,7 @@ object QueryParticle {
     tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
     bindings: Array[Int],
     unmatched: Seq[TriplePattern]): Array[Int] = {
-        
+
     val ints = 4 + bindings.length + 3 * unmatched.length
     val r = new Array[Int](ints)
     r.writeQueryId(queryId)
