@@ -104,7 +104,7 @@ abstract class AbstractQueryVertex[StateType](
     val objectCountsCache = ObjectCounts(pIndexForPattern)
     val subjectCountsCache = SubjectCounts(pIndexForPattern)
     val cardinalityInCache = fromCache.isDefined
-    val predicateStatsInCache = edgeCountsCache.isDefined
+    val predicateStatsInCache = edgeCountsCache.isDefined && objectCountsCache.isDefined && subjectCountsCache.isDefined
     if (cardinalityInCache && predicateStatsInCache) {
       // Answer with stats from cache.
       handleCardinalityReply(triplePattern, fromCache.get)
