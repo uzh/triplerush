@@ -46,10 +46,14 @@ final class PIndex(id: TriplePattern) extends CardinalityCountingIndex(id)
   }
 
   override def handleObjectCount(objCount: ObjectCountSignal) = {
-    if (objCount.count > maxObjectCount) maxObjectCount = objCount.count
+    if (objCount.count > maxObjectCount) {
+      maxObjectCount = objCount.count
+    }
   }
 
   override def handleSubjectCount(subCount: SubjectCountSignal) = {
-    if (subCount.count > maxSubjectCount) maxSubjectCount = subCount.count
+    if (subCount.count > maxSubjectCount) {
+      maxSubjectCount = subCount.count
+    }
   }
 }

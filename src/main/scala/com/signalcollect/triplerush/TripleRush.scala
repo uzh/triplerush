@@ -40,6 +40,7 @@ import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
 import com.signalcollect.triplerush.vertices.RootIndex
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.ExplorationOptimizerCreator
+import com.signalcollect.GraphEditor
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
@@ -97,22 +98,25 @@ case class TripleRush(
     graph.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
   }
 
-  /**
-   * Slow, only use for debugging purposes.
-   */
   def addTriple(s: String, p: String, o: String) {
-    val sId = Mapping.register(s)
-    val pId = Mapping.register(p)
-    val oId = Mapping.register(o)
-    val tp = TriplePattern(sId, pId, oId)
-    FileLoader.addTriple(tp, graph)
+    val sId = Dictionary(s)
+    val pId = Dictionary(p)
+    val oId = Dictionary(o)
+    addEncodedTriple(sId, pId, oId)
   }
 
-  /**
-   * Slow, only use for debugging purposes.
-   */
+  def addTriplePattern(tp: TriplePattern) {
+    addEncodedTriple(tp.s, tp.p, tp.o)
+  }
+
   def addEncodedTriple(sId: Int, pId: Int, oId: Int) {
-    FileLoader.addTriple(TriplePattern(sId, pId, oId), graph)
+    assert(sId > 0 && pId > 0 && oId > 0)
+    val po = TriplePattern(0, pId, oId)
+    val so = TriplePattern(sId, 0, oId)
+    val sp = TriplePattern(sId, pId, 0)
+    graph.addEdge(po, new PlaceholderEdge(sId))
+    graph.addEdge(so, new PlaceholderEdge(pId))
+    graph.addEdge(sp, new PlaceholderEdge(oId))
   }
 
   def executeCountingQuery(

@@ -39,7 +39,7 @@ object SparqlDsl {
         if (variableToId.contains(s)) {
           variableToId(s)
         } else {
-          Mapping.register(s)
+          Dictionary(s)
         }
       }
       TriplePattern(getId(s), getId(p), getId(o))
@@ -70,11 +70,11 @@ object SparqlDsl {
     }
   }
   case class DslQuery(isSamplingQuery: Boolean, tickets: Long, variableToId: Map[String, Int], idToVariable: Map[Int, String], dslTriplePatterns: List[DslTriplePattern]) {
-    def getString(id: Int): String = {
+    def resolve(id: Int): Option[String] = {
       if (id < 0) {
-        idToVariable(id)
+        Some(idToVariable(id))
       } else {
-        Mapping.getString(id)
+        Dictionary(id)
       }
     }
   }

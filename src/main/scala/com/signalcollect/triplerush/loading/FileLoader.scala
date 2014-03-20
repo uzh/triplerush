@@ -21,12 +21,11 @@
 package com.signalcollect.triplerush.loading
 
 import java.io.FileInputStream
+
 import org.semanticweb.yars.nx.parser.NxParser
+
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.vertices.POIndex
-import com.signalcollect.triplerush.vertices.SOIndex
-import com.signalcollect.triplerush.vertices.SPIndex
-import com.signalcollect.triplerush.Mapping
+import com.signalcollect.triplerush.Dictionary
 import com.signalcollect.triplerush.PlaceholderEdge
 import com.signalcollect.triplerush.TriplePattern
 
@@ -41,14 +40,14 @@ case object FileLoader {
       val predicateString = triple(1).toString
       val subjectString = triple(0).toString
       val objectString = triple(2).toString
-      val sId = Mapping.register(subjectString)
-      val pId = Mapping.register(predicateString)
-      val oId = Mapping.register(objectString)
+      val sId = Dictionary(subjectString)
+      val pId = Dictionary(predicateString)
+      val oId = Dictionary(objectString)
       val tp = TriplePattern(sId, pId, oId)
       if (!tp.isFullyBound) {
         println(s"Problem: $tp, triple #${triplesLoaded + 1} in file $ntriplesFilename is not fully bound.")
       } else {
-        addTriple(tp, graphEditor)
+        addEncodedTriple(sId, pId, oId, graphEditor)
       }
       triplesLoaded += 1
       if (triplesLoaded % 10000 == 0) {
@@ -59,13 +58,14 @@ case object FileLoader {
     is.close
   }
 
-  def addTriple(tp: TriplePattern, graphEditor: GraphEditor[Any, Any]) {
-    assert(tp.isFullyBound)
-    val po = TriplePattern(0, tp.p, tp.o)
-    val so = TriplePattern(tp.s, 0, tp.o)
-    val sp = TriplePattern(tp.s, tp.p, 0)
-    graphEditor.addEdge(po, new PlaceholderEdge(tp.s))
-    graphEditor.addEdge(so, new PlaceholderEdge(tp.p))
-    graphEditor.addEdge(sp, new PlaceholderEdge(tp.o))
+  def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Any, Any]) {
+    assert(sId > 0 && pId > 0 && oId > 0)
+    val po = TriplePattern(0, pId, oId)
+    val so = TriplePattern(sId, 0, oId)
+    val sp = TriplePattern(sId, pId, 0)
+    graphEditor.addEdge(po, new PlaceholderEdge(sId))
+    graphEditor.addEdge(so, new PlaceholderEdge(pId))
+    graphEditor.addEdge(sp, new PlaceholderEdge(oId))
   }
+
 }

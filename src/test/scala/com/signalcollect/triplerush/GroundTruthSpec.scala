@@ -313,7 +313,7 @@ WHERE
     val result = qe.executeQuery(q)
     val bindings: List[Map[String, String]] = result.
       map(
-        bindingsToMap(_).map(entry => (q.getString(entry._1), q.getString(entry._2)))).toList
+        bindingsToMap(_).map(entry => (q.resolve(entry._1).get, q.resolve(entry._2).get))).toList
     val sortedBindings: List[TreeMap[String, String]] = bindings.
       map(unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
     val sortedBindingList = (sortedBindings sortBy (map => map.values)).toList

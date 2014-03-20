@@ -25,6 +25,7 @@ import com.signalcollect.GraphEditor
 import java.io.EOFException
 import java.io.DataInputStream
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.PlaceholderEdge
 
 /**
  * Only works if the file contains at least one triple.
@@ -75,9 +76,20 @@ case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEdito
     if (!isInitialized) {
       initialize
     }
-    val patternCopy = nextTriplePattern
-    val loader: GraphEditor[Any, Any] => Unit = FileLoader.addTriple(patternCopy, _)
+    val loader: GraphEditor[Any, Any] => Unit = addEncodedTriple(
+      nextTriplePattern.s, nextTriplePattern.p, nextTriplePattern.o, _)
     nextTriplePattern = readNextTriplePattern
     loader
   }
+
+  def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Any, Any]) {
+    assert(sId > 0 && pId > 0 && oId > 0)
+    val po = TriplePattern(0, pId, oId)
+    val so = TriplePattern(sId, 0, oId)
+    val sp = TriplePattern(sId, pId, 0)
+    graphEditor.addEdge(po, new PlaceholderEdge(sId))
+    graphEditor.addEdge(so, new PlaceholderEdge(pId))
+    graphEditor.addEdge(sp, new PlaceholderEdge(oId))
+  }
+
 }
