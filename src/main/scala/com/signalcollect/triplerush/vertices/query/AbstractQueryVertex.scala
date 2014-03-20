@@ -107,6 +107,7 @@ abstract class AbstractQueryVertex[StateType](
     } else if (cardinalityInCache && !requestedPredicateStats.contains(pIndexForPattern)) {
       // Need to gather predicate stats.
       requestedPredicateStats += pIndexForPattern
+      handleCardinalityReply(triplePattern, fromCache.get)
       graphEditor.sendSignal(CardinalityRequest(triplePattern, id), TriplePattern(0, pIndexForPattern, 0), None)
     } else if (predicateStatsInCache) {
       // Need to gather cardinality stats.
@@ -118,6 +119,7 @@ abstract class AbstractQueryVertex[StateType](
       val pIndex = TriplePattern(0, pIndexForPattern, 0)
       graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId, None)
       if (!requestedPredicateStats.contains(pIndexForPattern) && pIndex != responsibleIndexId) {
+        requestedPredicateStats += pIndexForPattern
         graphEditor.sendSignal(CardinalityRequest(triplePattern, id), pIndex, None)
       }
     }
