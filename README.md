@@ -1,5 +1,5 @@
-Parallelized Triple Pattern Matcher
-===================================
+TripleRush: A Fast Distributed Triple Pattern Matcher [![Build Status](https://travis-ci.org/uzh/triplerush.png)](https://travis-ci.org/uzh/triplerush)
+=====================================================
 
 How to Compile the Project
 --------------------------
