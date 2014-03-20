@@ -22,6 +22,7 @@ package com.signalcollect.triplerush
 
 import com.signalcollect.GraphEditor
 import QueryParticle.arrayToParticle
+import com.signalcollect.triplerush.vertices.PIndex
 
 case object UndeliverableRerouter {
   def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
@@ -31,7 +32,12 @@ case object UndeliverableRerouter {
       case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
       case ChildIdRequest =>
-        graphEditor.sendSignal(ChildIdReply(Set()), sourceId.get, Some(targetId))    
+        graphEditor.sendSignal(ChildIdReply(Set()), sourceId.get, Some(targetId))
+      case SubjectCountSignal =>
+        // This count could potentially arrive before the vertex is created.
+        val predicateIndex = new PIndex(targetId.asInstanceOf[TriplePattern])
+        graphEditor.addVertex(predicateIndex)
+        graphEditor.sendSignal(signal, targetId, sourceId)
       case other =>
         println(s"Failed signal delivery of $other of type ${other.getClass} to the vertex with id $targetId and sender id $sourceId.")
     }
