@@ -30,7 +30,6 @@ import org.scalacheck.Gen
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Prop
-import org.openrdf.query.QueryResult
 import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
 
