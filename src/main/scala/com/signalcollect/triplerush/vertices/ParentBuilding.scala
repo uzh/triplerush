@@ -32,15 +32,6 @@ trait ParentBuilding[Signal, State] extends BaseVertex[TriplePattern, Signal, St
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     // Build the hierarchical index on initialization.
     id.parentPatterns foreach { parentId =>
-      if (parentId != TriplePattern(0, 0, 0)) {
-        // The root is added initially, no need to add again.
-        val indexVertex = parentId match {
-          case TriplePattern(s, 0, 0) => new SIndex(parentId)
-          case TriplePattern(0, p, 0) => new PIndex(parentId)
-          case TriplePattern(0, 0, o) => new OIndex(parentId)
-        }
-        graphEditor.addVertex(indexVertex)
-      }
       val idDelta = id.parentIdDelta(parentId)
       graphEditor.addEdge(parentId, new PlaceholderEdge(idDelta))
     }

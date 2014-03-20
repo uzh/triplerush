@@ -75,6 +75,7 @@ case class TripleRush(
       "com.signalcollect.interfaces.AddEdge",
       "akka.actor.RepointableActorRef")).build
   graph.setUndeliverableSignalHandler(UndeliverableRerouter.handle _)
+  graph.setEdgeAddedToNonExistentVertexHandler(NonExistentVertexHandler.createIndexVertex _)
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
