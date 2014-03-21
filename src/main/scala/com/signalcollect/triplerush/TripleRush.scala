@@ -154,13 +154,17 @@ case class TripleRush(
     result
   }
 
+  /**
+   * If the optimizer is defined, uses that one, else uses the default.
+   */
   def executeAdvancedQuery(
     q: QuerySpecification,
-    optimizer: Option[Optimizer]): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
+    optimizerOption: Option[Optimizer] = None): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
-    graph.addVertex(new ResultBindingQueryVertex(q, resultPromise, statsPromise, optimizer))
+    val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
+    graph.addVertex(new ResultBindingQueryVertex(q, resultPromise, statsPromise, usedOptimizer))
     (resultPromise.future, statsPromise.future)
   }
 
