@@ -44,6 +44,7 @@ import com.hp.hpl.jena.sparql.syntax.ElementService
 import com.hp.hpl.jena.sparql.syntax.ElementData
 import com.hp.hpl.jena.sparql.syntax.ElementNotExists
 import com.hp.hpl.jena.sparql.syntax.ElementFilter
+import scala.collection.parallel.mutable.ParArray
 
 /**
  * Represents a SPARQL query.
@@ -51,6 +52,7 @@ import com.hp.hpl.jena.sparql.syntax.ElementFilter
 case class QuerySpecification(
   unmatched: Seq[TriplePattern],
   tickets: Long = Long.MaxValue,
+  selectVarIds: Option[Set[Int]] = None,
   variableNameToId: Option[Map[String, Int]] = None,
   idToVariableName: Option[Map[Int, String]] = None) {
 
@@ -59,20 +61,20 @@ case class QuerySpecification(
   }
 
   def decodeResults(encodedResults: Traversable[Array[Int]]): Option[Traversable[Map[String, String]]] = {
-    if (variableNameToId.isDefined && idToVariableName.isDefined) {
+    if (variableNameToId.isDefined && idToVariableName.isDefined && selectVarIds.isDefined) {
+      val parEncodedResults: ParArray[Array[Int]] = encodedResults.toArray.par
+      val select = selectVarIds.get
       val varToId = variableNameToId.get
       val idToVar = idToVariableName.get
       val variables = varToId.keys
-      val decodedResultMaps = encodedResults.map { encodedResults =>
+      val decodedResultMaps = parEncodedResults.map { encodedResults =>
         val numberOfBindings = encodedResults.length
-        val resultTuples = (-1 to -numberOfBindings by -1).zip(encodedResults)
-        val decodedResultMap = resultTuples.map {
-          case (id, binding) =>
-            (idToVar(id), Dictionary(binding).get)
+        val decodedResultMap = select.map { variableId =>
+          idToVar(variableId) -> Dictionary(encodedResults(-variableId - 1)).get
         }.toMap
         decodedResultMap
       }
-      Some(decodedResultMaps)
+      Some(decodedResultMaps.seq)
     } else {
       None
     }
@@ -90,6 +92,7 @@ object QuerySpecification {
   class JenaQueryVisitor(queryString: String) extends ElementVisitor {
     private val jenaQuery = QueryFactory.create(queryString)
     private val queryPatterns = jenaQuery.getQueryPattern
+    private val selectVarNames = jenaQuery.getProjectVars.map(_.getVarName).toSet
     private var hasNoResults = false
     var nextVariableId = -1
     var variableNameToId = Map[String, Int]()
@@ -124,8 +127,10 @@ object QuerySpecification {
         if (hasNoResults) {
           None
         } else {
+          val selectVarIds = selectVarNames.map(variableNameToId)
           Some(QuerySpecification(
             unmatched = patterns,
+            selectVarIds = Some(selectVarIds),
             variableNameToId = Some(variableNameToId),
             idToVariableName = Some(idToVariableName)))
         }

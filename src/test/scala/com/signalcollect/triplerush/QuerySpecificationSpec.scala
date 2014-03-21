@@ -42,9 +42,7 @@ WHERE {
       val queryOption = QuerySpecification.fromSparql(sparql)
       assert(queryOption.isDefined)
       val query = queryOption.get
-      println(query)
       val encodedResults = tr.executeQuery(query)
-      println("Encoded done")
       val decodedResults = query.decodeResults(encodedResults)
       assert(decodedResults.get.toSet === Set(Map("X" -> "http://a")))
     } catch {
