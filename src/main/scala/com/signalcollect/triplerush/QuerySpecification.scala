@@ -58,10 +58,6 @@ case class QuerySpecification(
     copy(unmatched = u)
   }
 
-  //  override def toString = {
-  //    unmatched.toString
-  //  }
-
   def decodeResults(encodedResults: Traversable[Array[Int]]): Option[Traversable[Map[String, String]]] = {
     if (variableNameToId.isDefined && idToVariableName.isDefined) {
       val varToId = variableNameToId.get
@@ -183,7 +179,9 @@ object QuerySpecification {
       }
     }
 
-    private def unsupported(el: Element) = throw new UnsupportedOperationException(el.toString)
+    private def unsupported(el: Element) = {
+      throw new UnsupportedOperationException(el.toString)
+    }
     def visit(el: ElementTriplesBlock) = unsupported(el)
     def visit(el: ElementFilter) = unsupported(el)
     def visit(el: ElementAssign) = unsupported(el)
