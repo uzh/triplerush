@@ -20,23 +20,183 @@
 
 package com.signalcollect.triplerush
 
+import scala.collection.JavaConversions._
 import language.implicitConversions
 import java.util.concurrent.atomic.AtomicInteger
 import scala.util.Random
+import com.hp.hpl.jena.query.Query
+import com.hp.hpl.jena.query.QueryFactory
+import com.hp.hpl.jena.sparql.syntax.Element
+import com.hp.hpl.jena.sparql.syntax.ElementGroup
+import com.hp.hpl.jena.sparql.syntax.ElementPathBlock
+import com.hp.hpl.jena.sparql.syntax.ElementVisitor
+import com.hp.hpl.jena.sparql.syntax.ElementSubQuery
+import com.hp.hpl.jena.sparql.syntax.ElementMinus
+import com.hp.hpl.jena.sparql.syntax.ElementNamedGraph
+import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock
+import com.hp.hpl.jena.sparql.syntax.ElementExists
+import com.hp.hpl.jena.sparql.syntax.ElementAssign
+import com.hp.hpl.jena.sparql.syntax.ElementDataset
+import com.hp.hpl.jena.sparql.syntax.ElementBind
+import com.hp.hpl.jena.sparql.syntax.ElementUnion
+import com.hp.hpl.jena.sparql.syntax.ElementOptional
+import com.hp.hpl.jena.sparql.syntax.ElementService
+import com.hp.hpl.jena.sparql.syntax.ElementData
+import com.hp.hpl.jena.sparql.syntax.ElementNotExists
+import com.hp.hpl.jena.sparql.syntax.ElementFilter
 
 /**
  * Represents a SPARQL query.
  */
 case class QuerySpecification(
   unmatched: Seq[TriplePattern],
-  tickets: Long = Long.MaxValue) {
+  tickets: Long = Long.MaxValue,
+  variableNameToId: Option[Map[String, Int]] = None,
+  idToVariableName: Option[Map[Int, String]] = None) {
 
   def withUnmatchedPatterns(u: Seq[TriplePattern]): QuerySpecification = {
     copy(unmatched = u)
   }
 
-  override def toString = {
-    unmatched.toString
+  //  override def toString = {
+  //    unmatched.toString
+  //  }
+
+  def decodeResults(encodedResults: Traversable[Array[Int]]): Option[Traversable[Map[String, String]]] = {
+    if (variableNameToId.isDefined && idToVariableName.isDefined) {
+      val varToId = variableNameToId.get
+      val idToVar = idToVariableName.get
+      val variables = varToId.keys
+      val decodedResultMaps = encodedResults.map { encodedResults =>
+        val numberOfBindings = encodedResults.length
+        val resultTuples = (-1 to -numberOfBindings by -1).zip(encodedResults)
+        val decodedResultMap = resultTuples.map {
+          case (id, binding) =>
+            (idToVar(id), Dictionary(binding).get)
+        }.toMap
+        decodedResultMap
+      }
+      Some(decodedResultMaps)
+    } else {
+      None
+    }
   }
 
+}
+
+object QuerySpecification {
+
+  def fromSparql(q: String): Option[QuerySpecification] = {
+    val visitor = new JenaQueryVisitor(q)
+    visitor.createSpecification
+  }
+
+  class JenaQueryVisitor(queryString: String) extends ElementVisitor {
+    private val jenaQuery = QueryFactory.create(queryString)
+    private val queryPatterns = jenaQuery.getQueryPattern
+    private var hasNoResults = false
+    var nextVariableId = -1
+    var variableNameToId = Map[String, Int]()
+    var idToVariableName = Map[Int, String]()
+    private var patterns: List[TriplePattern] = List()
+    private var problem: Option[String] = {
+      if (!jenaQuery.isStrict) {
+        Some("Only strict queries are supported.")
+      } else if (jenaQuery.isDistinct) {
+        Some("Feature DISTINCT is unsupported.")
+      } else if (jenaQuery.isReduced) {
+        Some("Feature REDUCED is unsupported.")
+      } else if (jenaQuery.isOrdered) {
+        Some("Feature ORDERED is unsupported.")
+      } else if (jenaQuery.isQueryResultStar) {
+        Some("Result variables as * is unsupported.")
+      } else {
+        None
+      }
+    }
+
+    /**
+     * Turns the sparql query string into a query specification,
+     * returns None if at least one string that appears in the query has no dictionary encoding,
+     * because currently such queries cannot have any results.
+     */
+    def createSpecification: Option[QuerySpecification] = {
+      queryPatterns.visit(this)
+      if (problem.isDefined) {
+        throw new Exception(problem.get)
+      } else {
+        if (hasNoResults) {
+          None
+        } else {
+          Some(QuerySpecification(
+            unmatched = patterns,
+            variableNameToId = Some(variableNameToId),
+            idToVariableName = Some(idToVariableName)))
+        }
+      }
+    }
+
+    def visit(el: ElementGroup) {
+      for (element <- el.getElements) {
+        element.visit(this)
+      }
+    }
+
+    def visit(el: ElementPathBlock) {
+      for (pattern <- el.patternElts) {
+        val triple = pattern.asTriple
+        val tripleComponents = Vector(triple.getSubject, triple.getPredicate, triple.getObject)
+        val tripleIds = tripleComponents map { e =>
+          if (e.isVariable) {
+            val variableName = e.getName
+            val idOption = variableNameToId.get(variableName)
+            if (idOption.isDefined) {
+              idOption.get
+            } else {
+              val id = nextVariableId
+              nextVariableId -= 1
+              variableNameToId += variableName -> id
+              idToVariableName += id -> variableName
+              id
+            }
+          } else if (e.isLiteral) {
+            val literalString: String = e.getLiteral.toString
+            if (Dictionary.contains(literalString)) {
+              Dictionary(literalString)
+            } else {
+              //println(s"$literalString not in store, no results.")
+              hasNoResults = true
+              Int.MaxValue
+            }
+          } else {
+            val uriString = e.getURI
+            if (Dictionary.contains(uriString)) {
+              Dictionary(uriString)
+            } else {
+              //println(s"$uriString not in store, no results.")
+              hasNoResults = true
+              Int.MaxValue
+            }
+          }
+        }
+        patterns = patterns ::: List(TriplePattern(tripleIds(0), tripleIds(1), tripleIds(2)))
+      }
+    }
+
+    private def unsupported(el: Element) = throw new UnsupportedOperationException(el.toString)
+    def visit(el: ElementTriplesBlock) = unsupported(el)
+    def visit(el: ElementFilter) = unsupported(el)
+    def visit(el: ElementAssign) = unsupported(el)
+    def visit(el: ElementBind) = unsupported(el)
+    def visit(el: ElementData) = unsupported(el)
+    def visit(el: ElementUnion) = unsupported(el)
+    def visit(el: ElementOptional) = unsupported(el)
+    def visit(el: ElementDataset) = unsupported(el)
+    def visit(el: ElementNamedGraph) = unsupported(el)
+    def visit(el: ElementExists) = unsupported(el)
+    def visit(el: ElementNotExists) = unsupported(el)
+    def visit(el: ElementMinus) = unsupported(el)
+    def visit(el: ElementService) = unsupported(el)
+    def visit(el: ElementSubQuery) = unsupported(el)
+  }
 }
