@@ -74,7 +74,7 @@ object SparqlDsl {
       if (id < 0) {
         Some(idToVariable(id))
       } else {
-        Dictionary(id)
+        Dictionary.decode(id)
       }
     }
   }

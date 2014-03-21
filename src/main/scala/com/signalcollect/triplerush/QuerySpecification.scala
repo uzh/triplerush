@@ -70,7 +70,7 @@ case class QuerySpecification(
       val decodedResultMaps = parEncodedResults.map { encodedResults =>
         val numberOfBindings = encodedResults.length
         val decodedResultMap = select.map { variableId =>
-          idToVar(variableId) -> Dictionary(encodedResults(-variableId - 1)).get
+          idToVar(variableId) -> Dictionary(encodedResults(-variableId - 1))
         }.toMap
         decodedResultMap
       }

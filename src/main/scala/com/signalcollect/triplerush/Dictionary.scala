@@ -22,35 +22,64 @@ package com.signalcollect.triplerush
 
 import com.signalcollect.util.IntHashMap
 import com.signalcollect.util.IntValueHashMap
+import java.util.concurrent.locks.ReadWriteLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 object Dictionary {
+  private val lock = new ReentrantReadWriteLock
+  private val read = lock.readLock
+  private val write = lock.writeLock
   private var id2String = new IntHashMap[String]
   private var string2Id = new IntValueHashMap[String]
   private var maxId = 0
 
-  def contains(s: String): Boolean = synchronized {
-    val existingEncoding = string2Id.get(s)
-    existingEncoding != 0
+  def contains(s: String): Boolean = {
+    read.lock
+    try {
+      val hasExistingEncoding = string2Id.get(s) != 0
+      hasExistingEncoding
+    } finally {
+      read.unlock
+    }
   }
 
-  def apply(s: String): Int = synchronized {
-    val existingEncoding = string2Id.get(s)
+  def apply(s: String): Int = {
+    read.lock
+    val existingEncoding: Int = try {
+      string2Id.get(s)
+    } finally {
+      read.unlock
+    }
     if (existingEncoding == 0) {
-      val id = {
-        maxId += 1
-        maxId
+      write.lock
+      try {
+        val id = {
+          maxId += 1
+          maxId
+        }
+        string2Id.put(s, id)
+        id2String.put(id, s)
+        id
+      } finally {
+        write.unlock
       }
-      string2Id.put(s, id)
-      id2String.put(id, s)
-      id
     } else {
       existingEncoding
     }
   }
 
-  def apply(id: Int): Option[String] = synchronized {
-    val decoded = id2String.get(id)
-    if (decoded != 0) {
+  def apply(id: Int): String = {
+    read.lock
+    try {
+      id2String.get(id)
+    } finally {
+      read.unlock
+    }
+  }
+
+  def decode(id: Int): Option[String] = {
+    val decoded = apply(id)
+    if (decoded != null) {
       Some(decoded)
     } else {
       None
