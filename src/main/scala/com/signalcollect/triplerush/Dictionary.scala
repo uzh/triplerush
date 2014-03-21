@@ -28,6 +28,11 @@ object Dictionary {
   private var string2Id = new IntValueHashMap[String]
   private var maxId = 0
 
+  def contains(s: String): Boolean = synchronized {
+    val existingEncoding = string2Id.get(s)
+    existingEncoding != 0
+  }
+
   def apply(s: String): Int = synchronized {
     val existingEncoding = string2Id.get(s)
     if (existingEncoding == 0) {
