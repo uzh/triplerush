@@ -76,8 +76,12 @@ case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEdito
       initialize
     }
     assert(nextTriplePattern != null, "Next was called when hasNext is false.")
+    println(nextTriplePattern)
+    val s = nextTriplePattern.s
+    val p = nextTriplePattern.p
+    val o = nextTriplePattern.o
     val loader: GraphEditor[Any, Any] => Unit = FileLoader.addEncodedTriple(
-      nextTriplePattern.s, nextTriplePattern.p, nextTriplePattern.o, _)
+      s, p, o, _)
     nextTriplePattern = readNextTriplePattern
     loader
   }
