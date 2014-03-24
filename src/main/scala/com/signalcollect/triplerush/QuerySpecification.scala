@@ -60,6 +60,16 @@ case class QuerySpecification(
     copy(unmatched = u)
   }
 
+  def counts(variableId: Int, encodedResults: Traversable[Array[Int]]): Map[Int, Int] = {
+    var counts = Map.empty[Int, Int].withDefaultValue(0)
+    for (encodedResult <- encodedResults) {
+      val binding = encodedResult(math.abs(variableId) - 1)
+      val countForBinding = counts(binding)
+      counts += binding -> { countForBinding + 1 }
+    }
+    counts
+  }
+  
   def decodeResults(encodedResults: Traversable[Array[Int]]): Option[Traversable[Map[String, String]]] = {
     if (variableNameToId.isDefined && idToVariableName.isDefined && selectVarIds.isDefined) {
       val parEncodedResults: ParArray[Array[Int]] = encodedResults.toArray.par
