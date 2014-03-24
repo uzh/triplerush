@@ -24,6 +24,7 @@ import com.signalcollect.util.IntHashMap
 import com.signalcollect.util.IntValueHashMap
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import scala.io.Source
 
 object Dictionary {
   private val lock = new ReentrantReadWriteLock
@@ -84,6 +85,46 @@ object Dictionary {
     } else {
       None
     }
+  }
+
+  /**
+   * File format:
+   * http://dbpedia.org/resource/Kauffman_%28crater%29 -> 5421181
+   * http://dbpedia.org/resource/Watersports -> 2654992
+   *
+   * Warning: this has to be done before any other dictionary entries are added.
+   */
+  def loadFromFile(fileName: String) {
+    assert(string2Id.isEmpty)
+    assert(id2String.isEmpty)
+    println(s"Parsing dictionary from $fileName.")
+    
+    def parseEntry(line: String): (Int, String) = {
+      val split = line.split(" -> ")
+      val string = split(0)
+      val id = split(1).toInt
+      (id, string)
+    }
+
+    val entries = Source.fromFile(fileName).getLines
+    write.lock
+    var entriesAdded = 0
+    try {
+      for (entry <- entries) {
+        val (id, string) = parseEntry(entry)
+        maxId = math.max(id, maxId)
+        string2Id.put(string, id)
+        id2String.put(id, string)
+        entriesAdded += 1
+        if(entriesAdded % 10000 == 0){
+        	println(s"Added $entriesAdded to dictionary so far...")
+        }
+      }
+    } finally {
+      write.unlock
+    }
+    
+    println(s"Finished loading. Total entries added: $entriesAdded.")
   }
 
 }
