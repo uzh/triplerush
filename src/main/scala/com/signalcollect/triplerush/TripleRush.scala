@@ -34,13 +34,11 @@ import com.signalcollect.triplerush.loading.EdgesPerIndexType
 import com.signalcollect.triplerush.loading.FileLoader
 import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.Optimizer
+import com.signalcollect.triplerush.vertices.RootIndex
 import com.signalcollect.triplerush.vertices.query.IndexQueryVertex
 import com.signalcollect.triplerush.vertices.query.ResultBindingQueryVertex
 import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
-import com.signalcollect.triplerush.vertices.RootIndex
-import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.ExplorationOptimizerCreator
-import com.signalcollect.GraphEditor
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
