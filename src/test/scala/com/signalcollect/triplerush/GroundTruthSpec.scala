@@ -38,6 +38,7 @@ import com.signalcollect.triplerush.optimizers.ExplorationOptimizer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
+import java.io.File
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
@@ -302,8 +303,9 @@ WHERE
   }
 
   println("Loading LUBM1 ... ")
+  val sep = File.separator
   for (fileNumber <- 0 to 14) {
-    val filename = s"./lubm/university0_$fileNumber.nt"
+    val filename = s".${sep}lubm${sep}university0_$fileNumber.nt"
     qe.loadNtriples(filename)
   }
   qe.prepareExecution
@@ -335,7 +337,7 @@ WHERE
     }
   }
 
-  val queryBaseName = "./answers/answers_query"
+  val queryBaseName = ".${sep}answers${sep}answers_query"
   val referenceFiles: Map[Int, String] = ((1 to 14) map (queryNumber => queryNumber -> (queryBaseName + queryNumber + ".txt"))).toMap
   val referenceResults: Map[Int, QuerySolution] = {
     referenceFiles map { entry =>
