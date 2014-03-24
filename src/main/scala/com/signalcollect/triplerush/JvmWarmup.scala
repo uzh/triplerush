@@ -22,18 +22,19 @@ package com.signalcollect.triplerush
 import java.lang.management.ManagementFactory
 
 import scala.util.Random
+import collection.JavaConversions._
 
 object JvmWarmup extends App {
-  warmup(300, 20)
+  warmup(30, 20)
+  sleepUntilGcInactiveForXSeconds(10)
 
   def warmupWithExistingStore(maxSeconds: Int, minRunsWithoutCompilation: Int, tr: TripleRush) {
     println("JVM JIT warmup in progress.")
     val compilations = ManagementFactory.getCompilationMXBean
     val startTime = System.currentTimeMillis
-    val actualSeconds = maxSeconds - 5 // 5 seconds of sleep for GC at the end.
     println("Loading triples.")
-    // Spend 10% of the time, but a maximum of 30 seconds loading random triples, also don't load more than 1 million triples.
-    val loadingTime = math.min(actualSeconds / 4, 30)
+    // Spend 25% of the time, but a maximum of 30 seconds loading random triples, also don't load more than 1 million triples.
+    val loadingTime = math.min(maxSeconds / 4, 30)
     var triplesLoaded = 0
     val maxSubjectId = 400
     val maxPredicateId = 20
@@ -53,7 +54,7 @@ object JvmWarmup extends App {
     tr.prepareExecution
     println("Starting query executions.")
     var runsWithoutCompilationTime = 0
-    while (secondsSoFar < actualSeconds && runsWithoutCompilationTime < minRunsWithoutCompilation) {
+    while (secondsSoFar < maxSeconds && runsWithoutCompilationTime < minRunsWithoutCompilation) {
       val compilationTimeBefore = compilations.getTotalCompilationTime
       // Intentionally sometimes ask for a predicate that is not in the DB and a subject that has no dictionary encoding.
       val sparql = s"""
@@ -82,7 +83,6 @@ WHERE {
     }
     println(s"JVM JIT warmup finished after $secondsSoFar seconds, at the end there were $runsWithoutCompilationTime query executions without compilation.")
     tr.clear
-    Thread.sleep(3000)
   }
 
   def warmup(maxSeconds: Int, minRunsWithoutCompilation: Int) {
@@ -93,4 +93,33 @@ WHERE {
       tr.shutdown
     }
   }
+
+  def sleepUntilGcInactiveForXSeconds(x: Int) {
+    val gcs = ManagementFactory.getGarbageCollectorMXBeans
+    val sunGcs = gcs.map(_.asInstanceOf[com.sun.management.GarbageCollectorMXBean])
+    def collectionTime = {
+      val t = sunGcs.map(_.getCollectionTime).sum
+      println(t)
+      t
+    }
+    def collectionDelta(oldGcTime: Long) = collectionTime - oldGcTime
+    var secondsWithoutGc = 0
+    var lastGcTime = collectionTime
+    while (secondsWithoutGc < x) {
+      Thread.sleep(1000)
+      val delta = collectionDelta(lastGcTime)
+      if (delta > 0) {
+        secondsWithoutGc = 0
+        lastGcTime = collectionTime
+        print("GC-")
+      } else {
+        secondsWithoutGc += 1
+        print("0-")
+      }
+    }
+    println("Done.")
+    println(s"No GC for $secondsWithoutGc seconds.")
+
+  }
+
 }
