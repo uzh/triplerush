@@ -34,6 +34,17 @@ object Dictionary {
   private var string2Id = new IntValueHashMap[String]
   private var maxId = 0
 
+  def clear {
+    write.lock
+    try {
+      maxId = 0
+      id2String = new IntHashMap[String]
+      string2Id = new IntValueHashMap[String]
+    } finally {
+      write.unlock
+    }
+  }
+
   def contains(s: String): Boolean = {
     read.lock
     try {
@@ -98,7 +109,7 @@ object Dictionary {
     assert(string2Id.isEmpty)
     assert(id2String.isEmpty)
     println(s"Parsing dictionary from $fileName.")
-    
+
     def parseEntry(line: String): (Int, String) = {
       val split = line.split(" -> ")
       val string = split(0)
@@ -116,14 +127,14 @@ object Dictionary {
         string2Id.put(string, id)
         id2String.put(id, string)
         entriesAdded += 1
-        if(entriesAdded % 10000 == 0){
-        	println(s"Added $entriesAdded to dictionary so far...")
+        if (entriesAdded % 10000 == 0) {
+          println(s"Added $entriesAdded to dictionary so far...")
         }
       }
     } finally {
       write.unlock
     }
-    
+
     println(s"Finished loading. Total entries added: $entriesAdded.")
   }
 
