@@ -66,30 +66,20 @@ case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEdito
 
   def hasNext = {
     if (!isInitialized) {
-      true
-    } else {
-      nextTriplePattern != null
+      initialize
     }
+    nextTriplePattern != null
   }
 
   def next: GraphEditor[Any, Any] => Unit = {
     if (!isInitialized) {
       initialize
     }
-    val loader: GraphEditor[Any, Any] => Unit = addEncodedTriple(
+    assert(nextTriplePattern != null, "Next was called when hasNext is false.")
+    val loader: GraphEditor[Any, Any] => Unit = FileLoader.addEncodedTriple(
       nextTriplePattern.s, nextTriplePattern.p, nextTriplePattern.o, _)
     nextTriplePattern = readNextTriplePattern
     loader
-  }
-
-  def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Any, Any]) {
-    assert(sId > 0 && pId > 0 && oId > 0)
-    val po = TriplePattern(0, pId, oId)
-    val so = TriplePattern(sId, 0, oId)
-    val sp = TriplePattern(sId, pId, 0)
-    graphEditor.addEdge(po, new PlaceholderEdge(sId))
-    graphEditor.addEdge(so, new PlaceholderEdge(pId))
-    graphEditor.addEdge(sp, new PlaceholderEdge(oId))
   }
 
 }
