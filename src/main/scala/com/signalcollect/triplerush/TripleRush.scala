@@ -170,12 +170,29 @@ case class TripleRush(
     graph.awaitIdle
   }
 
-  def shutdown = {
+  def clear {
+    clearCaches
+    clearDictionary
+    graph.reset
     graph.awaitIdle
-    graph.shutdown
+    graph.addVertex(new RootIndex)
+  }
+
+  def clearCaches {
+    graph.awaitIdle
     CardinalityCache.clear
     PredicateStatsCache.clear
     QueryIds.reset
+  }
+
+  def clearDictionary {
+    Dictionary.clear
+  }
+
+  def shutdown = {
+    clearCaches
+    clearDictionary
+    graph.shutdown
   }
 
   def edgesPerIndexType: Map[String, Int] = {
