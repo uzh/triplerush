@@ -41,3 +41,5 @@ binary-split/0.filtered-split
 *.config
 
 *.split
+
+lubm1*/
