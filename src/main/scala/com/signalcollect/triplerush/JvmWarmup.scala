@@ -33,7 +33,7 @@ object JvmWarmup extends App {
     val compilations = ManagementFactory.getCompilationMXBean
     val startTime = System.currentTimeMillis
     println("Loading triples.")
-    // Spend 25% of the time, but a maximum of 30 seconds loading random triples, also don't load more than 1 million triples.
+    // Spend 25% of the time, but a maximum of 30 seconds loading random triples, also don't load more than 2 million triples.
     val loadingTime = math.min(maxSeconds / 4, 30)
     var triplesLoaded = 0
     val maxSubjectId = 400
@@ -42,7 +42,7 @@ object JvmWarmup extends App {
     def secondsSoFar = ((System.currentTimeMillis - startTime) / 1000.0).toInt
     def intToIref(i: Int): String = s"http://warmup.com/$i"
     def randomId(maxId: Int) = Random.nextInt(maxId)
-    while (secondsSoFar < loadingTime && triplesLoaded < 1000000) {
+    while (secondsSoFar < loadingTime && triplesLoaded < 2000000) {
       val s = intToIref(randomId(maxSubjectId))
       val p = intToIref(randomId(maxPredicateId))
       val o = intToIref(randomId(maxObjectId))
@@ -58,12 +58,11 @@ object JvmWarmup extends App {
       val compilationTimeBefore = compilations.getTotalCompilationTime
       // Intentionally sometimes ask for a predicate that is not in the DB and a subject that has no dictionary encoding.
       val sparql = s"""
-SELECT ?A ?B ?C ?D
+SELECT ?A ?B ?T
 WHERE {
-        		?A <http://warmup.com/${randomId(maxPredicateId) + 1}> ?B .
-        		?B <http://warmup.com/2> ?C .
-        		?C <http://warmup.com/3> <http://warmup.com/${randomId(maxObjectId)}> .
-        		<http://warmup.com/${randomId(maxSubjectId + 1)}> ?D ?B
+        		<http://warmup.com/${randomId(maxPredicateId) + 1}> <http://warmup.com/1>  ?A .
+        		?A <http://warmup.com/1> ?B .
+        		?B <http://warmup.com/1> ?T
 }
 """
       val queryOption = QuerySpecification.fromSparql(sparql)
