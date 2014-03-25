@@ -36,9 +36,9 @@ object JvmWarmup extends App {
     // Spend 25% of the time, but a maximum of 30 seconds loading random triples, also don't load more than 2 million triples.
     val loadingTime = math.min(maxSeconds / 4, 30)
     var triplesLoaded = 0
-    val maxSubjectId = 400
-    val maxPredicateId = 20
-    val maxObjectId = 200
+    val maxSubjectId = 5000
+    val maxPredicateId = 1
+    val maxObjectId = 5000
     def secondsSoFar = ((System.currentTimeMillis - startTime) / 1000.0).toInt
     def intToIref(i: Int): String = s"http://warmup.com/$i"
     def randomId(maxId: Int) = Random.nextInt(maxId)
