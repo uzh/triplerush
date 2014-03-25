@@ -337,7 +337,7 @@ WHERE
     }
   }
 
-  val queryBaseName = ".${sep}answers${sep}answers_query"
+  val queryBaseName = s".${sep}answers${sep}answers_query"
   val referenceFiles: Map[Int, String] = ((1 to 14) map (queryNumber => queryNumber -> (queryBaseName + queryNumber + ".txt"))).toMap
   val referenceResults: Map[Int, QuerySolution] = {
     referenceFiles map { entry =>
