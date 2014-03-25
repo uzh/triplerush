@@ -97,11 +97,7 @@ WHERE {
   def sleepUntilGcInactiveForXSeconds(x: Int) {
     val gcs = ManagementFactory.getGarbageCollectorMXBeans
     val sunGcs = gcs.map(_.asInstanceOf[com.sun.management.GarbageCollectorMXBean])
-    def collectionTime = {
-      val t = sunGcs.map(_.getCollectionTime).sum
-      println(t)
-      t
-    }
+    def collectionTime = sunGcs.map(_.getCollectionTime).sum
     def collectionDelta(oldGcTime: Long) = collectionTime - oldGcTime
     var secondsWithoutGc = 0
     var lastGcTime = collectionTime
