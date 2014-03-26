@@ -89,6 +89,15 @@ object Dictionary {
     }
   }
 
+  /**
+   *  Returns null if no entry with the given id is found.
+   *
+   *  Only call if there are no concurrent modifications of the dictionary.
+   */
+  def unsafeDecode(id: Int): String = {
+    id2String.get(id)
+  }
+
   def decode(id: Int): Option[String] = {
     val decoded = apply(id)
     if (decoded != null) {

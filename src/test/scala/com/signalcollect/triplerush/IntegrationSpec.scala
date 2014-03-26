@@ -184,43 +184,67 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
       }, minSuccessful(10))
   }
 
+  "ResultIteratorQueries" should "correctly answer random queries with basic graph patterns" in {
+    check(
+      Prop.forAllNoShrink(tripleSet, queryPatterns) {
+        (triples: Set[TriplePattern], query: List[TriplePattern]) =>
+          val tr = new TripleRush
+          val jena = new Jena
+          try {
+            val jenaResults = TestHelper.execute(jena, triples, query)
+            TestHelper.prepareStore(tr, triples)
+            val resultIterator = tr.resultIteratorForQuery(QuerySpecification(query))
+            val trResults = TestHelper.resultsToBindings(resultIterator.toList)
+            assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
+            jenaResults === trResults
+          } finally {
+            tr.shutdown
+            jena.shutdown
+          }
+      }, minSuccessful(100))
+  }
+
 }
 
 object TestHelper {
-  def count(
-    tr: TripleRush,
+
+  def prepareStore(qe: QueryEngine,
+    triples: Set[TriplePattern]) {
+    for (triple <- triples) {
+      qe.addEncodedTriple(triple.s, triple.p, triple.o)
+    }
+    qe.prepareExecution
+  }
+
+  def count(tr: TripleRush,
     triples: Set[TriplePattern],
     query: List[TriplePattern]): Long = {
-    for (triple <- triples) {
-      tr.addEncodedTriple(triple.s, triple.p, triple.o)
-    }
-    tr.prepareExecution
+    prepareStore(tr, triples)
     val resultFuture = tr.executeCountingQuery(QuerySpecification(query), Some(GreedyCardinalityOptimizer))
     val result = Await.result(resultFuture, 7200.seconds).get //we assume the query execution is complete
     result
+  }
+
+  def resultsToBindings(results: Traversable[Array[Int]]): Set[Map[Int, Int]] = {
+    results.map({ binding: Array[Int] =>
+      // Only keep variable bindings that have an assigned value.
+      val filtered: Map[Int, Int] = {
+        (-1 to -binding.length by -1).
+          zip(binding).
+          filter(_._2 > 0).
+          toMap
+      }
+      filtered
+    }).toSet
   }
 
   def execute(
     qe: QueryEngine,
     triples: Set[TriplePattern],
     query: List[TriplePattern]): Set[Map[Int, Int]] = {
-    for (triple <- triples) {
-      qe.addEncodedTriple(triple.s, triple.p, triple.o)
-    }
-    qe.prepareExecution
+    prepareStore(qe, triples)
     val results = qe.executeQuery(QuerySpecification(query))
-    val bindings: Set[Map[Int, Int]] = {
-      results.map({ binding: Array[Int] =>
-        // Only keep variable bindings that have an assigned value.
-        val filtered: Map[Int, Int] = {
-          (-1 to -binding.length by -1).
-            zip(binding).
-            filter(_._2 > 0).
-            toMap
-        }
-        filtered
-      }).toSet
-    }
+    val bindings = resultsToBindings(results)
     bindings
   }
 }

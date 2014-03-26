@@ -39,6 +39,8 @@ import com.signalcollect.triplerush.vertices.query.IndexQueryVertex
 import com.signalcollect.triplerush.vertices.query.ResultBindingQueryVertex
 import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
 import com.signalcollect.triplerush.optimizers.ExplorationOptimizerCreator
+import com.signalcollect.triplerush.util.ResultIterator
+import com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
@@ -164,6 +166,19 @@ case class TripleRush(
     val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
     graph.addVertex(new ResultBindingQueryVertex(q, resultPromise, statsPromise, usedOptimizer))
     (resultPromise.future, statsPromise.future)
+  }
+
+  /**
+   * If the optimizer is defined, uses that one, else uses the default.
+   */
+  def resultIteratorForQuery(
+    q: QuerySpecification,
+    optimizerOption: Option[Optimizer] = None): Iterator[Array[Int]] = {
+    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    val resultIterator = new ResultIterator
+    val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
+    graph.addVertex(new ResultIteratorQueryVertex(q, resultIterator, usedOptimizer))
+    resultIterator
   }
 
   def awaitIdle {

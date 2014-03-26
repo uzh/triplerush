@@ -11,6 +11,12 @@ import com.signalcollect.triplerush.QueryEngine
 import com.signalcollect.triplerush.TriplePattern
 import scala.Option.option2Iterable
 import com.signalcollect.triplerush.QuerySpecification
+import com.hp.hpl.jena.sparql.engine.ResultSetStream
+import com.hp.hpl.jena.sparql.core.ResultBinding
+import com.hp.hpl.jena.sparql.engine.binding.BindingProject
+import com.hp.hpl.jena.sparql.engine.binding.Binding
+import com.hp.hpl.jena.sparql.engine.binding.BindingProjectBase
+import com.hp.hpl.jena.sparql.engine.binding.BindingHashMap
 
 class Jena extends QueryEngine {
   val model = ModelFactory.createDefaultModel
@@ -41,7 +47,7 @@ WHERE {
 \t${patterns.map(patternToString).mkString(" \n\t")} }"""
     val query = QueryFactory.create(queryString)
     val qe = QueryExecutionFactory.create(query, model)
-    val results = qe.execSelect.toList
+    val results = qe.execSelect
     val transformedResults = results.flatMap(transformJenaResult)
     val bufferResults = transformedResults.map(
       UnrolledBuffer(_)).foldLeft(
