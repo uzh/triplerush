@@ -30,23 +30,34 @@ trait Forwarding extends IndexVertex {
   def nextRoutingAddress(childDelta: Int): TriplePattern
 
   override def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
-    val edges = edgeCount
-    val totalTickets = query.tickets
-    val avg = math.abs(totalTickets) / edges
-    val complete = avg > 0 && totalTickets > 0
-    var extras = math.abs(totalTickets) % edges
-    val averageTicketQuery = query.copyWithTickets(avg, complete)
-    val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
-    def sendTo(childDelta: Int) {
-      val routingAddress = nextRoutingAddress(childDelta)
-      if (extras > 0) {
-        extras -= 1
-        graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress, None)
-      } else if (avg > 0) {
-        graphEditor.sendSignal(averageTicketQuery, routingAddress, None)
+    if (!query.isBindingQuery &&
+      query.numberOfPatterns == 1 &&
+      query.isSimpleToBind &&
+      id != TriplePattern(0, 0, 0) // Cardinality stats for root node are not accurate.  
+      ) {
+      // Take a shortcut and don't actually do the forwarding, just send the cardinality.
+      // The isSimpleToBind check excludes complicated cases, where a binding might fail.
+      graphEditor.sendSignal(cardinality, query.queryId, None)
+      graphEditor.sendSignal(query.tickets, query.queryId, None)
+    } else {
+      val edges = edgeCount
+      val totalTickets = query.tickets
+      val avg = math.abs(totalTickets) / edges
+      val complete = avg > 0 && totalTickets > 0
+      var extras = math.abs(totalTickets) % edges
+      val averageTicketQuery = query.copyWithTickets(avg, complete)
+      val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
+      def sendTo(childDelta: Int) {
+        val routingAddress = nextRoutingAddress(childDelta)
+        if (extras > 0) {
+          extras -= 1
+          graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress, None)
+        } else if (avg > 0) {
+          graphEditor.sendSignal(averageTicketQuery, routingAddress, None)
+        }
       }
+      foreachChildDelta(sendTo)
     }
-    foreachChildDelta(sendTo)
   }
 
 }
