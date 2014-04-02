@@ -43,3 +43,5 @@ binary-split/0.filtered-split
 *.split
 
 lubm1*/
+
+*.filtered-split
