@@ -108,10 +108,15 @@ final class ExplorationOptimizer(predicateSelectivity: PredicateSelectivity, rel
         exploreCostOfCandidate
       } //if either s or o is bound)
       else if ((candidate.o > 0 || candidate.s > 0 || boundVariables.contains(candidate.s) || boundVariables.contains(candidate.o)) && (candidate.p > 0)) {
-        val minimumPredicateSelectivityCost = {
-          pickedPatterns.map { prev => if (prev.p < 0) Double.MaxValue else calculatePredicateSelectivityCost(prev, candidate) }.min
+        //TODO: make minimum computation more efficient
+        var minFrontierSizeEstimate = exploreCostOfCandidate // assume the worst.
+        pickedPatterns.foreach {
+          pattern =>
+            if (pattern.p > 0) {
+              minFrontierSizeEstimate = math.min(minFrontierSizeEstimate, calculatePredicateSelectivityCost(pattern, candidate))
+            }
         }
-        math.min(exploreCostOfCandidate, minimumPredicateSelectivityCost)
+        minFrontierSizeEstimate
       } //otherwise
       else {
         exploreCostOfCandidate
