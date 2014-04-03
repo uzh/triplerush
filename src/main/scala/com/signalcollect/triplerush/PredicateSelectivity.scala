@@ -97,4 +97,10 @@ class PredicateSelectivity(tr: TripleRush) {
     }
   }
   //println(s"Index statistics complete, $queriesTotal queries were executed.")
+  
+    override def toString = {
+      s"""outOut: $outOut
+      inOut: $inOut
+      inIn: $inIn"""
+    }
 }
