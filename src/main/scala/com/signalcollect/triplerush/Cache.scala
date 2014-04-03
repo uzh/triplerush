@@ -22,7 +22,11 @@ package com.signalcollect.triplerush
 object CardinalityCache extends Cache[TriplePattern, Long]
 object PredicateStatsCache extends Cache[Int, PredicateStats]
 
-case class PredicateStats(edgeCount: Long, subjectCount: Long, objectCount: Long)
+case class PredicateStats(edgeCount: Long, subjectCount: Long, objectCount: Long){
+  override def toString: String = {
+    s"PredicateStats(edgeCount = $edgeCount, subjectCount = $subjectCount, objectCount = $objectCount"
+  } 
+}
 
 class Cache[K, V] {
 
