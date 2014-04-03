@@ -64,13 +64,10 @@ class OptimizerTest extends FlatSpec with Checkers with TestAnnouncements {
 
       val query = QuerySpecification.fromSparql(queryString).get
 
-      println(s"query: $query")
-
       val optimizedQuery = optimizer.optimize(Map(
-        TriplePattern(Dictionary("http://a"), Dictionary("http://p"), -1) -> 4,
-        TriplePattern(-1, Dictionary("http://p"), -2) -> 1),
-        Map(Dictionary("http://p") -> PredicateStats(1, 2, 3), Dictionary("http://q") -> PredicateStats(2, 3, 4)))
-
+        TriplePattern(Dictionary("http://a"), Dictionary("http://p"), -1) -> 3,
+        TriplePattern(-1, Dictionary("http://p"), -2) -> 6),
+        Map(Dictionary("http://p") -> PredicateStats(2, 2, 3)))
       assert(optimizedQuery.length === 2)
       assert(optimizedQuery(0) === TriplePattern(Dictionary("http://a"), Dictionary("http://p"), -1))
     } finally {
