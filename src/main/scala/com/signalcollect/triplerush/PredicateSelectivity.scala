@@ -68,7 +68,7 @@ class PredicateSelectivity(tr: TripleRush) {
   val queriesTotal = ps * ps * 3
   val tickets = Long.MaxValue
   var queriesSoFar = 0
-  println(s"Gathering index statistics ...")
+  //println(s"Gathering index statistics ...")
   var lastPrintedProgressPercentage = 0.0
   for (p1 <- predicates) {
     for (p2 <- predicates) {
