@@ -57,45 +57,43 @@ class PredicateSelectivity(tr: TripleRush) {
   val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0))
 
   val ps = predicates.size
-//  println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
+  //println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
 
-  var outOut = Map[(Int, Int), Long]().withDefaultValue(0l)
-  var inOut = Map[(Int, Int), Long]().withDefaultValue(0l)
-  var inIn = Map[(Int, Int), Long]().withDefaultValue(0l)
+  var outOut = Map[(Int, Int), Long]()
+  var inOut = Map[(Int, Int), Long]()
+  var inIn = Map[(Int, Int), Long]()
   def outIn(p1: Int, p2: Int) = inOut((p2, p1))
 
   val optimizer = Some(GreedyCardinalityOptimizer)
-  val queriesTotal = ps * (ps - 1) * 3
+  val queriesTotal = ps * ps * 3
   val tickets = Long.MaxValue
   var queriesSoFar = 0
-  //println(s"Gathering index statistics ...")
-//  var lastPrintedProgressPercentage = 0.0
+  println(s"Gathering index statistics ...")
+  var lastPrintedProgressPercentage = 0.0
   for (p1 <- predicates) {
     for (p2 <- predicates) {
-      if (p1 != p2) {
-//        val currentProgressPercentage = queriesSoFar / queriesTotal.toDouble
-//        if (currentProgressPercentage - lastPrintedProgressPercentage >= 0.1) {
-//          //println(s"${(currentProgressPercentage * 100).toInt}%")
-//          lastPrintedProgressPercentage = currentProgressPercentage
-//        }
-        val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y)), tickets)
-        val outOutResult = tr.executeCountingQuery(outOutQuery, optimizer)
-        val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y)), tickets)
-        val inOutResult = tr.executeCountingQuery(inOutQuery, optimizer)
-        val inInQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(y, p2, o)), tickets)
-        val inInResult = tr.executeCountingQuery(inInQuery, optimizer)
+      val currentProgressPercentage = queriesSoFar / queriesTotal.toDouble
+      /*if (currentProgressPercentage - lastPrintedProgressPercentage >= 0.1) {
+        println(s"selectivity progress: ${(currentProgressPercentage * 100).toInt}%")
+        lastPrintedProgressPercentage = currentProgressPercentage
+      }*/
+      val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y)), tickets)
+      val outOutResult = tr.executeCountingQuery(outOutQuery, optimizer)
+      val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y)), tickets)
+      val inOutResult = tr.executeCountingQuery(inOutQuery, optimizer)
+      val inInQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(y, p2, o)), tickets)
+      val inInResult = tr.executeCountingQuery(inInQuery, optimizer)
 
-        // TODO: Handle the else parts better.
-        val outOutResultSize = Await.result(outOutResult, 7200.seconds).getOrElse(Long.MaxValue)
-        val inOutResultSize = Await.result(inOutResult, 7200.seconds).getOrElse(Long.MaxValue)
-        val inInResultSize = Await.result(inInResult, 7200.seconds).getOrElse(Long.MaxValue)
+      // TODO: Handle the else parts better.
+      val outOutResultSize = Await.result(outOutResult, 600.seconds).get
+      val inOutResultSize = Await.result(inOutResult, 600.seconds).get
+      val inInResultSize = Await.result(inInResult, 600.seconds).get
 
-        outOut += (p1, p2) -> outOutResultSize
-        inOut += (p1, p2) -> inOutResultSize
-        inIn += (p1, p2) -> inInResultSize
+      outOut += (p1, p2) -> outOutResultSize
+      inOut += (p1, p2) -> inOutResultSize
+      inIn += (p1, p2) -> inInResultSize
 
-        queriesSoFar += 3
-      }
+      queriesSoFar += 3
     }
   }
   //println(s"Index statistics complete, $queriesTotal queries were executed.")
