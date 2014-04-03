@@ -158,6 +158,9 @@ final class ExplorationOptimizer(predicateSelectivity: PredicateSelectivity, rel
     var goodCompletePlan: QueryPlan = null
     while (goodCompletePlan == null) {
       val topPlan = planHeap.remove
+      if (reliableStats && topPlan.fringe == 0) {
+        return Array()
+      }
       if (topPlan.id.size == sizeOfFullPlan) {
         goodCompletePlan = topPlan
       } else {
