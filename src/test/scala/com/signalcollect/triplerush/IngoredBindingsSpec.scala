@@ -46,7 +46,7 @@ class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements 
       val queryToGetAllPredicates = QuerySpecification(List(TriplePattern(0, -1, 0)))
       val allPredicateResult = tr.executeQuery(queryToGetAllPredicates, Some(CleverCardinalityOptimizer))
       val predicates = getBindingsFor(-1, allPredicateResult)
-      predicates === Set(p1, p2, p3, p4, p5)
+      assert(predicates === Set(p1, p2, p3, p4, p5))
     } finally {
       tr.shutdown
     }
@@ -69,7 +69,7 @@ class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements 
       tr.addEncodedTriple(o10, p5, o9)
       tr.prepareExecution
       val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0))
-      predicates === Set(p1, p2, p3, p4, p5)
+      assert(predicates === Set(p1, p2, p3, p4, p5))
     } finally {
       tr.shutdown
     }

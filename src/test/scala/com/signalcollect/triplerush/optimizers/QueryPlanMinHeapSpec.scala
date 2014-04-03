@@ -49,7 +49,7 @@ class QueryPlanMinHeapSpec extends FlatSpec with ShouldMatchers with Checkers wi
         //println("Default: " + defaultSorted)
         val sortedWithHeap = heap.toSortedArray.toList.map(_.cost)
         //println("With heap: " + sortedWithHeap)
-        sortedWithHeap === defaultSorted
+        assert(sortedWithHeap === defaultSorted)
         } catch {
           case t: Throwable => t.printStackTrace
         }
