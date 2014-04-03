@@ -7,7 +7,7 @@ import com.signalcollect.triplerush.TriplePattern
 import scala.annotation.tailrec
 import com.signalcollect.triplerush.PredicateStats
 
-final class ExplorationOptimizer(predicateSelectivity: PredicateSelectivity) extends Optimizer {
+final class ExplorationOptimizer(predicateSelectivity: PredicateSelectivity, reliableStats: Boolean = true) extends Optimizer {
 
   case class CostEstimate(frontier: Double, lastExploration: Double, explorationSum: Double)
 
@@ -109,7 +109,7 @@ final class ExplorationOptimizer(predicateSelectivity: PredicateSelectivity) ext
       } //if either s or o is bound)
       else if ((candidate.o > 0 || candidate.s > 0 || boundVariables.contains(candidate.s) || boundVariables.contains(candidate.o)) && (candidate.p > 0)) {
         val minimumPredicateSelectivityCost = {
-          pickedPatterns.map { prev => calculatePredicateSelectivityCost(prev, candidate) }.min
+          pickedPatterns.map { prev => if (prev.p < 0) Double.MaxValue else calculatePredicateSelectivityCost(prev, candidate) }.min
         }
         math.min(exploreCostOfCandidate, minimumPredicateSelectivityCost)
       } //otherwise
