@@ -164,7 +164,7 @@ final class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: Predic
       } //if either s or o is bound)
       else if ((candidate.o > 0 || candidate.s > 0 || boundVariables.contains(candidate.s) || boundVariables.contains(candidate.o)) && (candidate.p > 0)) {
         val minimumPredicateSelectivityCost = {
-          pickedPatterns.map { prev => calculatePredicateSelectivityCost(prev, candidate) }.min
+          pickedPatterns.map { prev => if(prev.p < 0) Double.MaxValue else calculatePredicateSelectivityCost(prev, candidate) }.min
         }
         math.min(exploreCostOfCandidate, minimumPredicateSelectivityCost)
       } //otherwise
@@ -186,10 +186,12 @@ final class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: Predic
         case other =>
           Double.MaxValue
       }
+      
       upperBoundBasedOnPredicateSelectivity
     }
 
     val triplePatterns = cardinalities.keys.toArray
+    
 
     /**
      * find all plans whose cost have to be calculated
@@ -221,15 +223,13 @@ final class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: Predic
     val resultOrder = optimalOrder.toArray
     reverseMutableArray(resultOrder)
 
-    /*
-    println(s"\tALL ORDERS:\n\t${lookupTable.mkString("\n\t")}")
-    println(s"optimal order: ${resultOrder.mkString(" ")}")
-    println(s"cost of optimal order: ${optimalCombination._2}")
-    println(s"cardinalities: ${cardinalities.mkString(" ")}")
-    println("edgeCounts: " + edgeCounts.mkString(" "))
-    println("maxObjectCounts: " + maxObjectCounts.mkString(" "))
-    println("maxSubjectCounts: " + maxSubjectCounts.mkString(" ") + "\n")
-	*/
+    
+    //println(s"optimal order: ${resultOrder.mkString(" ")}")
+    //println(s"cardinalities: ${cardinalities.mkString(" ")}")
+    //println("edgeCounts: " + stats.edgeCounts.mkString(" "))
+    //println("maxObjectCounts: " + stats.maxObjectCounts.mkString(" "))
+    //println("maxSubjectCounts: " + stats.maxSubjectCounts.mkString(" ") + "\n")
+	
 
     resultOrder
   }
