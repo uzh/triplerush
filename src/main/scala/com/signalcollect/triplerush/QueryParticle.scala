@@ -76,21 +76,18 @@ case class ParticleDebug(
 object QueryParticle {
   implicit def arrayToParticle(a: Array[Int]) = new QueryParticle(a)
 
-  //    val queryId: Int = {
-  //      if (withBindings) {
-  //        QueryIds.nextQueryId
-  //      } else {
-  //        QueryIds.nextCountQueryId
-  //      }
-  //    }
-
   def fromSpecification(queryId: Int, s: QuerySpecification): Array[Int] = {
     if (queryId > 0) {
-      val variableCount = math.abs(s.unmatched.foldLeft(0) {
-        (currentMin, next) =>
-          val minCandidate = math.min(next.o, math.min(next.s, next.p))
-          math.min(currentMin, minCandidate)
-      })
+      val variableCount =
+        if (!s.selectVarIds.isDefined) {
+          math.abs(s.unmatched.foldLeft(0) {
+            (currentMin, next) =>
+              val minCandidate = math.min(next.o, math.min(next.s, next.p))
+              math.min(currentMin, minCandidate)
+          })
+        } else {
+          s.selectVarIds.get.size
+        }
       QueryParticle(
         queryId,
         s.tickets,
@@ -289,17 +286,24 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     System.arraycopy(r, 4, b, 0, numBindings)
     b
   }
+
   def isResult = r.length == 4 + numberOfBindings
+
   def queryId: Int = r(0)
+
   def writeQueryId(id: Int) = r(0) = id
+
   def tickets: Long = {
     ((r(1) | 0l) << 32) | (r(2) & 0x00000000FFFFFFFFL)
   }
+
   def writeTickets(t: Long) = {
     r(1) = (t >> 32).toInt
     r(2) = t.toInt
   }
+
   def numberOfBindings: Int = r(3)
+
   def writeBindings(bindings: Seq[Int]) {
     r(3) = bindings.length
     var i = 0
@@ -308,10 +312,15 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
       i += 1
     }
   }
+
   def writeBinding(bindingIndex: Int, boundValue: Int) {
-    val baseBindingIndex = 4
-    r(baseBindingIndex + bindingIndex) = boundValue
+    val numBindings = numberOfBindings
+    if (bindingIndex < numBindings) {
+      val baseBindingIndex = 4
+      r(baseBindingIndex + bindingIndex) = boundValue
+    }
   }
+
   def binding(bindingIndex: Int): Int = {
     val contentIntIndex = bindingIndex + 4
     r(contentIntIndex)
