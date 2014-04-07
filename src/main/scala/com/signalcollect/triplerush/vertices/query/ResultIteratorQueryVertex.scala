@@ -21,15 +21,15 @@ package com.signalcollect.triplerush.vertices.query
 
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.QueryIds
-import com.signalcollect.triplerush.QuerySpecification
+import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.util.ResultIterator
 
 class ResultIteratorQueryVertex(
-  querySpecification: QuerySpecification,
+  queryParticle: QueryParticle,
   resultIterator: ResultIterator,
   optimizer: Option[Optimizer])
-  extends AbstractQueryVertex[ResultIterator](querySpecification, optimizer) {
+  extends AbstractQueryVertex[ResultIterator](queryParticle, optimizer) {
 
   final val id = QueryIds.nextQueryId
 

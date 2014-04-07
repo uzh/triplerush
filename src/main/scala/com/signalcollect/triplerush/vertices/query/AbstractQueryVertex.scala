@@ -26,7 +26,6 @@ import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.QueryParticle
-import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryIds
@@ -214,7 +213,7 @@ abstract class AbstractQueryVertex[StateType](
       cardinalities, PredicateStatsCache.implementation)
     optimizingDuration = System.nanoTime - optimizingStartTime
     if (optimizedPatterns.length > 0) {
-      val optimizedQuery = queryParticle.copy
+      val optimizedQuery = new QueryParticle(queryParticle.copy)
       optimizedQuery.writePatterns(optimizedPatterns)
       Some(optimizedQuery)
     } else {

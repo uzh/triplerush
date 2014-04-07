@@ -29,11 +29,11 @@ import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.util.SequenceOfArraysTraversable
 
 class ResultBindingQueryVertex(
-  querySpecification: QuerySpecification,
+  queryParticle: QueryParticle,
   resultPromise: Promise[Traversable[Array[Int]]],
   statsPromise: Promise[Map[Any, Any]],
   optimizer: Option[Optimizer])
-  extends AbstractQueryVertex[SequenceOfArraysTraversable](querySpecification, optimizer) {
+  extends AbstractQueryVertex[SequenceOfArraysTraversable](queryParticle, optimizer) {
 
   final val id = QueryIds.nextQueryId
 
@@ -59,7 +59,7 @@ class ResultBindingQueryVertex(
         "optimizingDuration" -> optimizingDuration,
         "optimizedQuery" -> ("Pattern matching order: " + {
           if (dispatchedQuery.isDefined) {
-            new QueryParticle(dispatchedQuery.get).patterns.toList
+            dispatchedQuery.get.patterns.toList
           } else { "Inferred that the query has no results before it was dispatched." }
         })).withDefaultValue("")
       statsPromise.success(stats)

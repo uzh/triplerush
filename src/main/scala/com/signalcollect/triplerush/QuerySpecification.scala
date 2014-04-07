@@ -57,6 +57,10 @@ case class QuerySpecification(
   idToVariableName: Option[Map[Int, String]] = None,
   distinct: Boolean = false) {
 
+  def resultIterator(implicit tr: TripleRush): Iterator[Map[String, String]] = {
+    ???
+  }
+  
   def withUnmatchedPatterns(u: Seq[TriplePattern]): QuerySpecification = {
     copy(unmatched = u)
   }
