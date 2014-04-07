@@ -54,7 +54,8 @@ case class QuerySpecification(
   tickets: Long = Long.MaxValue,
   selectVarIds: Option[Set[Int]] = None,
   variableNameToId: Option[Map[String, Int]] = None,
-  idToVariableName: Option[Map[Int, String]] = None) {
+  idToVariableName: Option[Map[Int, String]] = None,
+  distinct: Boolean = false) {
 
   def withUnmatchedPatterns(u: Seq[TriplePattern]): QuerySpecification = {
     copy(unmatched = u)
@@ -69,7 +70,7 @@ case class QuerySpecification(
     }
     counts
   }
-  
+
   def decodeResults(encodedResults: Traversable[Array[Int]]): Option[Traversable[Map[String, String]]] = {
     if (variableNameToId.isDefined && idToVariableName.isDefined && selectVarIds.isDefined) {
       val parEncodedResults: ParArray[Array[Int]] = encodedResults.toArray.par
@@ -101,18 +102,35 @@ object QuerySpecification {
 
   class JenaQueryVisitor(queryString: String) extends ElementVisitor {
     private val jenaQuery = QueryFactory.create(queryString)
-    private val queryPatterns = jenaQuery.getQueryPattern
     private val selectVarNames = jenaQuery.getProjectVars.map(_.getVarName).toSet
+
     private var hasNoResults = false
     var nextVariableId = -1
     var variableNameToId = Map[String, Int]()
     var idToVariableName = Map[Int, String]()
     private var patterns: List[TriplePattern] = List()
+
+    for (varName <- selectVarNames) {
+      addVariableEncoding(varName)
+    }
+
+    def addVariableEncoding(variableName: String): Int = {
+      val idOption = variableNameToId.get(variableName)
+      if (idOption.isDefined) {
+        idOption.get
+      } else {
+        val id = nextVariableId
+        nextVariableId -= 1
+        variableNameToId += variableName -> id
+        idToVariableName += id -> variableName
+        id
+      }
+    }
+
+    private val queryPatterns = jenaQuery.getQueryPattern
     private var problem: Option[String] = {
       if (!jenaQuery.isStrict) {
         Some("Only strict queries are supported.")
-      } else if (jenaQuery.isDistinct) {
-        Some("Feature DISTINCT is unsupported.")
       } else if (jenaQuery.isReduced) {
         Some("Feature REDUCED is unsupported.")
       } else if (jenaQuery.isOrdered) {
@@ -142,7 +160,8 @@ object QuerySpecification {
             unmatched = patterns,
             selectVarIds = Some(selectVarIds),
             variableNameToId = Some(variableNameToId),
-            idToVariableName = Some(idToVariableName)))
+            idToVariableName = Some(idToVariableName),
+            distinct = jenaQuery.isDistinct))
         }
       }
     }
@@ -160,16 +179,7 @@ object QuerySpecification {
         val tripleIds = tripleComponents map { e =>
           if (e.isVariable) {
             val variableName = e.getName
-            val idOption = variableNameToId.get(variableName)
-            if (idOption.isDefined) {
-              idOption.get
-            } else {
-              val id = nextVariableId
-              nextVariableId -= 1
-              variableNameToId += variableName -> id
-              idToVariableName += id -> variableName
-              id
-            }
+            addVariableEncoding(variableName)
           } else if (e.isLiteral) {
             val literalString: String = e.getLiteral.toString
             if (Dictionary.contains(literalString)) {

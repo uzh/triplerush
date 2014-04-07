@@ -1,10 +1,10 @@
 package com.signalcollect.triplerush.util
 
-class ArrayOfArraysTraversable extends Traversable[Array[Int]] {
+class SequenceOfArraysTraversable extends Traversable[Array[Int]] with ResultBindings {
 
-  var listOfArraysOfArrays = List[Array[Array[Int]]]()
+  var listOfArraysOfArrays = List[Seq[Array[Int]]]()
 
-  def add(a: Array[Array[Int]]) {
+  def add(a: Seq[Array[Int]]) {
     listOfArraysOfArrays = a :: listOfArraysOfArrays
   }
 

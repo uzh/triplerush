@@ -25,16 +25,15 @@ import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.util.ResultIterator
 
-final class ResultIteratorQueryVertex(
+class ResultIteratorQueryVertex(
   querySpecification: QuerySpecification,
   resultIterator: ResultIterator,
   optimizer: Option[Optimizer])
-
   extends AbstractQueryVertex[ResultIterator](querySpecification, optimizer) {
 
-  val id = QueryIds.nextQueryId
+  final val id = QueryIds.nextQueryId
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override final def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     state = resultIterator
     super.afterInitialization(graphEditor)
   }
@@ -47,7 +46,7 @@ final class ResultIteratorQueryVertex(
     throw new UnsupportedOperationException("Result binding vertex should never receive a result count.")
   }
 
-  override def reportResults {
+  override final def reportResults {
     if (!resultsReported) {
       super.reportResults
       state.close

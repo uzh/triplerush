@@ -5,14 +5,14 @@ import java.util.concurrent.locks.ReentrantLock
 /**
  * Only supports a single result consumer thread.
  */
-class ResultIterator extends Iterator[Array[Int]] {
+final class ResultIterator extends Iterator[Array[Int]] with ResultBindings {
 
   var allResultsReported = false
 
   var nextResultArrayIndex: Int = 0
-  var currentResultArray: Array[Array[Int]] = null
+  var currentResultArray: Seq[Array[Int]] = null
 
-  var listOfArraysOfArrays = List[Array[Array[Int]]]()
+  var listOfArraysOfArrays = List[Seq[Array[Int]]]()
 
   def close {
     synchronized {
@@ -21,7 +21,7 @@ class ResultIterator extends Iterator[Array[Int]] {
     }
   }
 
-  def add(a: Array[Array[Int]]) {
+  def add(a: Seq[Array[Int]]) {
     synchronized {
       listOfArraysOfArrays = a :: listOfArraysOfArrays
       notify

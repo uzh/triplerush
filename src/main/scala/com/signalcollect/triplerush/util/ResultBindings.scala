@@ -1,7 +1,7 @@
 /*
  *  @author Philip Stutz
  *  
- *  Copyright 2013 University of Zurich
+ *  Copyright 2014 University of Zurich
  *      
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,15 +19,6 @@
 
 package com.signalcollect.triplerush.util
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import com.signalcollect.triplerush.TestAnnouncements
-
-class ArrayOfArraysTraversableSpec extends FlatSpec with Matchers with TestAnnouncements {
-
-  "ArrayOfArraysTraversable" should "have size 0 when no results are added" in {
-    val aoat = new SequenceOfArraysTraversable()
-    assert(aoat.size === 0)
-  }
-
+trait ResultBindings {
+  def add(a: Seq[Array[Int]])
 }

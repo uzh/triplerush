@@ -21,32 +21,28 @@
 package com.signalcollect.triplerush.vertices.query
 
 import scala.concurrent.Promise
-
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.optimizers.Optimizer
-import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
+import com.signalcollect.triplerush.util.SequenceOfArraysTraversable
 
-final class ResultBindingQueryVertex(
+class ResultBindingQueryVertex(
   querySpecification: QuerySpecification,
   resultPromise: Promise[Traversable[Array[Int]]],
   statsPromise: Promise[Map[Any, Any]],
   optimizer: Option[Optimizer])
+  extends AbstractQueryVertex[SequenceOfArraysTraversable](querySpecification, optimizer) {
 
-  extends AbstractQueryVertex[ArrayOfArraysTraversable](querySpecification, optimizer) {
+  final val id = QueryIds.nextQueryId
 
-  val id = QueryIds.nextQueryId
-  var queryCopyCount = 0l
-
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    state = new ArrayOfArraysTraversable
+  override final def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+    state = new SequenceOfArraysTraversable
     super.afterInitialization(graphEditor)
   }
 
   def handleBindings(bindings: Array[Array[Int]]) {
-    queryCopyCount += 1
     state.add(bindings)
   }
 
@@ -54,14 +50,13 @@ final class ResultBindingQueryVertex(
     throw new UnsupportedOperationException("Result binding vertex should never receive a result count.")
   }
 
-  override def reportResults {
+  override final def reportResults {
     if (!resultsReported) {
       super.reportResults
       resultPromise.success(state)
       val stats = Map[Any, Any](
         "isComplete" -> complete,
         "optimizingDuration" -> optimizingDuration,
-        "queryCopyCount" -> queryCopyCount,
         "optimizedQuery" -> ("Pattern matching order: " + {
           if (dispatchedQuery.isDefined) {
             new QueryParticle(dispatchedQuery.get).patterns.toList
