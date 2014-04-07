@@ -168,6 +168,7 @@ object QuerySpecification {
 
     def visit(el: ElementGroup) {
       for (element <- el.getElements) {
+        println(element.getClass)
         element.visit(this)
       }
     }

@@ -122,10 +122,11 @@ case class TripleRush(
   }
 
   def executeCountingQuery(
-    q: QuerySpecification,
+    q: QueryParticle,
+    distinct: Boolean = false,
     optimizer: Option[Optimizer] = Some(GreedyCardinalityOptimizer)): Future[Option[Long]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    if (!q.distinct) {
+    if (!distinct) {
       // Efficient counting query.
       val resultCountPromise = Promise[Option[Long]]()
       graph.addVertex(new ResultCountingQueryVertex(q, resultCountPromise, optimizer))
@@ -161,11 +162,11 @@ case class TripleRush(
     childIdPromise.future
   }
 
-  def executeQuery(q: QuerySpecification): Traversable[Array[Int]] = {
+  def executeQuery(q: QueryParticle): Traversable[Array[Int]] = {
     executeQuery(q, optimizer)
   }
 
-  def executeQuery(q: QuerySpecification, optimizer: Option[Optimizer]): Traversable[Array[Int]] = {
+  def executeQuery(q: QueryParticle, optimizer: Option[Optimizer]): Traversable[Array[Int]] = {
     val (resultFuture, statsFuture) = executeAdvancedQuery(q, optimizer)
     val result = Await.result(resultFuture, 7200.seconds)
     result
@@ -175,7 +176,7 @@ case class TripleRush(
    * If the optimizer is defined, uses that one, else uses the default.
    */
   def executeAdvancedQuery(
-    q: QuerySpecification,
+    q: QueryParticle,
     optimizerOption: Option[Optimizer] = None): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val resultPromise = Promise[Traversable[Array[Int]]]()

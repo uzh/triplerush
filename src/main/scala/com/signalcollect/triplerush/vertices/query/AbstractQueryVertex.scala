@@ -40,11 +40,11 @@ import com.signalcollect.triplerush.PredicateStatsCache
 import com.signalcollect.triplerush.PredicateStatsReply
 
 abstract class AbstractQueryVertex[StateType](
-  val querySpecification: QuerySpecification,
+  val queryParticle: QueryParticle,
   val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, StateType] {
 
-  val expectedTickets = querySpecification.tickets
-  val numberOfPatternsInOriginalQuery: Int = querySpecification.unmatched.length
+  val expectedTickets = queryParticle.tickets
+  val numberOfPatternsInOriginalQuery: Int = queryParticle.numberOfPatterns
 
   val expectedCardinalityReplies: Int = numberOfPatternsInOriginalQuery
   var receivedCardinalityReplies: Int = 0
@@ -54,7 +54,7 @@ abstract class AbstractQueryVertex[StateType](
   var receivedTickets = 0l
   var complete = true
 
-  var dispatchedQuery: Option[Array[Int]] = None
+  var dispatchedQuery: Option[QueryParticle] = None
 
   var optimizingStartTime = 0l
   var optimizingDuration = 0l
@@ -68,7 +68,7 @@ abstract class AbstractQueryVertex[StateType](
       // Dispatch the query directly.
       optimizingDuration = System.nanoTime - optimizingStartTime
       if (numberOfPatternsInOriginalQuery > 0) {
-        dispatchedQuery = Some(QueryParticle.fromSpecification(id, querySpecification))
+        dispatchedQuery = Some(queryParticle)
         graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
       } else {
         dispatchedQuery = None
@@ -127,7 +127,7 @@ abstract class AbstractQueryVertex[StateType](
 
   def gatherStatistics(graphEditor: GraphEditor[Any, Any]) {
     // Gather pattern cardinalities.
-    querySpecification.unmatched foreach { triplePattern =>
+    queryParticle.patterns foreach { triplePattern =>
       val pIndexForPattern = triplePattern.p
       if (pIndexForPattern > 0) {
         gatherPredicateStatsForPattern(triplePattern, graphEditor)
@@ -209,12 +209,13 @@ abstract class AbstractQueryVertex[StateType](
     }
   }
 
-  def optimizeQuery: Option[Array[Int]] = {
+  def optimizeQuery: Option[QueryParticle] = {
     val optimizedPatterns = optimizer.get.optimize(
       cardinalities, PredicateStatsCache.implementation)
     optimizingDuration = System.nanoTime - optimizingStartTime
     if (optimizedPatterns.length > 0) {
-      val optimizedQuery = QueryParticle.fromSpecification(id, querySpecification.withUnmatchedPatterns(optimizedPatterns))
+      val optimizedQuery = queryParticle.copy
+      optimizedQuery.writePatterns(optimizedPatterns)
       Some(optimizedQuery)
     } else {
       None
