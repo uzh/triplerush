@@ -85,9 +85,9 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   }
 
   val select: Parser[Select] = {
-    (("SELECT" ~> rep1(variable)) <~ "WHERE") ~! patternList ^^ {
-      case selectVariables ~ patterns =>
-        Select(selectVariables, List(patterns), false)
+    (("SELECT" ~> opt("DISTINCT") ~ rep1(variable)) <~ "WHERE") ~! patternList ^^ {
+      case distinct ~ selectVariables ~ patterns =>
+        Select(selectVariables, List(patterns), distinct.isDefined)
     }
   }
 

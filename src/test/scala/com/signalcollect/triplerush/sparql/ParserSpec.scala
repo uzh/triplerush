@@ -46,4 +46,17 @@ WHERE {
     true
   }
 
+  it should "support the DISTINCT keyword" in {
+    val q1 = """
+SELECT DISTINCT ?T ?A ?B
+WHERE {
+		  <http://dbpedia.org/resource/Elvis> <http://dbpedia.org/property/wikilink> ?A .
+		  ?A <http://dbpedia.org/property/wikilink> ?B .
+		  ?B <http://dbpedia.org/property/wikilink> ?T
+}
+"""
+    val parsed = SparqlParser.parse(q1)
+    assert(parsed.select.isDistinct === true)
+  }
+
 }
