@@ -69,4 +69,21 @@ WHERE {
     assert(parsed.select.isDistinct === true)
   }
 
+  it should "support the UNION keyword" in {
+    val q1 = """
+SELECT ?property ?hasValue ?isValueOf
+WHERE {
+ { <http://dbpedia.org/resource/Elvis> ?property ?hasValue }
+ UNION
+ { ?isValueOf ?property <http://dbpedia.org/resource/Memphis> }
+}
+"""
+    val parsed = SparqlParser.parse(q1)
+    assert(parsed.select.patternUnions === List(
+      List(
+        ParsedPattern(Bound("""http://dbpedia.org/resource/Elvis"""), Variable("property"), Variable("hasValue"))),
+      List(
+        ParsedPattern(Variable("isValueOf"), Variable("property"), Bound("""http://dbpedia.org/resource/Memphis""")))))
+  }
+
 }

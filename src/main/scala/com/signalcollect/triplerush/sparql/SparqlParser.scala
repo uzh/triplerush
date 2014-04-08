@@ -84,10 +84,15 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
     }
   }
 
+  val unionOfPatternLists: Parser[List[List[ParsedPattern]]] = {
+    patternList ^^ { List(_) } |
+      "{" ~> rep1sep(patternList, "UNION") <~ "}"
+  }
+
   val select: Parser[Select] = {
-    (("SELECT" ~> opt("DISTINCT") ~ rep1(variable)) <~ "WHERE") ~! patternList ^^ {
-      case distinct ~ selectVariables ~ patterns =>
-        Select(selectVariables, List(patterns), distinct.isDefined)
+    (("SELECT" ~> opt("DISTINCT") ~ rep1(variable)) <~ "WHERE") ~! unionOfPatternLists ^^ {
+      case distinct ~ selectVariables ~ unionOfPatterns =>
+        Select(selectVariables, unionOfPatterns, distinct.isDefined)
     }
   }
 
