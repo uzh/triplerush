@@ -39,7 +39,7 @@ abstract class OptimizedIndexVertex(
   @transient var optimizedChildDeltas: SplayIntSet = _
 
   def handleChildIdRequest(requestor: Any, graphEditor: GraphEditor[Any, Any]) {
-    graphEditor.sendSignal(ChildIdReply(optimizedChildDeltas.toSet), requestor, None)
+    graphEditor.sendSignal(ChildIdReply(optimizedChildDeltas.toBuffer.toArray), requestor, None)
   }
 
   override def edgeCount = {

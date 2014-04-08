@@ -148,15 +148,15 @@ case class TripleRush(
   /**
    * Blocking version of 'executeIndexQuery'.
    */
-  def childIdsForPattern(indexId: TriplePattern): Set[Int] = {
-    val intSetFuture = executeIndexQuery(indexId)
-    Await.result(intSetFuture, 7200.seconds)
+  def childIdsForPattern(indexId: TriplePattern): Array[Int] = {
+    val intArrayFuture = executeIndexQuery(indexId)
+    Await.result(intArrayFuture, 7200.seconds)
   }
 
-  def executeIndexQuery(indexId: TriplePattern): Future[Set[Int]] = {
+  def executeIndexQuery(indexId: TriplePattern): Future[Array[Int]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     assert(!indexId.isFullyBound, "There is no index vertex with this id, as the pattern is fully bound.")
-    val childIdPromise = Promise[Set[Int]]()
+    val childIdPromise = Promise[Array[Int]]()
     graph.addVertex(new IndexQueryVertex(indexId, childIdPromise))
     childIdPromise.future
   }

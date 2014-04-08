@@ -36,7 +36,7 @@ abstract class SearchableIndexVertex[SignalType, State](
   }
 
   def handleChildIdRequest(requestor: Any, graphEditor: GraphEditor[Any, Any]) {
-    graphEditor.sendSignal(ChildIdReply(childDeltaArray.toSet), requestor, None)
+    graphEditor.sendSignal(ChildIdReply(childDeltaArray.toBuffer.toArray), requestor, None)
   }
 
   @transient var childDeltaArray: Array[Int] = _

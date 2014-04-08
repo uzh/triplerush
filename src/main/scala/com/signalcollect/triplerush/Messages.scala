@@ -26,4 +26,4 @@ case class PredicateStatsReply(forPattern: TriplePattern, cardinality: Int, pred
 case class ObjectCountSignal(count: Int)
 case class SubjectCountSignal(count: Int)
 case class ChildIdRequest(requestor: Any)
-case class ChildIdReply(ids: Set[Int])
+case class ChildIdReply(ids: Array[Int])

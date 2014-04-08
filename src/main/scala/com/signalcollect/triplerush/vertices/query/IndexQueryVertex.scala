@@ -29,7 +29,7 @@ import com.signalcollect.triplerush.vertices.BaseVertex
 
 final class IndexQueryVertex(
   val indexId: TriplePattern,
-  val resultPromise: Promise[Set[Int]]) extends BaseVertex[Int, Any, Nothing] {
+  val resultPromise: Promise[Array[Int]]) extends BaseVertex[Int, Any, Nothing] {
 
   val id = QueryIds.nextQueryId
 
