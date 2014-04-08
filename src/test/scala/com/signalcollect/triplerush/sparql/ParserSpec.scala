@@ -86,4 +86,18 @@ WHERE {
         ParsedPattern(Variable("isValueOf"), Variable("property"), Bound("""http://dbpedia.org/resource/Memphis""")))))
   }
 
+  it should "support the LIMIT keyword" in {
+    val q1 = """
+SELECT ?A, ?B, ?T
+WHERE {
+		  <http://dbpedia.org/resource/Elvis> <http://dbpedia.org/property/wikilink> ?A .
+		  ?A <http://dbpedia.org/property/wikilink> ?B .
+		  ?B <http://dbpedia.org/property/wikilink> ?T
+}
+LIMIT 10;
+"""
+    val parsed = SparqlParser.parse(q1)
+    assert(parsed.select.limit === Some(10))
+  }
+
 }
