@@ -49,7 +49,7 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
 
   lexical.delimiters ++= List(
     "(", ")", ",", ":", "<", ">")
-  protected override val whiteSpace = """(\s|//.*|#.*|(?m)/\*(\*(?!/)|[^*])*\*/)+""".r
+  protected override val whiteSpace = """(\s|//.*|(?m)/\*(\*(?!/)|[^*])*\*/)+""".r
 
   def defaultParser = sparqlQuery
 
@@ -61,7 +61,7 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   val orderBy = "ORDER" ~> "BY"
   val limit = "LIMIT"
 
-  val url: Parser[String] = "[-a-zA-Z0-9:/\\.]*".r
+  val url: Parser[String] = "[-a-zA-Z0-9:/\\.#]*".r
 
   val iri: Parser[Iri] = {
     (("<" ~> url <~ ">") | url) ^^ {
