@@ -57,7 +57,7 @@ WHERE {
   }
 
   it should "support the DISTINCT keyword" in {
-    val q1 = """
+    val q = """
 SELECT DISTINCT ?T ?A ?B
 WHERE {
 		  <http://dbpedia.org/resource/Elvis> <http://dbpedia.org/property/wikilink> ?A .
@@ -65,12 +65,12 @@ WHERE {
 		  ?B <http://dbpedia.org/property/wikilink> ?T
 }
 """
-    val parsed = SparqlParser.parse(q1)
+    val parsed = SparqlParser.parse(q)
     assert(parsed.select.isDistinct === true)
   }
 
   it should "support the UNION keyword" in {
-    val q1 = """
+    val q = """
 SELECT ?property ?hasValue ?isValueOf
 WHERE {
  { <http://dbpedia.org/resource/Elvis> ?property ?hasValue }
@@ -78,7 +78,7 @@ WHERE {
  { ?isValueOf ?property <http://dbpedia.org/resource/Memphis> }
 }
 """
-    val parsed = SparqlParser.parse(q1)
+    val parsed = SparqlParser.parse(q)
     assert(parsed.select.patternUnions === List(
       List(
         ParsedPattern(Iri("""http://dbpedia.org/resource/Elvis"""), Variable("property"), Variable("hasValue"))),
@@ -87,7 +87,7 @@ WHERE {
   }
 
   it should "support the LIMIT keyword" in {
-    val q1 = """
+    val q = """
 SELECT ?A, ?B, ?T
 WHERE {
 		  <http://dbpedia.org/resource/Elvis> <http://dbpedia.org/property/wikilink> ?A .
@@ -96,8 +96,28 @@ WHERE {
 }
 LIMIT 10;
 """
-    val parsed = SparqlParser.parse(q1)
+    val parsed = SparqlParser.parse(q)
     assert(parsed.select.limit === Some(10))
+  }
+
+  it should "support the ORDER BY keyword" in {
+    val q = """
+PREFIX bsbm-inst: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/>
+PREFIX bsbm: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?product ?label
+WHERE {
+  ?product rdfs:label ?label .
+  ?product a <http://dbpedia.org/resource/Elvis> .
+  ?product bsbm:productFeature <http://dbpedia.org/resource/Madonna> .
+}
+ORDER BY ?label
+LIMIT 10
+"""
+    val parsed = SparqlParser.parse(q)
+    assert(parsed.select.orderBy === Some(Variable("label")))
   }
 
 }
