@@ -23,18 +23,81 @@ import scala.collection.JavaConversions._
 
 import com.hp.hpl.jena.query.QueryFactory
 
+object Sparql {
+  // Index -1 gets mapped to index 0, -2 to 1, etc.
+  @inline private def idToIndex(id: Int) = math.abs(id) - 1
+
+  def apply(query: String): Sparql = {
+    val parsed: ParsedSparqlQuery = SparqlParser.parse(query)
+    val selectVariableNames = parsed.select.selectVariableNames
+    val numberOfSelectVariables = selectVariableNames.size
+    var selectVariableIds = List.empty[Int]
+    var nextVariableId = -1
+    var variableNameToId = Map.empty[String, Int]
+    var idToVariableName = new Array[String](numberOfSelectVariables)
+    for (varName <- selectVariableNames) {
+      val id = addVariableEncoding(varName)
+      selectVariableIds = id :: selectVariableIds
+    }
+
+    def addVariableEncoding(variableName: String): Int = {
+      val idOption = variableNameToId.get(variableName)
+      if (idOption.isDefined) {
+        idOption.get
+      } else {
+        val id = nextVariableId
+        nextVariableId -= 1
+        variableNameToId += variableName -> id
+        idToVariableName(idToIndex(id)) = variableName
+        id
+      }
+    }
+
+    Sparql(
+      selectVariableIds = selectVariableIds,
+      variableNameToId = variableNameToId,
+      idToVariableName = idToVariableName,
+      isDistinct = parsed.select.isDistinct)
+  }
+}
+
 /**
- * Class for advanced SPARQL Query executions.
+ * Class for SPARQL Query executions.
  */
-class Sparql {
+case class Sparql(
+  selectVariableIds: List[Int],
+  variableNameToId: Map[String, Int],
+  idToVariableName: Array[String],
+  isDistinct: Boolean = false) {
+
+  //  def counts(variableId: Int, encodedResults: Traversable[Array[Int]]): Map[Int, Int] = {
+  //    var counts = Map.empty[Int, Int].withDefaultValue(0)
+  //    for (encodedResult <- encodedResults) {
+  //      val binding = encodedResult(math.abs(variableId) - 1)
+  //      val countForBinding = counts(binding)
+  //      counts += binding -> { countForBinding + 1 }
+  //    }
+  //    counts
+  //  }
+  //
+  //  def decodeResults(encodedResults: Traversable[Array[Int]]): Option[Traversable[Map[String, String]]] = {
+  //    if (variableNameToId.isDefined && idToVariableName.isDefined && selectVarIds.isDefined) {
+  //      val parEncodedResults: ParArray[Array[Int]] = encodedResults.toArray.par
+  //      val select = selectVarIds.get
+  //      val varToId = variableNameToId.get
+  //      val idToVar = idToVariableName.get
+  //      val variables = varToId.keys
+  //      val decodedResultMaps = parEncodedResults.map { encodedResults =>
+  //        val numberOfBindings = encodedResults.length
+  //        val decodedResultMap = select.map { variableId =>
+  //          idToVar(variableId) -> Dictionary(encodedResults(-variableId - 1))
+  //        }.toMap
+  //        decodedResultMap
+  //      }
+  //      Some(decodedResultMaps.seq)
+  //    } else {
+  //      None
+  //    }
+  //  }
 
 }
-//
-//object Sparql {
-//  def apply(query: String): Sparql = {
-//    val jenaQuery = QueryFactory.create(query)
-//    val selectVarNames = jenaQuery.getProjectVars.map(_.getVarName).toSet
-//    jenaQuery.hasAggregators()
-//    ???
-//  }
-//}

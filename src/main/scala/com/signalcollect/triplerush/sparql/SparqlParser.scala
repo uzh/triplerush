@@ -39,10 +39,10 @@ case class ParsedPattern(s: VariableOrBound, p: VariableOrBound, o: VariableOrBo
 case class PrefixDeclaration(prefix: String, expanded: String)
 
 case class Select(
-  selectVariables: List[Variable],
+  selectVariableNames: List[String],
   patternUnions: List[List[ParsedPattern]],
   isDistinct: Boolean = false,
-  orderBy: Option[Variable] = None,
+  orderBy: Option[String] = None,
   limit: Option[Int] = None)
 
 object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversions {
@@ -84,6 +84,10 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
     }
   }
 
+  val variableName: Parser[String] = {
+    "?" ~> identifier
+  }
+
   val prefixDeclaration: Parser[PrefixDeclaration] = {
     ((prefix ~> identifier) <~ ":" ~! "<") ~! url <~ ">" ^^ {
       case prefix ~ expanded =>
@@ -115,12 +119,12 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   }
 
   val selectDeclaration: Parser[Select] = {
-    ((select ~> opt(distinct) ~ rep1sep(variable, opt(","))) <~ where) ~! unionOfPatternLists ~
-      opt(orderBy ~> variable) ~
+    ((select ~> opt(distinct) ~ rep1sep(variableName, opt(","))) <~ where) ~! unionOfPatternLists ~
+      opt(orderBy ~> variableName) ~
       opt(limit ~> integer) <~
       opt(";") ^^ {
-        case distinct ~ selectVariables ~ unionOfPatterns ~ orderBy ~ limit =>
-          Select(selectVariables, unionOfPatterns, distinct.isDefined, orderBy, limit)
+        case distinct ~ selectVariableNames ~ unionOfPatterns ~ orderBy ~ limit =>
+          Select(selectVariableNames, unionOfPatterns, distinct.isDefined, orderBy, limit)
       }
   }
 
