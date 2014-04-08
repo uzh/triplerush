@@ -26,14 +26,20 @@ import com.signalcollect.triplerush.TestAnnouncements
 
 class ParserSpec extends FlatSpec with Matchers with TestAnnouncements {
 
-  "Sparql parser" should "parse simple queries" in {
-    val q1 = """
+  "Sparql parser" should "parse a simple query" in {
+    val q = """
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 SELECT ?name WHERE { ?x foaf:name ?name }
 """
-    val parsed1 = SparqlParser.parse(q1)
+    val parsed = SparqlParser.parse(q)
+    assert(parsed === ParsedSparqlQuery(
+      List(PrefixDeclaration("foaf", """http://xmlns.com/foaf/0.1/""")),
+      Select(List(Variable("name")),
+        List(List(ParsedPattern(Variable("x"), Bound("foaf:name"), Variable("name")))), false)))
+  }
 
-    val q2 = """
+  it should "parse a query with multiple patterns" in {
+    val q = """
 SELECT ?T ?A ?B
 WHERE {
 		  <http://dbpedia.org/resource/Elvis> <http://dbpedia.org/property/wikilink> ?A .
@@ -41,9 +47,13 @@ WHERE {
 		  ?B <http://dbpedia.org/property/wikilink> ?T
 }
 """
-    val parsed2 = SparqlParser.parse(q2)
-    println(parsed2)
-    true
+    val parsed = SparqlParser.parse(q)
+    assert(parsed === ParsedSparqlQuery(List(),
+      Select(List(Variable("T"), Variable("A"), Variable("B")),
+        List(List(
+          ParsedPattern(Bound("""http://dbpedia.org/resource/Elvis"""), Bound("""http://dbpedia.org/property/wikilink"""), Variable("A")),
+          ParsedPattern(Variable("A"), Bound("""http://dbpedia.org/property/wikilink"""), Variable("B")),
+          ParsedPattern(Variable("B"), Bound("""http://dbpedia.org/property/wikilink"""), Variable("T")))), false)))
   }
 
   it should "support the DISTINCT keyword" in {
