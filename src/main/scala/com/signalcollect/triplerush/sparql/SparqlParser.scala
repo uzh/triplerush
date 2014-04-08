@@ -28,7 +28,11 @@ sealed trait VariableOrBound
 
 case class Variable(name: String) extends VariableOrBound
 
-case class Bound(url: String) extends VariableOrBound
+case class Iri(url: String) extends VariableOrBound
+
+//case class IntLiteral(i: Int) extends VariableOrBound
+//
+//case class StringLiteral(string: String) extends VariableOrBound
 
 case class ParsedPattern(s: VariableOrBound, p: VariableOrBound, o: VariableOrBound)
 
@@ -38,6 +42,7 @@ case class Select(
   selectVariables: List[Variable],
   patternUnions: List[List[ParsedPattern]],
   isDistinct: Boolean = false,
+  orderBy: Option[Variable] = None,
   limit: Option[Int] = None)
 
 object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversions {
@@ -48,19 +53,29 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
 
   def defaultParser = sparqlQuery
 
-  val prefix = "PREFIX" | "prefix"
-  val select = "SELECT" | "select"
-  val where = "WHERE" | "where"
-  val distinct = "DISTINCT" | "distinct"
-  val union = "UNION" | "union"
+  val prefix = "PREFIX" // | "prefix"
+  val select = "SELECT" // | "select"
+  val where = "WHERE" // | "where"
+  val distinct = "DISTINCT" // | "distinct"
+  val union = "UNION" // | "union"
+  val orderBy = "ORDER" ~> "BY"
+  val limit = "LIMIT"
 
   val url: Parser[String] = "[-a-zA-Z0-9:/\\.]*".r
 
-  val bound: Parser[Bound] = {
+  val iri: Parser[Iri] = {
     (("<" ~> url <~ ">") | url) ^^ {
-      case url => Bound(url)
+      case url => Iri(url)
     }
   }
+
+  //  val string = """.*""".r
+  //
+  //  val stringLiteral: Parser[StringLiteral] = {
+  //    "\"" ~> string <~ "\"" ^^ {
+  //      case l => StringLiteral(l)
+  //    }
+  //  }
 
   val variable: Parser[Variable] = {
     "?" ~> identifier ^^ {
@@ -77,7 +92,7 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   }
 
   val variableOrBound: Parser[VariableOrBound] = {
-    variable | bound
+    variable | iri
   }
 
   val pattern: Parser[ParsedPattern] = {
@@ -101,10 +116,11 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
 
   val selectDeclaration: Parser[Select] = {
     ((select ~> opt(distinct) ~ rep1sep(variable, opt(","))) <~ where) ~! unionOfPatternLists ~
-      opt("LIMIT" ~> integer) <~
+      opt(orderBy ~> variable) ~
+      opt(limit ~> integer) <~
       opt(";") ^^ {
-        case distinct ~ selectVariables ~ unionOfPatterns ~ limit =>
-          Select(selectVariables, unionOfPatterns, distinct.isDefined, limit)
+        case distinct ~ selectVariables ~ unionOfPatterns ~ orderBy ~ limit =>
+          Select(selectVariables, unionOfPatterns, distinct.isDefined, orderBy, limit)
       }
   }
 

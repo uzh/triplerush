@@ -35,7 +35,7 @@ SELECT ?name WHERE { ?x foaf:name ?name }
     assert(parsed === ParsedSparqlQuery(
       List(PrefixDeclaration("foaf", """http://xmlns.com/foaf/0.1/""")),
       Select(List(Variable("name")),
-        List(List(ParsedPattern(Variable("x"), Bound("foaf:name"), Variable("name")))), false)))
+        List(List(ParsedPattern(Variable("x"), Iri("foaf:name"), Variable("name")))), false)))
   }
 
   it should "parse a query with multiple patterns" in {
@@ -51,9 +51,9 @@ WHERE {
     assert(parsed === ParsedSparqlQuery(List(),
       Select(List(Variable("T"), Variable("A"), Variable("B")),
         List(List(
-          ParsedPattern(Bound("""http://dbpedia.org/resource/Elvis"""), Bound("""http://dbpedia.org/property/wikilink"""), Variable("A")),
-          ParsedPattern(Variable("A"), Bound("""http://dbpedia.org/property/wikilink"""), Variable("B")),
-          ParsedPattern(Variable("B"), Bound("""http://dbpedia.org/property/wikilink"""), Variable("T")))), false)))
+          ParsedPattern(Iri("""http://dbpedia.org/resource/Elvis"""), Iri("""http://dbpedia.org/property/wikilink"""), Variable("A")),
+          ParsedPattern(Variable("A"), Iri("""http://dbpedia.org/property/wikilink"""), Variable("B")),
+          ParsedPattern(Variable("B"), Iri("""http://dbpedia.org/property/wikilink"""), Variable("T")))), false)))
   }
 
   it should "support the DISTINCT keyword" in {
@@ -81,9 +81,9 @@ WHERE {
     val parsed = SparqlParser.parse(q1)
     assert(parsed.select.patternUnions === List(
       List(
-        ParsedPattern(Bound("""http://dbpedia.org/resource/Elvis"""), Variable("property"), Variable("hasValue"))),
+        ParsedPattern(Iri("""http://dbpedia.org/resource/Elvis"""), Variable("property"), Variable("hasValue"))),
       List(
-        ParsedPattern(Variable("isValueOf"), Variable("property"), Bound("""http://dbpedia.org/resource/Memphis""")))))
+        ParsedPattern(Variable("isValueOf"), Variable("property"), Iri("""http://dbpedia.org/resource/Memphis""")))))
   }
 
   it should "support the LIMIT keyword" in {
