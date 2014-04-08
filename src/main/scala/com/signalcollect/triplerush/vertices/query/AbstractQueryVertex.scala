@@ -59,6 +59,7 @@ abstract class AbstractQueryVertex[StateType](
   var optimizingDuration = 0l
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+
     optimizingStartTime = System.nanoTime
     //TODO: Should we run an optimizer even for one-pattern queries?
     if (optimizer.isDefined && numberOfPatternsInOriginalQuery > 1) {
@@ -100,6 +101,7 @@ abstract class AbstractQueryVertex[StateType](
     val predicateStats = PredicateStatsCache(pIndexForPattern)
     val cardinalityInCache = fromCache.isDefined
     val predicateStatsInCache = predicateStats.isDefined
+
     if (cardinalityInCache && predicateStatsInCache) {
       // Answer with stats from cache.
       handleCardinalityReply(triplePattern, fromCache.get)
@@ -183,11 +185,17 @@ abstract class AbstractQueryVertex[StateType](
       dispatchedQuery = optimizeQuery
       if (dispatchedQuery.isDefined) {
         graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
+      } else {
+        reportResultsAndRequestQueryVertexRemoval(graphEditor)
       }
     } else {
-      reportResults
-      requestQueryVertexRemoval(graphEditor)
+      reportResultsAndRequestQueryVertexRemoval(graphEditor)
     }
+  }
+
+  def reportResultsAndRequestQueryVertexRemoval(graphEditor: GraphEditor[Any, Any]) {
+    reportResults
+    requestQueryVertexRemoval(graphEditor)
   }
 
   def handleBindings(bindings: Array[Array[Int]])
