@@ -118,26 +118,6 @@ case class Sparql(
   //    }
   //    counts
   //  }
-  //
-  //  def decodeResults(encodedResults: Traversable[Array[Int]]): Option[Traversable[Map[String, String]]] = {
-  //    if (variableNameToId.isDefined && idToVariableName.isDefined && selectVarIds.isDefined) {
-  //      val parEncodedResults: ParArray[Array[Int]] = encodedResults.toArray.par
-  //      val select = selectVarIds.get
-  //      val varToId = variableNameToId.get
-  //      val idToVar = idToVariableName.get
-  //      val variables = varToId.keys
-  //      val decodedResultMaps = parEncodedResults.map { encodedResults =>
-  //        val numberOfBindings = encodedResults.length
-  //        val decodedResultMap = select.map { variableId =>
-  //          idToVar(variableId) -> Dictionary(encodedResults(-variableId - 1))
-  //        }.toMap
-  //        decodedResultMap
-  //      }
-  //      Some(decodedResultMaps.seq)
-  //    } else {
-  //      None
-  //    }
-  //  }
 
 }
 

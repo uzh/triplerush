@@ -25,21 +25,25 @@ import com.signalcollect.util.IntValueHashMap
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.io.Source
+import scala.collection.mutable.ResizableArray
+import scala.collection.mutable.ArrayBuffer
 
 object Dictionary {
   private val lock = new ReentrantReadWriteLock
   private val read = lock.readLock
   private val write = lock.writeLock
-  private var id2String = new IntHashMap[String]
-  private var string2Id = new IntValueHashMap[String]
+  private var id2String = new ArrayBuffer[String](32768)
+  id2String += "*" // Wildcard entry at 0
+  private var string2Id = new IntValueHashMap[String](rehashFraction = 0.5f)
   private var maxId = 0
 
   def clear {
     write.lock
     try {
       maxId = 0
-      id2String = new IntHashMap[String]
-      string2Id = new IntValueHashMap[String]
+      id2String = new ArrayBuffer[String](32768)
+      string2Id = new IntValueHashMap[String](rehashFraction = 0.5f)
+      id2String += "*" // Wildcard entry at 0
     } finally {
       write.unlock
     }
@@ -70,7 +74,7 @@ object Dictionary {
           maxId
         }
         string2Id.put(s, id)
-        id2String.put(id, s)
+        id2String += s
         id
       } finally {
         write.unlock
@@ -83,7 +87,7 @@ object Dictionary {
   def apply(id: Int): String = {
     read.lock
     try {
-      id2String.get(id)
+      id2String(id)
     } finally {
       read.unlock
     }
@@ -95,7 +99,7 @@ object Dictionary {
    *  Only call if there are no concurrent modifications of the dictionary.
    */
   def unsafeDecode(id: Int): String = {
-    id2String.get(id)
+    id2String(id)
   }
 
   def decode(id: Int): Option[String] = {
@@ -134,7 +138,7 @@ object Dictionary {
         val (id, string) = parseEntry(entry)
         maxId = math.max(id, maxId)
         string2Id.put(string, id)
-        id2String.put(id, string)
+        id2String += string
         entriesAdded += 1
         if (entriesAdded % 10000 == 0) {
           println(s"Added $entriesAdded to dictionary so far...")
