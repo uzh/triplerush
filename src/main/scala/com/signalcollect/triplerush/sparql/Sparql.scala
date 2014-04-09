@@ -26,6 +26,7 @@ import com.signalcollect.triplerush.Dictionary
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.triplerush.util.ResultBindingsHashSet
+import scala.collection.mutable.PriorityQueue
 
 /**
  * Class for SPARQL Query executions.
@@ -48,7 +49,7 @@ case class Sparql(
     val id = variableNameToId(variableName)
     val index = math.abs(id) - 1
     val encodedBinding = encodedResult(index)
-    Dictionary(encodedBinding)
+    Dictionary.unsafeDecode(encodedBinding)
   }
 
   protected class DecodingIterator(encodedIterator: Iterator[Array[Int]]) extends Iterator[String => String] {
@@ -62,8 +63,27 @@ case class Sparql(
   def resultIterator: Iterator[String => String] = {
     if (orderBy == None && limit == None) {
       new DecodingIterator(encodedResults)
+    } else if (orderBy.isDefined && limit.isDefined) {
+      val orderByIndex = math.abs(orderBy.get) - 1
+      @inline def orderByStringForBinding(bindings: Array[Int]) = Dictionary(bindings(orderByIndex))
+      val iterator = encodedResults
+      val topK = limit.get
+      implicit val ordering = Ordering.by((bindings: Array[Int]) => orderByStringForBinding(bindings))
+      val topKQueue = new PriorityQueue[Array[Int]]()(ordering.reverse)
+      while (iterator.hasNext) {
+        val bindings = iterator.next
+        if (topKQueue.size < topK) {
+          topKQueue += bindings
+        }
+        if (ordering.compare(topKQueue.head, bindings) < 0) {
+          topKQueue.dequeue
+          topKQueue += bindings
+        }
+      }
+      val topKEncodedResults = topKQueue.toList.sorted
+      new DecodingIterator(topKEncodedResults.toIterator)
     } else {
-      throw new UnsupportedOperationException("ORDER BY and LIMIT are not supported yet.")
+      throw new UnsupportedOperationException("ORDER BY and LIMIT are only supported when both are used.")
     }
   }
 
