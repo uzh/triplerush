@@ -41,8 +41,8 @@ class TicketsSpec extends FlatSpec with TestAnnouncements {
       tr.addEncodedTriple(1, 2, 3)
       tr.addEncodedTriple(4, 5, 6)
       tr.prepareExecution
-      val q = QuerySpecification(List(TriplePattern(-1, -2, -3)), tickets = 1)
-      val results = tr.executeQuery(q)
+      val q = Seq(TriplePattern(-1, -2, -3))
+      val results = tr.executeQuery(q, tickets = 1)
       val bindings: Set[Map[Int, Int]] = {
         results.map({ binding: Array[Int] =>
           // Only keep variable bindings that have an assigned value.

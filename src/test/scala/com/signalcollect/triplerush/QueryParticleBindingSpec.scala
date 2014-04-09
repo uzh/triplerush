@@ -41,7 +41,7 @@ class QueryParticleBindingSpec extends FlatSpec with ShouldMatchers with Checker
   }
 
   def testBinding(toBind: TriplePattern, queryPattern: TriplePattern) {
-    val qp = QueryParticle.fromSpecification(1, QuerySpecification(Array(queryPattern)))
+    val qp = QueryParticle(Seq(queryPattern), queryId = 1, numberOfSelectVariables = 3)
     val boundParticle = qp.bind(toBind.s, toBind.p, toBind.o)
     if (!isBindingPossible(queryPattern, toBind)) {
       assert(boundParticle == null, s"tr found a binding for binding: $toBind to query: $queryPattern")

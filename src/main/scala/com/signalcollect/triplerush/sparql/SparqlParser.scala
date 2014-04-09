@@ -32,7 +32,7 @@ case class Iri(url: String) extends VariableOrBound
 
 //case class IntLiteral(i: Int) extends VariableOrBound
 //
-//case class StringLiteral(string: String) extends VariableOrBound
+case class StringLiteral(string: String) extends VariableOrBound
 
 case class ParsedPattern(s: VariableOrBound, p: VariableOrBound, o: VariableOrBound)
 
@@ -59,21 +59,23 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   val orderBy = "ORDER" ~> "BY"
   val limit = "LIMIT"
 
-  val url: Parser[String] = "[-a-zA-Z0-9:/\\.#]*".r
+  val url: Parser[String] = "[-a-zA-Z0-9:/\\.#]+".r
 
   val iri: Parser[Iri] = {
     (("<" ~> url <~ ">") | url) ^^ {
-      case url => Iri(url)
+      case url =>
+        Iri(url)
     }
   }
 
-  //  val string = """.*""".r
-  //
-  //  val stringLiteral: Parser[StringLiteral] = {
-  //    "\"" ~> string <~ "\"" ^^ {
-  //      case l => StringLiteral(l)
-  //    }
-  //  }
+  val string = """[^"]+""".r
+
+  val stringLiteral: Parser[StringLiteral] = {
+    """"""" ~> string <~ """"""" ^^ {
+      case l =>
+        StringLiteral(l)
+    }
+  }
 
   val variable: Parser[Variable] = {
     "?" ~> identifier ^^ {
@@ -94,7 +96,7 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   }
 
   val variableOrBound: Parser[VariableOrBound] = {
-    variable | iri
+    variable | iri | stringLiteral
   }
 
   val pattern: Parser[ParsedPattern] = {

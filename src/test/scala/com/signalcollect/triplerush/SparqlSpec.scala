@@ -23,11 +23,12 @@ import org.scalatest.FlatSpec
 import com.signalcollect.GraphBuilder
 import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer
 import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
+import com.signalcollect.triplerush.sparql.Sparql
 
 class QuerySpecificationSpec extends FlatSpec with TestAnnouncements {
 
-  "QuerySpecification" should "correctly translate a SPARQL query that has results" in {
-    val tr = new TripleRush
+  "Sparql" should "correctly translate a SPARQL query that has results" in {
+    implicit val tr = new TripleRush
     try {
       tr.addTriple("http://a", "http://b", "http://c")
       tr.addTriple("http://a", "http://d", "http://e")
@@ -39,12 +40,11 @@ WHERE {
     	?X <http://d> <http://e>
 }
 """
-      val queryOption = QuerySpecification.fromSparql(sparql)
+      val queryOption = Sparql(sparql)
       assert(queryOption.isDefined)
       val query = queryOption.get
-      val encodedResults = tr.executeQuery(query)
-      val decodedResults = query.decodeResults(encodedResults)
-      assert(decodedResults.get.toSet === Set(Map("X" -> "http://a")))
+      val decodedResults = query.resultIterator
+      assert(decodedResults.toSet === Set(Map("X" -> "http://a")))
     } catch {
       case t: Throwable =>
         println(t.getMessage)
@@ -56,7 +56,7 @@ WHERE {
   }
 
   it should "correctly translate a SPARQL query that has no results" in {
-    val tr = new TripleRush
+    implicit val tr = new TripleRush
     try {
       tr.addTriple("http://a", "http://b", "http://c")
       tr.addTriple("http://f", "http://d", "http://e")
@@ -68,12 +68,11 @@ WHERE {
     	?X <http://d> <http://e>
 }
 """
-      val queryOption = QuerySpecification.fromSparql(sparql)
+      val queryOption = Sparql(sparql)
       assert(queryOption.isDefined)
       val query = queryOption.get
-      val encodedResults = tr.executeQuery(query)
-      val decodedResults = query.decodeResults(encodedResults)
-      assert(decodedResults.get.toSet === Set())
+      val decodedResults = query.resultIterator
+      assert(decodedResults.toSet === Set())
     } catch {
       case t: Throwable =>
         println(t.getMessage)
@@ -85,7 +84,7 @@ WHERE {
   }
 
   it should "correctly eliminate a SPARQL query that is guaranteed to have no results" in {
-    val tr = new TripleRush
+    implicit val tr = new TripleRush
     try {
       tr.addTriple("http://a", "http://b", "http://c")
       tr.addTriple("http://f", "http://d", "http://e")
@@ -97,7 +96,7 @@ WHERE {
     	?X <http://d> <http://e>
 }
 """
-      val queryOption = QuerySpecification.fromSparql(sparql)
+      val queryOption = Sparql(sparql)
       assert(queryOption.isEmpty)
     } finally {
       tr.shutdown

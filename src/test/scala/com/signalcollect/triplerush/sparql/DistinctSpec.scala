@@ -22,7 +22,6 @@ package com.signalcollect.triplerush.sparql
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import com.signalcollect.triplerush.TestAnnouncements
-import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TripleRush
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -34,12 +33,14 @@ class DistinctSpec extends FlatSpec with Matchers with TestAnnouncements {
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
 """
-    val tr = new TripleRush
-    tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-    tr.prepareExecution
+    implicit val tr = new TripleRush
     try {
-      val query = QuerySpecification.fromSparql(sparql).get
-      assert(query.distinct === true)
+      tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "Harold")
+      tr.prepareExecution
+      val parsed = SparqlParser.parse(sparql)
+      println(parsed)
+      val query = Sparql(sparql).get
+      assert(query.isDistinct === true)
     } finally {
       tr.shutdown
     }
@@ -50,15 +51,15 @@ SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
 """
-    val tr = new TripleRush
-    tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-    tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-    tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "Arthur")
-    tr.prepareExecution
+    implicit val tr = new TripleRush
     try {
-      val query = QuerySpecification.fromSparql(sparql).get
-      assert(query.distinct === true)
-      val result = tr.executeQuery(query)
+      tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "Harold")
+      tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "Harold")
+      tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "Arthur")
+      tr.prepareExecution
+      val query = Sparql(sparql).get
+      assert(query.isDistinct === true)
+      val result = query.resultIterator
       assert(result.size === 2)
     } finally {
       tr.shutdown
@@ -70,17 +71,16 @@ SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
 """
-    val tr = new TripleRush
-    tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-    tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-    tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "Arthur")
-    tr.prepareExecution
+    implicit val tr = new TripleRush
     try {
-      val query = QuerySpecification.fromSparql(sparql).get
-      assert(query.distinct === true)
-      val resultFuture = tr.executeCountingQuery(query)
-      val result = Await.result(resultFuture, 10.seconds)
-      assert(result.get === 2)
+      tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "Harold")
+      tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "Harold")
+      tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "Arthur")
+      tr.prepareExecution
+      val query = Sparql(sparql).get
+      assert(query.isDistinct === true)
+      val results = query.resultIterator
+      assert(results === 2)
     } finally {
       tr.shutdown
     }

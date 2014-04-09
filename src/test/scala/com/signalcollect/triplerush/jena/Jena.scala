@@ -10,7 +10,6 @@ import com.hp.hpl.jena.rdf.model.RDFNode
 import com.signalcollect.triplerush.QueryEngine
 import com.signalcollect.triplerush.TriplePattern
 import scala.Option.option2Iterable
-import com.signalcollect.triplerush.QuerySpecification
 import com.hp.hpl.jena.sparql.engine.ResultSetStream
 import com.hp.hpl.jena.sparql.core.ResultBinding
 import com.hp.hpl.jena.sparql.engine.binding.BindingProject
@@ -26,10 +25,9 @@ class Jena extends QueryEngine {
     val obj = model.createResource(intToInsertString(o))
     model.add(resource, prop, obj)
   }
-  def executeQuery(q: QuerySpecification): Iterable[Array[Int]] = {
-    val patterns = q.unmatched
+  def executeQuery(q: Seq[TriplePattern]): Iterable[Array[Int]] = {
     val variableNames = {
-      val vars = patterns.
+      val vars = q.
         flatMap(p => Set(p.s, p.p, p.o)).
         filter(_ < 0).
         map(intToQueryString).
@@ -44,7 +42,7 @@ class Jena extends QueryEngine {
 PREFIX ns: <http://example.com#>
 SELECT ${variableNames.mkString(" ")}
 WHERE {
-\t${patterns.map(patternToString).mkString(" \n\t")} }"""
+\t${q.map(patternToString).mkString(" \n\t")} }"""
     val query = QueryFactory.create(queryString)
     val qe = QueryExecutionFactory.create(query, model)
     val results = qe.execSelect

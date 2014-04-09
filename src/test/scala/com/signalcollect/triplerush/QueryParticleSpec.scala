@@ -49,9 +49,12 @@ class QueryParticleSpec extends FlatSpec with ShouldMatchers with Checkers with 
   "QueryParticle" should "correctly encode ids" in {
     check(
       (id: Int) => {
-        val qp = QueryParticle.fromSpecification(1, QuerySpecification(Array(
-          TriplePattern(-1, 1, 2),
-          TriplePattern(-1, 3, -2))))
+        val qp = QueryParticle(
+          patterns = Seq(
+            TriplePattern(-1, 1, 2),
+            TriplePattern(-1, 3, -2)),
+          queryId = 1,
+          numberOfSelectVariables = 2)
         qp.writeQueryId(id)
         qp.queryId == id
       },
@@ -61,9 +64,12 @@ class QueryParticleSpec extends FlatSpec with ShouldMatchers with Checkers with 
   it should "correctly encode tickets" in {
     check(
       (tickets: Long) => {
-        val qp = QueryParticle.fromSpecification(1, QuerySpecification(Array(
-          TriplePattern(-1, 1, 2),
-          TriplePattern(-1, 3, -2))))
+        val qp = QueryParticle(
+          patterns = Seq(
+            TriplePattern(-1, 1, 2),
+            TriplePattern(-1, 3, -2)),
+          queryId = 1,
+          numberOfSelectVariables = 2)
         qp.writeTickets(tickets)
         qp.tickets == tickets
       },
@@ -74,7 +80,10 @@ class QueryParticleSpec extends FlatSpec with ShouldMatchers with Checkers with 
     check(
       (a: TriplePattern, b: TriplePattern, c: TriplePattern) => {
         val patterns = Array(a, b, c)
-        val qp = QueryParticle.fromSpecification(1, QuerySpecification(patterns))
+        val qp = QueryParticle(
+          patterns = patterns,
+          queryId = 1,
+          numberOfSelectVariables = 3)
         qp.patterns.toList == patterns.toList
       },
       minSuccessful(1000))

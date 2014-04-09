@@ -41,7 +41,6 @@ import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
 import com.signalcollect.triplerush.optimizers.ExplorationOptimizerCreator
 import com.signalcollect.triplerush.util.ResultIterator
 import com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex
-import com.signalcollect.triplerush.vertices.query.DistinctResults
 import com.signalcollect.triplerush.util.SequenceOfArraysTraversable
 
 case class TripleRush(
@@ -122,27 +121,14 @@ case class TripleRush(
   }
 
   def executeCountingQuery(
-    q: QuerySpecification,
-    optimizer: Option[Optimizer] = Some(GreedyCardinalityOptimizer)): Future[Option[Long]] = {
+    q: Seq[TriplePattern],
+    optimizer: Option[Optimizer] = Some(GreedyCardinalityOptimizer),
+    tickets: Long = Long.MaxValue): Future[Option[Long]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    if (!q.distinct) {
-      // Efficient counting query.
-      val resultCountPromise = Promise[Option[Long]]()
-      graph.addVertex(new ResultCountingQueryVertex(q, resultCountPromise, optimizer))
-      resultCountPromise.future
-    } else {
-      // Dispatch normal query instead, then count results.
-      val (bindingsFuture, statsFuture) = executeAdvancedQuery(q, optimizer)
-      val result: Future[Option[Long]] = for {
-        stats <- statsFuture
-        bindings <- bindingsFuture
-      } yield if (stats("isComplete").asInstanceOf[Boolean]) {
-        Some(bindings.size.toLong)
-      } else {
-        None
-      }
-      result
-    }
+    // Efficient counting query.
+    val resultCountPromise = Promise[Option[Long]]()
+    graph.addVertex(new ResultCountingQueryVertex(q, tickets, resultCountPromise, optimizer))
+    resultCountPromise.future
   }
 
   /**
@@ -161,31 +147,41 @@ case class TripleRush(
     childIdPromise.future
   }
 
-  def executeQuery(q: QuerySpecification): Traversable[Array[Int]] = {
+  def executeQuery(q: Seq[TriplePattern]): Traversable[Array[Int]] = {
     executeQuery(q, optimizer)
   }
 
-  def executeQuery(q: QuerySpecification, optimizer: Option[Optimizer]): Traversable[Array[Int]] = {
-    val (resultFuture, statsFuture) = executeAdvancedQuery(q, optimizer)
+  def executeQuery(q: Seq[TriplePattern], optimizer: Option[Optimizer] = None, tickets: Long = Long.MaxValue): Traversable[Array[Int]] = {
+    val (resultFuture, statsFuture) = executeAdvancedQuery(q, optimizer, tickets = tickets)
     val result = Await.result(resultFuture, 7200.seconds)
     result
+  }
+
+  protected def requiredVariableBindingsSlots(query: Seq[TriplePattern]): Int = {
+    var minId = 0
+    query.foreach {
+      tp =>
+        minId = math.min(minId, tp.s)
+        minId = math.min(minId, tp.p)
+        minId = math.min(minId, tp.o)
+    }
+    math.abs(minId)
   }
 
   /**
    * If the optimizer is defined, uses that one, else uses the default.
    */
   def executeAdvancedQuery(
-    q: QuerySpecification,
-    optimizerOption: Option[Optimizer] = None): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
+    query: Seq[TriplePattern],
+    optimizerOption: Option[Optimizer] = None,
+    numberOfSelectVariables: Option[Int] = None,
+    tickets: Long = Long.MaxValue): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    val selectVariables = numberOfSelectVariables.getOrElse(requiredVariableBindingsSlots(query))
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
     val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
-    val queryVertex = if (q.distinct) {
-      new ResultBindingQueryVertex(q, resultPromise, statsPromise, usedOptimizer) with DistinctResults[SequenceOfArraysTraversable]
-    } else {
-      new ResultBindingQueryVertex(q, resultPromise, statsPromise, usedOptimizer)
-    }
+    val queryVertex = new ResultBindingQueryVertex(query, selectVariables, tickets, resultPromise, statsPromise, usedOptimizer)
     graph.addVertex(queryVertex)
     (resultPromise.future, statsPromise.future)
   }
@@ -194,16 +190,15 @@ case class TripleRush(
    * If the optimizer is defined, uses that one, else uses the default.
    */
   def resultIteratorForQuery(
-    q: QuerySpecification,
-    optimizerOption: Option[Optimizer] = None): Iterator[Array[Int]] = {
+    query: Seq[TriplePattern],
+    optimizerOption: Option[Optimizer] = None,
+    numberOfSelectVariables: Option[Int] = None,
+    tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    val selectVariables = numberOfSelectVariables.getOrElse(requiredVariableBindingsSlots(query))
     val resultIterator = new ResultIterator
     val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
-    val queryVertex = if (q.distinct) {
-      new ResultIteratorQueryVertex(q, resultIterator, usedOptimizer) with DistinctResults[ResultIterator]
-    } else {
-      new ResultIteratorQueryVertex(q, resultIterator, usedOptimizer)
-    }
+    val queryVertex = new ResultIteratorQueryVertex(query, selectVariables, tickets, resultIterator, usedOptimizer)
     graph.addVertex(queryVertex)
     resultIterator
   }

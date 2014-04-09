@@ -17,30 +17,37 @@
  *  
  */
 
-package com.signalcollect.triplerush.vertices.query
+package com.signalcollect.triplerush.sparql
 
-import com.signalcollect.triplerush.util.ResultBindingWrapper
 import com.signalcollect.triplerush.util.ResultBindingsHashSet
-import com.signalcollect.triplerush.util.ResultBindings
 
-trait DistinctResults[State <: ResultBindings] extends {
-  this: AbstractQueryVertex[State] =>
+class DistinctIterator(encodedResultIterator: Iterator[Array[Int]]) extends Iterator[Array[Int]] {
 
   val alreadyReportedBindings = new ResultBindingsHashSet(128)
 
-  override def handleBindings(bindings: Array[Array[Int]]) {
-    var toReport = Vector[Array[Int]]()
-    var i = 0
-    val length = bindings.length
-    while (i < length) {
-      val currentBindings = bindings(i)
-      val alreadyReported = alreadyReportedBindings.add(currentBindings)
-      if (!alreadyReported) {
-        toReport = toReport :+ currentBindings
-      }
-      i += 1
-    }
-    state.add(toReport)
+  var distinctNext: Array[Int] = if (encodedResultIterator.hasNext) {
+    val next = encodedResultIterator.next
+    alreadyReportedBindings.add(next)
+    next
+  } else {
+    null.asInstanceOf[Array[Int]]
   }
 
+  def hasNext: Boolean = {
+    distinctNext != null
+  }
+
+  def next: Array[Int] = {
+    val nextThatWeWillReport = distinctNext
+    distinctNext = null.asInstanceOf[Array[Int]]
+    // Refill the next slot.
+    while (distinctNext == null && encodedResultIterator.hasNext) {
+      val next = encodedResultIterator.next
+      val alreadyReported = alreadyReportedBindings.add(next)
+      if (!alreadyReported) {
+        distinctNext = next
+      }
+    }
+    nextThatWeWillReport
+  }
 }

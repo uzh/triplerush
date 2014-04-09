@@ -76,47 +76,17 @@ case class ParticleDebug(
 object QueryParticle {
   implicit def arrayToParticle(a: Array[Int]) = new QueryParticle(a)
 
-  def fromSpecification(queryId: Int, s: QuerySpecification): Array[Int] = {
-    if (queryId > 0) {
-      val variableCount =
-        if (!s.selectVarIds.isDefined) {
-          math.abs(s.unmatched.foldLeft(0) {
-            (currentMin, next) =>
-              val minCandidate = math.min(next.o, math.min(next.s, next.p))
-              math.min(currentMin, minCandidate)
-          })
-        } else {
-          s.selectVarIds.get.size
-        }
-      QueryParticle(
-        queryId,
-        s.tickets,
-        new Array[Int](variableCount),
-        s.unmatched)
-    } else {
-      val ints = 4 + 3 * s.unmatched.length
-      val r = new Array[Int](ints)
-      r.writeQueryId(queryId)
-      r.writeTickets(s.tickets)
-      r.writePatterns(s.unmatched)
-      r
-    }
-
-  }
-
   def apply(
+    patterns: Seq[TriplePattern],
     queryId: Int,
-    tickets: Long = Long.MaxValue, // normal queries have a lot of tickets
-    bindings: Array[Int],
-    unmatched: Seq[TriplePattern]): Array[Int] = {
-
-    val ints = 4 + bindings.length + 3 * unmatched.length
+    numberOfSelectVariables: Int,
+    tickets: Long = Long.MaxValue): Array[Int] = {
+    val ints = 4 + numberOfSelectVariables + 3 * patterns.length
     val r = new Array[Int](ints)
     r.writeQueryId(queryId)
+    r.writeNumberOfBindings(numberOfSelectVariables)
     r.writeTickets(tickets)
-    r.writeBindings(bindings)
-    r.writePatterns(unmatched)
-
+    r.writePatterns(patterns)
     r
   }
 
@@ -303,6 +273,10 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   def numberOfBindings: Int = r(3)
+
+  def writeNumberOfBindings(numberOfBindings: Int) {
+    r(3) = numberOfBindings
+  }
 
   def writeBindings(bindings: Seq[Int]) {
     r(3) = bindings.length

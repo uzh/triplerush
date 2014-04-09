@@ -7,7 +7,6 @@ import org.scalatest.Finders
 import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
 import com.signalcollect.triplerush.PredicateSelectivity
-import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.TripleGenerators.genTriple
 import com.signalcollect.triplerush.TripleGenerators.queryPatterns
 import com.signalcollect.triplerush.TriplePattern
@@ -51,8 +50,8 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
       tr.prepareExecution
       val stats = new PredicateSelectivity(tr)
       val optimizer = new PredicateSelectivityEdgeCountsOptimizer(stats)
-      val tripleExists = tr.executeQuery(QuerySpecification(List(TriplePattern(s1, p1, o1))), Some(optimizer))
-      val tripleNotFound = tr.executeQuery(QuerySpecification(List(TriplePattern(s1, p2, o1))), Some(optimizer))
+      val tripleExists = tr.executeQuery(Seq(TriplePattern(s1, p1, o1)), Some(optimizer))
+      val tripleNotFound = tr.executeQuery(Seq(TriplePattern(s1, p2, o1)), Some(optimizer))
       assert(tripleExists.size == 1)
       assert(tripleNotFound.size == 0)
     } finally {
@@ -127,7 +126,7 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
       val optimizer = new PredicateSelectivityEdgeCountsOptimizer(stats)
 
       def calculateCardinalityOfPattern(tp: TriplePattern): Long = {
-        val queryToGetCardinality = QuerySpecification(List(tp))
+        val queryToGetCardinality = Seq(tp)
         val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality)
         cardinalityQueryResult.size
       }
@@ -218,7 +217,7 @@ class PredicateSelectivityEdgeCountsOptimizerSpec extends FlatSpec with Checkers
       val optimizer = new PredicateSelectivityEdgeCountsOptimizer(stats)
 
       def calculateCardinalityOfPattern(tp: TriplePattern): Long = {
-        val queryToGetCardinality = QuerySpecification(List(tp))
+        val queryToGetCardinality = Seq(tp)
         val cardinalityQueryResult = tr.executeQuery(queryToGetCardinality)
         cardinalityQueryResult.size
       }
