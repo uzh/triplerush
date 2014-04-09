@@ -65,7 +65,7 @@ case class Sparql(
       new DecodingIterator(encodedResults)
     } else if (orderBy.isDefined && limit.isDefined) {
       val orderByIndex = math.abs(orderBy.get) - 1
-      @inline def orderByStringForBinding(bindings: Array[Int]) = Dictionary(bindings(orderByIndex))
+      @inline def orderByStringForBinding(bindings: Array[Int]) = Dictionary.unsafeDecode(bindings(orderByIndex))
       val iterator = encodedResults
       val topK = limit.get
       implicit val ordering = Ordering.by((bindings: Array[Int]) => orderByStringForBinding(bindings))
