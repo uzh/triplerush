@@ -20,14 +20,19 @@
 package com.signalcollect.triplerush.sparql
 
 import scala.collection.JavaConversions._
-import com.hp.hpl.jena.query.QueryFactory
-import com.signalcollect.triplerush.TriplePattern
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 import com.signalcollect.triplerush.Dictionary
+import com.signalcollect.triplerush.QuerySpecification
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.TripleRush
 
 /**
  * Class for SPARQL Query executions.
  */
 case class Sparql(
+  tr: TripleRush,
   encodedPatternUnions: List[Seq[TriplePattern]],
   selectVariableIds: List[Int],
   variableNameToId: Map[String, Int],
@@ -35,6 +40,23 @@ case class Sparql(
   isDistinct: Boolean = false,
   orderBy: Option[Int],
   limit: Option[Int]) {
+
+  assert(orderBy.isDefined == limit.isDefined, "ORDER BY and LIMIT are only supprted when both are used together.")
+
+  def encodedResults: Iterator[Array[Int]] = {
+    // Simple case first.
+    if (isDistinct == false && orderBy == None && limit == None) {
+      val iterators = encodedPatternUnions.map {
+        patterns =>
+          val query = QuerySpecification(patterns)
+          tr.resultIteratorForQuery(query)
+      }
+      iterators.reduce(_ ++ _)
+    } else {
+      throw new UnsupportedOperationException("Features DISTINCT, ORDER BY and LIMIT are not supported yet.")
+    }
+
+  }
 
   //  def counts(variableId: Int, encodedResults: Traversable[Array[Int]]): Map[Int, Int] = {
   //    var counts = Map.empty[Int, Int].withDefaultValue(0)
@@ -75,7 +97,7 @@ object Sparql {
   /**
    *  If the query might have results returns Some(Sparql), else returns None.
    */
-  def apply(query: String): Option[Sparql] = {
+  def apply(query: String)(implicit tr: TripleRush): Option[Sparql] = {
     val parsed: ParsedSparqlQuery = SparqlParser.parse(query)
     var containsEntryThatIsNotInDictionary = false
     val prefixes = parsed.prefixes
@@ -157,6 +179,7 @@ object Sparql {
     } else {
       Some(
         Sparql(
+          tr = tr,
           encodedPatternUnions = encodedPatternUnions,
           selectVariableIds = selectVariableIds,
           variableNameToId = variableNameToId,
