@@ -22,7 +22,7 @@ package com.signalcollect.triplerush.sparql
 import scala.util.parsing.combinator.ImplicitConversions
 import com.signalcollect.triplerush.TriplePattern
 
-case class ParsedSparqlQuery(prefixes: List[PrefixDeclaration], select: Select)
+case class ParsedSparqlQuery(prefixes: Map[String, String], select: Select)
 
 sealed trait VariableOrBound
 
@@ -36,11 +36,9 @@ case class Iri(url: String) extends VariableOrBound
 
 case class ParsedPattern(s: VariableOrBound, p: VariableOrBound, o: VariableOrBound)
 
-case class PrefixDeclaration(prefix: String, expanded: String)
-
 case class Select(
   selectVariableNames: List[String],
-  patternUnions: List[List[ParsedPattern]],
+  patternUnions: List[Seq[ParsedPattern]],
   isDistinct: Boolean = false,
   orderBy: Option[String] = None,
   limit: Option[Int] = None)
@@ -88,10 +86,10 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
     "?" ~> identifier
   }
 
-  val prefixDeclaration: Parser[PrefixDeclaration] = {
+  val prefixDeclaration: Parser[(String, String)] = {
     ((prefix ~> identifier) <~ ":" ~! "<") ~! url <~ ">" ^^ {
       case prefix ~ expanded =>
-        PrefixDeclaration(prefix, expanded)
+        (prefix, expanded)
     }
   }
 
@@ -113,7 +111,7 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
     }
   }
 
-  val unionOfPatternLists: Parser[List[List[ParsedPattern]]] = {
+  val unionOfPatternLists: Parser[List[Seq[ParsedPattern]]] = {
     patternList ^^ { List(_) } |
       "{" ~> rep1sep(patternList, union) <~ "}"
   }
@@ -131,7 +129,7 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   val sparqlQuery: Parser[ParsedSparqlQuery] = {
     rep(prefixDeclaration) ~! selectDeclaration ^^ {
       case prefixes ~ select =>
-        ParsedSparqlQuery(prefixes, select)
+        ParsedSparqlQuery(prefixes.toMap, select)
     }
   }
 }

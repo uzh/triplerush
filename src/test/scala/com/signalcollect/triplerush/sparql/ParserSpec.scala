@@ -33,7 +33,7 @@ SELECT ?name WHERE { ?x foaf:name ?name }
 """
     val parsed = SparqlParser.parse(q)
     assert(parsed === ParsedSparqlQuery(
-      List(PrefixDeclaration("foaf", """http://xmlns.com/foaf/0.1/""")),
+      Map("foaf" -> """http://xmlns.com/foaf/0.1/"""),
       Select(List("name"),
         List(List(ParsedPattern(Variable("x"), Iri("foaf:name"), Variable("name")))), false)))
   }
@@ -48,7 +48,7 @@ WHERE {
 }
 """
     val parsed = SparqlParser.parse(q)
-    assert(parsed === ParsedSparqlQuery(List(),
+    assert(parsed === ParsedSparqlQuery(Map(),
       Select(List("T", "A", "B"),
         List(List(
           ParsedPattern(Iri("""http://dbpedia.org/resource/Elvis"""), Iri("""http://dbpedia.org/property/wikilink"""), Variable("A")),
@@ -117,7 +117,7 @@ ORDER BY ?label
 LIMIT 10
 """
     val parsed = SparqlParser.parse(q)
-    assert(parsed.select.orderBy === Some(Variable("label")))
+    assert(parsed.select.orderBy === Some("label"))
   }
 
 }

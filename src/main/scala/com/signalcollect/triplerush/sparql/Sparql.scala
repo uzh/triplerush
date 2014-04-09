@@ -20,8 +20,8 @@
 package com.signalcollect.triplerush.sparql
 
 import scala.collection.JavaConversions._
-
 import com.hp.hpl.jena.query.QueryFactory
+import com.signalcollect.triplerush.TriplePattern
 
 object Sparql {
   // Index -1 gets mapped to index 0, -2 to 1, etc.
@@ -29,6 +29,7 @@ object Sparql {
 
   def apply(query: String): Sparql = {
     val parsed: ParsedSparqlQuery = SparqlParser.parse(query)
+    val prefixes = parsed.prefixes
     val select = parsed.select
     val selectVariableNames = select.selectVariableNames
     val numberOfSelectVariables = selectVariableNames.size
@@ -53,6 +54,64 @@ object Sparql {
         id
       }
     }
+
+    def dictionaryEncodePatterns(patterns: Seq[ParsedPattern]): Seq[TriplePattern] = {
+      def expandPrefix(prefixedString: String): String = {
+        val prefixEnd = prefixedString.indexOf(':')
+        if (prefixEnd == -1) {
+          throw new Exception(s"Iri $prefixedString should have a prefix, but none was found.")
+        }
+        val prefix = prefixedString.substring(0, prefixEnd)
+        try {
+          val remainder = prefixedString.substring(prefixEnd + 1)
+          val expanded = prefixes(prefix)
+          expanded + remainder
+        } catch {
+          case t: Throwable =>
+            throw new Exception(s"""Prefix "$prefix" was not declared or $prefixedString did not properly define a prefix.""")
+        }
+      }
+      
+      patterns.map {
+        case ParsedPattern(s, p, o) =>
+                  
+      }
+      ???
+    }
+
+    //           val tripleComponents = Vector(triple.getSubject, triple.getPredicate, triple.getObject)
+    //        val tripleIds = tripleComponents map { e =>
+    //          if (e.isVariable) {
+    //            val variableName = e.getName
+    //            addVariableEncoding(variableName)
+    //          } else if (e.isLiteral) {
+    //            val literalString: String = e.getLiteral.toString
+    //            if (Dictionary.contains(literalString)) {
+    //              Dictionary(literalString)
+    //            } else {
+    //              //println(s"$literalString not in store, no results.")
+    //              hasNoResults = true
+    //              Int.MaxValue
+    //            }
+    //          } else {
+    //            val uriString = e.getURI
+    //            if (Dictionary.contains(uriString)) {
+    //              Dictionary(uriString)
+    //            } else {
+    //              //println(s"$uriString not in store, no results.")
+    //              hasNoResults = true
+    //              Int.MaxValue
+    //            }
+    //          }
+    //        }
+    //        patterns = patterns ::: List(TriplePattern(tripleIds(0), tripleIds(1), tripleIds(2)))
+
+//    Some(QuerySpecification(
+//      unmatched = patterns,
+//      selectVarIds = Some(selectVarIds),
+//      variableNameToId = Some(variableNameToId),
+//      idToVariableName = Some(idToVariableName),
+//      distinct = jenaQuery.isDistinct))
 
     Sparql(
       selectVariableIds = selectVariableIds,
