@@ -107,7 +107,7 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   }
 
   val patternList: Parser[List[ParsedPattern]] = {
-    ("{" ~> rep1sep(pattern, ".")) <~ "}" ^^ {
+    ("{" ~> rep1sep(pattern, ".") <~ opt(".")) <~ "}" ^^ {
       case patterns =>
         patterns
     }
