@@ -38,7 +38,6 @@ SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
       tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "Harold")
       tr.prepareExecution
       val parsed = SparqlParser.parse(sparql)
-      println(parsed)
       val query = Sparql(sparql).get
       assert(query.isDistinct === true)
     } finally {
@@ -79,7 +78,7 @@ SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
       tr.prepareExecution
       val query = Sparql(sparql).get
       assert(query.isDistinct === true)
-      val results = query.resultIterator
+      val results = query.resultIterator.size
       assert(results === 2)
     } finally {
       tr.shutdown
