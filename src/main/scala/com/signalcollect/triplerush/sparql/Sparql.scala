@@ -22,111 +22,13 @@ package com.signalcollect.triplerush.sparql
 import scala.collection.JavaConversions._
 import com.hp.hpl.jena.query.QueryFactory
 import com.signalcollect.triplerush.TriplePattern
-
-object Sparql {
-  // Index -1 gets mapped to index 0, -2 to 1, etc.
-  @inline private def idToIndex(id: Int) = math.abs(id) - 1
-
-  def apply(query: String): Sparql = {
-    val parsed: ParsedSparqlQuery = SparqlParser.parse(query)
-    val prefixes = parsed.prefixes
-    val select = parsed.select
-    val selectVariableNames = select.selectVariableNames
-    val numberOfSelectVariables = selectVariableNames.size
-    var selectVariableIds = List.empty[Int]
-    var nextVariableId = -1
-    var variableNameToId = Map.empty[String, Int]
-    var idToVariableName = new Array[String](numberOfSelectVariables)
-    for (varName <- selectVariableNames) {
-      val id = addVariableEncoding(varName)
-      selectVariableIds = id :: selectVariableIds
-    }
-
-    def addVariableEncoding(variableName: String): Int = {
-      val idOption = variableNameToId.get(variableName)
-      if (idOption.isDefined) {
-        idOption.get
-      } else {
-        val id = nextVariableId
-        nextVariableId -= 1
-        variableNameToId += variableName -> id
-        idToVariableName(idToIndex(id)) = variableName
-        id
-      }
-    }
-
-    def dictionaryEncodePatterns(patterns: Seq[ParsedPattern]): Seq[TriplePattern] = {
-      def expandPrefix(prefixedString: String): String = {
-        val prefixEnd = prefixedString.indexOf(':')
-        if (prefixEnd == -1) {
-          throw new Exception(s"Iri $prefixedString should have a prefix, but none was found.")
-        }
-        val prefix = prefixedString.substring(0, prefixEnd)
-        try {
-          val remainder = prefixedString.substring(prefixEnd + 1)
-          val expanded = prefixes(prefix)
-          expanded + remainder
-        } catch {
-          case t: Throwable =>
-            throw new Exception(s"""Prefix "$prefix" was not declared or $prefixedString did not properly define a prefix.""")
-        }
-      }
-      
-      patterns.map {
-        case ParsedPattern(s, p, o) =>
-                  
-      }
-      ???
-    }
-
-    //           val tripleComponents = Vector(triple.getSubject, triple.getPredicate, triple.getObject)
-    //        val tripleIds = tripleComponents map { e =>
-    //          if (e.isVariable) {
-    //            val variableName = e.getName
-    //            addVariableEncoding(variableName)
-    //          } else if (e.isLiteral) {
-    //            val literalString: String = e.getLiteral.toString
-    //            if (Dictionary.contains(literalString)) {
-    //              Dictionary(literalString)
-    //            } else {
-    //              //println(s"$literalString not in store, no results.")
-    //              hasNoResults = true
-    //              Int.MaxValue
-    //            }
-    //          } else {
-    //            val uriString = e.getURI
-    //            if (Dictionary.contains(uriString)) {
-    //              Dictionary(uriString)
-    //            } else {
-    //              //println(s"$uriString not in store, no results.")
-    //              hasNoResults = true
-    //              Int.MaxValue
-    //            }
-    //          }
-    //        }
-    //        patterns = patterns ::: List(TriplePattern(tripleIds(0), tripleIds(1), tripleIds(2)))
-
-//    Some(QuerySpecification(
-//      unmatched = patterns,
-//      selectVarIds = Some(selectVarIds),
-//      variableNameToId = Some(variableNameToId),
-//      idToVariableName = Some(idToVariableName),
-//      distinct = jenaQuery.isDistinct))
-
-    Sparql(
-      selectVariableIds = selectVariableIds,
-      variableNameToId = variableNameToId,
-      idToVariableName = idToVariableName,
-      isDistinct = parsed.select.isDistinct,
-      orderBy = select.orderBy.map(variableNameToId),
-      limit = select.limit)
-  }
-}
+import com.signalcollect.triplerush.Dictionary
 
 /**
  * Class for SPARQL Query executions.
  */
 case class Sparql(
+  encodedPatternUnions: List[Seq[TriplePattern]],
   selectVariableIds: List[Int],
   variableNameToId: Map[String, Int],
   idToVariableName: Array[String],
@@ -164,4 +66,104 @@ case class Sparql(
   //    }
   //  }
 
+}
+
+object Sparql {
+  // Index -1 gets mapped to index 0, -2 to 1, etc.
+  @inline private def idToIndex(id: Int) = math.abs(id) - 1
+
+  /**
+   *  If the query might have results returns Some(Sparql), else returns None.
+   */
+  def apply(query: String): Option[Sparql] = {
+    val parsed: ParsedSparqlQuery = SparqlParser.parse(query)
+    var containsEntryThatIsNotInDictionary = false
+    val prefixes = parsed.prefixes
+    val select = parsed.select
+    val selectVariableNames = select.selectVariableNames
+    val numberOfSelectVariables = selectVariableNames.size
+    var selectVariableIds = List.empty[Int]
+    var nextVariableId = -1
+    var variableNameToId = Map.empty[String, Int]
+    var idToVariableName = new Array[String](numberOfSelectVariables)
+    for (varName <- selectVariableNames) {
+      val id = encodeVariable(varName)
+      selectVariableIds = id :: selectVariableIds
+    }
+
+    def encodeVariable(variableName: String): Int = {
+      val idOption = variableNameToId.get(variableName)
+      if (idOption.isDefined) {
+        idOption.get
+      } else {
+        val id = nextVariableId
+        nextVariableId -= 1
+        variableNameToId += variableName -> id
+        idToVariableName(idToIndex(id)) = variableName
+        id
+      }
+    }
+
+    def dictionaryEncodePatterns(patterns: Seq[ParsedPattern]): Seq[TriplePattern] = {
+
+      def expandPrefix(prefixedString: String): String = {
+        val prefixEnd = prefixedString.indexOf(':')
+        if (prefixEnd == -1) {
+          throw new Exception(s"Iri $prefixedString should have a prefix, but none was found.")
+        }
+        val prefix = prefixedString.substring(0, prefixEnd)
+        try {
+          val remainder = prefixedString.substring(prefixEnd + 1)
+          val expanded = prefixes(prefix)
+          expanded + remainder
+        } catch {
+          case t: Throwable =>
+            throw new Exception(s"""Prefix "$prefix" was not declared or $prefixedString did not properly define a prefix.""")
+        }
+      }
+
+      def encodeVariableOrIri(s: VariableOrBound): Int = {
+        s match {
+          case Variable(name) => encodeVariable(name)
+          case Iri(url) =>
+            val expandedUrl = if (url.startsWith("http")) {
+              url
+            } else {
+              expandPrefix(url)
+            }
+            if (Dictionary.contains(expandedUrl)) {
+              Dictionary(expandedUrl)
+            } else {
+              // Url not in store, no results.
+              containsEntryThatIsNotInDictionary = true
+              Int.MaxValue
+            }
+        }
+      }
+
+      val encodedPatterns = patterns.map {
+        case ParsedPattern(s, p, o) =>
+          TriplePattern(encodeVariableOrIri(s), encodeVariableOrIri(p), encodeVariableOrIri(o))
+      }
+
+      encodedPatterns
+    }
+
+    // Needs to happen before 'containsEntryThatIsNotInDictionary' check, because it modifies that flag as a side effect.
+    val encodedPatternUnions = select.patternUnions.map(dictionaryEncodePatterns)
+
+    if (containsEntryThatIsNotInDictionary) {
+      None
+    } else {
+      Some(
+        Sparql(
+          encodedPatternUnions = encodedPatternUnions,
+          selectVariableIds = selectVariableIds,
+          variableNameToId = variableNameToId,
+          idToVariableName = idToVariableName,
+          isDistinct = parsed.select.isDistinct,
+          orderBy = select.orderBy.map(variableNameToId),
+          limit = select.limit))
+    }
+  }
 }
