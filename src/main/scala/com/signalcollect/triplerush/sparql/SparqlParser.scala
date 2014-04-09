@@ -22,7 +22,7 @@ package com.signalcollect.triplerush.sparql
 import scala.util.parsing.combinator.ImplicitConversions
 import com.signalcollect.triplerush.TriplePattern
 
-case class ParsedSparqlQuery(prefixes: List[PrefixDeclaration], select: Select)
+case class ParsedSparqlQuery(prefixes: Map[String, String], select: Select)
 
 sealed trait VariableOrBound
 
@@ -36,13 +36,11 @@ case class Iri(url: String) extends VariableOrBound
 
 case class ParsedPattern(s: VariableOrBound, p: VariableOrBound, o: VariableOrBound)
 
-case class PrefixDeclaration(prefix: String, expanded: String)
-
 case class Select(
-  selectVariables: List[Variable],
-  patternUnions: List[List[ParsedPattern]],
+  selectVariableNames: List[String],
+  patternUnions: List[Seq[ParsedPattern]],
   isDistinct: Boolean = false,
-  orderBy: Option[Variable] = None,
+  orderBy: Option[String] = None,
   limit: Option[Int] = None)
 
 object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversions {
@@ -84,10 +82,14 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
     }
   }
 
-  val prefixDeclaration: Parser[PrefixDeclaration] = {
+  val variableName: Parser[String] = {
+    "?" ~> identifier
+  }
+
+  val prefixDeclaration: Parser[(String, String)] = {
     ((prefix ~> identifier) <~ ":" ~! "<") ~! url <~ ">" ^^ {
       case prefix ~ expanded =>
-        PrefixDeclaration(prefix, expanded)
+        (prefix, expanded)
     }
   }
 
@@ -109,25 +111,25 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
     }
   }
 
-  val unionOfPatternLists: Parser[List[List[ParsedPattern]]] = {
+  val unionOfPatternLists: Parser[List[Seq[ParsedPattern]]] = {
     patternList ^^ { List(_) } |
       "{" ~> rep1sep(patternList, union) <~ "}"
   }
 
   val selectDeclaration: Parser[Select] = {
-    ((select ~> opt(distinct) ~ rep1sep(variable, opt(","))) <~ where) ~! unionOfPatternLists ~
-      opt(orderBy ~> variable) ~
+    ((select ~> opt(distinct) ~ rep1sep(variableName, opt(","))) <~ where) ~! unionOfPatternLists ~
+      opt(orderBy ~> variableName) ~
       opt(limit ~> integer) <~
       opt(";") ^^ {
-        case distinct ~ selectVariables ~ unionOfPatterns ~ orderBy ~ limit =>
-          Select(selectVariables, unionOfPatterns, distinct.isDefined, orderBy, limit)
+        case distinct ~ selectVariableNames ~ unionOfPatterns ~ orderBy ~ limit =>
+          Select(selectVariableNames, unionOfPatterns, distinct.isDefined, orderBy, limit)
       }
   }
 
   val sparqlQuery: Parser[ParsedSparqlQuery] = {
     rep(prefixDeclaration) ~! selectDeclaration ^^ {
       case prefixes ~ select =>
-        ParsedSparqlQuery(prefixes, select)
+        ParsedSparqlQuery(prefixes.toMap, select)
     }
   }
 }
