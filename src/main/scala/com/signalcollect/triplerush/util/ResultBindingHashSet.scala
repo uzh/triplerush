@@ -21,7 +21,6 @@ package com.signalcollect.triplerush.util
 import scala.Array.canBuildFrom
 import scala.reflect.ClassTag
 import scala.util.hashing.MurmurHash3._
-import com.hp.hpl.jena.sparql.core.ResultBinding
 
 class ResultBindingWrapper(val bindings: Array[Int]) extends AnyVal {
 
