@@ -25,7 +25,7 @@ import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOpt
 import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 import com.signalcollect.triplerush.sparql.Sparql
 
-class QuerySpecificationSpec extends FlatSpec with TestAnnouncements {
+class SparqlSpec extends FlatSpec with TestAnnouncements {
 
   "Sparql" should "correctly translate a SPARQL query that has results" in {
     implicit val tr = new TripleRush
@@ -43,8 +43,8 @@ WHERE {
       val queryOption = Sparql(sparql)
       assert(queryOption.isDefined)
       val query = queryOption.get
-      val decodedResults = query.resultIterator
-      assert(decodedResults.toSet === Set(Map("X" -> "http://a")))
+      val decodedResults = query.resultIterator.map(_("X"))
+      assert(decodedResults.toSet === Set("http://a"))
     } catch {
       case t: Throwable =>
         println(t.getMessage)
@@ -71,7 +71,7 @@ WHERE {
       val queryOption = Sparql(sparql)
       assert(queryOption.isDefined)
       val query = queryOption.get
-      val decodedResults = query.resultIterator
+      val decodedResults = query.resultIterator.map(_("X"))
       assert(decodedResults.toSet === Set())
     } catch {
       case t: Throwable =>
