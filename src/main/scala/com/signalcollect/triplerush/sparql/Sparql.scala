@@ -29,7 +29,8 @@ object Sparql {
 
   def apply(query: String): Sparql = {
     val parsed: ParsedSparqlQuery = SparqlParser.parse(query)
-    val selectVariableNames = parsed.select.selectVariableNames
+    val select = parsed.select
+    val selectVariableNames = select.selectVariableNames
     val numberOfSelectVariables = selectVariableNames.size
     var selectVariableIds = List.empty[Int]
     var nextVariableId = -1
@@ -57,7 +58,9 @@ object Sparql {
       selectVariableIds = selectVariableIds,
       variableNameToId = variableNameToId,
       idToVariableName = idToVariableName,
-      isDistinct = parsed.select.isDistinct)
+      isDistinct = parsed.select.isDistinct,
+      orderBy = select.orderBy.map(variableNameToId),
+      limit = select.limit)
   }
 }
 
@@ -68,7 +71,9 @@ case class Sparql(
   selectVariableIds: List[Int],
   variableNameToId: Map[String, Int],
   idToVariableName: Array[String],
-  isDistinct: Boolean = false) {
+  isDistinct: Boolean = false,
+  orderBy: Option[Int],
+  limit: Option[Int]) {
 
   //  def counts(variableId: Int, encodedResults: Traversable[Array[Int]]): Map[Int, Int] = {
   //    var counts = Map.empty[Int, Int].withDefaultValue(0)
