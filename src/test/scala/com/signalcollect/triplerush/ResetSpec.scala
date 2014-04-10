@@ -14,12 +14,12 @@ class ResetSpec extends FlatSpec with Matchers with TestAnnouncements {
     try {
       tr.addTriplePattern(TriplePattern(1, 2, 3))
       tr.prepareExecution
-      val query = List(TriplePattern(-1, 2, 3))
-      val result1 = tr.executeQuery(QuerySpecification(query), Some(CleverCardinalityOptimizer))
+      val query = Seq(TriplePattern(-1, 2, 3))
+      val result1 = tr.executeQuery(query, Some(CleverCardinalityOptimizer))
       tr.clear
       tr.addTriplePattern(TriplePattern(3, 2, 3))
       tr.prepareExecution
-      val result2 = tr.executeQuery(QuerySpecification(query), Some(CleverCardinalityOptimizer))
+      val result2 = tr.executeQuery(query, Some(CleverCardinalityOptimizer))
     } finally {
       tr.shutdown
     }

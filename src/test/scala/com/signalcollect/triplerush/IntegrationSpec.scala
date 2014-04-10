@@ -193,7 +193,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
           try {
             val jenaResults = TestHelper.execute(jena, triples, query)
             TestHelper.prepareStore(tr, triples)
-            val resultIterator = tr.resultIteratorForQuery(QuerySpecification(query))
+            val resultIterator = tr.resultIteratorForQuery(query)
             val trResults = TestHelper.resultsToBindings(resultIterator.toList)
             assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
             jenaResults === trResults
@@ -220,7 +220,7 @@ object TestHelper {
     triples: Set[TriplePattern],
     query: List[TriplePattern]): Long = {
     prepareStore(tr, triples)
-    val resultFuture = tr.executeCountingQuery(QuerySpecification(query), Some(GreedyCardinalityOptimizer))
+    val resultFuture = tr.executeCountingQuery(query, Some(GreedyCardinalityOptimizer))
     val result = Await.result(resultFuture, 7200.seconds).get //we assume the query execution is complete
     result
   }
@@ -243,7 +243,7 @@ object TestHelper {
     triples: Set[TriplePattern],
     query: List[TriplePattern]): Set[Map[Int, Int]] = {
     prepareStore(qe, triples)
-    val results = qe.executeQuery(QuerySpecification(query))
+    val results = qe.executeQuery(query)
     val bindings = resultsToBindings(results)
     bindings
   }

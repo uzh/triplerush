@@ -31,7 +31,6 @@ import org.specs2.runner.JUnitRunner
 import com.signalcollect.GraphBuilder
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.triplerush.SparqlDsl._
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
 import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer
 import com.signalcollect.triplerush.optimizers.ExplorationOptimizer
@@ -39,99 +38,14 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import java.io.File
+import com.signalcollect.triplerush.sparql.Sparql
 
 @RunWith(classOf[JUnitRunner])
 class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
 
   val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
-  //val enabledQueries = Set(1, 7)
-  //val enabledQueries = Set(2, 4, 6, 7, 8, 9, 12, 14)
-  //  val enabledQueries = Set(2)
-  val dslEnabled = true
-  val sparqlEnabled = false
-
-  val ub = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"
-  val rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
-
-  val dslQueries = List(
-    // Query 1
-    SELECT ? "X" WHERE (
-      | - "X" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
-      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent"),
-    // Query 2
-    SELECT ? "X" ? "Y" ? "Z" WHERE (
-      | - "Y" - s"$rdf#type" - s"$ub#University",
-      | - "Z" - s"$ub#subOrganizationOf" - "Y",
-      | - "Z" - s"$rdf#type" - s"$ub#Department",
-      | - "X" - s"$ub#undergraduateDegreeFrom" - "Y",
-      | - "X" - s"$rdf#type" - s"$ub#GraduateStudent",
-      | - "X" - s"$ub#memberOf" - "Z"),
-    // Query 3
-    SELECT ? "X" WHERE (
-      | - "X" - s"$ub#publicationAuthor" - "http://www.Department0.University0.edu/AssistantProfessor0",
-      | - "X" - s"$rdf#type" - s"$ub#Publication"),
-    // Query 4
-    SELECT ? "X" ? "Y1" ? "Y2" ? "Y3" WHERE (
-      | - "X" - s"$ub#worksFor" - "http://www.Department0.University0.edu",
-      | - "X" - s"$rdf#type" - s"$ub#Professor",
-      | - "X" - s"$ub#name" - "Y1",
-      | - "X" - s"$ub#emailAddress" - "Y2",
-      | - "X" - s"$ub#telephone" - "Y3"),
-    //Query 5
-    SELECT ? "X" WHERE (
-      | - "X" - s"$ub#memberOf" - "http://www.Department0.University0.edu",
-      | - "X" - s"$rdf#type" - s"$ub#Person"),
-    //Query 6
-    SELECT ? "X" WHERE (
-      | - "X" - s"$rdf#type" - s"$ub#Student"),
-    //Query 7
-    SELECT ? "X" ? "Y" WHERE (
-      | - "http://www.Department0.University0.edu/AssociateProfessor0" - s"$ub#teacherOf" - "Y",
-      | - "Y" - s"$rdf#type" - s"$ub#Course",
-      | - "X" - s"$ub#takesCourse" - "Y",
-      | - "X" - s"$rdf#type" - s"$ub#Student"),
-    //Query 8
-    SELECT ? "X" ? "Y" ? "Z" WHERE (
-      | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
-      | - "Y" - s"$rdf#type" - s"$ub#Department",
-      | - "X" - s"$ub#memberOf" - "Y",
-      | - "X" - s"$rdf#type" - s"$ub#Student",
-      | - "X" - s"$ub#emailAddress" - "Z"),
-    //Query 9
-    SELECT ? "X" ? "Y" ? "Z" WHERE (
-      | - "Y" - s"$rdf#type" - s"$ub#Faculty",
-      | - "Y" - s"$ub#teacherOf" - "Z",
-      | - "Z" - s"$rdf#type" - s"$ub#Course",
-      | - "X" - s"$ub#advisor" - "Y",
-      | - "X" - s"$ub#takesCourse" - "Z",
-      | - "X" - s"$rdf#type" - s"$ub#Student"),
-    //Query 10
-    SELECT ? "X" WHERE (
-      | - "X" - s"$ub#takesCourse" - "http://www.Department0.University0.edu/GraduateCourse0",
-      | - "X" - s"$rdf#type" - s"$ub#Student"),
-    //Query 11
-    SELECT ? "X" WHERE (
-      | - "X" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
-      | - "X" - s"$rdf#type" - s"$ub#ResearchGroup"),
-    //Query 12
-    SELECT ? "X" ? "Y" WHERE (
-      | - "Y" - s"$ub#subOrganizationOf" - "http://www.University0.edu",
-      | - "Y" - s"$rdf#type" - s"$ub#Department",
-      | - "X" - s"$ub#worksFor" - "Y",
-      | - "X" - s"$rdf#type" - s"$ub#Chair"),
-    //Query 13
-    SELECT ? "X" WHERE (
-      | - "http://www.University0.edu" - s"$ub#hasAlumnus" - "X",
-      | - "X" - s"$rdf#type" - s"$ub#Person"),
-    //Query 14
-    SELECT ? "X" WHERE (
-      | - "X" - s"$rdf#type" - s"$ub#UndergraduateStudent"))
-
   val sparqlQueries = List(
     """
-# Query1
-# This query bears large input and high selectivity. It queries about just one class and
-# one property and does not assume any hierarchy information or inference.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X	
@@ -140,9 +54,6 @@ WHERE
   ?X ub:takesCourse "http://www.Department0.University0.edu/GraduateCourse0"}
 """,
     """
-# Query2
-# This query increases in complexity: 3 classes and 3 properties are involved. Additionally, 
-# there is a triangular pattern of relationships between the objects involved.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X ?Y ?Z
@@ -155,8 +66,6 @@ WHERE
   ?X ub:undergraduateDegreeFrom ?Y}
 """,
     """
-# Query3
-# This query is similar to Query 1 but class Publication has a wide hierarchy.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
@@ -166,10 +75,6 @@ WHERE
         <http://www.Department0.University0.edu/AssistantProfessor0>}
 """,
     """
-# Query4
-# This query has small input and high selectivity. It assumes subClassOf relationship 
-# between Professor and its subclasses. Class Professor has a wide hierarchy. Another 
-# feature is that it queries about multiple properties of a single class.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X ?Y1 ?Y2 ?Y3
@@ -180,125 +85,155 @@ WHERE
   ?X ub:name ?Y1 .
   ?X ub:emailAddress ?Y2 .
   ?X ub:telephone ?Y3}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X
+WHERE
+{?X rdf:type ub:Person .
+  ?X ub:memberOf <http://www.Department0.University0.edu>}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X WHERE {?X rdf:type ub:Student}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X, ?Y
+WHERE 
+{?X rdf:type ub:Student .
+  ?Y rdf:type ub:Course .
+  ?X ub:takesCourse ?Y .
+  <http://www.Department0.University0.edu/AssociateProfessor0> ub:teacherOf ?Y}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X, ?Y, ?Z
+WHERE
+{?X rdf:type ub:Student .
+  ?Y rdf:type ub:Department .
+  ?X ub:memberOf ?Y .
+  ?Y ub:subOrganizationOf <http://www.University0.edu> .
+  ?X ub:emailAddress ?Z}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X, ?Y, ?Z
+WHERE
+{?X rdf:type ub:Student .
+  ?Y rdf:type ub:Faculty .
+  ?Z rdf:type ub:Course .
+  ?X ub:advisor ?Y .
+  ?Y ub:teacherOf ?Z .
+  ?X ub:takesCourse ?Z}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X
+WHERE
+{?X rdf:type ub:Student .
+  ?X ub:takesCourse
+<http://www.Department0.University0.edu/GraduateCourse0>}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X
+WHERE
+{?X rdf:type ub:ResearchGroup .
+  ?X ub:subOrganizationOf <http://www.University0.edu>}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X, ?Y
+WHERE
+{?X rdf:type ub:Chair .
+  ?Y rdf:type ub:Department .
+  ?X ub:worksFor ?Y .
+  ?Y ub:subOrganizationOf <http://www.University0.edu>}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X
+WHERE
+{?X rdf:type ub:Person .
+  <http://www.University0.edu> ub:hasAlumnus ?X}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X
+WHERE {?X rdf:type ub:UndergraduateStudent}
 """)
 
-  "LUBM Query 1" should "DSL-match the reference results" in {
-    runTest(1, sparql = false)
+  "LUBM Query 1" should "match the reference results" in {
+    runTest(1)
   }
 
-  it should "SPARQL-match the reference results" in {
-    runTest(1, sparql = true)
+  "LUBM Query 2" should "match the reference results" in {
+    runTest(2)
   }
 
-  "LUBM Query 2" should "DSL-match the reference results" in {
-    runTest(2, sparql = false)
+  "LUBM Query 3" should "match the reference results" in {
+    runTest(3)
   }
 
-  it should "SPARQL-match the reference results" in {
-    runTest(2, sparql = true)
+  "LUBM Query 4" should "match the reference results" in {
+    runTest(4)
   }
 
-  "LUBM Query 3" should "DSL-match the reference results" in {
-    runTest(3, sparql = false)
+  "LUBM Query 5" should "match the reference results" in {
+    runTest(5)
   }
 
-  it should "SPARQL-match the reference results" in {
-    runTest(3, sparql = true)
+  "LUBM Query 6" should "match the reference results" in {
+    runTest(6)
   }
 
-  "LUBM Query 4" should "DSL-match the reference results" in {
-    runTest(4, sparql = false)
+  "LUBM Query 7" should "match the reference results" in {
+    runTest(7)
   }
 
-  it should "SPARQL-match the reference results" in {
-    runTest(4, sparql = true)
+  "LUBM Query 8" should "match the reference results" in {
+    runTest(8)
   }
 
-  "LUBM Query 5" should "DSL-match the reference results" in {
-    runTest(5, sparql = false)
+  "LUBM Query 9" should "match the reference results" in {
+    runTest(9)
   }
 
-  it should s"SPARQL-match the reference results" in {
-    runTest(5, sparql = true)
+  "LUBM Query 10" should "match the reference results" in {
+    runTest(10)
   }
 
-  "LUBM Query 6" should "DSL-match the reference results" in {
-    runTest(6, sparql = false)
+  "LUBM Query 11" should "match the reference results" in {
+    runTest(11)
   }
 
-  it should "SPARQL-match the reference results" in {
-    runTest(6, sparql = true)
+  "LUBM Query 12" should "match the reference results" in {
+    runTest(12)
   }
 
-  "LUBM Query 7" should "DSL-match the reference results" in {
-    runTest(7, sparql = false)
+  "LUBM Query 13" should "match the reference results" in {
+    runTest(13)
   }
 
-  it should "SPARQL-match the reference results" in {
-    runTest(7, sparql = true)
+  "LUBM Query 14" should "match the reference results" in {
+    runTest(14)
   }
 
-  "LUBM Query 8" should "DSL-match the reference results" in {
-    runTest(8, sparql = false)
-  }
-
-  it should "SPARQL-match the reference results" in {
-    runTest(8, sparql = true)
-  }
-
-  "LUBM Query 9" should "DSL-match the reference results" in {
-    runTest(9, sparql = false)
-  }
-
-  it should "SPARQL-match the reference results" in {
-    runTest(9, sparql = true)
-  }
-
-  "LUBM Query 10" should "DSL-match the reference results" in {
-    runTest(10, sparql = false)
-  }
-
-  it should "SPARQL-match the reference results" in {
-    runTest(10, sparql = true)
-  }
-
-  "LUBM Query 11" should "DSL-match the reference results" in {
-    runTest(11, sparql = false)
-  }
-
-  it should "SPARQL-match the reference results" in {
-    runTest(11, sparql = true)
-  }
-
-  "LUBM Query 12" should "DSL-match the reference results" in {
-    runTest(12, sparql = false)
-  }
-
-  it should "SPARQL-match the reference results" in {
-    runTest(12, sparql = true)
-  }
-
-  "LUBM Query 13" should "DSL-match the reference results" in {
-    runTest(13, sparql = false)
-  }
-
-  it should "SPARQL-match the reference results" in {
-    runTest(13, sparql = true)
-  }
-
-  "LUBM Query 14" should "DSL-match the reference results" in {
-    runTest(14, sparql = false)
-  }
-
-  it should "SPARQL-match the reference results" in {
-    runTest(14, sparql = true)
-  }
-
-  val qe = new TripleRush(graphBuilder = GraphBuilder.
-    withMessageSerialization(false))
+  implicit val tr = new TripleRush
 
   override def afterAll {
-    qe.shutdown
+    tr.shutdown
     super.afterAll
   }
 
@@ -306,17 +241,20 @@ WHERE
   val sep = File.separator
   for (fileNumber <- 0 to 14) {
     val filename = s".${sep}lubm${sep}university0_$fileNumber.nt"
-    qe.loadNtriples(filename)
+    tr.loadNtriples(filename)
   }
-  qe.prepareExecution
+  tr.prepareExecution
   println("Finished loading LUBM1.")
 
-  def executeOnQueryEngine(q: DslQuery): List[Bindings] = {
-    val result = qe.executeQuery(q)
-    val bindings: List[Map[String, String]] = result.
-      map(
-        bindingsToMap(_).map(entry => (q.resolve(entry._1).get, q.resolve(entry._2).get))).toList
-    val sortedBindings: List[TreeMap[String, String]] = bindings.
+  def executeOnQueryEngine(q: String): List[Bindings] = {
+    val sparql = Sparql(q).get
+    val bindings = sparql.resultIterator
+    val bindingsList = bindings.map { binding =>
+      val bindingsMap = sparql.selectVariableIds.map(
+        variableId => sparql.idToVariableName(math.abs(variableId) - 1)).map(variable => (variable, binding(variable))).toMap
+      bindingsMap
+    }.toList
+    val sortedBindings: List[TreeMap[String, String]] = bindingsList.
       map(unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
     val sortedBindingList = (sortedBindings sortBy (map => map.values)).toList
     sortedBindingList
@@ -329,10 +267,10 @@ WHERE
   type Bindings = TreeMap[String, String]
   type QuerySolution = List[Bindings]
 
-  def runTest(queryId: Int, sparql: Boolean = false) {
-    if (enabledQueries.contains(queryId) && (dslEnabled && !sparql || sparqlEnabled && sparql)) {
+  def runTest(queryId: Int) {
+    if (enabledQueries.contains(queryId)) {
       val referenceResult = referenceResults(queryId)
-      val ourResult = executeOnQueryEngine(dslQueries(queryId - 1))
+      val ourResult = executeOnQueryEngine(sparqlQueries(queryId - 1))
       assert(ourResult === referenceResult, s"TR result $ourResult for query $queryId did not match reference result $referenceResult.")
     }
   }

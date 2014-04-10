@@ -66,7 +66,6 @@ class PredicateSelectivity(tr: TripleRush) {
 
   val optimizer = Some(GreedyCardinalityOptimizer)
   val queriesTotal = ps * ps * 3
-  val tickets = Long.MaxValue
   var queriesSoFar = 0
   //println(s"Gathering index statistics ...")
   var lastPrintedProgressPercentage = 0.0
@@ -77,11 +76,11 @@ class PredicateSelectivity(tr: TripleRush) {
         println(s"selectivity progress: ${(currentProgressPercentage * 100).toInt}%")
         lastPrintedProgressPercentage = currentProgressPercentage
       }*/
-      val outOutQuery = QuerySpecification(List(TriplePattern(s, p1, x), TriplePattern(s, p2, y)), tickets)
+      val outOutQuery = Seq(TriplePattern(s, p1, x), TriplePattern(s, p2, y))
       val outOutResult = tr.executeCountingQuery(outOutQuery, optimizer)
-      val inOutQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(o, p2, y)), tickets)
+      val inOutQuery = Seq(TriplePattern(x, p1, o), TriplePattern(o, p2, y))
       val inOutResult = tr.executeCountingQuery(inOutQuery, optimizer)
-      val inInQuery = QuerySpecification(List(TriplePattern(x, p1, o), TriplePattern(y, p2, o)), tickets)
+      val inInQuery = Seq(TriplePattern(x, p1, o), TriplePattern(y, p2, o))
       val inInResult = tr.executeCountingQuery(inInQuery, optimizer)
 
       // TODO: Handle the else parts better.

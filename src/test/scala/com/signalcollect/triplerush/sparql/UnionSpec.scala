@@ -21,36 +21,23 @@ package com.signalcollect.triplerush.sparql
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import com.signalcollect.triplerush.TestAnnouncements
 import com.signalcollect.triplerush.TripleRush
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
-class DistinctSpec extends FlatSpec with Matchers with TestAnnouncements {
+class UnionSpec extends FlatSpec with Matchers with TestAnnouncements {
 
-  "DISTNCT" should "eliminate results with same bindings" in {
+  "UNION" should "return the results of two separate queries" in {
     val sparql = """
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
-"""
-    implicit val tr = new TripleRush
-    try {
-      tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-      tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-      tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "Arthur")
-      tr.prepareExecution
-      val query = Sparql(sparql).get
-      assert(query.isDistinct === true)
-      val result = query.resultIterator
-      assert(result.size === 2)
-    } finally {
-      tr.shutdown
-    }
+SELECT ?name WHERE {
+  {
+      <http://SomePerson> foaf:name ?name .
+  } UNION {
+      <http://ThatGuy> foaf:name ?name
   }
-
-  it should "correctly count the number of results" in {
-    val sparql = """
-PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
+}
 """
     implicit val tr = new TripleRush
     try {
@@ -59,9 +46,8 @@ SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
       tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "Arthur")
       tr.prepareExecution
       val query = Sparql(sparql).get
-      assert(query.isDistinct === true)
-      val results = query.resultIterator.size
-      assert(results === 2)
+      val result = query.resultIterator.map(_("name")).toSet
+      assert(result === Set("Harold", "Arthur"))
     } finally {
       tr.shutdown
     }

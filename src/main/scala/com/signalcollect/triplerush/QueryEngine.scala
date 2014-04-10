@@ -5,7 +5,7 @@ import scala.concurrent.Future
 trait QueryEngine {
   def addEncodedTriple(s: Int, p: Int, o: Int)
   def prepareExecution
-  def executeQuery(q: QuerySpecification): Traversable[Array[Int]]
+  def executeQuery(q: Seq[TriplePattern]): Traversable[Array[Int]]
   def awaitIdle
   def shutdown
 }

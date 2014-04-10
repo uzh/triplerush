@@ -27,7 +27,7 @@ excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
 /** Dependencies */
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-library" % "2.10.4"  % "compile",
-  "org.apache.jena" % "apache-jena-libs" % "2.11.1" % "compile",
+  "org.apache.jena" % "apache-jena-libs" % "2.11.1" % "test",
   "junit" % "junit" % "4.8.2"  % "test",
   "org.specs2" %% "specs2" % "2.3.3"  % "test",
   "org.scalacheck" %% "scalacheck" % "1.11.0" % "test",

@@ -24,16 +24,18 @@ import scala.concurrent.Promise
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.QueryParticle
-import com.signalcollect.triplerush.QuerySpecification
 import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.util.SequenceOfArraysTraversable
+import com.signalcollect.triplerush.TriplePattern
 
 class ResultBindingQueryVertex(
-  querySpecification: QuerySpecification,
+  query: Seq[TriplePattern],
+  numberOfSelectVariables: Int,
+  tickets: Long,
   resultPromise: Promise[Traversable[Array[Int]]],
   statsPromise: Promise[Map[Any, Any]],
   optimizer: Option[Optimizer])
-  extends AbstractQueryVertex[SequenceOfArraysTraversable](querySpecification, optimizer) {
+  extends AbstractQueryVertex[SequenceOfArraysTraversable](query, tickets, numberOfSelectVariables, optimizer) {
 
   final val id = QueryIds.nextQueryId
 

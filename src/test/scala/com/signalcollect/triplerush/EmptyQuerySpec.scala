@@ -13,8 +13,8 @@ class EmptyQuerySpec extends FlatSpec with Matchers with TestAnnouncements {
     val tr = new TripleRush
     try {
       tr.prepareExecution
-      val query = List(TriplePattern(-1, 2, 3))
-      val result = tr.executeQuery(QuerySpecification(query), Some(CleverCardinalityOptimizer))
+      val query = Seq(TriplePattern(-1, 2, 3))
+      val result = tr.executeQuery(query, Some(CleverCardinalityOptimizer))
     } finally {
       tr.shutdown
     }
