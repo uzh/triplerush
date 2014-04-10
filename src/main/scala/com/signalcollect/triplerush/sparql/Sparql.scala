@@ -69,15 +69,21 @@ case class Sparql(
       val iterator = encodedResults
       val topK = limit.get
       implicit val ordering = Ordering.by((bindings: Array[Int]) => orderByStringForBinding(bindings))
-      val topKQueue = new PriorityQueue[Array[Int]]()(ordering.reverse)
+      val topKQueue = new PriorityQueue[Array[Int]]()(ordering)
       while (iterator.hasNext) {
         val bindings = iterator.next
+        println(s"Considering ${bindings.toList.map(Dictionary(_))}")
         if (topKQueue.size < topK) {
+          println(s"Adding ${bindings.toList.map(Dictionary(_))}, because not full")
           topKQueue += bindings
-        }
-        if (ordering.compare(topKQueue.head, bindings) < 0) {
-          topKQueue.dequeue
-          topKQueue += bindings
+        } else {
+          if (ordering.compare(topKQueue.head, bindings) > 0) {
+            println(s"The new one ${bindings.toList.map(Dictionary(_))} kicked ${topKQueue.head.toList.map(Dictionary(_))} out")
+            topKQueue.dequeue
+            topKQueue += bindings
+          } else {
+            println(s"The new one ${bindings.toList.map(Dictionary(_))} was smaller than ${topKQueue.head.toList.map(Dictionary(_))}")
+          }
         }
       }
       val topKEncodedResults = topKQueue.toList.sorted
