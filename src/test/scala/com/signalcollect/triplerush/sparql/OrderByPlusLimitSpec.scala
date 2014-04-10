@@ -74,7 +74,7 @@ LIMIT 3
       //      val jenaResultIterator = jenaQueryExecution.execSelect
       //      println(jenaResultIterator.toList.map(_.get("label")))
       val result = query.resultIterator.map(bindings => (bindings("label"), bindings("product"))).toList
-      assert(result === List(("A", "http://SomeProduct1"), ("B", "http://SomeProduct2"), ("C", "http://SomeProduct3")))
+      assert(result === List(("http://A", "http://SomeProduct1"), ("http://B", "http://SomeProduct2"), ("http://C", "http://SomeProduct3")))
     } finally {
       tr.shutdown
     }
