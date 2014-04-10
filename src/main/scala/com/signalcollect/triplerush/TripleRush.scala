@@ -42,6 +42,7 @@ import com.signalcollect.triplerush.optimizers.ExplorationOptimizerCreator
 import com.signalcollect.triplerush.util.ResultIterator
 import com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex
 import com.signalcollect.triplerush.util.SequenceOfArraysTraversable
+import com.signalcollect.triplerush.sparql.VariableEncoding
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
@@ -157,17 +158,6 @@ case class TripleRush(
     result
   }
 
-  protected def requiredVariableBindingsSlots(query: Seq[TriplePattern]): Int = {
-    var minId = 0
-    query.foreach {
-      tp =>
-        minId = math.min(minId, tp.s)
-        minId = math.min(minId, tp.p)
-        minId = math.min(minId, tp.o)
-    }
-    math.abs(minId)
-  }
-
   /**
    * If the optimizer is defined, uses that one, else uses the default.
    */
@@ -177,7 +167,8 @@ case class TripleRush(
     numberOfSelectVariables: Option[Int] = None,
     tickets: Long = Long.MaxValue): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    val selectVariables = numberOfSelectVariables.getOrElse(requiredVariableBindingsSlots(query))
+    val selectVariables = numberOfSelectVariables.getOrElse(
+      VariableEncoding.requiredVariableBindingsSlots(query))
     val resultPromise = Promise[Traversable[Array[Int]]]()
     val statsPromise = Promise[Map[Any, Any]]()
     val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
@@ -195,7 +186,8 @@ case class TripleRush(
     numberOfSelectVariables: Option[Int] = None,
     tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    val selectVariables = numberOfSelectVariables.getOrElse(requiredVariableBindingsSlots(query))
+    val selectVariables = numberOfSelectVariables.getOrElse(
+      VariableEncoding.requiredVariableBindingsSlots(query))
     val resultIterator = new ResultIterator
     val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
     val queryVertex = new ResultIteratorQueryVertex(query, selectVariables, tickets, resultIterator, usedOptimizer)

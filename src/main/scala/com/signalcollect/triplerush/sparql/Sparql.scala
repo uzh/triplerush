@@ -47,7 +47,7 @@ case class Sparql(
 
   protected def lookupVariableBinding(encodedResult: Array[Int])(variableName: String): String = {
     val id = variableNameToId(variableName)
-    val index = math.abs(id) - 1
+    val index = VariableEncoding.variableIdToDecodingIndex(id)
     val encodedBinding = encodedResult(index)
     Dictionary.unsafeDecode(encodedBinding)
   }
@@ -64,7 +64,7 @@ case class Sparql(
     if (orderBy == None && limit == None) {
       new DecodingIterator(encodedResults)
     } else if (orderBy.isDefined && limit.isDefined) {
-      val orderByIndex = math.abs(orderBy.get) - 1
+      val orderByIndex = VariableEncoding.variableIdToDecodingIndex(orderBy.get)
       @inline def orderByStringForBinding(bindings: Array[Int]) = Dictionary.unsafeDecode(bindings(orderByIndex))
       val iterator = encodedResults
       val topK = limit.get
@@ -110,21 +110,9 @@ case class Sparql(
     iterators.reduce(_ ++ _)
   }
 
-  //  def counts(variableId: Int, encodedResults: Traversable[Array[Int]]): Map[Int, Int] = {
-  //    var counts = Map.empty[Int, Int].withDefaultValue(0)
-  //    for (encodedResult <- encodedResults) {
-  //      val binding = encodedResult(math.abs(variableId) - 1)
-  //      val countForBinding = counts(binding)
-  //      counts += binding -> { countForBinding + 1 }
-  //    }
-  //    counts
-  //  }
-
 }
 
 object Sparql {
-  // Index -1 gets mapped to index 0, -2 to 1, etc.
-  @inline private def idToIndex(id: Int) = math.abs(id) - 1
 
   /**
    *  If the query might have results returns Some(Sparql), else returns None.

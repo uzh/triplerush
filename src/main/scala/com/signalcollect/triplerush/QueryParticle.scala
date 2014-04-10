@@ -22,6 +22,7 @@ package com.signalcollect.triplerush
 
 import language.implicitConversions
 import java.util.concurrent.atomic.AtomicInteger
+import com.signalcollect.triplerush.sparql.VariableEncoding
 
 object QueryIds {
   private val maxFullQueryId = new AtomicInteger(0)
@@ -150,7 +151,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     }
 
     if (isBindingQuery) {
-      val variableIndex = -(variable + 1)
+      val variableIndex = VariableEncoding.variableIdToDecodingIndex(variable)
       currentParticle.writeBinding(variableIndex, boundValue)
     }
 
