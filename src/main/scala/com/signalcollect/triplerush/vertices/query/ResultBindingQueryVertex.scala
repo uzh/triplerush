@@ -25,7 +25,7 @@ import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.optimizers.Optimizer
-import com.signalcollect.triplerush.util.SequenceOfArraysTraversable
+import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 import com.signalcollect.triplerush.TriplePattern
 
 class ResultBindingQueryVertex(
@@ -35,12 +35,12 @@ class ResultBindingQueryVertex(
   resultPromise: Promise[Traversable[Array[Int]]],
   statsPromise: Promise[Map[Any, Any]],
   optimizer: Option[Optimizer])
-  extends AbstractQueryVertex[SequenceOfArraysTraversable](query, tickets, numberOfSelectVariables, optimizer) {
+  extends AbstractQueryVertex[ArrayOfArraysTraversable](query, tickets, numberOfSelectVariables, optimizer) {
 
   final val id = QueryIds.nextQueryId
 
   override final def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    state = new SequenceOfArraysTraversable
+    state = new ArrayOfArraysTraversable
     super.afterInitialization(graphEditor)
   }
 

@@ -41,7 +41,7 @@ import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
 import com.signalcollect.triplerush.optimizers.ExplorationOptimizerCreator
 import com.signalcollect.triplerush.util.ResultIterator
 import com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex
-import com.signalcollect.triplerush.util.SequenceOfArraysTraversable
+import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 import com.signalcollect.triplerush.sparql.VariableEncoding
 
 case class TripleRush(
