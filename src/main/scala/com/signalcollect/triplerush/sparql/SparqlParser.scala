@@ -59,7 +59,7 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   val orderBy = "ORDER" ~> "BY"
   val limit = "LIMIT"
 
-  val url: Parser[String] = "[-a-zA-Z0-9:/\\.#]+".r
+  val url: Parser[String] = "[-a-zA-Z0-9:/\\.#_]+".r
 
   val iri: Parser[Iri] = {
     (("<" ~> url <~ ">") | url) ^^ {
