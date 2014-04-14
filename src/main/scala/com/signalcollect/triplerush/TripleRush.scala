@@ -81,7 +81,6 @@ case class TripleRush(
       "com.signalcollect.triplerush.TripleMapperFactory$",
       "com.signalcollect.triplerush.TripleRush$$anonfun$3",
       "com.signalcollect.triplerush.TripleRush$$anonfun$4",
-      "com.signalcollect.triplerush.TripleRush$$anonfun$4", 
       "com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex", // Only for local serialization test.
       "com.signalcollect.triplerush.util.ResultIterator", // Only for local serialization test.
       "java.util.concurrent.atomic.AtomicBoolean", // Only for local serialization test.
