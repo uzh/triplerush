@@ -58,6 +58,7 @@ case class TripleRush(
     //    withJavaSerialization(false).
     withHeartbeatInterval(500).
     withKryoRegistrations(List(
+      "com.signalcollect.triplerush.vertices.RootIndex",
       "com.signalcollect.triplerush.vertices.SIndex",
       "com.signalcollect.triplerush.vertices.PIndex",
       "com.signalcollect.triplerush.vertices.OIndex",
@@ -76,6 +77,10 @@ case class TripleRush(
       "Array[com.signalcollect.triplerush.TriplePattern]",
       "com.signalcollect.interfaces.SignalMessage$mcIJ$sp",
       "com.signalcollect.interfaces.AddEdge",
+      "com.signalcollect.triplerush.CombiningMessageBusFactory",
+      "com.signalcollect.triplerush.TripleMapperFactory$",
+      "com.signalcollect.triplerush.TripleRush$$anonfun$3",
+      "com.signalcollect.triplerush.TripleRush$$anonfun$4",
       "akka.actor.RepointableActorRef")).build
   graph.setUndeliverableSignalHandler(UndeliverableRerouter.handle _)
   graph.setEdgeAddedToNonExistentVertexHandler(NonExistentVertexHandler.createIndexVertex _)
