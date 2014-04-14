@@ -86,9 +86,30 @@ class PredicateSelectivity(tr: TripleRush) {
       // TODO: Handle the else parts better.
       // TODO: Figure out worst case for selectivity of join. 
       // If worst case count is more than 100 billion (100,000,000,000), then don't execute the query but instead assume Long.MAX
-      val outOutResultSize = Await.result(outOutResult, 120.seconds).get
-      val inOutResultSize = Await.result(inOutResult, 120.seconds).get
-      val inInResultSize = Await.result(inInResult, 120.seconds).get
+
+      val outOutResultSize =
+        try {
+          Await.result(outOutResult, 120.seconds).get
+        } catch {
+          case e: Exception =>
+            Long.MaxValue
+        }
+
+      val inOutResultSize =
+        try {
+          Await.result(inOutResult, 120.seconds).get
+        } catch {
+          case e: Exception =>
+            Long.MaxValue
+        }
+
+      val inInResultSize =
+        try {
+          Await.result(inInResult, 120.seconds).get
+        } catch {
+          case e: Exception =>
+            Long.MaxValue
+        }
 
       outOut += (p1, p2) -> outOutResultSize
       inOut += (p1, p2) -> inOutResultSize
@@ -98,10 +119,10 @@ class PredicateSelectivity(tr: TripleRush) {
     }
   }
   //println(s"Index statistics complete, $queriesTotal queries were executed.")
-  
-    override def toString = {
-      s"""outOut: $outOut
+
+  override def toString = {
+    s"""outOut: $outOut
       inOut: $inOut
       inIn: $inIn"""
-    }
+  }
 }
