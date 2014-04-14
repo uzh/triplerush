@@ -27,8 +27,10 @@ import scala.concurrent.duration._
 import collection.JavaConversions._
 import com.signalcollect.GraphBuilder
 import com.signalcollect.triplerush.sparql.Sparql
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 
-class SerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
+class TripleRushSerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
 
   "TripleRush serialization" should "support full message serialization" in {
     val sparql = """
@@ -40,17 +42,16 @@ WHERE {
 ORDER BY ?label
 LIMIT 3
 """
-    implicit val tr = new TripleRush(graphBuilder = GraphBuilder.withMessageSerialization(true))
+    implicit val tr = new TripleRush(
+      graphBuilder = GraphBuilder.withMessageSerialization(true),
+      optimizerCreator = NoOptimizerCreator)
     try {
-      tr.addTriple("http://SomeProduct2", "http://www.w3.org/2000/01/rdf-schema#label", "http://B")
-      tr.addTriple("http://SomeProduct3", "http://www.w3.org/2000/01/rdf-schema#label", "http://C")
-      tr.addTriple("http://SomeProduct4", "http://www.w3.org/2000/01/rdf-schema#label", "http://D")
-      tr.addTriple("http://SomeProduct5", "http://www.w3.org/2000/01/rdf-schema#label", "http://E")
-      tr.addTriple("http://SomeProduct1", "http://www.w3.org/2000/01/rdf-schema#label", "http://A")
+      tr.addTriplePattern(TriplePattern(1, 2, 3))
+      tr.addTriplePattern(TriplePattern(3, 2, 5))
+      tr.addTriplePattern(TriplePattern(3, 2, 7))
       tr.prepareExecution
-      val query = Sparql(sparql).get
-      val result = query.resultIterator.map(bindings => (bindings("label"), bindings("product"))).toList
-      assert(result === List(("http://A", "http://SomeProduct1"), ("http://B", "http://SomeProduct2"), ("http://C", "http://SomeProduct3")))
+      tr.resultIteratorForQuery(Seq(TriplePattern(1, 2, -1), TriplePattern(-1, 2, -2)))
+      Thread.sleep(1000)
     } finally {
       tr.shutdown
     }
