@@ -120,4 +120,15 @@ LIMIT 10
     assert(parsed.select.orderBy === Some("label"))
   }
 
+  it should "support underlines in queries" in {
+    val q = """
+SELECT ?T ?A
+WHERE {
+		  <http://dbpedia.org/resource/Some_Person> <http://dbpedia.org/property/wikilink> ?A .
+		  ?A <http://dbpedia.org/property/wikilink> ?T
+}
+"""
+    val parsed = SparqlParser.parse(q)
+  }
+
 }
