@@ -53,6 +53,7 @@ case class TripleRush(
 
   val graph = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
+    withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withMapperFactory(TripleMapperFactory).
     //    withMessageSerialization(true).
     //    withJavaSerialization(false).
