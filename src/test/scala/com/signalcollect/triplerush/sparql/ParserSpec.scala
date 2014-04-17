@@ -21,8 +21,8 @@ package com.signalcollect.triplerush.sparql
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import com.signalcollect.triplerush.TestAnnouncements
+import com.signalcollect.triplerush.TripleRush
 
 class ParserSpec extends FlatSpec with Matchers with TestAnnouncements {
 
@@ -129,6 +129,27 @@ WHERE {
 }
 """
     val parsed = SparqlParser.parse(q)
+  }
+
+  it should "support abbreviating rdf:type with a" in {
+    val q = """
+SELECT ?T ?A
+WHERE {
+		  <http://dbpedia.org/resource/Some_Person> a ?A .
+		  ?A <http://dbpedia.org/property/wikilink> ?T
+}
+"""
+    val tr = new TripleRush
+    try {
+      tr.addTriple("http://dbpedia.org/resource/Some_Person", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://dbpedia.org/resource/Thing")
+      tr.addTriple("http://dbpedia.org/resource/Thing", "http://dbpedia.org/property/wikilink", "Link")
+      tr.prepareExecution
+      val query = Sparql(q)(tr).get
+      val result = query.resultIterator
+      assert(result.toList.map(_("A")) === List("http://dbpedia.org/resource/Thing"))
+    } finally {
+      tr.shutdown
+    }
   }
 
 }

@@ -99,8 +99,14 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
     variable | iri | stringLiteral
   }
 
+  val a: Parser[Iri] = {
+    "a" ^^^ {
+      Iri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+    } 
+  }
+  
   val pattern: Parser[ParsedPattern] = {
-    variableOrBound ~! variableOrBound ~! variableOrBound ^^ {
+    variableOrBound ~! (a | variableOrBound) ~! variableOrBound ^^ {
       case s ~ p ~ o =>
         ParsedPattern(s, p, o)
     }
