@@ -24,11 +24,12 @@ import QueryParticle.arrayToParticle
 import com.signalcollect.Vertex
 import com.signalcollect.Edge
 import com.signalcollect.triplerush.vertices._
+import com.signalcollect.triplerush.vertices.RootIndex
 
 case object NonExistentVertexHandler {
   def createIndexVertex(edge: Edge[Any], vertexId: Any): Option[Vertex[Any, _]] = {
     vertexId match {
-      case TriplePattern(0, 0, 0) => throw new Exception("Root vertex does not exist, should always be added first.")
+      case TriplePattern(0, 0, 0) => Some(new RootIndex)
       case tp @ TriplePattern(0, 0, o) => Some(new OIndex(tp))
       case tp @ TriplePattern(0, p, 0) => Some(new PIndex(tp))
       case tp @ TriplePattern(s, 0, 0) => Some(new SIndex(tp))
