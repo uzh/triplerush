@@ -44,7 +44,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     s"TriplePattern(${s.toString},${p.toString},${o.toString})"
   }
 
-  def lookup = s"(${Dictionary(s)},${Dictionary(p)},${Dictionary(o)})"
+  def lookup(d: Dictionary) = s"(${d(s)},${d(p)},${d(o)})"
 
   def variables: List[Int] = {
     val sOpt = if (s < 0) Some(s) else None

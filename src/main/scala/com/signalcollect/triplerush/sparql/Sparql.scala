@@ -49,7 +49,7 @@ case class Sparql(
     val id = variableNameToId(variableName)
     val index = VariableEncoding.variableIdToDecodingIndex(id)
     val encodedBinding = encodedResult(index)
-    Dictionary.unsafeDecode(encodedBinding)
+    tr.dictionary.unsafeDecode(encodedBinding)
   }
 
   protected class DecodingIterator(encodedIterator: Iterator[Array[Int]]) extends Iterator[String => String] {
@@ -65,7 +65,7 @@ case class Sparql(
       new DecodingIterator(encodedResults)
     } else if (orderBy.isDefined && limit.isDefined) {
       val orderByIndex = VariableEncoding.variableIdToDecodingIndex(orderBy.get)
-      @inline def orderByStringForBinding(bindings: Array[Int]) = Dictionary.unsafeDecode(bindings(orderByIndex))
+      @inline def orderByStringForBinding(bindings: Array[Int]) = tr.dictionary.unsafeDecode(bindings(orderByIndex))
       val iterator = encodedResults
       val topK = limit.get
       implicit val ordering = Ordering.by((bindings: Array[Int]) => orderByStringForBinding(bindings))
@@ -169,8 +169,8 @@ object Sparql {
           case Variable(name) =>
             encodeVariable(name)
           case StringLiteral(s) =>
-            if (Dictionary.contains(s)) {
-              Dictionary(s)
+            if (tr.dictionary.contains(s)) {
+              tr.dictionary(s)
             } else {
               // Literal not in store, no results.
               containsEntryThatIsNotInDictionary = true
@@ -182,8 +182,8 @@ object Sparql {
             } else {
               expandPrefix(url)
             }
-            if (Dictionary.contains(expandedUrl)) {
-              Dictionary(expandedUrl)
+            if (tr.dictionary.contains(expandedUrl)) {
+              tr.dictionary(expandedUrl)
             } else {
               // Url not in store, no results.
               containsEntryThatIsNotInDictionary = true

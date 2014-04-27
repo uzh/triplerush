@@ -53,11 +53,11 @@ class OptimizerTest extends FlatSpec with Checkers with TestAnnouncements {
       val optimizer = new ExplorationOptimizer(stats)
 
       val optimizedQuery = optimizer.optimize(Map(
-        TriplePattern(Dictionary("http://a"), Dictionary("http://p"), -1) -> 3,
-        TriplePattern(-1, Dictionary("http://p"), -2) -> 6),
-        Map(Dictionary("http://p") -> PredicateStats(2, 2, 3)))
+        TriplePattern(tr.dictionary("http://a"), tr.dictionary("http://p"), -1) -> 3,
+        TriplePattern(-1, tr.dictionary("http://p"), -2) -> 6),
+        Map(tr.dictionary("http://p") -> PredicateStats(2, 2, 3)))
       assert(optimizedQuery.length === 2)
-      assert(optimizedQuery(0) === TriplePattern(Dictionary("http://a"), Dictionary("http://p"), -1))
+      assert(optimizedQuery(0) === TriplePattern(tr.dictionary("http://a"), tr.dictionary("http://p"), -1))
     } finally {
       tr.shutdown
     }
@@ -80,9 +80,9 @@ class OptimizerTest extends FlatSpec with Checkers with TestAnnouncements {
       val optimizer = new ExplorationOptimizer(stats)
 
       val optimizedQuery = optimizer.optimize(Map(
-        TriplePattern(Dictionary("http://a"), Dictionary("http://p"), -1) -> 4,
-        TriplePattern(-1, Dictionary("http://q"), -2) -> 1),
-        Map(Dictionary("http://p") -> PredicateStats(1, 2, 3), Dictionary("http://q") -> PredicateStats(2, 3, 4)))
+        TriplePattern(tr.dictionary("http://a"), tr.dictionary("http://p"), -1) -> 4,
+        TriplePattern(-1, tr.dictionary("http://q"), -2) -> 1),
+        Map(tr.dictionary("http://p") -> PredicateStats(1, 2, 3), tr.dictionary("http://q") -> PredicateStats(2, 3, 4)))
       assert(optimizedQuery.toList === Nil)
     } finally {
       tr.shutdown

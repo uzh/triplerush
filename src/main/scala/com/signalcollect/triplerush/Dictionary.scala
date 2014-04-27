@@ -28,22 +28,35 @@ import scala.io.Source
 import scala.collection.mutable.ResizableArray
 import scala.collection.mutable.ArrayBuffer
 
-object Dictionary {
+trait Dictionary {
+  def contains(s: String): Boolean
+  def apply(s: String): Int
+  def apply(id: Int): String
+  // Can only be called, when there are no concurrent writes.
+  def unsafeDecode(id: Int): String
+  def decode(id: Int): Option[String]
+  def clear
+  def loadFromFile(fileName: String)
+}
+
+class HashMapDictionary(
+  initialSize: Int = 32768,
+  rehashFraction: Float = 0.5f) extends Dictionary {
   private val lock = new ReentrantReadWriteLock
   private val read = lock.readLock
   private val write = lock.writeLock
-  private var id2String = new ArrayBuffer[String](32768)
+  private var id2String = new ArrayBuffer[String](initialSize)
   id2String += "*" // Wildcard entry at 0
-  private var string2Id = new IntValueHashMap[String](rehashFraction = 0.5f)
+  private var string2Id = new IntValueHashMap[String](initialSize, rehashFraction)
   private var maxId = 0
 
   def clear {
     write.lock
     try {
       maxId = 0
-      id2String = new ArrayBuffer[String](32768)
-      string2Id = new IntValueHashMap[String](rehashFraction = 0.5f)
+      id2String = new ArrayBuffer[String](initialSize)
       id2String += "*" // Wildcard entry at 0
+      string2Id = new IntValueHashMap[String](initialSize, rehashFraction)
     } finally {
       write.unlock
     }
@@ -103,11 +116,16 @@ object Dictionary {
   }
 
   def decode(id: Int): Option[String] = {
-    val decoded = apply(id)
-    if (decoded != null) {
-      Some(decoded)
-    } else {
-      None
+    read.lock
+    try {
+      val decoded = apply(id)
+      if (decoded != null) {
+        Some(decoded)
+      } else {
+        None
+      }
+    } finally {
+      read.unlock
     }
   }
 
