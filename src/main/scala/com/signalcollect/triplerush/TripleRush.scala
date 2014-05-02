@@ -47,6 +47,7 @@ import com.signalcollect.triplerush.sparql.VariableEncoding
 case class TripleRush(
   graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
   optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
+  val dictionary: Dictionary = new HashMapDictionary(),
   console: Boolean = false) extends QueryEngine {
 
   var canExecute = false
@@ -105,7 +106,7 @@ case class TripleRush(
   }
 
   def loadNtriples(ntriplesFilename: String, placementHint: Option[Any] = None) {
-    graph.modifyGraph(FileLoader.loadNtriplesFile(ntriplesFilename) _, placementHint)
+    graph.modifyGraph(FileLoader.loadNtriplesFile(dictionary, ntriplesFilename) _, placementHint)
   }
 
   def loadBinary(binaryFilename: String, placementHint: Option[Any] = None) {
@@ -113,9 +114,9 @@ case class TripleRush(
   }
 
   def addTriple(s: String, p: String, o: String) {
-    val sId = Dictionary(s)
-    val pId = Dictionary(p)
-    val oId = Dictionary(o)
+    val sId = dictionary(s)
+    val pId = dictionary(p)
+    val oId = dictionary(o)
     addEncodedTriple(sId, pId, oId)
   }
 
@@ -227,7 +228,7 @@ case class TripleRush(
   }
 
   def clearDictionary {
-    Dictionary.clear
+    dictionary.clear
   }
 
   def shutdown = {

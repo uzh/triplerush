@@ -30,7 +30,7 @@ import com.signalcollect.triplerush.PlaceholderEdge
 import com.signalcollect.triplerush.TriplePattern
 
 case object FileLoader {
-  def loadNtriplesFile(ntriplesFilename: String)(graphEditor: GraphEditor[Any, Any]) {
+  def loadNtriplesFile(dictionary: Dictionary, ntriplesFilename: String)(graphEditor: GraphEditor[Any, Any]) {
     val is = new FileInputStream(ntriplesFilename)
     val nxp = new NxParser(is)
     println(s"Reading triples from $ntriplesFilename ...")
@@ -40,9 +40,9 @@ case object FileLoader {
       val predicateString = triple(1).toString
       val subjectString = triple(0).toString
       val objectString = triple(2).toString
-      val sId = Dictionary(subjectString)
-      val pId = Dictionary(predicateString)
-      val oId = Dictionary(objectString)
+      val sId = dictionary(subjectString)
+      val pId = dictionary(predicateString)
+      val oId = dictionary(objectString)
       val tp = TriplePattern(sId, pId, oId)
       if (!tp.isFullyBound) {
         println(s"Problem: $tp, triple #${triplesLoaded + 1} in file $ntriplesFilename is not fully bound.")
