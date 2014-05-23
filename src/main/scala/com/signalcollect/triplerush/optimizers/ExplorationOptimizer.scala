@@ -7,7 +7,10 @@ import com.signalcollect.triplerush.TriplePattern
 import scala.annotation.tailrec
 import com.signalcollect.triplerush.PredicateStats
 
-final class ExplorationOptimizer(predicateSelectivity: PredicateSelectivity, reliableStats: Boolean = true) extends Optimizer {
+final class ExplorationOptimizer(
+  val predicateSelectivity: PredicateSelectivity,
+  val reliableStats: Boolean = true,
+  val useHeuristic: Boolean = true) extends Optimizer {
 
   case class CostEstimate(frontier: Double, lastExploration: Double, explorationSum: Double)
 
@@ -149,15 +152,33 @@ final class ExplorationOptimizer(predicateSelectivity: PredicateSelectivity, rel
 
     triplePatterns.foreach { tp =>
       val cardinality = cardinalities(tp).toDouble
-      val atomicPlan = QueryPlan(id = Set(tp), cost = cardinality, patternOrdering = List(tp), fringe = cardinality)
+      val atomicPlan = QueryPlan(
+        id = Set(tp),
+        costSoFar = cardinality,
+        estimatedTotalCost = cardinality * sizeOfFullPlan,
+        patternOrdering = List(tp),
+        fringe = cardinality)
       planHeap.insert(atomicPlan)
     }
 
     def extend(p: QueryPlan, tp: TriplePattern): QueryPlan = {
       val exploreCost = exploreCostForCandidatePattern(tp, p.patternOrdering)
-      val totalCost = p.cost + exploreCost
+      val newCostSoFar = p.costSoFar + exploreCost
+      val matchedPatternsSoFar = p.id.size + 1
+      val remainingUnmatchedPatterns = sizeOfFullPlan - matchedPatternsSoFar
+      val newEstimatedTotalCost = if (useHeuristic) {
+        val avgPatternCostSoFar = newCostSoFar / matchedPatternsSoFar
+        newCostSoFar + remainingUnmatchedPatterns * avgPatternCostSoFar
+      } else {
+        newCostSoFar
+      }
       val fringeAfterExploration = frontierSizeForCandidatePattern(tp, exploreCost, p.patternOrdering)
-      QueryPlan(id = p.id + tp, cost = totalCost, patternOrdering = tp :: p.patternOrdering, fringe = fringeAfterExploration)
+      QueryPlan(
+        id = p.id + tp,
+        costSoFar = newCostSoFar,
+        estimatedTotalCost = newEstimatedTotalCost,
+        patternOrdering = tp :: p.patternOrdering,
+        fringe = fringeAfterExploration)
     }
 
     var goodCompletePlan: QueryPlan = null

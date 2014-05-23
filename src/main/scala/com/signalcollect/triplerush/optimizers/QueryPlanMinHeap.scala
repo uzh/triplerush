@@ -26,7 +26,8 @@ import com.signalcollect.util.IntValueHashMap
 
 case class QueryPlan(
   id: Set[TriplePattern],
-  cost: Double,
+  costSoFar: Double,
+  estimatedTotalCost: Double,
   patternOrdering: List[TriplePattern] = Nil,
   fringe: Double = 0)
 
@@ -88,7 +89,7 @@ final class QueryPlanMinHeap(initialSize: Int) {
     val existing = indexMap.get(element.id)
     if (existing.isDefined) {
       val indexOfExisting = existing.get
-      if (r(indexOfExisting).cost > element.cost) {
+      if (r(indexOfExisting).estimatedTotalCost > element.estimatedTotalCost) {
         // Replace existing element.
         r(indexOfExisting) = element
         siftUp(indexOfExisting)
@@ -114,12 +115,12 @@ final class QueryPlanMinHeap(initialSize: Int) {
       val leftIndex = 2 * index + 1
       val rightIndex = leftIndex + 1
       val current = r(index)
-      val currentValue = r(index).cost
+      val currentValue = r(index).estimatedTotalCost
       if (rightIndex < numberOfElements) {
         val left = r(leftIndex)
         val right = r(rightIndex)
-        val leftValue = left.cost
-        val rightValue = right.cost
+        val leftValue = left.estimatedTotalCost
+        val rightValue = right.estimatedTotalCost
         if (leftValue < rightValue) {
           if (leftValue < currentValue) {
             swap(index, leftIndex)
@@ -134,7 +135,7 @@ final class QueryPlanMinHeap(initialSize: Int) {
       } else if (leftIndex < numberOfElements) {
         // right == NOTHING
         val left = r(leftIndex)
-        val leftValue = left.cost
+        val leftValue = left.estimatedTotalCost
         if (leftValue < currentValue) {
           swap(index, leftIndex)
           // No sift down necessary anymore, the element to the right is already null.
@@ -154,9 +155,9 @@ final class QueryPlanMinHeap(initialSize: Int) {
 
   @tailrec def siftUp(index: Int) {
     if (index > 0) {
-      val currentValue = r(index).cost
+      val currentValue = r(index).estimatedTotalCost
       val parentIndex = (index - 1) / 2
-      val parentValue = r(parentIndex).cost
+      val parentValue = r(parentIndex).estimatedTotalCost
       if (parentValue > currentValue) {
         swap(index, parentIndex)
         siftUp(parentIndex)

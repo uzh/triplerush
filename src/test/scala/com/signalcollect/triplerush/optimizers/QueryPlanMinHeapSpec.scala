@@ -34,22 +34,22 @@ class QueryPlanMinHeapSpec extends FlatSpec with ShouldMatchers with Checkers wi
   lazy val genPlan: Gen[QueryPlan] = for {
     id <- arbitrary[Int]
     c <- arbitrary[Double]
-  } yield QueryPlan(id = Set(TriplePattern(id, 0, 0)), cost = c)
+  } yield QueryPlan(id = Set(TriplePattern(id, 0, 0)), costSoFar = c, estimatedTotalCost = c)
   implicit lazy val arbPlan: Arbitrary[QueryPlan] = Arbitrary(genPlan)
 
   "QueryPlanMinHeap" should "correctly sort query plans" in {
     check(
       (plans: Set[QueryPlan]) => {
         try {
-        val heap = new QueryPlanMinHeap(1)
-        plans.foreach(heap.insert(_))
-        val byId: Map[_, List[QueryPlan]] = plans.toList.groupBy(_.id)
-        val minPerId = byId.map(_._2.minBy(_.cost))
-        val defaultSorted = minPerId.toList.sortBy(_.cost).map(_.cost)
-        //println("Default: " + defaultSorted)
-        val sortedWithHeap = heap.toSortedArray.toList.map(_.cost)
-        //println("With heap: " + sortedWithHeap)
-        assert(sortedWithHeap === defaultSorted)
+          val heap = new QueryPlanMinHeap(1)
+          plans.foreach(heap.insert(_))
+          val byId: Map[_, List[QueryPlan]] = plans.toList.groupBy(_.id)
+          val minPerId = byId.map(_._2.minBy(_.estimatedTotalCost))
+          val defaultSorted = minPerId.toList.sortBy(_.estimatedTotalCost).map(_.estimatedTotalCost)
+          //println("Default: " + defaultSorted)
+          val sortedWithHeap = heap.toSortedArray.toList.map(_.estimatedTotalCost)
+          //println("With heap: " + sortedWithHeap)
+          assert(sortedWithHeap === defaultSorted)
         } catch {
           case t: Throwable => t.printStackTrace
         }
