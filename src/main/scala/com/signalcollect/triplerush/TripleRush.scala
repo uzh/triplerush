@@ -59,6 +59,7 @@ case class TripleRush(
     //    withMessageSerialization(true).
     //    withJavaSerialization(false).
     withHeartbeatInterval(500).
+    withEagerIdleDetection(false).
     withKryoRegistrations(List(
       "com.signalcollect.triplerush.vertices.RootIndex",
       "com.signalcollect.triplerush.vertices.SIndex",
