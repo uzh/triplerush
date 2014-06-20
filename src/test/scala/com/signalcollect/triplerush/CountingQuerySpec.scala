@@ -240,6 +240,23 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     }
   }
 
+  it should "also work with encoded triples" in {
+    val tr = new TripleRush
+    try {
+      tr.addTriple("Elvis", "inspired", "Dylan")
+      tr.addTriple("Dylan", "inspired", "Jobs")
+      tr.prepareExecution
+      val encodedInspired = tr.dictionary("inspired")
+      val query = Seq(TriplePattern(-1, encodedInspired, -2))
+      val countOptionFuture = tr.executeCountingQuery(query)
+      val countOption = Await.result(countOptionFuture, 1.second)
+      assert(countOption.isDefined === true)
+      assert(countOption.get === 2)
+    } finally {
+      tr.shutdown
+    }
+  }
+
   it should "correctly answer random queries with basic graph patterns" in {
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
@@ -255,5 +272,5 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
           }
       }, minSuccessful(50))
   }
-  
+
 }
