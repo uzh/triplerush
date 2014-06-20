@@ -22,7 +22,6 @@ package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
-import com.signalcollect.interfaces.Inspectable
 import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.PlaceholderEdge
