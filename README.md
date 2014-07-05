@@ -5,7 +5,7 @@ How to Compile the Project
 --------------------------
 Ensure Java 7 is available on the system, verify with "java -version" on the command line.
 
-Ensure that the https://github.com/uzh/signal-collect and the https://github.com/uzh/signal-collect-torque projects are both placed in the same root folder as this project. 
+Ensure that the https://github.com/uzh/signal-collect project is placed in the same root folder as this project. 
 
 Install SBT: http://www.scala-sbt.org/release/docs/Getting-Started/Setup.html
 
