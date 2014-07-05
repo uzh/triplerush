@@ -56,8 +56,6 @@ case class TripleRush(
     withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withMapperFactory(TripleMapperFactory).
-    //    withMessageSerialization(true).
-    //    withJavaSerialization(false).
     withHeartbeatInterval(500).
     withEagerIdleDetection(false).
     withKryoRegistrations(List(
