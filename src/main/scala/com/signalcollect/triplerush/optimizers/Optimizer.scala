@@ -30,6 +30,14 @@ object ExplorationOptimizerCreator extends Function1[TripleRush, Option[Optimize
   }
 }
 
+object ExplorationOptimizerCreatorWithHeuristic extends Function1[TripleRush, Option[Optimizer]] {
+  def apply(tr: TripleRush) = {
+    val stats = new PredicateSelectivity(tr)
+    val optimizer = new ExplorationOptimizer(stats, useHeuristic = true)
+    Some(optimizer)
+  }
+}
+
 object PredicateSelectivityEdgeCountsOptimizerCreator extends Function1[TripleRush, Option[Optimizer]] {
   def apply(tr: TripleRush) = {
     val stats = new PredicateSelectivity(tr)
