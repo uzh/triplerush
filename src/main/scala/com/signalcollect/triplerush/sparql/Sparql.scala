@@ -27,12 +27,14 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.triplerush.util.ResultBindingsHashSet
 import scala.collection.mutable.PriorityQueue
+import com.signalcollect.triplerush.optimizers.Optimizer
 
 /**
  * Class for SPARQL Query executions.
  */
 case class Sparql(
   tr: TripleRush,
+  optimizer: Option[Optimizer] = None,
   encodedPatternUnions: List[Seq[TriplePattern]],
   selectVariableIds: Set[Int] = Set.empty[Int],
   variableNameToId: Map[String, Int] = Map.empty[String, Int],
@@ -45,6 +47,8 @@ case class Sparql(
 
   protected val numberOfSelectVariables = selectVariableIds.size
 
+  def withOptimizer(o: Optimizer) = this.copy(optimizer = Some(o))
+  
   protected def lookupVariableBinding(encodedResult: Array[Int])(variableName: String): String = {
     val id = variableNameToId(variableName)
     val index = VariableEncoding.variableIdToDecodingIndex(id)
@@ -105,7 +109,7 @@ case class Sparql(
   protected def fullEncodedResultIterator: Iterator[Array[Int]] = {
     val iterators = encodedPatternUnions.map {
       patterns =>
-        tr.resultIteratorForQuery(patterns, None, Some(numberOfSelectVariables))
+        tr.resultIteratorForQuery(patterns, optimizer, Some(numberOfSelectVariables))
     }
     iterators.reduce(_ ++ _)
   }
