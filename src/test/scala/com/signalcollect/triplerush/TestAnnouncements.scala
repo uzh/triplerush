@@ -37,7 +37,7 @@ trait TestAnnouncements extends BeforeAndAfterAll {
     val seconds = delta % 60
     val minutes = (delta / 60).floor.toInt
     if (minutes > 0) {
-      Some(s"$seconds seconds and $minutes minutes")
+      Some(s"$minutes minutes and $seconds seconds")
     } else if (seconds > 0) {
       Some(s"$seconds seconds")
     } else {
@@ -62,7 +62,7 @@ trait TestAnnouncements extends BeforeAndAfterAll {
   override def afterAll {
     val totalTime = timeSinceStart
     if (totalTime.isDefined) {
-      println(s"Finished tests in ${this.getClass.getSimpleName} @ $currentTime, ran for a total of ${timeSinceStart.getOrElse()}.")
+      println(s"Finished tests in ${this.getClass.getSimpleName} @ $currentTime, ran for a total of ${totalTime.get}.")
     } else {
       println(s"Finished tests in ${this.getClass.getSimpleName} @ $currentTime, ran for less than a second.")
     }

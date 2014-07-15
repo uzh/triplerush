@@ -35,16 +35,19 @@ import com.signalcollect.util.IntLongHashMap
 import com.signalcollect.util.IntHashMap
 import com.signalcollect.util.IntValueHashMap
 import com.signalcollect.util.IntIntHashMap
+import akka.actor.ActorSystem
 
 class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
   extends MessageBusFactory {
   def createInstance[Id: ClassTag, Signal: ClassTag](
+    system: ActorSystem,
     numberOfWorkers: Int,
     numberOfNodes: Int,
     mapper: VertexToWorkerMapper[Id],
     sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
     workerApiFactory: WorkerApiFactory): MessageBus[Id, Signal] = {
     new CombiningMessageBus[Id, Signal](
+      system,
       numberOfWorkers,
       numberOfNodes,
       mapper,
@@ -60,6 +63,7 @@ class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
  * Version of bulk message bus that combines tickets of failed queries.
  */
 final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
+  system: ActorSystem,
   numberOfWorkers: Int,
   numberOfNodes: Int,
   mapper: VertexToWorkerMapper[Id],
@@ -67,7 +71,9 @@ final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
   withSourceIds: Boolean,
   sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
   workerApiFactory: WorkerApiFactory)
-  extends BulkMessageBus[Id, Signal](numberOfWorkers,
+  extends BulkMessageBus[Id, Signal](
+    system,
+    numberOfWorkers,
     numberOfNodes,
     mapper,
     flushThreshold,
@@ -107,8 +113,7 @@ final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
         case other =>
           super.sendSignal(signal, targetId, sourceId, blocking)
       }
-    } 
-    // If message is sent to an Index Vertex
+    } // If message is sent to an Index Vertex
     else if (signal.isInstanceOf[Int]) {
       val t = targetId.asInstanceOf[TriplePattern]
       val oldCardinalities = aggregatedCardinalities(t)
