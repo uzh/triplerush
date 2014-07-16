@@ -10,7 +10,7 @@ import com.signalcollect.triplerush.PredicateStats
 final class ExplorationOptimizer(
   val predicateSelectivity: PredicateSelectivity,
   val reliableStats: Boolean = true,
-  val useHeuristic: Boolean = true) extends Optimizer {
+  val useHeuristic: Boolean = false) extends Optimizer {
 
   case class CostEstimate(frontier: Double, lastExploration: Double, explorationSum: Double)
 
@@ -143,23 +143,7 @@ final class ExplorationOptimizer(
     }
 
     val triplePatterns = cardinalities.keys.toArray
-
-    val allPatterns = cardinalities.keySet
-
     val sizeOfFullPlan = cardinalities.size
-
-    val planHeap = new QueryPlanMinHeap(100 * sizeOfFullPlan * sizeOfFullPlan)
-
-    triplePatterns.foreach { tp =>
-      val cardinality = cardinalities(tp).toDouble
-      val atomicPlan = QueryPlan(
-        id = Set(tp),
-        costSoFar = cardinality,
-        estimatedTotalCost = cardinality * sizeOfFullPlan,
-        patternOrdering = List(tp),
-        fringe = cardinality)
-      planHeap.insert(atomicPlan)
-    }
 
     def extend(p: QueryPlan, tp: TriplePattern): QueryPlan = {
       val exploreCost = exploreCostForCandidatePattern(tp, p.patternOrdering)
@@ -181,25 +165,43 @@ final class ExplorationOptimizer(
         fringe = fringeAfterExploration)
     }
 
-    var goodCompletePlan: QueryPlan = null
-    while (goodCompletePlan == null) {
-      val topPlan = planHeap.remove
-      if (reliableStats && topPlan.fringe == 0) {
-        return Array()
+    if (sizeOfFullPlan > 8) {
+      // The exploration optimizer is awful for queries with many patterns, use the clever cardinality optimizer instead.
+      CleverCardinalityOptimizer.optimize(cardinalities, predicateStats)
+    } else {
+      val allPatterns = cardinalities.keySet
+      val planHeap = new QueryPlanMinHeap(100 * sizeOfFullPlan * sizeOfFullPlan)
+      triplePatterns.foreach { tp =>
+        val cardinality = cardinalities(tp).toDouble
+        val atomicPlan = QueryPlan(
+          id = Set(tp),
+          costSoFar = cardinality,
+          estimatedTotalCost = cardinality * sizeOfFullPlan,
+          patternOrdering = List(tp),
+          fringe = cardinality)
+        planHeap.insert(atomicPlan)
       }
-      if (topPlan.id.size == sizeOfFullPlan) {
-        goodCompletePlan = topPlan
-      } else {
-        val candidatePatterns = allPatterns -- topPlan.id
-        candidatePatterns.foreach { tp =>
-          val extendedPlan = extend(topPlan, tp)
-          planHeap.insert(extendedPlan)
+      var goodCompletePlan: QueryPlan = null
+      while (goodCompletePlan == null) {
+        val topPlan = planHeap.remove
+        if (reliableStats && topPlan.fringe == 0) {
+          return Array()
+        }
+        if (topPlan.id.size == sizeOfFullPlan) {
+          goodCompletePlan = topPlan
+        } else {
+          val candidatePatterns = allPatterns -- topPlan.id
+          candidatePatterns.foreach { tp =>
+            val extendedPlan = extend(topPlan, tp)
+            planHeap.insert(extendedPlan)
+          }
         }
       }
-    }
 
-    val resultOrder = goodCompletePlan.patternOrdering.toArray
-    reverseMutableArray(resultOrder)
-    resultOrder
+      val resultOrder = goodCompletePlan.patternOrdering.toArray
+      reverseMutableArray(resultOrder)
+      resultOrder
+    }
   }
 }
+
