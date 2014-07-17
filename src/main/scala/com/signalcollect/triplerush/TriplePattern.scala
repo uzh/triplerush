@@ -28,7 +28,7 @@ object EfficientIndexPattern {
 
   implicit def longToIndexPattern(l: Long): EfficientIndexPattern = new EfficientIndexPattern(l)
 
-  @inline private def embed2IntsInALong(i1: Int, i2: Int): Long = {
+  @inline def embed2IntsInALong(i1: Int, i2: Int): Long = {
     ((i2 | 0l) << 32) | (i1 & 0x00000000FFFFFFFFL)
   }
 
@@ -65,6 +65,10 @@ object EfficientIndexPattern {
 
 class EfficientIndexPattern(val id: Long) extends AnyVal {
 
+  @inline def isQueryId: Boolean = {
+    id < 0 && id.toInt < 0
+  }
+
   @inline def toTriplePattern = TriplePattern(s, p, o)
 
   @inline def parentIds: List[Long] = {
@@ -98,11 +102,10 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
   }
 
   @inline def o = {
-    val second = extractSecond
-    if (second < 0) {
+    if (id < 0) { // second < 0
       0
     } else {
-      second
+      extractSecond
     }
   }
 
@@ -111,9 +114,8 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
     if (first < 0) {
       first & Int.MaxValue
     } else {
-      val second = extractSecond
-      if (second < 0) {
-        second & Int.MaxValue
+      if (id < 0) { // second < 0
+        extractSecond & Int.MaxValue
       } else {
         0
       }
@@ -254,11 +256,11 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
    * Returns the id of the index/triple vertex to which this pattern should be routed.
    * Any variables (<0) should be converted to "unbound", which is represented by a wildcard.
    */
-  def routingAddress: TriplePattern = {
+  def routingAddress: Long = {
     if (s > 0 && p > 0 && o > 0) {
-      TriplePattern(s, 0, o)
+      EfficientIndexPattern(s, 0, o)
     } else {
-      withVariablesAsWildcards
+      EfficientIndexPattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
     }
   }
 

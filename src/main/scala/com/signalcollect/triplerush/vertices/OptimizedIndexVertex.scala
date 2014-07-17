@@ -20,13 +20,10 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.util.Ints._
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.util.IntSet
-import com.signalcollect.util.SplayIntSet
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.ChildIdReply
 import com.signalcollect.triplerush.util.MemoryEfficientSplayIntSet
+import com.signalcollect.util.SplayIntSet
 
 abstract class OptimizedIndexVertex(
   id: Long) extends IndexVertex(id) {
@@ -45,6 +42,7 @@ abstract class OptimizedIndexVertex(
   override def edgeCount = {
     if (optimizedChildDeltas != null) optimizedChildDeltas.size else 0
   }
+  
   def cardinality = optimizedChildDeltas.size
 
   @inline def foreachChildDelta(f: Int => Unit) = optimizedChildDeltas.foreach(f)

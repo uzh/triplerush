@@ -20,13 +20,11 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.ObjectCountSignal
 import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.ObjectCountSignal
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 
 final class SPIndex(id: Long) extends OptimizedIndexVertex(id)
   with Binding {
@@ -39,9 +37,9 @@ final class SPIndex(id: Long) extends OptimizedIndexVertex(id)
     incrementParentIndexCardinalities(ge)
     updatePredicateObjectCount(ge)
   }
-  
+
   def updatePredicateObjectCount(ge: GraphEditor[Any, Any]) {
-    ge.sendSignal(ObjectCountSignal(edgeCount), TriplePattern(0, id.p, 0), None)
+    ge.sendSignal(ObjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0), None)
   }
 
 }

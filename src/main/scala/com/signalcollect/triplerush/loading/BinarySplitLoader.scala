@@ -30,7 +30,7 @@ import com.signalcollect.triplerush.PlaceholderEdge
 /**
  * Only works if the file contains at least one triple.
  */
-case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEditor[Any, Any] => Unit] {
+case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEditor[Long, Any] => Unit] {
 
   var is: FileInputStream = _
   var dis: DataInputStream = _
@@ -71,7 +71,7 @@ case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEdito
     nextTriplePattern != null
   }
 
-  def next: GraphEditor[Any, Any] => Unit = {
+  def next: GraphEditor[Long, Any] => Unit = {
     if (!isInitialized) {
       initialize
     }
@@ -79,7 +79,7 @@ case class BinarySplitLoader(binaryFilename: String) extends Iterator[GraphEdito
     val s = nextTriplePattern.s
     val p = nextTriplePattern.p
     val o = nextTriplePattern.o
-    val loader: GraphEditor[Any, Any] => Unit = FileLoader.addEncodedTriple(
+    val loader: GraphEditor[Long, Any] => Unit = FileLoader.addEncodedTriple(
       s, p, o, _)
     nextTriplePattern = readNextTriplePattern
     loader

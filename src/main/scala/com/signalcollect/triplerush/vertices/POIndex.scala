@@ -20,13 +20,11 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.util.IntSet
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.SubjectCountSignal
 import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
+import com.signalcollect.triplerush.SubjectCountSignal
 
 final class POIndex(id: Long) extends OptimizedIndexVertex(id)
   with Binding {
@@ -45,7 +43,7 @@ final class POIndex(id: Long) extends OptimizedIndexVertex(id)
   }
 
   def updatePredicateSubjectCount(ge: GraphEditor[Any, Any]) {
-    ge.sendSignal(SubjectCountSignal(edgeCount), TriplePattern(0, id.p, 0), None)
+    ge.sendSignal(SubjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0), None)
   }
 
 }

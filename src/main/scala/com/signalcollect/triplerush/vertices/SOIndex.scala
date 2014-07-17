@@ -20,14 +20,13 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.util.SearchableIntSet
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.CardinalityReply
-import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
+import com.signalcollect.util.SearchableIntSet
+import com.signalcollect.triplerush.QueryIds
 
 final class SOIndex(id: Long) extends SearchableIndexVertex(id)
   with Binding {
@@ -69,7 +68,8 @@ final class SOIndex(id: Long) extends SearchableIndexVertex(id)
         routeSuccessfullyBound(query.copyWithoutLastPattern, graphEditor)
       } else {
         // Failed query
-        graphEditor.sendSignal(query.tickets, query.queryId, None)
+        val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
+        graphEditor.sendSignal(query.tickets, queryVertexId, None)
       }
     } else {
       // We need to bind the next pattern to all targetIds.

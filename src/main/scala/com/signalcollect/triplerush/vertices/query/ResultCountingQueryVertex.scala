@@ -36,7 +36,7 @@ final class ResultCountingQueryVertex(
   optimizer: Option[Optimizer])
   extends AbstractQueryVertex[Long](query, tickets, numberOfSelectVariables = 0, optimizer) {
 
-  val id = QueryIds.nextCountQueryId
+  val id = QueryIds.embedQueryIdInLong(QueryIds.nextCountQueryId)
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     state = 0

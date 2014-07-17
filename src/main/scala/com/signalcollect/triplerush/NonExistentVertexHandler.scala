@@ -28,7 +28,7 @@ import com.signalcollect.triplerush.vertices.RootIndex
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 
 case object NonExistentVertexHandler {
-  def createIndexVertex(edge: Edge[Any], vertexId: Any): Option[Vertex[Any, _]] = {
+  def createIndexVertex(edge: Edge[Any], vertexId: Any): Option[Vertex[Long, _]] = {
     val longId = vertexId.asInstanceOf[Long]
     val s = longId.s
     val p = longId.p

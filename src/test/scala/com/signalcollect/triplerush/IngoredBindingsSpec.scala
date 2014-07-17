@@ -43,7 +43,7 @@ class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements 
       tr.addEncodedTriple(o3, p5, o9)
       tr.addEncodedTriple(o10, p5, o9)
       tr.prepareExecution
-      val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0)).toSet
+      val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0).toEfficientIndexPattern).toSet
       assert(predicates === Set(p1, p2, p3, p4, p5))
     } finally {
       tr.shutdown
@@ -66,7 +66,7 @@ class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements 
       tr.addEncodedTriple(o3, p5, o9)
       tr.addEncodedTriple(o10, p5, o9)
       tr.prepareExecution
-      val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0))
+      val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0).toEfficientIndexPattern)
       assert(predicates.toSet === Set(p1, p2, p3, p4, p5))
     } finally {
       tr.shutdown

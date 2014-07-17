@@ -20,30 +20,26 @@
 
 package com.signalcollect.triplerush.vertices.query
 
-import scala.concurrent.Promise
 import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.CardinalityCache
 import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.optimizers.Optimizer
+import com.signalcollect.triplerush.PredicateStatsCache
+import com.signalcollect.triplerush.PredicateStatsReply
 import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.vertices.BaseVertex
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.CardinalityCache
-import com.signalcollect.triplerush.PredicateStatsCache
-import com.signalcollect.triplerush.PredicateStatsReply
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.QueryIds
 
 abstract class AbstractQueryVertex[StateType](
   val query: Seq[TriplePattern],
   val tickets: Long,
   val numberOfSelectVariables: Int,
-  val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, StateType] {
-
+  val optimizer: Option[Optimizer]) extends BaseVertex[Long, Any, StateType] {
+  
   val numberOfPatternsInOriginalQuery: Int = query.length
 
   val expectedCardinalityReplies: Int = numberOfPatternsInOriginalQuery
@@ -71,7 +67,7 @@ abstract class AbstractQueryVertex[StateType](
       if (numberOfPatternsInOriginalQuery > 0) {
         val particle = QueryParticle(
           patterns = query,
-          queryId = id,
+          queryId = QueryIds.extractQueryIdFromLong(id),
           numberOfSelectVariables = numberOfSelectVariables,
           tickets = tickets)
         dispatchedQuery = Some(particle)
@@ -115,7 +111,7 @@ abstract class AbstractQueryVertex[StateType](
       // Need to gather predicate stats.
       requestedPredicateStats += pIndexForPattern
       handleCardinalityReply(triplePattern, fromCache.get)
-      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), TriplePattern(0, pIndexForPattern, 0), None)
+      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), EfficientIndexPattern(0, pIndexForPattern, 0), None)
     } else if (predicateStatsInCache) {
       // Need to gather cardinality stats.
       val responsibleIndexId = patternWithWildcards.routingAddress
@@ -127,7 +123,7 @@ abstract class AbstractQueryVertex[StateType](
       graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId, None)
       if (!requestedPredicateStats.contains(pIndexForPattern) && pIndex != responsibleIndexId) {
         requestedPredicateStats += pIndexForPattern
-        graphEditor.sendSignal(CardinalityRequest(triplePattern, id), pIndex, None)
+        graphEditor.sendSignal(CardinalityRequest(triplePattern, id), pIndex.routingAddress, None)
       }
     }
   }
@@ -190,7 +186,10 @@ abstract class AbstractQueryVertex[StateType](
     if (queryMightHaveResults) {
       dispatchedQuery = optimizeQuery
       if (dispatchedQuery.isDefined) {
-        graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
+        graphEditor.sendSignal(
+          dispatchedQuery.get,
+          dispatchedQuery.get.routingAddress,
+          None)
       } else {
         reportResultsAndRequestQueryVertexRemoval(graphEditor)
       }
@@ -229,7 +228,7 @@ abstract class AbstractQueryVertex[StateType](
     if (optimizedPatterns.length > 0) {
       val optimizedQuery = QueryParticle(
         patterns = optimizedPatterns,
-        queryId = id,
+        queryId = QueryIds.extractQueryIdFromLong(id),
         numberOfSelectVariables = numberOfSelectVariables,
         tickets = tickets)
       Some(optimizedQuery)

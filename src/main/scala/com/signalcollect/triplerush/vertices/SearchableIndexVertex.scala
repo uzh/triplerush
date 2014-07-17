@@ -20,12 +20,9 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.util.Ints._
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.util.SearchableIntSet
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.ChildIdRequest
 import com.signalcollect.triplerush.ChildIdReply
+import com.signalcollect.util.SearchableIntSet
 
 abstract class SearchableIndexVertex[SignalType, State](
   id: Long) extends IndexVertex(id) {

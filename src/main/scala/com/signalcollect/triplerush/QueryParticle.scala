@@ -20,18 +20,44 @@
 
 package com.signalcollect.triplerush
 
-import language.implicitConversions
 import java.util.concurrent.atomic.AtomicInteger
+
+import scala.language.implicitConversions
+
+import com.signalcollect.triplerush.EfficientIndexPattern._
 import com.signalcollect.triplerush.sparql.VariableEncoding
 
 object QueryIds {
   private val maxFullQueryId = new AtomicInteger(0)
   private val minFullQueryId = new AtomicInteger(0)
-  def nextQueryId: Int = maxFullQueryId.incrementAndGet
-  def nextCountQueryId: Int = minFullQueryId.decrementAndGet
+  def nextQueryId: Int = {
+    maxFullQueryId.incrementAndGet
+  }
+  def nextCountQueryId: Int = {
+    minFullQueryId.decrementAndGet
+  }
   def reset {
     maxFullQueryId.set(0)
     minFullQueryId.set(0)
+  }
+
+  // Int.MinValue cannot be embedded
+  @inline def embedQueryIdInLong(queryId: Int): Long = {
+    assert(queryId != Int.MinValue)
+    if (queryId < 0) {
+      EfficientIndexPattern.embed2IntsInALong(queryId, Int.MinValue)
+    } else {
+      EfficientIndexPattern.embed2IntsInALong(Int.MinValue, queryId | Int.MinValue)
+    }
+  }
+
+  @inline def extractQueryIdFromLong(efficientIndexId: Long): Int = {
+    val first = efficientIndexId.extractFirst
+    if (first == Int.MinValue) {
+      efficientIndexId.extractSecond & Int.MaxValue
+    } else {
+      first
+    }
   }
 }
 
@@ -380,16 +406,16 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
    */
   def routingAddress: Any = {
     if (isResult) {
-      queryId
+      QueryIds.embedQueryIdInLong(queryId)
     } else {
       // Query not complete yet, route onwards.
       val s = lastPatternS
       val p = lastPatternP
       val o = lastPatternO
       if (s > 0 && p > 0 && o > 0) {
-        TriplePattern(s, 0, o)
+        EfficientIndexPattern(s, 0, o)
       } else {
-        TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
+        EfficientIndexPattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
       }
     }
   }

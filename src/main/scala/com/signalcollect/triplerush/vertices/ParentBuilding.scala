@@ -21,10 +21,8 @@
 package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.PlaceholderEdge
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.PlaceholderEdge
 
 /**
  * Basic vertex that recursively builds the TripleRush index structure.

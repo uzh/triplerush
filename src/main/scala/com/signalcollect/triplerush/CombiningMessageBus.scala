@@ -33,7 +33,8 @@ import QueryParticle._
 import scala.collection.mutable.ArrayBuffer
 import com.signalcollect.util.IntLongHashMap
 import com.signalcollect.util.IntHashMap
-import com.signalcollect.util.IntValueHashMap
+import com.signalcollect.triplerush.util.TriplePatternIntHashMap
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.util.IntIntHashMap
 import akka.actor.ActorSystem
 
@@ -46,15 +47,15 @@ class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
     mapper: VertexToWorkerMapper[Id],
     sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
     workerApiFactory: WorkerApiFactory): MessageBus[Id, Signal] = {
-    new CombiningMessageBus[Id, Signal](
+    new CombiningMessageBus[Signal](
       system,
       numberOfWorkers,
       numberOfNodes,
-      mapper,
+      mapper.asInstanceOf[VertexToWorkerMapper[Long]],
       flushThreshold,
       withSourceIds,
       sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
-      workerApiFactory)
+      workerApiFactory).asInstanceOf[MessageBus[Id, Signal]]
   }
   override def toString = "CombiningMessageBusFactory"
 }
@@ -62,16 +63,16 @@ class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
 /**
  * Version of bulk message bus that combines tickets of failed queries.
  */
-final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
+final class CombiningMessageBus[Signal: ClassTag](
   system: ActorSystem,
   numberOfWorkers: Int,
   numberOfNodes: Int,
-  mapper: VertexToWorkerMapper[Id],
+  mapper: VertexToWorkerMapper[Long],
   flushThreshold: Int,
   withSourceIds: Boolean,
   sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
   workerApiFactory: WorkerApiFactory)
-  extends BulkMessageBus[Id, Signal](
+  extends BulkMessageBus[Long, Signal](
     system,
     numberOfWorkers,
     numberOfNodes,
@@ -83,32 +84,32 @@ final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
 
   val aggregatedTickets = new IntLongHashMap(initialSize = 8)
   val aggregatedResults = new IntHashMap[ArrayBuffer[Array[Int]]](initialSize = 8)
-  val aggregatedCardinalities = new IntValueHashMap[TriplePattern](initialSize = 8)
+  val aggregatedCardinalities = new TriplePatternIntHashMap(initialSize = 8)
   val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
   override def sendSignal(
     signal: Signal,
-    targetId: Id,
-    sourceId: Option[Id],
+    targetId: Long,
+    sourceId: Option[Long],
     blocking: Boolean = false) {
     // If message is sent to a Query Vertex 
-    if (targetId.isInstanceOf[Int]) {
-      val tId = targetId.asInstanceOf[Int]
+    if (targetId.isQueryId) {
+      val extractedQueryId = QueryIds.extractQueryIdFromLong(targetId)
       signal match {
         case resultCount: Int =>
-          val oldResultCount = aggregatedResultCounts(tId)
-          aggregatedResultCounts(tId) = oldResultCount + resultCount
+          val oldResultCount = aggregatedResultCounts(extractedQueryId)
+          aggregatedResultCounts(extractedQueryId) = oldResultCount + resultCount
         case tickets: Long =>
-          handleTickets(tickets, tId)
+          handleTickets(tickets, extractedQueryId)
         case result: Array[Int] =>
-          val oldResults = aggregatedResults(tId)
+          val oldResults = aggregatedResults(extractedQueryId)
           val bindings = result.bindings
-          handleTickets(result.tickets, tId)
+          handleTickets(result.tickets, extractedQueryId)
           if (oldResults != null) {
             oldResults.append(bindings)
           } else {
             val newBuffer = ArrayBuffer(bindings)
-            aggregatedResults(tId) = newBuffer
+            aggregatedResults(extractedQueryId) = newBuffer
           }
         case other =>
           super.sendSignal(signal, targetId, sourceId, blocking)
@@ -146,25 +147,25 @@ final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
       aggregatedResults.foreach { (queryVertexId, results) =>
-        super.sendSignal(results.toArray.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
+        super.sendSignal(results.toArray.asInstanceOf[Signal], QueryIds.embedQueryIdInLong(queryVertexId), null, false)
       }
       aggregatedResults.clear
     }
     if (!aggregatedResultCounts.isEmpty) {
       aggregatedResultCounts.foreach { (queryVertexId, resultCount) =>
-        super.sendSignal(resultCount.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
+        super.sendSignal(resultCount.asInstanceOf[Signal], QueryIds.embedQueryIdInLong(queryVertexId), null, false)
       }
       aggregatedResultCounts.clear
     }
     if (!aggregatedTickets.isEmpty) {
       aggregatedTickets.foreach { (queryVertexId, tickets) =>
-        super.sendSignal(tickets.asInstanceOf[Signal], queryVertexId.asInstanceOf[Id], null, false)
+        super.sendSignal(tickets.asInstanceOf[Signal], QueryIds.embedQueryIdInLong(queryVertexId), null, false)
       }
       aggregatedTickets.clear
     }
     if (!aggregatedCardinalities.isEmpty) {
       aggregatedCardinalities.foreach { (targetId, cardinalityIncrement) =>
-        super.sendSignal(cardinalityIncrement.asInstanceOf[Signal], targetId.asInstanceOf[Id], null, false)
+        super.sendSignal(cardinalityIncrement.asInstanceOf[Signal], targetId, null, false)
       }
       aggregatedCardinalities.clear
     }

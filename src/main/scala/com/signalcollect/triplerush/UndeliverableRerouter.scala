@@ -23,13 +23,15 @@ package com.signalcollect.triplerush
 import com.signalcollect.GraphEditor
 import QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.vertices.PIndex
+import com.signalcollect.triplerush.EfficientIndexPattern._
 
 case object UndeliverableRerouter {
-  def handle(signal: Any, targetId: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) {
+  def handle(signal: Any, targetId: Long, sourceId: Option[Long], graphEditor: GraphEditor[Long, Any]) {
     signal match {
       case queryParticle: Array[Int] =>
-        graphEditor.sendSignal(queryParticle.tickets, queryParticle.queryId, None)
-      case CardinalityRequest(forPattern: TriplePattern, requestor: AnyRef) =>
+        val queryVertexId = QueryIds.embedQueryIdInLong(queryParticle.queryId)
+        graphEditor.sendSignal(queryParticle.tickets, queryVertexId, None)
+      case CardinalityRequest(forPattern: TriplePattern, requestor: Long) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
       case ChildIdRequest =>
         graphEditor.sendSignal(ChildIdReply(Array()), sourceId.get, Some(targetId))
@@ -39,7 +41,16 @@ case object UndeliverableRerouter {
         graphEditor.addVertex(predicateIndex)
         graphEditor.sendSignal(signal, targetId, sourceId)
       case other =>
-        println(s"Failed signal delivery of $other of type ${other.getClass} to the vertex with id $targetId and sender id $sourceId.")
+        targetId match {
+          case indexOrQueryId: Long =>
+            if (indexOrQueryId.isQueryId) {
+              println(s"Failed signal delivery of $other of type ${other.getClass} to the query vertex with query id ${QueryIds.extractQueryIdFromLong(targetId)} and sender id $sourceId.")
+            } else {
+              println(s"Failed signal delivery of $other of type ${other.getClass} to the index vertex ${targetId.toTriplePattern} and sender id $sourceId.")
+            }
+          case _ =>
+            println(s"Failed signal delivery of $other of type ${other.getClass} to the vertex with id $targetId and sender id $sourceId.")
+        }
     }
   }
 }

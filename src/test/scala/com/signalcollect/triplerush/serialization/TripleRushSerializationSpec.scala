@@ -43,7 +43,7 @@ ORDER BY ?label
 LIMIT 3
 """
     implicit val tr = new TripleRush(
-      graphBuilder = GraphBuilder.withMessageSerialization(true),
+      graphBuilder = new GraphBuilder[Long, Any].withMessageSerialization(true),
       optimizerCreator = NoOptimizerCreator)
     try {
       tr.addTriplePattern(TriplePattern(1, 2, 3))

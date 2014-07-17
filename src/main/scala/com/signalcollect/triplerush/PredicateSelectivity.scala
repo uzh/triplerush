@@ -54,7 +54,7 @@ class PredicateSelectivity(tr: TripleRush) {
     }
   }*/
 
-  val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0))
+  val predicates = tr.childIdsForPattern(TriplePattern(0, 0, 0).toEfficientIndexPattern)
 
   val ps = predicates.size
   //println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")

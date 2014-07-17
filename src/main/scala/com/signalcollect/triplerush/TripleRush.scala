@@ -43,9 +43,10 @@ import com.signalcollect.triplerush.util.ResultIterator
 import com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 import com.signalcollect.triplerush.sparql.VariableEncoding
+import com.signalcollect.triplerush.util.TripleRushStorage
 
 case class TripleRush(
-  graphBuilder: GraphBuilder[Any, Any] = GraphBuilder,
+  graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any],
   optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
   val dictionary: Dictionary = new HashMapDictionary(),
   console: Boolean = false) extends QueryEngine {
@@ -56,6 +57,7 @@ case class TripleRush(
     withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withMapperFactory(TripleMapperFactory).
+    withStorageFactory(TripleRushStorage).
     withHeartbeatInterval(500).
     withEagerIdleDetection(false).
     withKryoRegistrations(List(
@@ -88,6 +90,8 @@ case class TripleRush(
       "com.signalcollect.triplerush.util.ResultIterator", // Only for local serialization test.
       "java.util.concurrent.atomic.AtomicBoolean", // Only for local serialization test.
       "java.util.concurrent.LinkedBlockingQueue", // Only for local serialization test.
+      "scala.reflect.ManifestFactory$$anon$10",
+      "com.signalcollect.triplerush.util.TripleRushStorage$",
       "akka.actor.RepointableActorRef")).build
   graph.setUndeliverableSignalHandler(UndeliverableRerouter.handle _)
   graph.setEdgeAddedToNonExistentVertexHandler(NonExistentVertexHandler.createIndexVertex _)
@@ -104,11 +108,11 @@ case class TripleRush(
     optimizer = optimizerCreator(this)
   }
 
-  def loadNtriples(ntriplesFilename: String, placementHint: Option[Any] = None) {
+  def loadNtriples(ntriplesFilename: String, placementHint: Option[Long] = None) {
     graph.modifyGraph(FileLoader.loadNtriplesFile(dictionary, ntriplesFilename) _, placementHint)
   }
 
-  def loadBinary(binaryFilename: String, placementHint: Option[Any] = None) {
+  def loadBinary(binaryFilename: String, placementHint: Option[Long] = None) {
     graph.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
   }
 
@@ -125,9 +129,9 @@ case class TripleRush(
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int) {
     assert(sId > 0 && pId > 0 && oId > 0)
-    val po = TriplePattern(0, pId, oId).toEfficientIndexPattern
-    val so = TriplePattern(sId, 0, oId).toEfficientIndexPattern
-    val sp = TriplePattern(sId, pId, 0).toEfficientIndexPattern
+    val po = EfficientIndexPattern(0, pId, oId)
+    val so = EfficientIndexPattern(sId, 0, oId)
+    val sp = EfficientIndexPattern(sId, pId, 0)
     graph.addEdge(po, new PlaceholderEdge(sId))
     graph.addEdge(so, new PlaceholderEdge(pId))
     graph.addEdge(sp, new PlaceholderEdge(oId))
@@ -147,14 +151,13 @@ case class TripleRush(
   /**
    * Blocking version of 'executeIndexQuery'.
    */
-  def childIdsForPattern(indexId: TriplePattern): Array[Int] = {
+  def childIdsForPattern(indexId: Long): Array[Int] = {
     val intArrayFuture = executeIndexQuery(indexId)
     Await.result(intArrayFuture, 7200.seconds)
   }
 
-  def executeIndexQuery(indexId: TriplePattern): Future[Array[Int]] = {
+  def executeIndexQuery(indexId: Long): Future[Array[Int]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    assert(!indexId.isFullyBound, "There is no index vertex with this id, as the pattern is fully bound.")
     val childIdPromise = Promise[Array[Int]]()
     graph.addVertex(new IndexQueryVertex(indexId, childIdPromise))
     childIdPromise.future

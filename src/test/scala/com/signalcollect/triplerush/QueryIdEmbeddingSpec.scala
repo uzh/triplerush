@@ -20,20 +20,25 @@
 package com.signalcollect.triplerush
 
 import org.scalatest.FlatSpec
-import com.signalcollect.GraphBuilder
-import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer
-import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
+import org.scalatest.prop.Checkers
+import com.signalcollect.triplerush.EfficientIndexPattern._
 
-class SerializationSpec extends FlatSpec with TestAnnouncements {
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 
-  "TripleRush" should "run when messages are serialized" in {
-    val tr = new TripleRush(new GraphBuilder[Long, Any].withMessageSerialization(true), NoOptimizerCreator)
-    try {
-      tr.addEncodedTriple(1, 2, 3)
-      tr.prepareExecution
-    } finally {
-      tr.shutdown
-    }
+class QueryIdEmbeddingSpec extends FlatSpec with Checkers with TestAnnouncements {
+
+  "QueryIds" should "correctly embed and recover query IDs" in {
+    check((queryId: Int) => {
+      if (queryId != Int.MinValue) {
+        val embedded = QueryIds.embedQueryIdInLong(queryId)
+        assert(embedded.isQueryId)
+        val extracted = QueryIds.extractQueryIdFromLong(embedded)
+        assert(extracted === queryId)
+        true
+      } else {
+        true
+      }
+    }, minSuccessful(10000))
   }
 
 }

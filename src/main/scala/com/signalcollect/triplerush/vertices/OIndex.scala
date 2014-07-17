@@ -20,10 +20,8 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.EfficientIndexPattern
-import com.signalcollect.triplerush.EfficientIndexPattern._
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 
 final class OIndex(id: Long) extends CardinalityCountingIndex(id)
   with Forwarding {

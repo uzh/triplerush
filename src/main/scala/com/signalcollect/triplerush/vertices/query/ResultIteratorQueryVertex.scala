@@ -33,7 +33,7 @@ class ResultIteratorQueryVertex(
   optimizer: Option[Optimizer])
   extends AbstractQueryVertex[ResultIterator](query, tickets, numberOfSelectVariables, optimizer) {
 
-  final val id = QueryIds.nextQueryId
+  final val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
 
   override final def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     state = resultIterator

@@ -19,14 +19,12 @@
  */
 
 package com.signalcollect.triplerush.vertices
-import com.signalcollect.GraphEditor
-import com.signalcollect.DefaultEdge
-import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.interfaces.Inspectable
+
 import com.signalcollect.Edge
-import com.signalcollect.triplerush.EfficientIndexPattern
-import com.signalcollect.triplerush.EfficientIndexPattern._
+import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
+import com.signalcollect.triplerush.QueryIds
 
 trait Binding
   extends IndexVertex
@@ -66,8 +64,9 @@ trait Binding
       query.isSimpleToBind) {
       // Take a shortcut and don't actually do the binding, just send the result count.
       // The isSimpleToBind check excludes complicated cases, where a binding might fail.
-      graphEditor.sendSignal(edgeCount, query.queryId, None)
-      graphEditor.sendSignal(query.tickets, query.queryId, None)
+      val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
+      graphEditor.sendSignal(edgeCount, queryVertexId, None)
+      graphEditor.sendSignal(query.tickets, queryVertexId, None)
     } else {
       val edges = edgeCount
       val totalTickets = query.tickets
@@ -97,7 +96,8 @@ trait Binding
       routeSuccessfullyBound(boundParticle, graphEditor)
     } else {
       // Failed to bind, send to query vertex.
-      graphEditor.sendSignal(query.tickets, query.queryId, None)
+      val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
+      graphEditor.sendSignal(query.tickets, queryVertexId, None)
     }
   }
 
@@ -107,11 +107,12 @@ trait Binding
 
     if (boundParticle.isResult) {
       // Query successful, send to query vertex.
+      val queryVertexId = QueryIds.embedQueryIdInLong(boundParticle.queryId)
       if (boundParticle.isBindingQuery) {
-        graphEditor.sendSignal(boundParticle, boundParticle.queryId, None)
+        graphEditor.sendSignal(boundParticle, queryVertexId, None)
       } else {
-        graphEditor.sendSignal(1, boundParticle.queryId, None)
-        graphEditor.sendSignal(boundParticle.tickets, boundParticle.queryId, None)
+        graphEditor.sendSignal(1, queryVertexId, None)
+        graphEditor.sendSignal(boundParticle.tickets, queryVertexId, None)
       }
     } else {
       graphEditor.sendSignal(boundParticle, boundParticle.routingAddress, None)
