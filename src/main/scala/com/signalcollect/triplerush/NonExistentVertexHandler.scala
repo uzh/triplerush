@@ -25,18 +25,24 @@ import com.signalcollect.Vertex
 import com.signalcollect.Edge
 import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush.vertices.RootIndex
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 
 case object NonExistentVertexHandler {
   def createIndexVertex(edge: Edge[Any], vertexId: Any): Option[Vertex[Any, _]] = {
-    vertexId match {
+    val longId = vertexId.asInstanceOf[Long]
+    val s = longId.s
+    val p = longId.p
+    val o = longId.o
+    val triplePattern = TriplePattern(s, p, o)
+    triplePattern match {
       case TriplePattern(0, 0, 0) => Some(new RootIndex)
-      case tp @ TriplePattern(0, 0, o) => Some(new OIndex(tp))
-      case tp @ TriplePattern(0, p, 0) => Some(new PIndex(tp))
-      case tp @ TriplePattern(s, 0, 0) => Some(new SIndex(tp))
-      case tp @ TriplePattern(s, p, 0) => Some(new SPIndex(tp))
-      case tp @ TriplePattern(s, 0, o) => Some(new SOIndex(tp))
-      case tp @ TriplePattern(0, p, o) => Some(new POIndex(tp))
-      case other => throw new Exception(s"Could not add edge $edge to vertex $vertexId, because that vertex does not exist.")
+      case TriplePattern(0, 0, o) => Some(new OIndex(longId))
+      case TriplePattern(0, p, 0) => Some(new PIndex(longId))
+      case TriplePattern(s, 0, 0) => Some(new SIndex(longId))
+      case TriplePattern(s, p, 0) => Some(new SPIndex(longId))
+      case TriplePattern(s, 0, o) => Some(new SOIndex(longId))
+      case TriplePattern(0, p, o) => Some(new POIndex(longId))
+      case other => throw new Exception(s"Could not add edge $edge to vertex $triplePattern, because that vertex does not exist.")
     }
   }
 }

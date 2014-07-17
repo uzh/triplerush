@@ -25,11 +25,11 @@ import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.util.IntSet
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.SubjectCountSignal
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 
-final class POIndex(id: TriplePattern) extends OptimizedIndexVertex(id)
+final class POIndex(id: Long) extends OptimizedIndexVertex(id)
   with Binding {
-
-  assert(id.s == 0 && id.p != 0 && id.o != 0)
 
   @inline def bindIndividualQuery(childDelta: Int, query: Array[Int]): Array[Int] = {
     query.bind(childDelta, id.p, id.o)

@@ -20,20 +20,19 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.CardinalityRequest
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.ObjectCountSignal
-import com.signalcollect.triplerush.SubjectCountSignal
-import com.signalcollect.triplerush.PredicateStatsReply
 import com.signalcollect.triplerush.PredicateStats
+import com.signalcollect.triplerush.PredicateStatsReply
+import com.signalcollect.triplerush.SubjectCountSignal
 
-final class PIndex(id: TriplePattern) extends CardinalityCountingIndex(id)
+final class PIndex(id: Long) extends CardinalityCountingIndex(id)
   with Forwarding {
 
-  assert(id.s == 0 && id.p != 0 && id.o == 0)
-  def nextRoutingAddress(childDelta: Int) = TriplePattern(childDelta, id.p, 0)
+  def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(childDelta, id.p, 0)
 
   @transient var objectCountMap = Map[Int, Int]()
   var maxObjectCount = 1

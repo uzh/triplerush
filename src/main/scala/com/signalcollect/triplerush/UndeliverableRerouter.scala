@@ -35,7 +35,7 @@ case object UndeliverableRerouter {
         graphEditor.sendSignal(ChildIdReply(Array()), sourceId.get, Some(targetId))
       case s: SubjectCountSignal =>
         // This count could potentially arrive before the vertex is created.
-        val predicateIndex = new PIndex(targetId.asInstanceOf[TriplePattern])
+        val predicateIndex = new PIndex(targetId.asInstanceOf[Long])
         graphEditor.addVertex(predicateIndex)
         graphEditor.sendSignal(signal, targetId, sourceId)
       case other =>

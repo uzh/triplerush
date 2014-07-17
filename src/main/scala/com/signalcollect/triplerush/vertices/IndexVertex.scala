@@ -39,8 +39,8 @@ import com.signalcollect.triplerush.SubjectCountSignal
 /**
  * This vertex represents part of the TripleRush index.
  */
-abstract class IndexVertex(val id: TriplePattern)
-  extends BaseVertex[TriplePattern, Any, Any]
+abstract class IndexVertex(val id: Long)
+  extends BaseVertex[Long, Any, Any]
   with ParentBuilding[Any, Any] {
 
   def foreachChildDelta(f: Int => Unit)

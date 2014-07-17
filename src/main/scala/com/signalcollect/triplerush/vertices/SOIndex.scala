@@ -26,11 +26,11 @@ import com.signalcollect.util.SearchableIntSet
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.CardinalityReply
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 
-final class SOIndex(id: TriplePattern) extends SearchableIndexVertex(id)
+final class SOIndex(id: Long) extends SearchableIndexVertex(id)
   with Binding {
-
-  assert(id.s != 0 && id.p == 0 && id.o != 0)
 
   override def onEdgeAdded(ge: GraphEditor[Any, Any]) {}
 

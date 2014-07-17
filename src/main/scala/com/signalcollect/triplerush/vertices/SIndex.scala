@@ -20,14 +20,12 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryParticle._
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 
-final class SIndex(id: TriplePattern) extends CardinalityCountingIndex(id)
+final class SIndex(id: Long) extends CardinalityCountingIndex(id)
   with Forwarding {
 
-  assert(id.s != 0 && id.p == 0 && id.o == 0)
-
-  def nextRoutingAddress(childDelta: Int) = TriplePattern(id.s, childDelta, 0)
-
+  def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(id.s, childDelta, 0)
+  
 }

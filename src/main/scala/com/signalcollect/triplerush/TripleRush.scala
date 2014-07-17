@@ -125,9 +125,9 @@ case class TripleRush(
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int) {
     assert(sId > 0 && pId > 0 && oId > 0)
-    val po = TriplePattern(0, pId, oId)
-    val so = TriplePattern(sId, 0, oId)
-    val sp = TriplePattern(sId, pId, 0)
+    val po = TriplePattern(0, pId, oId).toEfficientIndexPattern
+    val so = TriplePattern(sId, 0, oId).toEfficientIndexPattern
+    val sp = TriplePattern(sId, pId, 0).toEfficientIndexPattern
     graph.addEdge(po, new PlaceholderEdge(sId))
     graph.addEdge(so, new PlaceholderEdge(pId))
     graph.addEdge(sp, new PlaceholderEdge(oId))

@@ -25,6 +25,8 @@ import com.signalcollect.triplerush.QueryParticle._
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.interfaces.Inspectable
 import com.signalcollect.Edge
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern._
 
 trait Binding
   extends IndexVertex
@@ -33,13 +35,13 @@ trait Binding
   def onEdgeAdded(ge: GraphEditor[Any, Any])
 
   def incrementParentIndexCardinalities(ge: GraphEditor[Any, Any]) {
-    for (parent <- id.parentPatterns) {
+    for (parent <- id.parentIds) {
       ge.sendSignal(1, parent, None)
     }
   }
 
   def decrementParentIndexCardinalities(ge: GraphEditor[Any, Any]) {
-    for (parent <- id.parentPatterns) {
+    for (parent <- id.parentIds) {
       ge.sendSignal(-1, parent, None)
     }
   }

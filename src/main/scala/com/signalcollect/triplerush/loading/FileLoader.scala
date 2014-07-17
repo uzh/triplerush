@@ -60,9 +60,9 @@ case object FileLoader {
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Any, Any]) {
     assert(sId > 0 && pId > 0 && oId > 0)
-    val po = TriplePattern(0, pId, oId)
-    val so = TriplePattern(sId, 0, oId)
-    val sp = TriplePattern(sId, pId, 0)
+    val po = TriplePattern(0, pId, oId).toEfficientIndexPattern
+    val so = TriplePattern(sId, 0, oId).toEfficientIndexPattern
+    val sp = TriplePattern(sId, pId, 0).toEfficientIndexPattern
     graphEditor.addEdge(po, new PlaceholderEdge(sId))
     graphEditor.addEdge(so, new PlaceholderEdge(pId))
     graphEditor.addEdge(sp, new PlaceholderEdge(oId))

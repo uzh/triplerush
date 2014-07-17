@@ -28,7 +28,7 @@ import com.signalcollect.triplerush.ChildIdRequest
 import com.signalcollect.triplerush.ChildIdReply
 
 abstract class SearchableIndexVertex[SignalType, State](
-  id: TriplePattern) extends IndexVertex(id) {
+  id: Long) extends IndexVertex(id) {
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     super.afterInitialization(graphEditor)

@@ -29,7 +29,7 @@ import com.signalcollect.triplerush.ChildIdReply
 import com.signalcollect.triplerush.util.MemoryEfficientSplayIntSet
 
 abstract class OptimizedIndexVertex(
-  id: TriplePattern) extends IndexVertex(id) {
+  id: Long) extends IndexVertex(id) {
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     super.afterInitialization(graphEditor)

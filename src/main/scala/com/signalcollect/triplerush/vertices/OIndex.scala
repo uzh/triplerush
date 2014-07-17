@@ -22,12 +22,12 @@ package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.QueryParticle._
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern._
 
-final class OIndex(id: TriplePattern) extends CardinalityCountingIndex(id)
+final class OIndex(id: Long) extends CardinalityCountingIndex(id)
   with Forwarding {
 
-  assert(id.s == 0 && id.p == 0 && id.o != 0)
-
-  def nextRoutingAddress(childDelta: Int) = TriplePattern(0, childDelta, id.o)
+  def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(0, childDelta, id.o)
 
 }

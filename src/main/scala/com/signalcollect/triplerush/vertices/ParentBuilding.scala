@@ -23,15 +23,17 @@ package com.signalcollect.triplerush.vertices
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.PlaceholderEdge
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 
 /**
  * Basic vertex that recursively builds the TripleRush index structure.
  */
-trait ParentBuilding[Signal, State] extends BaseVertex[TriplePattern, Signal, State] {
+trait ParentBuilding[Signal, State] extends BaseVertex[Long, Signal, State] {
 
   override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
     // Build the hierarchical index on initialization.
-    id.parentPatterns foreach { parentId =>
+    id.parentIds foreach { parentId =>
       val idDelta = id.parentIdDelta(parentId)
       graphEditor.addEdge(parentId, new PlaceholderEdge(idDelta))
     }

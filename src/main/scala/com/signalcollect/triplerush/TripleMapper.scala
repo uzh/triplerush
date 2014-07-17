@@ -22,6 +22,7 @@ package com.signalcollect.triplerush
 
 import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.interfaces.MapperFactory
+import com.signalcollect.triplerush.EfficientIndexPattern._
 
 class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Id] {
   val numberOfWorkers = numberOfNodes * workersPerNode
@@ -32,7 +33,10 @@ class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends 
        * Try to map things with to a node based on the subject/object, wherever possible.
        * Load balance over the workers of that node by using other unused triple information.
        */
-      case TriplePattern(s, p, o) =>
+      case indexPattern: Long =>
+        val s = indexPattern.s
+        val p = indexPattern.p
+        val o = indexPattern.o
         if (s > 0) {
           if (p > 0) {
             workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + p)

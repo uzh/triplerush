@@ -27,13 +27,13 @@ import com.signalcollect.interfaces.Inspectable
 
 trait Forwarding extends IndexVertex {
 
-  def nextRoutingAddress(childDelta: Int): TriplePattern
+  def nextRoutingAddress(childDelta: Int): Long
 
   override def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
     if (!query.isBindingQuery &&
       query.numberOfPatterns == 1 &&
       query.isSimpleToBind &&
-      id != TriplePattern(0, 0, 0) // Cardinality stats for root node are not accurate.  
+      id != 0 // Cardinality stats for root node are not accurate.  
       ) {
       // Take a shortcut and don't actually do the forwarding, just send the cardinality.
       // The isSimpleToBind check excludes complicated cases, where a binding might fail.

@@ -19,14 +19,11 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryParticle._
+import com.signalcollect.triplerush.EfficientIndexPattern
 
-final class RootIndex extends OptimizedIndexVertex(TriplePattern(0, 0, 0))
+final class RootIndex extends OptimizedIndexVertex(0l)
   with Forwarding {
 
-  assert(id.s == 0 && id.p == 0 && id.o == 0)
-
-  def nextRoutingAddress(childDelta: Int) = TriplePattern(0, childDelta, 0)
+  def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(0, childDelta, 0) 
 
 }

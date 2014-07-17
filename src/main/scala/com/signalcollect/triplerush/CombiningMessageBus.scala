@@ -115,7 +115,7 @@ final class CombiningMessageBus[Id: ClassTag, Signal: ClassTag](
       }
     } // If message is sent to an Index Vertex
     else if (signal.isInstanceOf[Int]) {
-      val t = targetId.asInstanceOf[TriplePattern]
+      val t = targetId.asInstanceOf[Long]
       val oldCardinalities = aggregatedCardinalities(t)
       aggregatedCardinalities(t) = oldCardinalities + signal.asInstanceOf[Int]
     } else {
