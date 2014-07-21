@@ -29,6 +29,7 @@ import com.signalcollect.GraphBuilder
 import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
+import com.signalcollect.GraphBuilder
 
 class TripleRushSerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
 

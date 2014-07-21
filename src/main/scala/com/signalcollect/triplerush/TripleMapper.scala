@@ -24,45 +24,47 @@ import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.interfaces.MapperFactory
 import com.signalcollect.triplerush.EfficientIndexPattern._
 
-class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Id] {
+class TripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
   val numberOfWorkers = numberOfNodes * workersPerNode
 
-  def getWorkerIdForVertexId(vertexId: Id): Int = {
+  def getWorkerIdForVertexId(vertexId: Long): Int = {
     vertexId match {
       /**
        * Try to map things with to a node based on the subject/object, wherever possible.
        * Load balance over the workers of that node by using other unused triple information.
        */
-      case indexPattern: Long =>
-        val s = indexPattern.s
-        val p = indexPattern.p
-        val o = indexPattern.o
-        if (s > 0) {
-          if (p > 0) {
-            workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + p)
-          } else if (o > 0) {
-            workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + o)
-          } else {
-            workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s)
-          }
-        } else if (o > 0) {
-          if (p > 0) {
-            workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o + p)
-          } else {
-            workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o)
-          }
-        } else if (p > 0) {
-          workerIdOptimized(nodeAssignmentId = p, nodeBalanceId = p)
+      case indexPatternOrQueryVertex: Long =>
+        if (indexPatternOrQueryVertex.isQueryId) {
+          // Avoid issues with mod on negative numbers by cutting off the 2s complement 1 at the front.
+          // This guarantees a 'positive' outcome. :)
+          // Always puts query vertices on node 0.
+          (QueryIds.extractQueryIdFromLong(indexPatternOrQueryVertex) & Int.MaxValue) % workersPerNode
         } else {
-          // Root, put it on the last node, so it does not collide with the node which has the coordinator, when there are multiple nodes.
-          // Put it on the second worker there.
-          workerIdOptimized(nodeAssignmentId = numberOfNodes - 1, nodeBalanceId = 1)
+          val s = indexPatternOrQueryVertex.s
+          val p = indexPatternOrQueryVertex.p
+          val o = indexPatternOrQueryVertex.o
+          if (s > 0) {
+            if (p > 0) {
+              workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + p)
+            } else if (o > 0) {
+              workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + o)
+            } else {
+              workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s)
+            }
+          } else if (o > 0) {
+            if (p > 0) {
+              workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o + p)
+            } else {
+              workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o)
+            }
+          } else if (p > 0) {
+            workerIdOptimized(nodeAssignmentId = p, nodeBalanceId = p)
+          } else {
+            // Root, put it on the last node, so it does not collide with the node which has the coordinator, when there are multiple nodes.
+            // Put it on the second worker there.
+            workerIdOptimized(nodeAssignmentId = numberOfNodes - 1, nodeBalanceId = 1)
+          }
         }
-      case qv: Int =>
-        // Avoid issues with mod on negative numbers by cutting off the 2s complement 1 at the front.
-        // This guarantees a 'positive' outcome. :)
-        // Always puts query vertices on node 0.
-        (qv & Int.MaxValue) % workersPerNode
       case other => throw new UnsupportedOperationException("This mapper does not support mapping ids of type " + other.getClass)
     }
   }
@@ -80,6 +82,6 @@ class TripleMapper[Id](val numberOfNodes: Int, val workersPerNode: Int) extends 
   def getWorkerIdForVertexIdHash(vertexIdHash: Int): Int = throw new UnsupportedOperationException("This mapper does not support mapping by vertex hash.")
 }
 
-object TripleMapperFactory extends MapperFactory {
-  def createInstance[Id](numberOfNodes: Int, workersPerNode: Int) = new TripleMapper[Id](numberOfNodes, workersPerNode)
+object TripleMapperFactory extends MapperFactory[Long] {
+  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new TripleMapper(numberOfNodes, workersPerNode)
 }

@@ -35,7 +35,7 @@ final class ResultIterator extends Iterator[Array[Int]] with ResultBindings {
   }
 
   private def replenishCurrentArray {
-    currentResultArray = incomingResultsQueue.poll(1, TimeUnit.NANOSECONDS)
+    currentResultArray = incomingResultsQueue.poll(10, TimeUnit.MICROSECONDS)
     var keepTrying = true
     while (currentResultArray == null && keepTrying) {
       keepTrying = !allResultsReported.get

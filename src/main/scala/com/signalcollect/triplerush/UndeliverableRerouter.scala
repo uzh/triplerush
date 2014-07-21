@@ -41,15 +41,10 @@ case object UndeliverableRerouter {
         graphEditor.addVertex(predicateIndex)
         graphEditor.sendSignal(signal, targetId, sourceId)
       case other =>
-        targetId match {
-          case indexOrQueryId: Long =>
-            if (indexOrQueryId.isQueryId) {
-              println(s"Failed signal delivery of $other of type ${other.getClass} to the query vertex with query id ${QueryIds.extractQueryIdFromLong(targetId)} and sender id $sourceId.")
-            } else {
-              println(s"Failed signal delivery of $other of type ${other.getClass} to the index vertex ${targetId.toTriplePattern} and sender id $sourceId.")
-            }
-          case _ =>
-            println(s"Failed signal delivery of $other of type ${other.getClass} to the vertex with id $targetId and sender id $sourceId.")
+        if (targetId.isQueryId) {
+          println(s"Failed signal delivery of $other of type ${other.getClass} to the query vertex with query id ${QueryIds.extractQueryIdFromLong(targetId)} and sender id $sourceId.")
+        } else {
+          println(s"Failed signal delivery of $other of type ${other.getClass} to the index vertex ${targetId.toTriplePattern} and sender id $sourceId.")
         }
     }
   }

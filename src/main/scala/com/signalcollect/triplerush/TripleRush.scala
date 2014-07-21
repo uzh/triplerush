@@ -44,9 +44,11 @@ import com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 import com.signalcollect.triplerush.sparql.VariableEncoding
 import com.signalcollect.triplerush.util.TripleRushStorage
+import com.signalcollect.GraphBuilder
+import com.signalcollect.triplerush.util.TripleRushWorkerFactory
 
 case class TripleRush(
-  graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any],
+  graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
   optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
   val dictionary: Dictionary = new HashMapDictionary(),
   console: Boolean = false) extends QueryEngine {
@@ -58,6 +60,7 @@ case class TripleRush(
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withMapperFactory(TripleMapperFactory).
     withStorageFactory(TripleRushStorage).
+    withWorkerFactory(new TripleRushWorkerFactory[Any]).
     withHeartbeatInterval(500).
     withEagerIdleDetection(false).
     withKryoRegistrations(List(
@@ -78,7 +81,6 @@ case class TripleRush(
       "com.signalcollect.triplerush.SubjectCountSignal",
       "com.signalcollect.triplerush.ObjectCountSignal",
       "Array[com.signalcollect.triplerush.TriplePattern]",
-      "com.signalcollect.interfaces.SignalMessage$mcIJ$sp",
       "com.signalcollect.interfaces.AddEdge",
       "com.signalcollect.triplerush.CombiningMessageBusFactory",
       "com.signalcollect.triplerush.TripleMapperFactory$",

@@ -34,19 +34,19 @@ import scala.collection.mutable.ArrayBuffer
 import com.signalcollect.util.IntLongHashMap
 import com.signalcollect.util.IntHashMap
 import com.signalcollect.triplerush.util.TriplePatternIntHashMap
-import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern._
 import com.signalcollect.util.IntIntHashMap
 import akka.actor.ActorSystem
 
-class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
-  extends MessageBusFactory {
-  def createInstance[Id: ClassTag, Signal: ClassTag](
+class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, withSourceIds: Boolean)
+  extends MessageBusFactory[Long, Signal] {
+  def createInstance(
     system: ActorSystem,
     numberOfWorkers: Int,
     numberOfNodes: Int,
-    mapper: VertexToWorkerMapper[Id],
+    mapper: VertexToWorkerMapper[Long],
     sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
-    workerApiFactory: WorkerApiFactory): MessageBus[Id, Signal] = {
+    workerApiFactory: WorkerApiFactory[Long, Signal]): MessageBus[Long, Signal] = {
     new CombiningMessageBus[Signal](
       system,
       numberOfWorkers,
@@ -55,7 +55,7 @@ class CombiningMessageBusFactory(flushThreshold: Int, withSourceIds: Boolean)
       flushThreshold,
       withSourceIds,
       sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
-      workerApiFactory).asInstanceOf[MessageBus[Id, Signal]]
+      workerApiFactory)
   }
   override def toString = "CombiningMessageBusFactory"
 }
@@ -71,7 +71,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   flushThreshold: Int,
   withSourceIds: Boolean,
   sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
-  workerApiFactory: WorkerApiFactory)
+  workerApiFactory: WorkerApiFactory[Long, Signal])
   extends BulkMessageBus[Long, Signal](
     system,
     numberOfWorkers,

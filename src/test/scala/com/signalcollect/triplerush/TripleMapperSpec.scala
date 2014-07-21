@@ -11,7 +11,7 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
   val workersPerNode = 24
   val step = numberOfNodes * workersPerNode
 
-  val m = new TripleMapper[Any](numberOfNodes = numberOfNodes, workersPerNode = workersPerNode)
+  val m = new TripleMapper(numberOfNodes = numberOfNodes, workersPerNode = workersPerNode)
 
   def nodeId(workerId: Int) = (((workerId & Int.MaxValue) % step) / workersPerNode).floor.toInt
   def workerId(workerId: Int) = (workerId & Int.MaxValue) % workersPerNode
