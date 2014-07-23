@@ -71,9 +71,13 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
 
   it should "always assign queries to node 0" in {
     check((queryVertexId: Int) => {
-      val queryWorkerId = m.getWorkerIdForVertexId(queryVertexId)
-      val node = nodeId(queryWorkerId)
-      node == 0
+      if (queryVertexId != 0) {
+        val queryWorkerId = m.getWorkerIdForVertexId(queryVertexId)
+        val node = nodeId(queryWorkerId)
+        node == 0
+      } else {
+        true
+      }
     }, minSuccessful(1000))
   }
 

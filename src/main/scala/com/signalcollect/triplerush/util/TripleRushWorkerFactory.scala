@@ -20,14 +20,16 @@
 package com.signalcollect.triplerush.util
 
 import scala.reflect.ClassTag
-import com.signalcollect.configuration.GraphConfiguration
+
+import com.signalcollect.interfaces.EdgeAddedToNonExistentVertexHandlerFactory
+import com.signalcollect.interfaces.ExistingVertexHandlerFactory
+import com.signalcollect.interfaces.MapperFactory
+import com.signalcollect.interfaces.MessageBusFactory
+import com.signalcollect.interfaces.SchedulerFactory
+import com.signalcollect.interfaces.StorageFactory
+import com.signalcollect.interfaces.UndeliverableSignalHandlerFactory
 import com.signalcollect.interfaces.WorkerFactory
 import com.signalcollect.worker.AkkaWorker
-import com.signalcollect.interfaces.MessageBusFactory
-import com.signalcollect.interfaces.MapperFactory
-import com.signalcollect.interfaces.StorageFactory
-import com.signalcollect.interfaces.SchedulerFactory
-import com.signalcollect.interfaces.WorkerFactory
 
 class TripleRushWorkerFactory[Signal: ClassTag] extends WorkerFactory[Long, Signal] {
   def createInstance(
@@ -38,6 +40,9 @@ class TripleRushWorkerFactory[Signal: ClassTag] extends WorkerFactory[Long, Sign
     mapperFactory: MapperFactory[Long],
     storageFactory: StorageFactory[Long],
     schedulerFactory: SchedulerFactory[Long],
+    existingVertexHandlerFactory: ExistingVertexHandlerFactory[Long, Signal],
+    undeliverableSignalHandlerFactory: UndeliverableSignalHandlerFactory[Long, Signal],
+    edgeAddedToNonExistentVertexHandlerFactory: EdgeAddedToNonExistentVertexHandlerFactory[Long, Signal],
     heartbeatIntervalInMilliseconds: Int,
     eagerIdleDetection: Boolean,
     throttlingEnabled: Boolean): AkkaWorker[Long, Signal] = {
@@ -49,6 +54,9 @@ class TripleRushWorkerFactory[Signal: ClassTag] extends WorkerFactory[Long, Sign
       mapperFactory,
       storageFactory,
       schedulerFactory,
+      existingVertexHandlerFactory,
+      undeliverableSignalHandlerFactory,
+      edgeAddedToNonExistentVertexHandlerFactory,
       heartbeatIntervalInMilliseconds,
       eagerIdleDetection,
       throttlingEnabled)

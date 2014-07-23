@@ -57,6 +57,8 @@ case class TripleRush(
 
   val graph = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
+    withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
+    withEdgeAddedToNonExistentVertexHandlerFactory(TripleRushEdgeAddedToNonExistentVertexHandlerFactory).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withMapperFactory(TripleMapperFactory).
     withStorageFactory(TripleRushStorage).
@@ -84,8 +86,6 @@ case class TripleRush(
       "com.signalcollect.interfaces.AddEdge",
       "com.signalcollect.triplerush.CombiningMessageBusFactory",
       "com.signalcollect.triplerush.TripleMapperFactory$",
-      "com.signalcollect.triplerush.TripleRush$$anonfun$3",
-      "com.signalcollect.triplerush.TripleRush$$anonfun$4",
       "com.signalcollect.triplerush.TripleRush$$anonfun$loadNtriples$1",
       "com.signalcollect.triplerush.PredicateStats",
       "com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex", // Only for local serialization test.
@@ -94,9 +94,11 @@ case class TripleRush(
       "java.util.concurrent.LinkedBlockingQueue", // Only for local serialization test.
       "scala.reflect.ManifestFactory$$anon$10",
       "com.signalcollect.triplerush.util.TripleRushStorage$",
-      "akka.actor.RepointableActorRef")).build
-  graph.setUndeliverableSignalHandler(UndeliverableRerouter.handle _)
-  graph.setEdgeAddedToNonExistentVertexHandler(NonExistentVertexHandler.createIndexVertex _)
+      "akka.actor.RepointableActorRef",
+      "com.signalcollect.triplerush.TripleRushEdgeAddedToNonExistentVertexHandlerFactory$",
+      "com.signalcollect.factory.scheduler.Throughput$mcJ$sp",
+      "com.signalcollect.triplerush.TripleRushUndeliverableSignalHandlerFactory$",
+      "com.signalcollect.triplerush.util.TripleRushWorkerFactory")).build
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)

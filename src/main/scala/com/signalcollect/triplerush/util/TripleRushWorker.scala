@@ -25,7 +25,7 @@ import com.signalcollect.worker.WorkerImplementation
 import scala.reflect.ClassTag
 import com.signalcollect._
 
-final class TripleRushWorker[Signal: ClassTag](
+class TripleRushWorker[Signal: ClassTag](
   workerId: Int,
   numberOfWorkers: Int,
   numberOfNodes: Int,
@@ -33,6 +33,9 @@ final class TripleRushWorker[Signal: ClassTag](
   mapperFactory: MapperFactory[Long],
   storageFactory: StorageFactory[Long],
   schedulerFactory: SchedulerFactory[Long],
+  existingVertexHandlerFactory: ExistingVertexHandlerFactory[Long, Signal],
+  undeliverableSignalHandlerFactory: UndeliverableSignalHandlerFactory[Long, Signal],
+  edgeAddedToNonExistentVertexHandlerFactory: EdgeAddedToNonExistentVertexHandlerFactory[Long, Signal],
   heartbeatIntervalInMilliseconds: Int,
   eagerIdleDetection: Boolean,
   throttlingEnabled: Boolean) extends AkkaWorker[Long, Signal](
@@ -43,6 +46,9 @@ final class TripleRushWorker[Signal: ClassTag](
   mapperFactory,
   storageFactory,
   schedulerFactory,
+  existingVertexHandlerFactory,
+  undeliverableSignalHandlerFactory,
+  edgeAddedToNonExistentVertexHandlerFactory,
   heartbeatIntervalInMilliseconds,
   eagerIdleDetection,
   throttlingEnabled) {
@@ -56,18 +62,11 @@ final class TripleRushWorker[Signal: ClassTag](
     log = log,
     storageFactory = storageFactory,
     schedulerFactory = schedulerFactory,
+    existingVertexHandlerFactory = existingVertexHandlerFactory,
+    undeliverableSignalHandlerFactory = undeliverableSignalHandlerFactory,
+    edgeAddedToNonExistentVertexHandlerFactory = edgeAddedToNonExistentVertexHandlerFactory,
     signalThreshold = 0.01,
-    collectThreshold = 0.0,
-    existingVertexHandler = (vOld, vNew, ge) => (),
-    undeliverableSignalHandler = (s: Signal, tId: Long, sId: Option[Long], ge: GraphEditor[Long, Signal]) => {
-      throw new Exception(s"Undeliverable signal: $s from $sId could not be delivered to $tId.")
-      Unit
-    },
-    edgeAddedToNonExistentVertexHandler = (edge: Edge[Long], vertexId: Long) => {
-      throw new Exception(
-        s"Could not add edge: ${edge.getClass.getSimpleName}(id = $vertexId -> ${edge.targetId}), because vertex with id $vertexId does not exist.")
-      None
-    })
+    collectThreshold = 0.0)
 
 }
   

@@ -28,44 +28,40 @@ class TripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends Vert
   val numberOfWorkers = numberOfNodes * workersPerNode
 
   def getWorkerIdForVertexId(vertexId: Long): Int = {
-    vertexId match {
-      /**
-       * Try to map things with to a node based on the subject/object, wherever possible.
-       * Load balance over the workers of that node by using other unused triple information.
-       */
-      case indexPatternOrQueryVertex: Long =>
-        if (indexPatternOrQueryVertex.isQueryId) {
-          // Avoid issues with mod on negative numbers by cutting off the 2s complement 1 at the front.
-          // This guarantees a 'positive' outcome. :)
-          // Always puts query vertices on node 0.
-          (QueryIds.extractQueryIdFromLong(indexPatternOrQueryVertex) & Int.MaxValue) % workersPerNode
+    /**
+     * Try to map things with to a node based on the subject/object, wherever possible.
+     * Load balance over the workers of that node by using other unused triple information.
+     */
+    if (vertexId.isQueryId) {
+      // Avoid issues with mod on negative numbers by cutting off the 2s complement 1 at the front.
+      // This guarantees a 'positive' outcome. :)
+      // Always puts query vertices on node 0.
+      (QueryIds.extractQueryIdFromLong(vertexId) & Int.MaxValue) % workersPerNode
+    } else {
+      val s = vertexId.s
+      val p = vertexId.p
+      val o = vertexId.o
+      if (s > 0) {
+        if (p > 0) {
+          workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + p)
+        } else if (o > 0) {
+          workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + o)
         } else {
-          val s = indexPatternOrQueryVertex.s
-          val p = indexPatternOrQueryVertex.p
-          val o = indexPatternOrQueryVertex.o
-          if (s > 0) {
-            if (p > 0) {
-              workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + p)
-            } else if (o > 0) {
-              workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + o)
-            } else {
-              workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s)
-            }
-          } else if (o > 0) {
-            if (p > 0) {
-              workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o + p)
-            } else {
-              workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o)
-            }
-          } else if (p > 0) {
-            workerIdOptimized(nodeAssignmentId = p, nodeBalanceId = p)
-          } else {
-            // Root, put it on the last node, so it does not collide with the node which has the coordinator, when there are multiple nodes.
-            // Put it on the second worker there.
-            workerIdOptimized(nodeAssignmentId = numberOfNodes - 1, nodeBalanceId = 1)
-          }
+          workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s)
         }
-      case other => throw new UnsupportedOperationException("This mapper does not support mapping ids of type " + other.getClass)
+      } else if (o > 0) {
+        if (p > 0) {
+          workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o + p)
+        } else {
+          workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o)
+        }
+      } else if (p > 0) {
+        workerIdOptimized(nodeAssignmentId = p, nodeBalanceId = p)
+      } else {
+        // Root, put it on the last node, so it does not collide with the node which has the coordinator, when there are multiple nodes.
+        // Put it on the second worker there.
+        workerIdOptimized(nodeAssignmentId = numberOfNodes - 1, nodeBalanceId = 1)
+      }
     }
   }
 
