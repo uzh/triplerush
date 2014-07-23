@@ -23,7 +23,7 @@ import com.signalcollect.interfaces.VertexStore
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import scala.util.hashing.MurmurHash3._
 
-// A special adaptation of LongHashMap[Vertex[Long, _]].
+// A special adaptation of LongHashMap[Vertex[Long, _, Long, Any]].
 // We allow arbitrary types for the vertex id to make
 // the usage of the framework simple.
 // This unfortunately means that we cannot use the id
@@ -35,13 +35,13 @@ import scala.util.hashing.MurmurHash3._
 // matches indeed (and not just the hash of the vertex id).
 class TripleRushVertexMap(
   initialSize: Int = 32768,
-  rehashFraction: Float = 0.75f) extends VertexStore[Long] {
+  rehashFraction: Float = 0.75f) extends VertexStore[Long, Any] {
   assert(initialSize > 0)
   final var maxSize = nextPowerOfTwo(initialSize)
   assert(1.0f >= rehashFraction && rehashFraction > 0.1f, "Unreasonable rehash fraction.")
   assert(maxSize > 0 && maxSize >= initialSize, "Initial size is too large.")
   private[this] final var maxElements: Int = (rehashFraction * maxSize).floor.toInt
-  private[this] final var values = new Array[Vertex[Long, _]](maxSize)
+  private[this] final var values = new Array[Vertex[Long, _, Long, Any]](maxSize)
   private[this] final var keys = new Array[Long](maxSize) // 0 means empty
   private[this] final var mask = maxSize - 1
   private[this] final var nextPositionToProcess = 0
@@ -50,8 +50,8 @@ class TripleRushVertexMap(
   final def isEmpty: Boolean = numberOfElements == 0
   private[this] final var numberOfElements = 0
 
-  def stream: Stream[Vertex[Long, _]] = {
-    def remainder(i: Int, elementsProcessed: Int): Stream[Vertex[Long, _]] = {
+  def stream: Stream[Vertex[Long, _, Long, Any]] = {
+    def remainder(i: Int, elementsProcessed: Int): Stream[Vertex[Long, _, Long, Any]] = {
       if (elementsProcessed == numberOfElements) {
         Stream.empty
       } else {
@@ -69,13 +69,13 @@ class TripleRushVertexMap(
   }
 
   final def clear {
-    values = new Array[Vertex[Long, _]](maxSize)
+    values = new Array[Vertex[Long, _, Long, Any]](maxSize)
     keys = new Array[Long](maxSize)
     numberOfElements = 0
     nextPositionToProcess = 0
   }
 
-  final def foreach(f: Vertex[Long, _] => Unit) {
+  final def foreach(f: Vertex[Long, _, Long, Any] => Unit) {
     var i = 0
     var elementsProcessed = 0
     while (elementsProcessed < numberOfElements) {
@@ -89,7 +89,7 @@ class TripleRushVertexMap(
   }
 
   // Removes the vertices after they have been processed.
-  final def process(p: Vertex[Long, _] => Unit, numberOfVertices: Option[Int] = None): Int = {
+  final def process(p: Vertex[Long, _, Long, Any] => Unit, numberOfVertices: Option[Int] = None): Int = {
     val limit = math.min(numberOfElements, numberOfVertices.getOrElse(numberOfElements))
     var elementsProcessed = 0
     while (elementsProcessed < limit) {
@@ -110,7 +110,7 @@ class TripleRushVertexMap(
   }
 
   // Removes the vertices after they have been processed.
-  final def processWithCondition(p: Vertex[Long, _] => Unit, breakCondition: () => Boolean): Int = {
+  final def processWithCondition(p: Vertex[Long, _, Long, Any] => Unit, breakCondition: () => Boolean): Int = {
     val limit = numberOfElements
     var elementsProcessed = 0
     while (elementsProcessed < limit && !breakCondition()) {
@@ -139,7 +139,7 @@ class TripleRushVertexMap(
       val oldNumberOfElements = numberOfElements
       maxSize *= 2
       maxElements = (rehashFraction * maxSize).floor.toInt
-      values = new Array[Vertex[Long, _]](maxSize)
+      values = new Array[Vertex[Long, _, Long, Any]](maxSize)
       keys = new Array[Long](maxSize)
       mask = maxSize - 1
       numberOfElements = 0
@@ -206,7 +206,7 @@ class TripleRushVertexMap(
     }
   }
 
-  final def get(vertexId: Long): Vertex[Long, _] = {
+  final def get(vertexId: Long): Vertex[Long, _, Long, Any] = {
     var position = keyToPosition(vertexId)
     var keyAtPosition = keys(position)
     while (keyAtPosition != 0 && vertexId != keyAtPosition) {
@@ -221,12 +221,12 @@ class TripleRushVertexMap(
   }
 
   // Only put if no vertex with the same id is present. If a vertex was put, return true.
-  final def put(vertex: Vertex[Long, _]): Boolean = {
+  final def put(vertex: Vertex[Long, _, Long, Any]): Boolean = {
     val success = putWithKey(vertex.id, vertex)
     success
   }
 
-  private[this] final def putWithKey(key: Long, vertex: Vertex[Long, _]): Boolean = {
+  private[this] final def putWithKey(key: Long, vertex: Vertex[Long, _, Long, Any]): Boolean = {
     var position = keyToPosition(key)
     var keyAtPosition = keys(position)
     while (keyAtPosition != 0 && key != keyAtPosition) {

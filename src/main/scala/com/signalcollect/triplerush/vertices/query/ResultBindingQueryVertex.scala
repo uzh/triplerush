@@ -39,7 +39,7 @@ class ResultBindingQueryVertex(
    
   final val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
   
-  override final def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override final def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     state = new ArrayOfArraysTraversable
     super.afterInitialization(graphEditor)
   }

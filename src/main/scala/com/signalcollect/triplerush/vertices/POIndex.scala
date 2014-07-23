@@ -25,24 +25,25 @@ import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.SubjectCountSignal
+import com.signalcollect.util.SplayIntSet
 
 final class POIndex(id: Long) extends OptimizedIndexVertex(id)
-  with Binding {
+  with Binding[SplayIntSet] {
 
   @inline def bindIndividualQuery(childDelta: Int, query: Array[Int]): Array[Int] = {
     query.bind(childDelta, id.p, id.o)
   }
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     super.afterInitialization(graphEditor)
   }
 
-  override def onEdgeAdded(ge: GraphEditor[Any, Any]) {
+  override def onEdgeAdded(ge: GraphEditor[Long, Any]) {
     incrementParentIndexCardinalities(ge)
     updatePredicateSubjectCount(ge)
   }
 
-  def updatePredicateSubjectCount(ge: GraphEditor[Any, Any]) {
+  def updatePredicateSubjectCount(ge: GraphEditor[Long, Any]) {
     ge.sendSignal(SubjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0), None)
   }
 

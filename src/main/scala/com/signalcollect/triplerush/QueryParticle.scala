@@ -404,7 +404,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   /**
    *  Routing address for this query.
    */
-  def routingAddress: Any = {
+  def routingAddress: Long = {
     if (isResult) {
       QueryIds.embedQueryIdInLong(queryId)
     } else {

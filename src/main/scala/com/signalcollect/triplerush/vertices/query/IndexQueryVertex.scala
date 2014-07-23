@@ -29,15 +29,15 @@ import com.signalcollect.triplerush.vertices.BaseVertex
 
 final class IndexQueryVertex(
   val indexId: Long,
-  val resultPromise: Promise[Array[Int]]) extends BaseVertex[Long, Any, Nothing] {
+  val resultPromise: Promise[Array[Int]]) extends BaseVertex[Nothing] {
 
   val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     graphEditor.sendSignal(ChildIdRequest(id), indexId, None)
   }
 
-  override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
+  override def deliverSignal(signal: Any, sourceId: Option[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {
     signal match {
       case ChildIdReply(intSet) =>
         resultPromise.success(intSet)

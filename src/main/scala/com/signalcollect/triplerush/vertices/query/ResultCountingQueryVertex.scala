@@ -38,7 +38,7 @@ final class ResultCountingQueryVertex(
 
   val id = QueryIds.embedQueryIdInLong(QueryIds.nextCountQueryId)
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     state = 0
     super.afterInitialization(graphEditor)
   }

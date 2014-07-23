@@ -20,10 +20,10 @@
 
 package com.signalcollect.triplerush
 
-case class CardinalityRequest(forPattern: TriplePattern, requestor: Any)
+case class CardinalityRequest(forPattern: TriplePattern, requestor: Long)
 case class CardinalityReply(forPattern: TriplePattern, cardinality: Int)
 case class PredicateStatsReply(forPattern: TriplePattern, cardinality: Int, predicateStats: PredicateStats)
 case class ObjectCountSignal(count: Int)
 case class SubjectCountSignal(count: Int)
-case class ChildIdRequest(requestor: Any)
+case class ChildIdRequest(requestor: Long)
 case class ChildIdReply(ids: Array[Int])

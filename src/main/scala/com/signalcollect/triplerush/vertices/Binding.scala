@@ -26,25 +26,25 @@ import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.QueryIds
 
-trait Binding
-  extends IndexVertex
-  with ParentBuilding[Any, Any] {
+trait Binding[State]
+  extends IndexVertex[State]
+  with ParentBuilding[State] {
 
-  def onEdgeAdded(ge: GraphEditor[Any, Any])
+  def onEdgeAdded(ge: GraphEditor[Long, Any])
 
-  def incrementParentIndexCardinalities(ge: GraphEditor[Any, Any]) {
+  def incrementParentIndexCardinalities(ge: GraphEditor[Long, Any]) {
     for (parent <- id.parentIds) {
       ge.sendSignal(1, parent, None)
     }
   }
 
-  def decrementParentIndexCardinalities(ge: GraphEditor[Any, Any]) {
+  def decrementParentIndexCardinalities(ge: GraphEditor[Long, Any]) {
     for (parent <- id.parentIds) {
       ge.sendSignal(-1, parent, None)
     }
   }
 
-  override def addEdge(e: Edge[_], ge: GraphEditor[Any, Any]): Boolean = {
+  override def addEdge(e: Edge[Long], ge: GraphEditor[Long, Any]): Boolean = {
     val wasAdded = super.addEdge(e, ge)
     if (wasAdded) {
       onEdgeAdded(ge)
@@ -54,11 +54,11 @@ trait Binding
 
   def bindIndividualQuery(childDelta: Int, queryParticle: Array[Int]): Array[Int]
 
-  def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
+  def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]) {
     bindQueryToAllTriples(query, graphEditor)
   }
 
-  def bindQueryToAllTriples(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
+  def bindQueryToAllTriples(query: Array[Int], graphEditor: GraphEditor[Long, Any]) {
     if (!query.isBindingQuery &&
       query.numberOfPatterns == 1 &&
       query.isSimpleToBind) {
@@ -90,7 +90,7 @@ trait Binding
   def handleQueryBinding(
     childDelta: Int,
     query: Array[Int],
-    graphEditor: GraphEditor[Any, Any]) {
+    graphEditor: GraphEditor[Long, Any]) {
     val boundParticle = bindIndividualQuery(childDelta, query)
     if (boundParticle != null) {
       routeSuccessfullyBound(boundParticle, graphEditor)
@@ -103,7 +103,7 @@ trait Binding
 
   def routeSuccessfullyBound(
     boundParticle: Array[Int],
-    graphEditor: GraphEditor[Any, Any]) {
+    graphEditor: GraphEditor[Long, Any]) {
 
     if (boundParticle.isResult) {
       // Query successful, send to query vertex.

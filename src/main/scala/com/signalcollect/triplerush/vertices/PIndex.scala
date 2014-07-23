@@ -28,9 +28,10 @@ import com.signalcollect.triplerush.ObjectCountSignal
 import com.signalcollect.triplerush.PredicateStats
 import com.signalcollect.triplerush.PredicateStatsReply
 import com.signalcollect.triplerush.SubjectCountSignal
+import com.signalcollect.util.SplayIntSet
 
 final class PIndex(id: Long) extends CardinalityCountingIndex(id)
-  with Forwarding {
+  with Forwarding[SplayIntSet] {
 
   def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(childDelta, id.p, 0)
 
@@ -38,7 +39,7 @@ final class PIndex(id: Long) extends CardinalityCountingIndex(id)
   var maxObjectCount = 1
   var maxSubjectCount = 1
 
-  override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
+  override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]) {
     graphEditor.sendSignal(PredicateStatsReply(
       c.forPattern, cardinality,
       PredicateStats(edgeCount = edgeCount, objectCount = maxObjectCount, subjectCount = maxSubjectCount)), c.requestor, None)

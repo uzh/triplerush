@@ -24,42 +24,44 @@ import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.ChildIdReply
 import com.signalcollect.util.SearchableIntSet
 
+/**
+ * Stores the child delta array in the state.
+ */
 abstract class SearchableIndexVertex[SignalType, State](
-  id: Long) extends IndexVertex(id) {
+  id: Long) extends IndexVertex[Array[Int]](id) {
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     super.afterInitialization(graphEditor)
-    childDeltaArray = Array[Int]()
+    state = Array[Int]()
   }
 
-  def handleChildIdRequest(requestor: Any, graphEditor: GraphEditor[Any, Any]) {
-    graphEditor.sendSignal(ChildIdReply(childDeltaArray.toBuffer.toArray), requestor, None)
+  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
+    graphEditor.sendSignal(ChildIdReply(state.toBuffer.toArray), requestor, None)
   }
-
-  @transient var childDeltaArray: Array[Int] = _
 
   @inline def foreachChildDelta(f: Int => Unit) = {
     var i = 0
-    val l = childDeltaArray.length
+    val l = state.length
     while (i < l) {
-      f(childDeltaArray(i))
+      f(state(i))
       i += 1
     }
   }
 
   override def edgeCount = {
-    if (childDeltaArray != null) childDeltaArray.length else 0
+    if (state != null) state.length else 0
   }
 
-  def cardinality = childDeltaArray.length
+  def cardinality = state.length
 
-  def forechildDeltas: Traversable[Int] = childDeltaArray
+  def forechildDeltas: Traversable[Int] = state
 
   def addChildDelta(delta: Int): Boolean = {
-    val deltasBeforeInsert = childDeltaArray
-    childDeltaArray = new SearchableIntSet(childDeltaArray).insert(delta)
-    val wasInserted = deltasBeforeInsert != childDeltaArray
+    val deltasBeforeInsert = state
+    state = new SearchableIntSet(state).insert(delta)
+    val wasInserted = deltasBeforeInsert != state // Reference comparison, if a new array was allocated, then an insert happened.
     wasInserted
   }
 
 }
+

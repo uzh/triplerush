@@ -35,7 +35,7 @@ case object TripleRushEdgeAddedToNonExistentVertexHandlerFactory extends EdgeAdd
 }
 
 case object TripleRushEdgeAddedToNonExistentVertexHandler extends EdgeAddedToNonExistentVertexHandler[Long, Any] {
-  def handleImpossibleEdgeAddition(edge: Edge[Long], vertexId: Long): Option[Vertex[Long, _]] = {
+  def handleImpossibleEdgeAddition(edge: Edge[Long], vertexId: Long): Option[Vertex[Long, _, Long, Any]] = {
     val s = vertexId.s
     val p = vertexId.p
     val o = vertexId.o

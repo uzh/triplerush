@@ -29,8 +29,8 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
   "TripleMapper" should "assign triples with the same subject to the same node" in {
     check((subjectId: Int) => {
       (subjectId > 0) ==> {
-        val node1 = nodeId(m.getWorkerIdForVertexId(TriplePattern(subjectId, 2, 0).toEfficientIndexPattern))
-        val node2 = nodeId(m.getWorkerIdForVertexId(TriplePattern(subjectId, 0, 5).toEfficientIndexPattern))
+        val node1 = nodeId(m.getWorkerIdForVertexId(EfficientIndexPattern(subjectId, 2, 0)))
+        val node2 = nodeId(m.getWorkerIdForVertexId(EfficientIndexPattern(subjectId, 0, 5)))
         node1 == node2
       }
     }, minSuccessful(100))
@@ -39,8 +39,8 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
   it should "assign triples that share subject/object to the same node, if the one with the object has no subject set" in {
     check((id: Int) => {
       (id > 0) ==> {
-        val node1 = nodeId(m.getWorkerIdForVertexId(TriplePattern(id, 2, 0).toEfficientIndexPattern))
-        val node2 = nodeId(m.getWorkerIdForVertexId(TriplePattern(0, 5, id).toEfficientIndexPattern))
+        val node1 = nodeId(m.getWorkerIdForVertexId(EfficientIndexPattern(id, 2, 0)))
+        val node2 = nodeId(m.getWorkerIdForVertexId(EfficientIndexPattern(0, 5, id)))
         node1 == node2
       }
     }, minSuccessful(100))
@@ -49,8 +49,8 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
   it should "usually assign triples that share subject/object to different workers on the same node, if their predicates are different" in {
     check((id: Int) => {
       (id > 0) ==> {
-        val w1 = workerId(m.getWorkerIdForVertexId(TriplePattern(id, 2, 0).toEfficientIndexPattern))
-        val w2 = workerId(m.getWorkerIdForVertexId(TriplePattern(0, 5, id).toEfficientIndexPattern))
+        val w1 = workerId(m.getWorkerIdForVertexId(EfficientIndexPattern(id, 2, 0)))
+        val w2 = workerId(m.getWorkerIdForVertexId(EfficientIndexPattern(0, 5, id)))
         w1 != w2
       }
     }, minSuccessful(100))
@@ -61,9 +61,9 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
    * on the same node.
    */
   it should "not assign all the small ids to the same node" in {
-    val node1 = nodeId(m.getWorkerIdForVertexId(TriplePattern(1, 2, 0).toEfficientIndexPattern))
-    val node2 = nodeId(m.getWorkerIdForVertexId(TriplePattern(2, 5, 0).toEfficientIndexPattern))
-    val node3 = nodeId(m.getWorkerIdForVertexId(TriplePattern(3, 5, 0).toEfficientIndexPattern))
+    val node1 = nodeId(m.getWorkerIdForVertexId(EfficientIndexPattern(1, 2, 0)))
+    val node2 = nodeId(m.getWorkerIdForVertexId(EfficientIndexPattern(2, 5, 0)))
+    val node3 = nodeId(m.getWorkerIdForVertexId(EfficientIndexPattern(3, 5, 0)))
     node1 != node2
     node2 != node3
     node1 != node3
@@ -71,8 +71,8 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
 
   it should "always assign queries to node 0" in {
     check((queryVertexId: Int) => {
-      if (queryVertexId != 0) {
-        val queryWorkerId = m.getWorkerIdForVertexId(queryVertexId)
+      if (queryVertexId != 0 && queryVertexId != Int.MinValue) {
+        val queryWorkerId = m.getWorkerIdForVertexId(QueryIds.embedQueryIdInLong(queryVertexId))
         val node = nodeId(queryWorkerId)
         node == 0
       } else {

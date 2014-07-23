@@ -24,7 +24,7 @@ import com.signalcollect.interfaces.AggregationOperation
 import com.signalcollect.Vertex
 
 case class EdgesPerIndexType() extends AggregationOperation[Map[String, Int]] {
-  def extract(v: Vertex[_, _]): Map[String, Int] = {
+  def extract(v: Vertex[_, _, _, _]): Map[String, Int] = {
     Map(v.getClass.toString -> v.edgeCount).withDefaultValue(0)
   }
   def reduce(elements: Stream[Map[String, Int]]): Map[String, Int] = {
@@ -38,7 +38,7 @@ case class EdgesPerIndexType() extends AggregationOperation[Map[String, Int]] {
 }
 
 case class CountVerticesByType() extends AggregationOperation[Map[String, Int]] {
-  def extract(v: Vertex[_, _]): Map[String, Int] = {
+  def extract(v: Vertex[_, _, _, _]): Map[String, Int] = {
     Map(v.getClass.toString -> 1).withDefaultValue(0)
   }
   def reduce(elements: Stream[Map[String, Int]]): Map[String, Int] = {

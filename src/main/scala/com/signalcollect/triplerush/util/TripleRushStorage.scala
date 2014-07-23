@@ -21,7 +21,7 @@ package com.signalcollect.triplerush.util
 
 import com.signalcollect.interfaces._
 
-object TripleRushStorage extends StorageFactory[Long] {
-  def createInstance: Storage[Long] = new TripleRushVertexMapStorage
+object TripleRushStorage extends StorageFactory[Long, Any] {
+  def createInstance: Storage[Long, Any] = new TripleRushVertexMapStorage
   override def toString = "MemoryEfficientStorage"
 }

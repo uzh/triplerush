@@ -27,9 +27,9 @@ import com.signalcollect.triplerush.PlaceholderEdge
 /**
  * Basic vertex that recursively builds the TripleRush index structure.
  */
-trait ParentBuilding[Signal, State] extends BaseVertex[Long, Signal, State] {
+trait ParentBuilding[State] extends BaseVertex[State] {
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     // Build the hierarchical index on initialization.
     id.parentIds foreach { parentId =>
       val idDelta = id.parentIdDelta(parentId)

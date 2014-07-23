@@ -24,11 +24,11 @@ import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.QueryIds
 
-trait Forwarding extends IndexVertex {
+trait Forwarding[State] extends IndexVertex[State] {
 
   def nextRoutingAddress(childDelta: Int): Long
 
-  override def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
+  override def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]) {
     if (!query.isBindingQuery &&
       query.numberOfPatterns == 1 &&
       query.isSimpleToBind &&

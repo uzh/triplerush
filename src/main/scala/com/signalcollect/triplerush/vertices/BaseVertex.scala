@@ -25,8 +25,8 @@ import com.signalcollect._
 /**
  * Base implementation for all TripleRush vertices.
  */
-abstract class BaseVertex[Id, SignalType, State]
-  extends Vertex[Id, State] {
+abstract class BaseVertex[State]
+  extends Vertex[Long, State, Long, Any] {
 
   @transient var state: State = _
 
@@ -37,12 +37,12 @@ abstract class BaseVertex[Id, SignalType, State]
   override def scoreCollect = 0
   override def scoreSignal = 0
   override def toString = s"${this.getClass.getName}(id=$id)"
-  override def executeSignalOperation(graphEditor: GraphEditor[Any, Any]) = throw new Exception("Should not be called, signals on delivery.")
-  override def executeCollectOperation(graphEditor: GraphEditor[Any, Any]) = throw new Exception("Should not be called, collects and signals on delivery.")
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {}
-  override def beforeRemoval(graphEditor: GraphEditor[Any, Any]) = {}
+  override def executeSignalOperation(graphEditor: GraphEditor[Long, Any]) = throw new Exception("Should not be called, signals on delivery.")
+  override def executeCollectOperation(graphEditor: GraphEditor[Long, Any]) = throw new Exception("Should not be called, collects and signals on delivery.")
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {}
+  override def beforeRemoval(graphEditor: GraphEditor[Long, Any]) = {}
   override def edgeCount = 0
-  override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
-  override def removeEdge(targetId: Any, graphEditor: GraphEditor[Any, Any]): Boolean = throw new UnsupportedOperationException
-  override def removeAllEdges(graphEditor: GraphEditor[Any, Any]): Int = 0
+  override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = throw new UnsupportedOperationException
+  override def removeEdge(targetId: Long, graphEditor: GraphEditor[Long, Any]): Boolean = throw new UnsupportedOperationException
+  override def removeAllEdges(graphEditor: GraphEditor[Long, Any]): Int = 0
 }

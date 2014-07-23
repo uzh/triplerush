@@ -25,31 +25,32 @@ import com.signalcollect.triplerush.ChildIdReply
 import com.signalcollect.triplerush.util.MemoryEfficientSplayIntSet
 import com.signalcollect.util.SplayIntSet
 
+/**
+ * Stores the SplayIntSet with the optimized child deltas in the state.
+ */
 abstract class OptimizedIndexVertex(
-  id: Long) extends IndexVertex(id) {
+  id: Long) extends IndexVertex[SplayIntSet](id) {
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     super.afterInitialization(graphEditor)
-    optimizedChildDeltas = new MemoryEfficientSplayIntSet
+    state = new MemoryEfficientSplayIntSet
   }
 
-  @transient var optimizedChildDeltas: SplayIntSet = _
-
-  def handleChildIdRequest(requestor: Any, graphEditor: GraphEditor[Any, Any]) {
-    graphEditor.sendSignal(ChildIdReply(optimizedChildDeltas.toBuffer.toArray), requestor, None)
+  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
+    graphEditor.sendSignal(ChildIdReply(state.toBuffer.toArray), requestor, None)
   }
 
   override def edgeCount = {
-    if (optimizedChildDeltas != null) optimizedChildDeltas.size else 0
+    if (state != null) state.size else 0
   }
   
-  def cardinality = optimizedChildDeltas.size
+  def cardinality = state.size
 
-  @inline def foreachChildDelta(f: Int => Unit) = optimizedChildDeltas.foreach(f)
+  @inline def foreachChildDelta(f: Int => Unit) = state.foreach(f)
 
   def addChildDelta(delta: Int): Boolean = {
-    val deltasBeforeInsert = optimizedChildDeltas
-    val wasInserted = optimizedChildDeltas.insert(delta)
+    val deltasBeforeInsert = state
+    val wasInserted = state.insert(delta)
     wasInserted
   }
 
