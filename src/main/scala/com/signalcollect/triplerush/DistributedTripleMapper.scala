@@ -23,6 +23,7 @@ package com.signalcollect.triplerush
 import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.interfaces.MapperFactory
 import com.signalcollect.triplerush.EfficientIndexPattern._
+import scala.util.hashing.MurmurHash3._
 
 class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
   val numberOfWorkers = numberOfNodes * workersPerNode
@@ -52,16 +53,17 @@ class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
           0
         }
       }
+      val loadBalanceId = finalizeHash(mix(first, second), 3) & Int.MaxValue
       if (s > 0) {
-        workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + p + o)
+        workerIdOptimized(nodeAssignmentId = s, nodeLoadBalanceId = loadBalanceId)
       } else if (o > 0) {
-        workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o + p)
+        workerIdOptimized(nodeAssignmentId = o, nodeLoadBalanceId = loadBalanceId)
       } else if (p > 0) {
-        workerIdOptimized(nodeAssignmentId = p, nodeBalanceId = p)
+        workerIdOptimized(nodeAssignmentId = p, nodeLoadBalanceId = loadBalanceId)
       } else {
         // Root, put it on the last node, so it does not collide with the node which has the coordinator, when there are multiple nodes.
         // Put it on the second worker there.
-        workerIdOptimized(nodeAssignmentId = numberOfNodes - 1, nodeBalanceId = 1)
+        workerIdOptimized(nodeAssignmentId = numberOfNodes - 1, nodeLoadBalanceId = 1)
       }
     }
   }
@@ -70,9 +72,9 @@ class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
    * Asserts that both nodeAssignmentId and nodeBalanceId
    * are larger than or equal to zero.
    */
-  def workerIdOptimized(nodeAssignmentId: Int, nodeBalanceId: Int): Int = {
+  def workerIdOptimized(nodeAssignmentId: Int, nodeLoadBalanceId: Int): Int = {
     val nodeId = nodeAssignmentId % numberOfNodes
-    val workerOnNode = nodeBalanceId % workersPerNode
+    val workerOnNode = nodeLoadBalanceId % workersPerNode
     nodeId * workersPerNode + workerOnNode
   }
 
