@@ -250,7 +250,7 @@ class TripleRushVertexMap(
   }
 
   private[this] final def keyToPosition(efficientIndexPattern: Long): Int = {
-    val triplePatternHash = finalizeHash(mixLast(efficientIndexPattern.extractFirst, efficientIndexPattern.extractSecond), 3)
+    val triplePatternHash = finalizeHash(mixLast(efficientIndexPattern.extractFirst, efficientIndexPattern.extractSecond), 7)
     triplePatternHash & mask
   }
 

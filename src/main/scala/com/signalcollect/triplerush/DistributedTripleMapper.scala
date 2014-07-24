@@ -53,7 +53,7 @@ class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
           0
         }
       }
-      val loadBalanceId = finalizeHash(mix(first, second), 3) & Int.MaxValue
+      val loadBalanceId = finalizeHash(mixLast(first, second), 3) & Int.MaxValue
       if (s > 0) {
         workerIdOptimized(nodeAssignmentId = s, nodeLoadBalanceId = loadBalanceId)
       } else if (o > 0) {

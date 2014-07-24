@@ -32,7 +32,7 @@ class SingleNodeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) ex
   def getWorkerIdForVertexId(vertexId: Long): Int = {
     val first = vertexId.extractFirst
     val second = vertexId.extractSecond
-    (finalizeHash(mix(first, second), 3) & Int.MaxValue) % numberOfWorkers
+    (finalizeHash(mixLast(first, second), 3) & Int.MaxValue) % numberOfWorkers
   }
 
   def getWorkerIdForVertexIdHash(vertexIdHash: Int): Int = throw new UnsupportedOperationException("This mapper does not support mapping by vertex hash.")
