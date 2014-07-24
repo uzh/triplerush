@@ -40,6 +40,22 @@ import com.signalcollect.interfaces.BulkSignal
 import com.signalcollect.interfaces.BulkSignalNoSourceIds
 import com.signalcollect.interfaces.SignalMessageWithoutSourceId
 
+class SignalBulkerWithoutIds[@specialized(Long) Id: ClassTag, Signal: ClassTag](size: Int) {
+  private var itemCount = 0
+  def numberOfItems = itemCount
+  def isFull: Boolean = itemCount == size
+  final val targetIds = new Array[Id](size)
+  final val signals = new Array[Signal](size)
+  def addSignal(signal: Signal, targetId: Id) {
+    signals(itemCount) = signal
+    targetIds(itemCount) = targetId
+    itemCount += 1
+  }
+  def clear {
+    itemCount = 0
+  }
+}
+
 class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, withSourceIds: Boolean)
   extends MessageBusFactory[Long, Signal] {
   def createInstance(
@@ -126,7 +142,7 @@ final class CombiningMessageBus[Signal: ClassTag](
     blocking: Boolean = false) {
     val workerId = mapper.getWorkerIdForVertexId(targetId)
     val bulker = outgoingMessages(workerId)
-    bulker.addSignal(signal, targetId, None)
+    bulker.addSignal(signal, targetId)
     pendingSignals += 1
     if (bulker.isFull) {
       pendingSignals -= bulker.numberOfItems
@@ -216,9 +232,9 @@ final class CombiningMessageBus[Signal: ClassTag](
 
   protected var pendingSignals = 0
 
-  val outgoingMessages: Array[SignalBulker[Long, Signal]] = new Array[SignalBulker[Long, Signal]](numberOfWorkers)
+  val outgoingMessages: Array[SignalBulkerWithoutIds[Long, Signal]] = new Array[SignalBulkerWithoutIds[Long, Signal]](numberOfWorkers)
   for (i <- 0 until numberOfWorkers) {
-    outgoingMessages(i) = new SignalBulker[Long, Signal](flushThreshold)
+    outgoingMessages(i) = new SignalBulkerWithoutIds[Long, Signal](flushThreshold)
   }
 
 }
