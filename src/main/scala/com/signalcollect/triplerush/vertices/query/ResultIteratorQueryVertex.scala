@@ -51,7 +51,8 @@ class ResultIteratorQueryVertex(
   override final def reportResults {
     if (!resultsReported) {
       super.reportResults
-      state.close
+      // Empty array implicitly signals that there are no more results.
+      state.add(Array[Array[Int]]())
     }
   }
 
