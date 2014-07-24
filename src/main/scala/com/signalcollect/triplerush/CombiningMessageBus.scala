@@ -27,7 +27,6 @@ import com.signalcollect.messaging.AbstractMessageBus
 import scala.reflect.ClassTag
 import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.messaging.BulkMessageBus
-import com.signalcollect.interfaces.SignalMessage
 import com.signalcollect.interfaces.MessageBusFactory
 import QueryParticle._
 import scala.collection.mutable.ArrayBuffer
@@ -39,6 +38,7 @@ import com.signalcollect.util.IntIntHashMap
 import akka.actor.ActorSystem
 import com.signalcollect.interfaces.BulkSignal
 import com.signalcollect.interfaces.BulkSignalNoSourceIds
+import com.signalcollect.interfaces.SignalMessageWithoutSourceId
 
 class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, withSourceIds: Boolean)
   extends MessageBusFactory[Long, Signal] {
@@ -55,7 +55,6 @@ class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, withSour
       numberOfNodes,
       mapper.asInstanceOf[VertexToWorkerMapper[Long]],
       flushThreshold,
-      withSourceIds,
       sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
       workerApiFactory)
   }
@@ -71,7 +70,6 @@ final class CombiningMessageBus[Signal: ClassTag](
   val numberOfNodes: Int,
   val mapper: VertexToWorkerMapper[Long],
   val flushThreshold: Int,
-  val withSourceIds: Boolean,
   val sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
   val workerApiFactory: WorkerApiFactory[Long, Signal])
   extends AbstractMessageBus[Long, Signal] {
@@ -84,15 +82,6 @@ final class CombiningMessageBus[Signal: ClassTag](
   val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
   override def sendSignal(signal: Signal, targetId: Long, sourceId: Option[Long]) {
-    sendSignal(signal, targetId, sourceId, false)
-  }
-
-  // Ignores blocking.
-  @inline override def sendSignal(
-    signal: Signal,
-    targetId: Long,
-    sourceId: Option[Long],
-    blocking: Boolean = false) {
     // If message is sent to a Query Vertex 
     if (targetId.isQueryId) {
       val extractedQueryId = QueryIds.extractQueryIdFromLong(targetId)
@@ -126,6 +115,10 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
+  override def sendSignal(signal: Signal, targetId: Long, sourceId: Option[Long], blocking: Boolean = false) {
+    throw new Exception("Non-optimized messaging path for TripleRush, this should never be called.")
+  }
+
   def bulkSend(
     signal: Signal,
     targetId: Long,
@@ -133,19 +126,11 @@ final class CombiningMessageBus[Signal: ClassTag](
     blocking: Boolean = false) {
     val workerId = mapper.getWorkerIdForVertexId(targetId)
     val bulker = outgoingMessages(workerId)
-    if (withSourceIds) {
-      bulker.addSignal(signal, targetId, sourceId)
-    } else {
-      bulker.addSignal(signal, targetId, None)
-    }
+    bulker.addSignal(signal, targetId, None)
     pendingSignals += 1
     if (bulker.isFull) {
       pendingSignals -= bulker.numberOfItems
-      if (withSourceIds) {
-        super.sendToWorker(workerId, BulkSignal[Long, Signal](bulker.signals.clone, bulker.targetIds.clone, bulker.sourceIds.clone))
-      } else {
-        super.sendToWorker(workerId, BulkSignalNoSourceIds[Long, Signal](bulker.signals.clone, bulker.targetIds.clone))
-      }
+      sendToWorker(workerId, BulkSignalNoSourceIds[Long, Signal](bulker.signals.clone, bulker.targetIds.clone))
       bulker.clear
     }
   }
@@ -172,25 +157,28 @@ final class CombiningMessageBus[Signal: ClassTag](
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
       aggregatedResults.foreach { (queryVertexId, results) =>
-        super.sendSignal(results.toArray.asInstanceOf[Signal], QueryIds.embedQueryIdInLong(queryVertexId), null, false)
+        val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
+        sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, results.toArray), targetId)
       }
       aggregatedResults.clear
     }
     if (!aggregatedResultCounts.isEmpty) {
       aggregatedResultCounts.foreach { (queryVertexId, resultCount) =>
-        super.sendSignal(resultCount.asInstanceOf[Signal], QueryIds.embedQueryIdInLong(queryVertexId), null, false)
+        val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
+        sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, resultCount), targetId)
       }
       aggregatedResultCounts.clear
     }
     if (!aggregatedTickets.isEmpty) {
       aggregatedTickets.foreach { (queryVertexId, tickets) =>
-        super.sendSignal(tickets.asInstanceOf[Signal], QueryIds.embedQueryIdInLong(queryVertexId), null, false)
+        val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
+        sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, tickets), targetId)
       }
       aggregatedTickets.clear
     }
     if (!aggregatedCardinalities.isEmpty) {
       aggregatedCardinalities.foreach { (targetId, cardinalityIncrement) =>
-        super.sendSignal(cardinalityIncrement.asInstanceOf[Signal], targetId, null, false)
+        sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, cardinalityIncrement), targetId)
       }
       aggregatedCardinalities.clear
     }
@@ -204,18 +192,9 @@ final class CombiningMessageBus[Signal: ClassTag](
           System.arraycopy(bulker.signals, 0, signalsCopy, 0, signalCount)
           val targetIdsCopy = new Array[Long](signalCount)
           System.arraycopy(bulker.targetIds, 0, targetIdsCopy, 0, signalCount)
-          if (withSourceIds) {
-            val sourceIdsCopy = new Array[Long](signalCount)
-            System.arraycopy(bulker.sourceIds, 0, sourceIdsCopy, 0, signalCount)
-            super.sendToWorker(workerId, BulkSignal[Long, Signal](
-              signalsCopy,
-              targetIdsCopy,
-              sourceIdsCopy))
-          } else {
-            super.sendToWorker(workerId, BulkSignalNoSourceIds[Long, Signal](
-              signalsCopy,
-              targetIdsCopy))
-          }
+          sendToWorker(workerId, BulkSignalNoSourceIds[Long, Signal](
+            signalsCopy,
+            targetIdsCopy))
           outgoingMessages(workerId).clear
         }
         workerId += 1

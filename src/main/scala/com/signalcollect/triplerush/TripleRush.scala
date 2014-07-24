@@ -100,7 +100,8 @@ case class TripleRush(
       "com.signalcollect.factory.scheduler.Throughput$mcJ$sp",
       "com.signalcollect.triplerush.TripleRushUndeliverableSignalHandlerFactory$",
       "com.signalcollect.triplerush.util.TripleRushWorkerFactory",
-      "com.signalcollect.interfaces.BulkSignalNoSourceIds$mcJ$sp")).build
+      "com.signalcollect.interfaces.BulkSignalNoSourceIds$mcJ$sp",
+      "com.signalcollect.interfaces.SignalMessageWithoutSourceId$mcJ$sp")).build
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
