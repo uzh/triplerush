@@ -56,7 +56,26 @@ class SignalBulkerWithoutIds[@specialized(Long) Id: ClassTag, Signal: ClassTag](
   }
 }
 
-class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, withSourceIds: Boolean)
+class ResultBulker(val size: Int) {
+  private var itemCount = 0
+  def numberOfItems = itemCount
+  def isFull: Boolean = itemCount == size
+  private final val results = new Array[Array[Int]](size)
+  def addResult(result: Array[Int]) {
+    results(itemCount) = result
+    itemCount += 1
+  }
+  def clear {
+    itemCount = 0
+  }
+  def getResultArray: Array[Array[Int]] = {
+    val resultsCopy = new Array[Array[Int]](itemCount)
+    System.arraycopy(results, 0, resultsCopy, 0, itemCount)
+    resultsCopy
+  }
+}
+
+class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, resultBulkerSize: Int)
   extends MessageBusFactory[Long, Signal] {
   def createInstance(
     system: ActorSystem,
@@ -71,6 +90,7 @@ class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, withSour
       numberOfNodes,
       mapper.asInstanceOf[VertexToWorkerMapper[Long]],
       flushThreshold,
+      resultBulkerSize,
       sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
       workerApiFactory)
   }
@@ -86,6 +106,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   val numberOfNodes: Int,
   val mapper: VertexToWorkerMapper[Long],
   val flushThreshold: Int,
+  val resultBulkerSize: Int,
   val sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
   val workerApiFactory: WorkerApiFactory[Long, Signal])
   extends AbstractMessageBus[Long, Signal] {
@@ -93,7 +114,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   lazy val workerApi = workerApiFactory.createInstance(workerProxies, mapper)
 
   val aggregatedTickets = new IntLongHashMap(initialSize = 8)
-  val aggregatedResults = new IntHashMap[ArrayBuffer[Array[Int]]](initialSize = 8)
+  val aggregatedResults = new IntHashMap[ResultBulker](initialSize = 8)
   val aggregatedCardinalities = new TriplePatternIntHashMap(initialSize = 8)
   val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
@@ -112,10 +133,16 @@ final class CombiningMessageBus[Signal: ClassTag](
           val bindings = result.bindings
           handleTickets(result.tickets, extractedQueryId)
           if (oldResults != null) {
-            oldResults.append(bindings)
+            oldResults.addResult(bindings)
+            if (oldResults.isFull) {
+              val targetId = QueryIds.embedQueryIdInLong(extractedQueryId)
+              sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, oldResults.getResultArray), targetId)
+              oldResults.clear
+            }
           } else {
-            val newBuffer = ArrayBuffer(bindings)
-            aggregatedResults(extractedQueryId) = newBuffer
+            val newBulker = new ResultBulker(resultBulkerSize)
+            newBulker.addResult(bindings)
+            aggregatedResults(extractedQueryId) = newBulker
           }
         case other =>
           bulkSend(signal, targetId)
@@ -126,7 +153,6 @@ final class CombiningMessageBus[Signal: ClassTag](
       val oldCardinalities = aggregatedCardinalities(t)
       aggregatedCardinalities(t) = oldCardinalities + signal.asInstanceOf[Int]
     } else {
-      // TODO: Also improve efficiency of sending non-result particles. Compression?
       bulkSend(signal, targetId)
     }
   }
@@ -171,8 +197,10 @@ final class CombiningMessageBus[Signal: ClassTag](
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
       aggregatedResults.foreach { (queryVertexId, results) =>
-        val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
-        sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, results.toArray), targetId)
+        if (results.numberOfItems > 0) {
+          val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
+          sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, results.getResultArray), targetId)
+        }
       }
       aggregatedResults.clear
     }

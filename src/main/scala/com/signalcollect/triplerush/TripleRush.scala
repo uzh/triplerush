@@ -57,7 +57,7 @@ case class TripleRush(
   var canExecute = false
 
   val graph = graphBuilder.withConsole(console).
-    withMessageBusFactory(new CombiningMessageBusFactory(8096, false)).
+    withMessageBusFactory(new CombiningMessageBusFactory(8096, 1024)).
     withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
     withEdgeAddedToNonExistentVertexHandlerFactory(TripleRushEdgeAddedToNonExistentVertexHandlerFactory).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
