@@ -69,7 +69,22 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
     id < 0 && id.toInt < 0
   }
 
-  @inline def toTriplePattern = TriplePattern(s, p, o)
+  @inline def toTriplePattern: TriplePattern = {
+    val first = extractFirst
+    val second = extractSecond
+    val s = math.max(0, first)
+    val o = math.max(0, second)
+    val p = if (first < 0) {
+      first & Int.MaxValue
+    } else {
+      if (second < 0) { // second < 0
+        second & Int.MaxValue
+      } else {
+        0
+      }
+    }
+    TriplePattern(s, p, o)
+  }
 
   @inline def parentIds: List[Long] = {
     toTriplePattern.parentPatterns.map(_.toEfficientIndexPattern)
@@ -92,22 +107,9 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
 
   @inline def extractSecond = (id >> 32).toInt
 
-  @inline def s = {
-    val first = extractFirst
-    if (first < 0) {
-      0
-    } else {
-      first
-    }
-  }
+  @inline def s = math.max(0, extractFirst)
 
-  @inline def o = {
-    if (id < 0) { // second < 0
-      0
-    } else {
-      extractSecond
-    }
-  }
+  @inline def o = math.max(0, extractSecond)
 
   @inline def p = {
     val first = extractFirst
