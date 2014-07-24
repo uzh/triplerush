@@ -55,7 +55,7 @@ abstract class IndexVertex[State](val id: Long)
    */
   def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]) {
     graphEditor.sendSignal(CardinalityReply(
-      c.forPattern, cardinality), c.requestor, None)
+      c.forPattern, cardinality), c.requestor)
   }
 
   override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {

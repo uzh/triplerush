@@ -37,9 +37,9 @@ case object TripleRushUndeliverableSignalHandler extends UndeliverableSignalHand
     signal match {
       case queryParticle: Array[Int] =>
         val queryVertexId = QueryIds.embedQueryIdInLong(queryParticle.queryId)
-        graphEditor.sendSignal(queryParticle.tickets, queryVertexId, None)
+        graphEditor.sendSignal(queryParticle.tickets, queryVertexId)
       case CardinalityRequest(forPattern: TriplePattern, requestor: Long) =>
-        graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor, None)
+        graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor)
       case ChildIdRequest =>
         graphEditor.sendSignal(ChildIdReply(Array()), senderId.get, Some(inexistentTargetId))
       case s: SubjectCountSignal =>

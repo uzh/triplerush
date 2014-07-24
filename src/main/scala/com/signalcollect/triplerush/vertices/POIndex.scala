@@ -44,7 +44,7 @@ final class POIndex(id: Long) extends OptimizedIndexVertex(id)
   }
 
   def updatePredicateSubjectCount(ge: GraphEditor[Long, Any]) {
-    ge.sendSignal(SubjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0), None)
+    ge.sendSignal(SubjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0))
   }
 
 }

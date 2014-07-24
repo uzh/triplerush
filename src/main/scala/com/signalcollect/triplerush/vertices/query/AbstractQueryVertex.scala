@@ -71,7 +71,7 @@ abstract class AbstractQueryVertex[StateType](
           numberOfSelectVariables = numberOfSelectVariables,
           tickets = tickets)
         dispatchedQuery = Some(particle)
-        graphEditor.sendSignal(particle, particle.routingAddress, None)
+        graphEditor.sendSignal(particle, particle.routingAddress)
       } else {
         dispatchedQuery = None
         // All stats processed, but no results, we can safely remove the query vertex now.
@@ -90,7 +90,7 @@ abstract class AbstractQueryVertex[StateType](
     } else {
       val responsibleIndexId = patternWithWildcards.routingAddress
       // Sending cardinality request to responsible Index.
-      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId, None)
+      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId)
     }
   }
 
@@ -111,19 +111,19 @@ abstract class AbstractQueryVertex[StateType](
       // Need to gather predicate stats.
       requestedPredicateStats += pIndexForPattern
       handleCardinalityReply(triplePattern, fromCache.get)
-      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), EfficientIndexPattern(0, pIndexForPattern, 0), None)
+      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), EfficientIndexPattern(0, pIndexForPattern, 0))
     } else if (predicateStatsInCache) {
       // Need to gather cardinality stats.
       val responsibleIndexId = patternWithWildcards.routingAddress
-      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId, None)
+      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId)
     } else {
       // Need to gather all stats.
       val responsibleIndexId = patternWithWildcards.routingAddress
       val pIndex = TriplePattern(0, pIndexForPattern, 0)
-      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId, None)
+      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId)
       if (!requestedPredicateStats.contains(pIndexForPattern) && pIndex != responsibleIndexId) {
         requestedPredicateStats += pIndexForPattern
-        graphEditor.sendSignal(CardinalityRequest(triplePattern, id), pIndex.routingAddress, None)
+        graphEditor.sendSignal(CardinalityRequest(triplePattern, id), pIndex.routingAddress)
       }
     }
   }
@@ -188,8 +188,7 @@ abstract class AbstractQueryVertex[StateType](
       if (dispatchedQuery.isDefined) {
         graphEditor.sendSignal(
           dispatchedQuery.get,
-          dispatchedQuery.get.routingAddress,
-          None)
+          dispatchedQuery.get.routingAddress)
       } else {
         reportResultsAndRequestQueryVertexRemoval(graphEditor)
       }

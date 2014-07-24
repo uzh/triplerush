@@ -37,7 +37,7 @@ abstract class OptimizedIndexVertex(
   }
 
   def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
-    graphEditor.sendSignal(ChildIdReply(state.toBuffer.toArray), requestor, None)
+    graphEditor.sendSignal(ChildIdReply(state.toBuffer.toArray), requestor)
   }
 
   override def edgeCount = {

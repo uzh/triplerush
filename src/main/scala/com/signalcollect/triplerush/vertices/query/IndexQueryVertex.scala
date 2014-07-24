@@ -34,7 +34,7 @@ final class IndexQueryVertex(
   val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
-    graphEditor.sendSignal(ChildIdRequest(id), indexId, None)
+    graphEditor.sendSignal(ChildIdRequest(id), indexId)
   }
 
   override def deliverSignal(signal: Any, sourceId: Option[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {

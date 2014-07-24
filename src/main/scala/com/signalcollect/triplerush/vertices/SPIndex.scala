@@ -40,7 +40,7 @@ final class SPIndex(id: Long) extends OptimizedIndexVertex(id)
   }
 
   def updatePredicateObjectCount(ge: GraphEditor[Long, Any]) {
-    ge.sendSignal(ObjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0), None)
+    ge.sendSignal(ObjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0))
   }
 
 }

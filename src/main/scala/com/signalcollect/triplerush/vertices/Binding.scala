@@ -34,13 +34,13 @@ trait Binding[State]
 
   def incrementParentIndexCardinalities(ge: GraphEditor[Long, Any]) {
     for (parent <- id.parentIds) {
-      ge.sendSignal(1, parent, None)
+      ge.sendSignal(1, parent)
     }
   }
 
   def decrementParentIndexCardinalities(ge: GraphEditor[Long, Any]) {
     for (parent <- id.parentIds) {
-      ge.sendSignal(-1, parent, None)
+      ge.sendSignal(-1, parent)
     }
   }
 
@@ -65,8 +65,8 @@ trait Binding[State]
       // Take a shortcut and don't actually do the binding, just send the result count.
       // The isSimpleToBind check excludes complicated cases, where a binding might fail.
       val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
-      graphEditor.sendSignal(edgeCount, queryVertexId, None)
-      graphEditor.sendSignal(query.tickets, queryVertexId, None)
+      graphEditor.sendSignal(edgeCount, queryVertexId)
+      graphEditor.sendSignal(query.tickets, queryVertexId)
     } else {
       val edges = edgeCount
       val totalTickets = query.tickets
@@ -97,7 +97,7 @@ trait Binding[State]
     } else {
       // Failed to bind, send to query vertex.
       val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
-      graphEditor.sendSignal(query.tickets, queryVertexId, None)
+      graphEditor.sendSignal(query.tickets, queryVertexId)
     }
   }
 
@@ -109,13 +109,13 @@ trait Binding[State]
       // Query successful, send to query vertex.
       val queryVertexId = QueryIds.embedQueryIdInLong(boundParticle.queryId)
       if (boundParticle.isBindingQuery) {
-        graphEditor.sendSignal(boundParticle, queryVertexId, None)
+        graphEditor.sendSignal(boundParticle, queryVertexId)
       } else {
-        graphEditor.sendSignal(1, queryVertexId, None)
-        graphEditor.sendSignal(boundParticle.tickets, queryVertexId, None)
+        graphEditor.sendSignal(1, queryVertexId)
+        graphEditor.sendSignal(boundParticle.tickets, queryVertexId)
       }
     } else {
-      graphEditor.sendSignal(boundParticle, boundParticle.routingAddress, None)
+      graphEditor.sendSignal(boundParticle, boundParticle.routingAddress)
     }
   }
 

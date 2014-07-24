@@ -36,7 +36,7 @@ abstract class SearchableIndexVertex[SignalType, State](
   }
 
   def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
-    graphEditor.sendSignal(ChildIdReply(state.toBuffer.toArray), requestor, None)
+    graphEditor.sendSignal(ChildIdReply(state.toBuffer.toArray), requestor)
   }
 
   @inline def foreachChildDelta(f: Int => Unit) = {

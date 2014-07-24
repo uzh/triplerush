@@ -37,8 +37,8 @@ trait Forwarding[State] extends IndexVertex[State] {
       // Take a shortcut and don't actually do the forwarding, just send the cardinality.
       // The isSimpleToBind check excludes complicated cases, where a binding might fail.
       val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
-      graphEditor.sendSignal(cardinality, queryVertexId, None)
-      graphEditor.sendSignal(query.tickets, queryVertexId, None)
+      graphEditor.sendSignal(cardinality, queryVertexId)
+      graphEditor.sendSignal(query.tickets, queryVertexId)
     } else {
       val edges = edgeCount
       val totalTickets = query.tickets
@@ -51,9 +51,9 @@ trait Forwarding[State] extends IndexVertex[State] {
         val routingAddress = nextRoutingAddress(childDelta)
         if (extras > 0) {
           extras -= 1
-          graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress, None)
+          graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress)
         } else if (avg > 0) {
-          graphEditor.sendSignal(averageTicketQuery, routingAddress, None)
+          graphEditor.sendSignal(averageTicketQuery, routingAddress)
         }
       }
       foreachChildDelta(sendTo)

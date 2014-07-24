@@ -42,10 +42,10 @@ final class SOIndex(id: Long) extends SearchableIndexVertex(id)
       val exists = new SearchableIntSet(state).contains(pattern.p)
       if (exists) {
         graphEditor.sendSignal(
-          CardinalityReply(pattern, 1), c.requestor, None)
+          CardinalityReply(pattern, 1), c.requestor)
       } else {
         graphEditor.sendSignal(
-          CardinalityReply(pattern, 0), c.requestor, None)
+          CardinalityReply(pattern, 0), c.requestor)
       }
     } else {
       super.handleCardinalityRequest(c, graphEditor)
@@ -69,7 +69,7 @@ final class SOIndex(id: Long) extends SearchableIndexVertex(id)
       } else {
         // Failed query
         val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
-        graphEditor.sendSignal(query.tickets, queryVertexId, None)
+        graphEditor.sendSignal(query.tickets, queryVertexId)
       }
     } else {
       // We need to bind the next pattern to all targetIds.

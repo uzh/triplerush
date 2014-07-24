@@ -97,7 +97,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   val aggregatedCardinalities = new TriplePatternIntHashMap(initialSize = 8)
   val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
-  override def sendSignal(signal: Signal, targetId: Long, sourceId: Option[Long]) {
+  override def sendSignal(signal: Signal, targetId: Long) {
     // If message is sent to a Query Vertex 
     if (targetId.isQueryId) {
       val extractedQueryId = QueryIds.extractQueryIdFromLong(targetId)
@@ -118,7 +118,7 @@ final class CombiningMessageBus[Signal: ClassTag](
             aggregatedResults(extractedQueryId) = newBuffer
           }
         case other =>
-          bulkSend(signal, targetId, sourceId)
+          bulkSend(signal, targetId)
       }
     } // If message is sent to an Index Vertex
     else if (signal.isInstanceOf[Int]) {
@@ -127,19 +127,17 @@ final class CombiningMessageBus[Signal: ClassTag](
       aggregatedCardinalities(t) = oldCardinalities + signal.asInstanceOf[Int]
     } else {
       // TODO: Also improve efficiency of sending non-result particles. Compression?
-      bulkSend(signal, targetId, sourceId)
+      bulkSend(signal, targetId)
     }
   }
 
   override def sendSignal(signal: Signal, targetId: Long, sourceId: Option[Long], blocking: Boolean = false) {
-    throw new Exception("Non-optimized messaging path for TripleRush, this should never be called.")
+    throw new Exception(s"Non-optimized messaging for TripleRush, this should never be called: signal=$signal targetId=$targetId")
   }
 
   def bulkSend(
     signal: Signal,
-    targetId: Long,
-    sourceId: Option[Long],
-    blocking: Boolean = false) {
+    targetId: Long) {
     val workerId = mapper.getWorkerIdForVertexId(targetId)
     val bulker = outgoingMessages(workerId)
     bulker.addSignal(signal, targetId)
