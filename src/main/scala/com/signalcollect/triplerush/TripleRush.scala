@@ -46,6 +46,7 @@ import com.signalcollect.triplerush.sparql.VariableEncoding
 import com.signalcollect.triplerush.util.TripleRushStorage
 import com.signalcollect.GraphBuilder
 import com.signalcollect.triplerush.util.TripleRushWorkerFactory
+import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
@@ -60,7 +61,13 @@ case class TripleRush(
     withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
     withEdgeAddedToNonExistentVertexHandlerFactory(TripleRushEdgeAddedToNonExistentVertexHandlerFactory).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
-    withMapperFactory(TripleMapperFactory).
+    withMapperFactory({
+      if (graphBuilder.config.preallocatedNodes.isEmpty && graphBuilder.config.nodeProvisioner.isInstanceOf[LocalNodeProvisioner[_, _]]) {
+        SingleNodeTripleMapperFactory
+      } else {
+        DistributedTripleMapperFactory
+      }
+    }).
     withStorageFactory(TripleRushStorage).
     withWorkerFactory(new TripleRushWorkerFactory[Any]).
     withBlockingGraphModificationsSupport(false).
@@ -86,7 +93,8 @@ case class TripleRush(
       "Array[com.signalcollect.triplerush.TriplePattern]",
       "com.signalcollect.interfaces.AddEdge",
       "com.signalcollect.triplerush.CombiningMessageBusFactory",
-      "com.signalcollect.triplerush.TripleMapperFactory$",
+      "com.signalcollect.triplerush.SingleNodeTripleMapperFactory$",
+      "com.signalcollect.triplerush.DistributedTripleMapperFactory$",
       "com.signalcollect.triplerush.TripleRush$$anonfun$loadNtriples$1",
       "com.signalcollect.triplerush.PredicateStats",
       "com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex", // Only for local serialization test.

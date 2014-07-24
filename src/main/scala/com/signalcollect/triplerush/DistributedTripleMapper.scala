@@ -24,7 +24,7 @@ import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.interfaces.MapperFactory
 import com.signalcollect.triplerush.EfficientIndexPattern._
 
-class TripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
+class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
   val numberOfWorkers = numberOfNodes * workersPerNode
 
   def getWorkerIdForVertexId(vertexId: Long): Int = {
@@ -38,23 +38,24 @@ class TripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends Vert
       // Always puts query vertices on node 0.
       (QueryIds.extractQueryIdFromLong(vertexId) & Int.MaxValue) % workersPerNode
     } else {
-      val s = vertexId.s
-      val p = vertexId.p
-      val o = vertexId.o
+      // Duplicated code, we don't want to create any new objects here.
+      val first = vertexId.extractFirst
+      val second = vertexId.extractSecond
+      val s = math.max(0, first)
+      val o = math.max(0, second)
+      val p = if (first < 0) {
+        first & Int.MaxValue
+      } else {
+        if (second < 0) { // second < 0
+          second & Int.MaxValue
+        } else {
+          0
+        }
+      }
       if (s > 0) {
-        if (p > 0) {
-          workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + p)
-        } else if (o > 0) {
-          workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + o)
-        } else {
-          workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s)
-        }
+        workerIdOptimized(nodeAssignmentId = s, nodeBalanceId = s + p + o)
       } else if (o > 0) {
-        if (p > 0) {
-          workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o + p)
-        } else {
-          workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o)
-        }
+        workerIdOptimized(nodeAssignmentId = o, nodeBalanceId = o + p)
       } else if (p > 0) {
         workerIdOptimized(nodeAssignmentId = p, nodeBalanceId = p)
       } else {
@@ -78,6 +79,6 @@ class TripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends Vert
   def getWorkerIdForVertexIdHash(vertexIdHash: Int): Int = throw new UnsupportedOperationException("This mapper does not support mapping by vertex hash.")
 }
 
-object TripleMapperFactory extends MapperFactory[Long] {
-  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new TripleMapper(numberOfNodes, workersPerNode)
+object DistributedTripleMapperFactory extends MapperFactory[Long] {
+  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new DistributedTripleMapper(numberOfNodes, workersPerNode)
 }
