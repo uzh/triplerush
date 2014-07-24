@@ -63,6 +63,7 @@ case class TripleRush(
     withMapperFactory(TripleMapperFactory).
     withStorageFactory(TripleRushStorage).
     withWorkerFactory(new TripleRushWorkerFactory[Any]).
+    withBlockingGraphModificationsSupport(false).
     withHeartbeatInterval(500).
     withEagerIdleDetection(false).
     withKryoRegistrations(List(

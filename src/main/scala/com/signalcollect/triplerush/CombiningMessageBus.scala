@@ -37,6 +37,8 @@ import com.signalcollect.triplerush.util.TriplePatternIntHashMap
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import com.signalcollect.util.IntIntHashMap
 import akka.actor.ActorSystem
+import com.signalcollect.interfaces.BulkSignal
+import com.signalcollect.interfaces.BulkSignalNoSourceIds
 
 class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, withSourceIds: Boolean)
   extends MessageBusFactory[Long, Signal] {
@@ -64,30 +66,29 @@ class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, withSour
  * Version of bulk message bus that combines tickets of failed queries.
  */
 final class CombiningMessageBus[Signal: ClassTag](
-  system: ActorSystem,
-  numberOfWorkers: Int,
-  numberOfNodes: Int,
-  mapper: VertexToWorkerMapper[Long],
-  flushThreshold: Int,
-  withSourceIds: Boolean,
-  sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
-  workerApiFactory: WorkerApiFactory[Long, Signal])
-  extends BulkMessageBus[Long, Signal](
-    system,
-    numberOfWorkers,
-    numberOfNodes,
-    mapper,
-    flushThreshold,
-    withSourceIds,
-    sendCountIncrementorForRequests,
-    workerApiFactory) {
+  val system: ActorSystem,
+  val numberOfWorkers: Int,
+  val numberOfNodes: Int,
+  val mapper: VertexToWorkerMapper[Long],
+  val flushThreshold: Int,
+  val withSourceIds: Boolean,
+  val sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
+  val workerApiFactory: WorkerApiFactory[Long, Signal])
+  extends AbstractMessageBus[Long, Signal] {
+
+  lazy val workerApi = workerApiFactory.createInstance(workerProxies, mapper)
 
   val aggregatedTickets = new IntLongHashMap(initialSize = 8)
   val aggregatedResults = new IntHashMap[ArrayBuffer[Array[Int]]](initialSize = 8)
   val aggregatedCardinalities = new TriplePatternIntHashMap(initialSize = 8)
   val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
-  override def sendSignal(
+  override def sendSignal(signal: Signal, targetId: Long, sourceId: Option[Long]) {
+    sendSignal(signal, targetId, sourceId, false)
+  }
+
+  // Ignores blocking.
+  @inline override def sendSignal(
     signal: Signal,
     targetId: Long,
     sourceId: Option[Long],
@@ -112,7 +113,7 @@ final class CombiningMessageBus[Signal: ClassTag](
             aggregatedResults(extractedQueryId) = newBuffer
           }
         case other =>
-          super.sendSignal(signal, targetId, sourceId, blocking)
+          bulkSend(signal, targetId, sourceId)
       }
     } // If message is sent to an Index Vertex
     else if (signal.isInstanceOf[Int]) {
@@ -121,7 +122,31 @@ final class CombiningMessageBus[Signal: ClassTag](
       aggregatedCardinalities(t) = oldCardinalities + signal.asInstanceOf[Int]
     } else {
       // TODO: Also improve efficiency of sending non-result particles. Compression?
-      super.sendSignal(signal, targetId, sourceId, blocking)
+      bulkSend(signal, targetId, sourceId)
+    }
+  }
+
+  def bulkSend(
+    signal: Signal,
+    targetId: Long,
+    sourceId: Option[Long],
+    blocking: Boolean = false) {
+    val workerId = mapper.getWorkerIdForVertexId(targetId)
+    val bulker = outgoingMessages(workerId)
+    if (withSourceIds) {
+      bulker.addSignal(signal, targetId, sourceId)
+    } else {
+      bulker.addSignal(signal, targetId, None)
+    }
+    pendingSignals += 1
+    if (bulker.isFull) {
+      pendingSignals -= bulker.numberOfItems
+      if (withSourceIds) {
+        super.sendToWorker(workerId, BulkSignal[Long, Signal](bulker.signals.clone, bulker.targetIds.clone, bulker.sourceIds.clone))
+      } else {
+        super.sendToWorker(workerId, BulkSignalNoSourceIds[Long, Signal](bulker.signals.clone, bulker.targetIds.clone))
+      }
+      bulker.clear
     }
   }
 
@@ -169,7 +194,52 @@ final class CombiningMessageBus[Signal: ClassTag](
       }
       aggregatedCardinalities.clear
     }
-    super.flush
+    if (pendingSignals > 0) {
+      var workerId = 0
+      while (workerId < numberOfWorkers) {
+        val bulker = outgoingMessages(workerId)
+        val signalCount = bulker.numberOfItems
+        if (signalCount > 0) {
+          val signalsCopy = new Array[Signal](signalCount)
+          System.arraycopy(bulker.signals, 0, signalsCopy, 0, signalCount)
+          val targetIdsCopy = new Array[Long](signalCount)
+          System.arraycopy(bulker.targetIds, 0, targetIdsCopy, 0, signalCount)
+          if (withSourceIds) {
+            val sourceIdsCopy = new Array[Long](signalCount)
+            System.arraycopy(bulker.sourceIds, 0, sourceIdsCopy, 0, signalCount)
+            super.sendToWorker(workerId, BulkSignal[Long, Signal](
+              signalsCopy,
+              targetIdsCopy,
+              sourceIdsCopy))
+          } else {
+            super.sendToWorker(workerId, BulkSignalNoSourceIds[Long, Signal](
+              signalsCopy,
+              targetIdsCopy))
+          }
+          outgoingMessages(workerId).clear
+        }
+        workerId += 1
+      }
+      pendingSignals = 0
+    }
+  }
+
+  override def reset {
+    super.reset
+    pendingSignals = 0
+    var i = 0
+    val bulkers = outgoingMessages.length
+    while (i < bulkers) {
+      outgoingMessages(i).clear
+      i += 1
+    }
+  }
+
+  protected var pendingSignals = 0
+
+  val outgoingMessages: Array[SignalBulker[Long, Signal]] = new Array[SignalBulker[Long, Signal]](numberOfWorkers)
+  for (i <- 0 until numberOfWorkers) {
+    outgoingMessages(i) = new SignalBulker[Long, Signal](flushThreshold)
   }
 
 }

@@ -38,7 +38,8 @@ class TripleRushWorker[Signal: ClassTag](
   edgeAddedToNonExistentVertexHandlerFactory: EdgeAddedToNonExistentVertexHandlerFactory[Long, Signal],
   heartbeatIntervalInMilliseconds: Int,
   eagerIdleDetection: Boolean,
-  throttlingEnabled: Boolean) extends AkkaWorker[Long, Signal](
+  throttlingEnabled: Boolean,
+  supportBlockingGraphModificationsInVertex: Boolean) extends AkkaWorker[Long, Signal](
   workerId,
   numberOfWorkers,
   numberOfNodes,
@@ -51,13 +52,15 @@ class TripleRushWorker[Signal: ClassTag](
   edgeAddedToNonExistentVertexHandlerFactory,
   heartbeatIntervalInMilliseconds,
   eagerIdleDetection,
-  throttlingEnabled) {
+  throttlingEnabled,
+  supportBlockingGraphModificationsInVertex) {
 
   override val worker = new WorkerImplementation[Long, Signal](
     workerId = workerId,
     numberOfWorkers = numberOfWorkers,
     numberOfNodes = numberOfNodes,
     eagerIdleDetection = eagerIdleDetection,
+    supportBlockingGraphModificationsInVertex = supportBlockingGraphModificationsInVertex,
     messageBus = messageBus,
     log = log,
     storageFactory = storageFactory,
