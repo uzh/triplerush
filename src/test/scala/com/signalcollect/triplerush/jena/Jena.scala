@@ -25,6 +25,11 @@ class Jena extends QueryEngine {
     val obj = model.createResource(intToInsertString(o))
     model.add(resource, prop, obj)
   }
+
+  def resultIteratorForQuery(query: Seq[TriplePattern]): Iterator[Array[Int]] = {
+    executeQuery(query).iterator
+  }
+
   def executeQuery(q: Seq[TriplePattern]): Iterable[Array[Int]] = {
     val variableNames = {
       val vars = q.

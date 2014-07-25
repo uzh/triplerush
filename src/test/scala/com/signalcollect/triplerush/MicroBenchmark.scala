@@ -6,7 +6,7 @@ object MicroBenchmark extends App {
 
   implicit val tr = new TripleRush
   Lubm.load(tr)
-  val runs = 10000 //Best time: 8.3 milliseconds
+  val runs = 1000 //Best time: 6.5 milliseconds
   val bestTime = (1 to runs).map(x => runAllLubmQueries).min
   println(s"Best time: $bestTime milliseconds")
   tr.shutdown

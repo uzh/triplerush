@@ -206,7 +206,10 @@ case class TripleRush(
     graph.addVertex(queryVertex)
     (resultPromise.future, statsPromise.future)
   }
-
+  
+  def resultIteratorForQuery(
+    query: Seq[TriplePattern]) = resultIteratorForQuery(query, None, None, Long.MaxValue)
+  
   /**
    * If the optimizer is defined, uses that one, else uses the default.
    */
