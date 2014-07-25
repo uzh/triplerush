@@ -34,6 +34,7 @@ abstract class BaseVertex[State]
     state = s
   }
 
+  override def deliverSignalWithSourceId(signal: Any, sourceId: Long, graphEditor: GraphEditor[Long, Any]): Boolean = throw new Exception("TripleRush only uses messages without the source ID.")
   override def scoreCollect = 0
   override def scoreSignal = 0
   override def toString = s"${this.getClass.getName}(id=$id)"

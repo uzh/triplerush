@@ -143,7 +143,7 @@ abstract class AbstractQueryVertex[StateType](
     }
   }
 
-  override def deliverSignal(signal: Any, sourceId: Option[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {
+  override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]): Boolean = {
     signal match {
       case deliveredTickets: Long =>
         processTickets(deliveredTickets)

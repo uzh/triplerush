@@ -43,9 +43,9 @@ abstract class IndexVertex[State](val id: Long)
   def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any])
 
   def handleCardinalityIncrement(i: Int) = {}
-  
+
   def handleObjectCount(count: ObjectCountSignal) = {}
-  
+
   def handleSubjectCount(count: SubjectCountSignal) = {}
 
   def cardinality: Int
@@ -66,7 +66,7 @@ abstract class IndexVertex[State](val id: Long)
 
   def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any])
 
-  override def deliverSignal(signal: Any, sourceId: Option[Long], graphEditor: GraphEditor[Long, Any]) = {
+  override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]) = {
     signal match {
       case query: Array[Int] =>
         processQuery(query, graphEditor)
