@@ -36,10 +36,10 @@ class ResultBindingQueryVertex(
   statsPromise: Promise[Map[Any, Any]],
   optimizer: Option[Optimizer])
   extends AbstractQueryVertex[ArrayOfArraysTraversable](query, tickets, numberOfSelectVariables, optimizer) {
-
-  final val id = QueryIds.nextQueryId
-
-  override final def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+   
+  final val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
+  
+  override final def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     state = new ArrayOfArraysTraversable
     super.afterInitialization(graphEditor)
   }

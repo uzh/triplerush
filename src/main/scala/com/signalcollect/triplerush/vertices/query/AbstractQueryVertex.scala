@@ -20,30 +20,26 @@
 
 package com.signalcollect.triplerush.vertices.query
 
-import scala.concurrent.Promise
 import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.CardinalityCache
 import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.optimizers.Optimizer
+import com.signalcollect.triplerush.PredicateStatsCache
+import com.signalcollect.triplerush.PredicateStatsReply
 import com.signalcollect.triplerush.QueryParticle
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.vertices.BaseVertex
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.CardinalityCache
-import com.signalcollect.triplerush.PredicateStatsCache
-import com.signalcollect.triplerush.PredicateStatsReply
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.QueryIds
 
 abstract class AbstractQueryVertex[StateType](
   val query: Seq[TriplePattern],
   val tickets: Long,
   val numberOfSelectVariables: Int,
-  val optimizer: Option[Optimizer]) extends BaseVertex[Int, Any, StateType] {
-
+  val optimizer: Option[Optimizer]) extends BaseVertex[StateType] {
+  
   val numberOfPatternsInOriginalQuery: Int = query.length
 
   val expectedCardinalityReplies: Int = numberOfPatternsInOriginalQuery
@@ -59,7 +55,7 @@ abstract class AbstractQueryVertex[StateType](
   var optimizingStartTime = 0l
   var optimizingDuration = 0l
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
 
     optimizingStartTime = System.nanoTime
     //TODO: Should we run an optimizer even for one-pattern queries?
@@ -71,11 +67,11 @@ abstract class AbstractQueryVertex[StateType](
       if (numberOfPatternsInOriginalQuery > 0) {
         val particle = QueryParticle(
           patterns = query,
-          queryId = id,
+          queryId = QueryIds.extractQueryIdFromLong(id),
           numberOfSelectVariables = numberOfSelectVariables,
           tickets = tickets)
         dispatchedQuery = Some(particle)
-        graphEditor.sendSignal(particle, particle.routingAddress, None)
+        graphEditor.sendSignal(particle, particle.routingAddress)
       } else {
         dispatchedQuery = None
         // All stats processed, but no results, we can safely remove the query vertex now.
@@ -85,7 +81,7 @@ abstract class AbstractQueryVertex[StateType](
     }
   }
 
-  def gatherZeroPredicateStatsForPattern(triplePattern: TriplePattern, graphEditor: GraphEditor[Any, Any]) {
+  def gatherZeroPredicateStatsForPattern(triplePattern: TriplePattern, graphEditor: GraphEditor[Long, Any]) {
     val patternWithWildcards = triplePattern.withVariablesAsWildcards
     val fromCache = CardinalityCache(patternWithWildcards)
     val cardinalityInCache = fromCache.isDefined
@@ -94,13 +90,13 @@ abstract class AbstractQueryVertex[StateType](
     } else {
       val responsibleIndexId = patternWithWildcards.routingAddress
       // Sending cardinality request to responsible Index.
-      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId, None)
+      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId)
     }
   }
 
   var requestedPredicateStats = Set.empty[Int]
 
-  def gatherPredicateStatsForPattern(triplePattern: TriplePattern, graphEditor: GraphEditor[Any, Any]) {
+  def gatherPredicateStatsForPattern(triplePattern: TriplePattern, graphEditor: GraphEditor[Long, Any]) {
     val patternWithWildcards = triplePattern.withVariablesAsWildcards
     val pIndexForPattern = patternWithWildcards.p
     val fromCache = CardinalityCache(patternWithWildcards)
@@ -115,24 +111,24 @@ abstract class AbstractQueryVertex[StateType](
       // Need to gather predicate stats.
       requestedPredicateStats += pIndexForPattern
       handleCardinalityReply(triplePattern, fromCache.get)
-      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), TriplePattern(0, pIndexForPattern, 0), None)
+      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), EfficientIndexPattern(0, pIndexForPattern, 0))
     } else if (predicateStatsInCache) {
       // Need to gather cardinality stats.
       val responsibleIndexId = patternWithWildcards.routingAddress
-      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId, None)
+      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId)
     } else {
       // Need to gather all stats.
       val responsibleIndexId = patternWithWildcards.routingAddress
       val pIndex = TriplePattern(0, pIndexForPattern, 0)
-      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId, None)
+      graphEditor.sendSignal(CardinalityRequest(triplePattern, id), responsibleIndexId)
       if (!requestedPredicateStats.contains(pIndexForPattern) && pIndex != responsibleIndexId) {
         requestedPredicateStats += pIndexForPattern
-        graphEditor.sendSignal(CardinalityRequest(triplePattern, id), pIndex, None)
+        graphEditor.sendSignal(CardinalityRequest(triplePattern, id), pIndex.routingAddress)
       }
     }
   }
 
-  def gatherStatistics(graphEditor: GraphEditor[Any, Any]) {
+  def gatherStatistics(graphEditor: GraphEditor[Long, Any]) {
     // Gather pattern cardinalities.
     query foreach { triplePattern =>
       val pIndexForPattern = triplePattern.p
@@ -147,7 +143,7 @@ abstract class AbstractQueryVertex[StateType](
     }
   }
 
-  override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
+  override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]): Boolean = {
     signal match {
       case deliveredTickets: Long =>
         processTickets(deliveredTickets)
@@ -186,11 +182,13 @@ abstract class AbstractQueryVertex[StateType](
     expectedReplies == receivedCardinalityReplies
   }
 
-  def handleQueryDispatch(graphEditor: GraphEditor[Any, Any]) {
+  def handleQueryDispatch(graphEditor: GraphEditor[Long, Any]) {
     if (queryMightHaveResults) {
       dispatchedQuery = optimizeQuery
       if (dispatchedQuery.isDefined) {
-        graphEditor.sendSignal(dispatchedQuery.get, dispatchedQuery.get.routingAddress, None)
+        graphEditor.sendSignal(
+          dispatchedQuery.get,
+          dispatchedQuery.get.routingAddress)
       } else {
         reportResultsAndRequestQueryVertexRemoval(graphEditor)
       }
@@ -199,7 +197,7 @@ abstract class AbstractQueryVertex[StateType](
     }
   }
 
-  def reportResultsAndRequestQueryVertexRemoval(graphEditor: GraphEditor[Any, Any]) {
+  def reportResultsAndRequestQueryVertexRemoval(graphEditor: GraphEditor[Long, Any]) {
     reportResults
     requestQueryVertexRemoval(graphEditor)
   }
@@ -229,7 +227,7 @@ abstract class AbstractQueryVertex[StateType](
     if (optimizedPatterns.length > 0) {
       val optimizedQuery = QueryParticle(
         patterns = optimizedPatterns,
-        queryId = id,
+        queryId = QueryIds.extractQueryIdFromLong(id),
         numberOfSelectVariables = numberOfSelectVariables,
         tickets = tickets)
       Some(optimizedQuery)
@@ -247,7 +245,7 @@ abstract class AbstractQueryVertex[StateType](
 
   var queryVertexRemovalRequested = false
 
-  def requestQueryVertexRemoval(graphEditor: GraphEditor[Any, Any]) {
+  def requestQueryVertexRemoval(graphEditor: GraphEditor[Long, Any]) {
     if (!queryVertexRemovalRequested) {
       graphEditor.removeVertex(id)
     }

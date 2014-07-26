@@ -25,15 +25,18 @@ import com.signalcollect.interfaces.EdgeId
 import com.signalcollect.GraphEditor
 import com.signalcollect.Vertex
 
-class PlaceholderEdge(val childDelta: Int) extends Edge[Int] {
+/**
+ * Trickery! It's actually the child delta (an Int), but we just pretend it's a Long.
+ */
+class PlaceholderEdge(val childDelta: Int) extends Edge[Long] {
   override def id: EdgeId[_] = throw new UnsupportedOperationException
   override def sourceId: Any = throw new UnsupportedOperationException
   override def targetId = childDelta
   override def source: Source = throw new UnsupportedOperationException
-  override def onAttach(source: Vertex[_, _], graphEditor: GraphEditor[Any, Any]) = throw new UnsupportedOperationException
+  override def onAttach(source: Vertex[_, _, _, _], graphEditor: GraphEditor[Any, Any]) = throw new UnsupportedOperationException
   override def weight: Double = 1
   override def toString = s"PlaceholderEdge(childDelta=$childDelta)"
   override def hashCode = throw new UnsupportedOperationException
   override def equals(other: Any): Boolean = throw new UnsupportedOperationException
-  override def executeSignalOperation(sourceVertex: Vertex[_, _], graphEditor: GraphEditor[Any, Any]) = throw new UnsupportedOperationException
+  override def executeSignalOperation(sourceVertex: Vertex[_, _, _, _], graphEditor: GraphEditor[Any, Any]) = throw new UnsupportedOperationException
 }

@@ -20,29 +20,29 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.CardinalityRequest
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.ObjectCountSignal
-import com.signalcollect.triplerush.SubjectCountSignal
-import com.signalcollect.triplerush.PredicateStatsReply
 import com.signalcollect.triplerush.PredicateStats
+import com.signalcollect.triplerush.PredicateStatsReply
+import com.signalcollect.triplerush.SubjectCountSignal
+import com.signalcollect.util.SplayIntSet
 
-final class PIndex(id: TriplePattern) extends CardinalityCountingIndex(id)
-  with Forwarding {
+final class PIndex(id: Long) extends CardinalityCountingIndex(id)
+  with Forwarding[Any] {
 
-  assert(id.s == 0 && id.p != 0 && id.o == 0)
-  def nextRoutingAddress(childDelta: Int) = TriplePattern(childDelta, id.p, 0)
+  def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(childDelta, id.p, 0)
 
   @transient var objectCountMap = Map[Int, Int]()
   var maxObjectCount = 1
   var maxSubjectCount = 1
 
-  override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
+  override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]) {
     graphEditor.sendSignal(PredicateStatsReply(
       c.forPattern, cardinality,
-      PredicateStats(edgeCount = edgeCount, objectCount = maxObjectCount, subjectCount = maxSubjectCount)), c.requestor, None)
+      PredicateStats(edgeCount = edgeCount, objectCount = maxObjectCount, subjectCount = maxSubjectCount)), c.requestor)
   }
 
   override def handleObjectCount(objCount: ObjectCountSignal) = {

@@ -29,6 +29,7 @@ import com.signalcollect.GraphBuilder
 import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
+import com.signalcollect.GraphBuilder
 
 class TripleRushSerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
 
@@ -43,7 +44,7 @@ ORDER BY ?label
 LIMIT 3
 """
     implicit val tr = new TripleRush(
-      graphBuilder = GraphBuilder.withMessageSerialization(true),
+      graphBuilder = new GraphBuilder[Long, Any].withMessageSerialization(true),
       optimizerCreator = NoOptimizerCreator)
     try {
       tr.addTriplePattern(TriplePattern(1, 2, 3))

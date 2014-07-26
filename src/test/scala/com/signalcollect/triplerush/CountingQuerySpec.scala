@@ -177,7 +177,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       val query = List(TriplePattern(3, 4, 2), TriplePattern(-2, -1, -3))
       val trCount = TestHelper.count(tr, triples, query)
       val trResults = TestHelper.execute(tr, triples, query)
-      assert(trResults.size === trCount)
+      assert(trResults.size === trCount, s"Bindings found: ${trResults.size}, counting query results: $trCount")
     } finally {
       tr.shutdown
     }
@@ -265,12 +265,12 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
           try {
             val trCount = TestHelper.count(tr, triples, query)
             val trResults = TestHelper.execute(tr, Set(), query)
-            assert(trResults.size === trCount)
+            assert(trResults.size === trCount, s"Bindings found: ${trResults.size}, counting query results: $trCount")
             trResults.size === trCount
           } finally {
             tr.shutdown
           }
-      }, minSuccessful(50))
+      }, minSuccessful(10))
   }
 
 }

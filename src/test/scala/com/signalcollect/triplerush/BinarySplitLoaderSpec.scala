@@ -5,7 +5,6 @@ import java.io.File
 
 class BinarySplitLoaderSpec extends FlatSpec with TestAnnouncements {
   "BinarySplitLoader" should "load a file" in {
-
     val tr = new TripleRush
     try {
       val sep = File.separator
@@ -14,6 +13,13 @@ class BinarySplitLoaderSpec extends FlatSpec with TestAnnouncements {
         tr.loadBinary(filename, Some(splitId))
       }
       tr.prepareExecution
+      val iter = tr.resultIteratorForQuery(Array(TriplePattern(-1, -2, -3)))
+      var resultCount = 0
+      while (iter.hasNext) {
+        val n = iter.next
+        resultCount += 1
+      }
+      assert(resultCount == 1711)
     } finally {
       tr.shutdown
     }

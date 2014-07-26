@@ -40,10 +40,18 @@ import org.scalatest.Matchers
 import java.io.File
 import com.signalcollect.triplerush.sparql.Sparql
 
-@RunWith(classOf[JUnitRunner])
-class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
+object Lubm {
 
-  val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+  def load(qe: TripleRush) {
+    println("Loading LUBM1 ... ")
+    for (fileNumber <- 0 to 14) {
+      val filename = s".${File.separator}lubm${File.separator}university0_$fileNumber.nt"
+      qe.loadNtriples(filename)
+    }
+    qe.prepareExecution
+    println("Finished loading LUBM1.")
+  }
+
   val sparqlQueries = List(
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -174,6 +182,13 @@ SELECT ?X
 WHERE {?X rdf:type ub:UndergraduateStudent}
 """)
 
+}
+
+@RunWith(classOf[JUnitRunner])
+class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
+
+  val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+
   "LUBM Query 1" should "match the reference results" in {
     runTest(1)
   }
@@ -231,20 +246,12 @@ WHERE {?X rdf:type ub:UndergraduateStudent}
   }
 
   implicit val tr = new TripleRush
+  Lubm.load(tr)
 
   override def afterAll {
     tr.shutdown
     super.afterAll
   }
-
-  println("Loading LUBM1 ... ")
-  val sep = File.separator
-  for (fileNumber <- 0 to 14) {
-    val filename = s".${sep}lubm${sep}university0_$fileNumber.nt"
-    tr.loadNtriples(filename)
-  }
-  tr.prepareExecution
-  println("Finished loading LUBM1.")
 
   def executeOnQueryEngine(q: String): List[Bindings] = {
     val sparql = Sparql(q).get
@@ -270,12 +277,12 @@ WHERE {?X rdf:type ub:UndergraduateStudent}
   def runTest(queryId: Int) {
     if (enabledQueries.contains(queryId)) {
       val referenceResult = referenceResults(queryId)
-      val ourResult = executeOnQueryEngine(sparqlQueries(queryId - 1))
+      val ourResult = executeOnQueryEngine(Lubm.sparqlQueries(queryId - 1))
       assert(ourResult === referenceResult, s"TR result $ourResult for query $queryId did not match reference result $referenceResult.")
     }
   }
 
-  val queryBaseName = s".${sep}answers${sep}answers_query"
+  val queryBaseName = s".${File.separator}answers${File.separator}answers_query"
   val referenceFiles: Map[Int, String] = ((1 to 14) map (queryNumber => queryNumber -> (queryBaseName + queryNumber + ".txt"))).toMap
   val referenceResults: Map[Int, QuerySolution] = {
     referenceFiles map { entry =>

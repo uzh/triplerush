@@ -20,32 +20,31 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.util.IntSet
 import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.SubjectCountSignal
+import com.signalcollect.util.SplayIntSet
 
-final class POIndex(id: TriplePattern) extends OptimizedIndexVertex(id)
-  with Binding {
-
-  assert(id.s == 0 && id.p != 0 && id.o != 0)
+final class POIndex(id: Long) extends OptimizedIndexVertex(id)
+  with Binding[Any] {
 
   @inline def bindIndividualQuery(childDelta: Int, query: Array[Int]): Array[Int] = {
     query.bind(childDelta, id.p, id.o)
   }
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     super.afterInitialization(graphEditor)
   }
 
-  override def onEdgeAdded(ge: GraphEditor[Any, Any]) {
+  override def onEdgeAdded(ge: GraphEditor[Long, Any]) {
     incrementParentIndexCardinalities(ge)
     updatePredicateSubjectCount(ge)
   }
 
-  def updatePredicateSubjectCount(ge: GraphEditor[Any, Any]) {
-    ge.sendSignal(SubjectCountSignal(edgeCount), TriplePattern(0, id.p, 0), None)
+  def updatePredicateSubjectCount(ge: GraphEditor[Long, Any]) {
+    ge.sendSignal(SubjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0))
   }
 
 }

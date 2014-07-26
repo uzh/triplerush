@@ -20,12 +20,8 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.util.Ints._
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.util.IntSet
-
 abstract class CardinalityCountingIndex(
-  id: TriplePattern) extends OptimizedIndexVertex(id) {
+  id: Long) extends OptimizedIndexVertex(id) {
 
   @transient var cardinalityCounter = 0
   override def cardinality = cardinalityCounter

@@ -1,8 +1,7 @@
 /*
  *  @author Philip Stutz
- *  @author Mihaela Verman
  *  
- *  Copyright 2013 University of Zurich
+ *  Copyright 2014 University of Zurich
  *      
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,23 +17,28 @@
  *  
  */
 
-package com.signalcollect.triplerush.vertices
+package com.signalcollect.triplerush
 
-import com.signalcollect.GraphEditor
+import org.scalatest.FlatSpec
+import org.scalatest.prop.Checkers
+import com.signalcollect.triplerush.EfficientIndexPattern._
+
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.PlaceholderEdge
 
-/**
- * Basic vertex that recursively builds the TripleRush index structure.
- */
-trait ParentBuilding[State] extends BaseVertex[State] {
+class QueryIdEmbeddingSpec extends FlatSpec with Checkers with TestAnnouncements {
 
-  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
-    // Build the hierarchical index on initialization.
-    id.parentIds foreach { parentId =>
-      val idDelta = id.parentIdDelta(parentId)
-      graphEditor.addEdge(parentId, new PlaceholderEdge(idDelta))
-    }
+  "QueryIds" should "correctly embed and recover query IDs" in {
+    check((queryId: Int) => {
+      if (queryId != Int.MinValue) {
+        val embedded = QueryIds.embedQueryIdInLong(queryId)
+        assert(embedded.isQueryId)
+        val extracted = QueryIds.extractQueryIdFromLong(embedded)
+        assert(extracted === queryId)
+        true
+      } else {
+        true
+      }
+    }, minSuccessful(10000))
   }
 
 }

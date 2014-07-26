@@ -20,25 +20,25 @@
 package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.GraphEditor
-import com.signalcollect.DefaultEdge
-import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.interfaces.Inspectable
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.QueryIds
 
-trait Forwarding extends IndexVertex {
+trait Forwarding[State] extends IndexVertex[State] {
 
-  def nextRoutingAddress(childDelta: Int): TriplePattern
+  def nextRoutingAddress(childDelta: Int): Long
 
-  override def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any]) {
+  override def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]) {
     if (!query.isBindingQuery &&
       query.numberOfPatterns == 1 &&
       query.isSimpleToBind &&
-      id != TriplePattern(0, 0, 0) // Cardinality stats for root node are not accurate.  
+      id != EfficientIndexPattern(0, 0, 0) // Cardinality stats for root node are not accurate.  
       ) {
       // Take a shortcut and don't actually do the forwarding, just send the cardinality.
       // The isSimpleToBind check excludes complicated cases, where a binding might fail.
-      graphEditor.sendSignal(cardinality, query.queryId, None)
-      graphEditor.sendSignal(query.tickets, query.queryId, None)
+      val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
+      graphEditor.sendSignal(cardinality, queryVertexId)
+      graphEditor.sendSignal(query.tickets, queryVertexId)
     } else {
       val edges = edgeCount
       val totalTickets = query.tickets
@@ -51,9 +51,9 @@ trait Forwarding extends IndexVertex {
         val routingAddress = nextRoutingAddress(childDelta)
         if (extras > 0) {
           extras -= 1
-          graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress, None)
+          graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress)
         } else if (avg > 0) {
-          graphEditor.sendSignal(averageTicketQuery, routingAddress, None)
+          graphEditor.sendSignal(averageTicketQuery, routingAddress)
         }
       }
       foreachChildDelta(sendTo)

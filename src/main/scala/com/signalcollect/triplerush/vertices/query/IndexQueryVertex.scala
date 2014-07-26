@@ -28,16 +28,16 @@ import com.signalcollect.triplerush.ChildIdReply
 import com.signalcollect.triplerush.vertices.BaseVertex
 
 final class IndexQueryVertex(
-  val indexId: TriplePattern,
-  val resultPromise: Promise[Array[Int]]) extends BaseVertex[Int, Any, Nothing] {
+  val indexId: Long,
+  val resultPromise: Promise[Array[Int]]) extends BaseVertex[Nothing] {
 
-  val id = QueryIds.nextQueryId
+  val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
 
-  override def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
-    graphEditor.sendSignal(ChildIdRequest(id), indexId, None)
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
+    graphEditor.sendSignal(ChildIdRequest(id), indexId)
   }
 
-  override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]): Boolean = {
+  override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]): Boolean = {
     signal match {
       case ChildIdReply(intSet) =>
         resultPromise.success(intSet)

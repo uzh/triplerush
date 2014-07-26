@@ -24,35 +24,28 @@ import com.signalcollect.Edge
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.CardinalityReply
 import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.PlaceholderEdge
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.CardinalityRequest
-import scala.collection.mutable.ArrayBuffer
-import com.signalcollect.triplerush.QueryParticle
-import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.ChildIdRequest
-import com.signalcollect.triplerush.ChildIdRequest
-import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.ObjectCountSignal
+import com.signalcollect.triplerush.PlaceholderEdge
 import com.signalcollect.triplerush.SubjectCountSignal
 
 /**
  * This vertex represents part of the TripleRush index.
  */
-abstract class IndexVertex(val id: TriplePattern)
-  extends BaseVertex[TriplePattern, Any, Any]
-  with ParentBuilding[Any, Any] {
+abstract class IndexVertex[State](val id: Long)
+  extends BaseVertex[State]
+  with ParentBuilding[State] {
 
   def foreachChildDelta(f: Int => Unit)
 
   def addChildDelta(delta: Int): Boolean
 
-  def processQuery(query: Array[Int], graphEditor: GraphEditor[Any, Any])
+  def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any])
 
   def handleCardinalityIncrement(i: Int) = {}
-  
+
   def handleObjectCount(count: ObjectCountSignal) = {}
-  
+
   def handleSubjectCount(count: SubjectCountSignal) = {}
 
   def cardinality: Int
@@ -60,20 +53,20 @@ abstract class IndexVertex(val id: TriplePattern)
   /**
    * Default reply, is only overridden by SOIndex.
    */
-  def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Any, Any]) {
+  def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]) {
     graphEditor.sendSignal(CardinalityReply(
-      c.forPattern, cardinality), c.requestor, None)
+      c.forPattern, cardinality), c.requestor)
   }
 
-  override def addEdge(e: Edge[_], graphEditor: GraphEditor[Any, Any]): Boolean = {
+  override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {
     val placeholderEdge = e.asInstanceOf[PlaceholderEdge]
     val wasAdded = addChildDelta(placeholderEdge.childDelta)
     wasAdded
   }
 
-  def handleChildIdRequest(requestor: Any, graphEditor: GraphEditor[Any, Any])
+  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any])
 
-  override def deliverSignal(signal: Any, sourceId: Option[Any], graphEditor: GraphEditor[Any, Any]) = {
+  override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]) = {
     signal match {
       case query: Array[Int] =>
         processQuery(query, graphEditor)

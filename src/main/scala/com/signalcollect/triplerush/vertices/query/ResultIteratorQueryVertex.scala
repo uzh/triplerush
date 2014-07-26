@@ -33,9 +33,9 @@ class ResultIteratorQueryVertex(
   optimizer: Option[Optimizer])
   extends AbstractQueryVertex[ResultIterator](query, tickets, numberOfSelectVariables, optimizer) {
 
-  final val id = QueryIds.nextQueryId
+  final val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
 
-  override final def afterInitialization(graphEditor: GraphEditor[Any, Any]) {
+  override final def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     state = resultIterator
     super.afterInitialization(graphEditor)
   }
@@ -51,7 +51,8 @@ class ResultIteratorQueryVertex(
   override final def reportResults {
     if (!resultsReported) {
       super.reportResults
-      state.close
+      // Empty array implicitly signals that there are no more results.
+      state.add(Array[Array[Int]]())
     }
   }
 

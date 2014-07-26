@@ -10,16 +10,10 @@ import java.util.concurrent.TimeUnit
  */
 final class ResultIterator extends Iterator[Array[Int]] with ResultBindings {
 
-  var allResultsReported = new AtomicBoolean(false)
-
   var nextResultArrayIndex: Int = 0
   var currentResultArray: Array[Array[Int]] = null
 
   var incomingResultsQueue = new LinkedBlockingQueue[Array[Array[Int]]]()
-
-  def close {
-    allResultsReported.set(true)
-  }
 
   def add(a: Array[Array[Int]]) {
     incomingResultsQueue.put(a)
@@ -35,22 +29,15 @@ final class ResultIterator extends Iterator[Array[Int]] with ResultBindings {
   }
 
   private def replenishCurrentArray {
-    currentResultArray = incomingResultsQueue.poll(1, TimeUnit.NANOSECONDS)
-    var keepTrying = true
-    while (currentResultArray == null && keepTrying) {
-      keepTrying = !allResultsReported.get
-      currentResultArray = incomingResultsQueue.poll(10, TimeUnit.MICROSECONDS)
-    }
+    currentResultArray = incomingResultsQueue.take
     nextResultArrayIndex = 0
   }
 
   def hasNext: Boolean = {
-    if (currentResultArray != null) {
-      true
-    } else {
+    if (currentResultArray == null) {
       replenishCurrentArray
-      currentResultArray != null
     }
+    currentResultArray.length > 0
   }
 
 }

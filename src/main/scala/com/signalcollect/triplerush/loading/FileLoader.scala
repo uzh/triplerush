@@ -21,16 +21,15 @@
 package com.signalcollect.triplerush.loading
 
 import java.io.FileInputStream
-
 import org.semanticweb.yars.nx.parser.NxParser
-
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.Dictionary
 import com.signalcollect.triplerush.PlaceholderEdge
 import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.EfficientIndexPattern
 
 case object FileLoader {
-  def loadNtriplesFile(dictionary: Dictionary, ntriplesFilename: String)(graphEditor: GraphEditor[Any, Any]) {
+  def loadNtriplesFile(dictionary: Dictionary, ntriplesFilename: String)(graphEditor: GraphEditor[Long, Any]) {
     val is = new FileInputStream(ntriplesFilename)
     val nxp = new NxParser(is)
     println(s"Reading triples from $ntriplesFilename ...")
@@ -58,11 +57,11 @@ case object FileLoader {
     is.close
   }
 
-  def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Any, Any]) {
+  def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Long, Any]) {
     assert(sId > 0 && pId > 0 && oId > 0)
-    val po = TriplePattern(0, pId, oId)
-    val so = TriplePattern(sId, 0, oId)
-    val sp = TriplePattern(sId, pId, 0)
+    val po = EfficientIndexPattern(0, pId, oId)
+    val so = EfficientIndexPattern(sId, 0, oId)
+    val sp = EfficientIndexPattern(sId, pId, 0)
     graphEditor.addEdge(po, new PlaceholderEdge(sId))
     graphEditor.addEdge(so, new PlaceholderEdge(pId))
     graphEditor.addEdge(sp, new PlaceholderEdge(oId))

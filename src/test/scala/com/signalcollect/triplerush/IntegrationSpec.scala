@@ -201,7 +201,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
             tr.shutdown
             jena.shutdown
           }
-      }, minSuccessful(100))
+      }, minSuccessful(10))
   }
 
 }
