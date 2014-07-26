@@ -36,11 +36,6 @@ abstract class OptimizedIndexVertex(
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     super.afterInitialization(graphEditor)
-    //state = new MemoryEfficientSplayIntSet
-    //      def overheadFraction = 0.01f
-    //  def maxNodeIntSetSize = 1000
-    //      val repr = Ints.createEmptyFastInsertIntSet
-    //      new FastInsertIntSet(repr).insert(i, overheadFraction)
     state = Ints.createEmptyFastInsertIntSet
   }
 
