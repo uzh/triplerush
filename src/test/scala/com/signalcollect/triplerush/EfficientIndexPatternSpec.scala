@@ -44,7 +44,7 @@ class EfficientIndexPatternSpec extends FlatSpec with Checkers with TestAnnounce
       } else {
         true
       }
-    }, minSuccessful(10000))
+    }, minSuccessful(10))
   }
 
 }

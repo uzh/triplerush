@@ -27,21 +27,22 @@ class IndexSpec extends FlatSpec with TestAnnouncements {
   "TripleRush" should "correctly answer all 1 pattern queries when there is only 1 triple in the store" in {
     val queries = {
       for {
-        s <- List(1, -1)
-        p <- List(2, -2)
-        o <- List(3, -3)
+        s <- Array(1, -1)
+        p <- Array(2, -2)
+        o <- Array(3, -3)
       } yield TriplePattern(s, p, o)
     }
-    for (query <- queries) {
-      val tr = new TripleRush
-      try {
-        val trResults = TestHelper.execute(
-          tr,
-          Set(TriplePattern(1, 2, 3)),
-          List(query))
-        assert(query.isFullyBound || trResults.size == 1, s"query $query should lead to 1 set of bindings, but there are ${trResults.size}.")
+    val tr = new TripleRush
+    try {
+      tr.addEncodedTriple(1, 2, 3)
+      tr.prepareExecution
+      for (query <- queries.par) {
+        val resultIterator = tr.resultIteratorForQuery(Seq(query))
+        val trResult: Option[Array[Int]] = if (resultIterator.hasNext) Some(resultIterator.next) else None
+        assert(!resultIterator.hasNext, "Query should have no more than 1 result.")
+        assert(query.isFullyBound || trResult.isDefined, s"query $query should lead to 1 set of bindings, but there are none.")
         if (!query.isFullyBound) {
-          val bindings = trResults.head
+          val bindings = TestHelper.resultsToBindings(Seq(trResult.get)).head
           assert(bindings.size == query.variables.size)
           if (bindings.size > 0) {
             if (query.s == -1) {
@@ -58,9 +59,9 @@ class IndexSpec extends FlatSpec with TestAnnouncements {
             }
           }
         }
-      } finally {
-        tr.shutdown
       }
+    } finally {
+      tr.shutdown
     }
   }
 
