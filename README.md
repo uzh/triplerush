@@ -1,9 +1,9 @@
-TripleRush: A Fast Distributed Triple Pattern Matcher [![Build Status](https://travis-ci.org/uzh/triplerush.png)](https://travis-ci.org/uzh/triplerush)
+TripleRush: A Fast Distributed Triple Pattern Matcher [![Build Status](https://travis-ci.org/uzh/triplerush.svg?branch=master)](https://travis-ci.org/uzh/triplerush/branches)
 =====================================================
 
 How to Compile the Project
 --------------------------
-Ensure Java 7 is available on the system, verify with "java -version" on the command line.
+Ensure Java 7/8 is available on the system, verify with "java -version" on the command line.
 
 Ensure that the https://github.com/uzh/signal-collect project is placed in the same root folder as this project. 
 
