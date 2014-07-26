@@ -58,7 +58,7 @@ class QueryParticleSpec extends FlatSpec with ShouldMatchers with Checkers with 
         qp.writeQueryId(id)
         qp.queryId == id
       },
-      minSuccessful(100))
+      minSuccessful(10))
   }
 
   it should "correctly encode tickets" in {
@@ -73,7 +73,7 @@ class QueryParticleSpec extends FlatSpec with ShouldMatchers with Checkers with 
         qp.writeTickets(tickets)
         qp.tickets == tickets
       },
-      minSuccessful(1000))
+      minSuccessful(10))
   }
 
   it should "correctly encode triple patterns" in {
@@ -86,6 +86,6 @@ class QueryParticleSpec extends FlatSpec with ShouldMatchers with Checkers with 
           numberOfSelectVariables = 3)
         qp.patterns.toList == patterns.toList
       },
-      minSuccessful(1000))
+      minSuccessful(10))
   }
 }

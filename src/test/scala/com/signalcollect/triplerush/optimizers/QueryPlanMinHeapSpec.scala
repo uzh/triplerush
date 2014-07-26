@@ -55,7 +55,7 @@ class QueryPlanMinHeapSpec extends FlatSpec with ShouldMatchers with Checkers wi
         }
         true
       },
-      minSuccessful(10000))
+      minSuccessful(10))
   }
 
 }

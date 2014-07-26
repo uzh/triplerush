@@ -38,7 +38,7 @@ class QueryIdEmbeddingSpec extends FlatSpec with Checkers with TestAnnouncements
       } else {
         true
       }
-    }, minSuccessful(10000))
+    }, minSuccessful(10))
   }
 
 }
