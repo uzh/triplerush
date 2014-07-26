@@ -43,7 +43,7 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
         val node2 = nodeId(m.getWorkerIdForVertexId(EfficientIndexPattern(0, 5, id)))
         node1 == node2
       }
-    }, minSuccessful(10))
+    }, minSuccessful(100))
   }
 
 //  it should "usually assign triples that share subject/object to different workers on the same node, when their predicates are different" in {

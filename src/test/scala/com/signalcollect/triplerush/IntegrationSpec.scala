@@ -146,8 +146,8 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
       val query = List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 10))
       val triples = {
         for {
-          s <- 1 to 2
-          p <- 1 to 2
+          s <- 1 to 3
+          p <- 1 to 3
           o <- 1 to 10
         } yield TriplePattern(s, p, o)
       }.toSet
@@ -201,7 +201,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
             tr.shutdown
             jena.shutdown
           }
-      }, minSuccessful(10))
+      }, minSuccessful(20))
   }
 
 }

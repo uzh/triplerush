@@ -270,7 +270,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
           } finally {
             tr.shutdown
           }
-      }, minSuccessful(10))
+      }, minSuccessful(5))
   }
 
 }
