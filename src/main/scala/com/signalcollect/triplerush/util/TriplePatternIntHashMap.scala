@@ -36,7 +36,6 @@ class TriplePatternIntHashMap(
   private[this] final var values = new Array[Int](maxSize)
   private[this] final var keys = new Array[Long](maxSize) // 0 means empty
   private[this] final var mask = maxSize - 1
-  private[this] final var nextPositionToProcess = 0
 
   final def size: Int = numberOfElements
   final def isEmpty: Boolean = numberOfElements == 0
@@ -45,7 +44,6 @@ class TriplePatternIntHashMap(
   final def clear {
     keys = new Array[Long](maxSize)
     numberOfElements = 0
-    nextPositionToProcess = 0
   }
 
   def toScalaMap: Map[Long, Int] = {
@@ -77,7 +75,7 @@ class TriplePatternIntHashMap(
     }
   }
 
-  final def foreach(f: (Long, Int) => Unit) {
+  @inline final def foreach(f: (Long, Int) => Unit) {
     var i = 0
     var elementsProcessed = 0
     while (elementsProcessed < numberOfElements) {
@@ -91,6 +89,25 @@ class TriplePatternIntHashMap(
     }
   }
 
+  /**
+   * Like foreach, but removes the entry after applying the function.
+   */
+  @inline final def process(f: (Long, Int) => Unit) {
+    var i = 0
+    var elementsProcessed = 0
+    while (elementsProcessed < numberOfElements) {
+      val key = keys(i)
+      if (key != 0) {
+        val value = values(i)
+        f(key, value)
+        elementsProcessed += 1
+        keys(i) = 0l
+      }
+      i += 1
+    }
+    numberOfElements = 0
+  }
+  
   final def remove(key: Long) {
     remove(key, true)
   }

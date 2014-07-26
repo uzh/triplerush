@@ -348,7 +348,11 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   def copyWithTickets(t: Long, complete: Boolean): Array[Int] = {
-    val newR = r.clone
+    // It seems that for small arrays arraycopy is faster than clone:
+    // http://www.javaspecialists.co.za/archive/Issue124.html
+    val rLength = r.length
+    val newR = new Array[Int](rLength)
+    System.arraycopy(r, 0, newR, 0, rLength)
     if (complete) {
       newR.writeTickets(t)
     } else {

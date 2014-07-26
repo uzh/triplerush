@@ -129,9 +129,9 @@ final class CombiningMessageBus[Signal: ClassTag](
         case tickets: Long =>
           handleTickets(tickets, extractedQueryId)
         case result: Array[Int] =>
-          val oldResults = aggregatedResults(extractedQueryId)
-          val bindings = result.bindings
           handleTickets(result.tickets, extractedQueryId)
+          val bindings = result.bindings
+          val oldResults = aggregatedResults.activateKeyAndGetValue(extractedQueryId)
           if (oldResults != null) {
             oldResults.addResult(bindings)
             if (oldResults.isFull) {
@@ -170,7 +170,14 @@ final class CombiningMessageBus[Signal: ClassTag](
     pendingSignals += 1
     if (bulker.isFull) {
       pendingSignals -= bulker.numberOfItems
-      sendToWorker(workerId, BulkSignalNoSourceIds[Long, Signal](bulker.signals.clone, bulker.targetIds.clone))
+      // It seems that for small arrays arraycopy is faster than clone:
+      // http://www.javaspecialists.co.za/archive/Issue124.html
+      val length = bulker.signals.length
+      val signalsClone = new Array[Signal](length)
+      System.arraycopy(bulker.signals, 0, signalsClone, 0, length)
+      val targetIdsClone = new Array[Long](length)
+      System.arraycopy(bulker.targetIds, 0, targetIdsClone, 0, length)
+      sendToWorker(workerId, BulkSignalNoSourceIds[Long, Signal](signalsClone, targetIdsClone))
       bulker.clear
     }
   }
@@ -196,33 +203,30 @@ final class CombiningMessageBus[Signal: ClassTag](
     // It is important that the results arrive before the tickets, because
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
-      aggregatedResults.foreach { (queryVertexId, results) =>
+      aggregatedResults.process { (queryVertexId, results) =>
         if (results.numberOfItems > 0) {
           val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
           sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, results.getResultArray), targetId)
+          results.clear
         }
       }
-      aggregatedResults.clear
     }
     if (!aggregatedResultCounts.isEmpty) {
-      aggregatedResultCounts.foreach { (queryVertexId, resultCount) =>
+      aggregatedResultCounts.process { (queryVertexId, resultCount) =>
         val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
         sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, resultCount), targetId)
       }
-      aggregatedResultCounts.clear
     }
     if (!aggregatedTickets.isEmpty) {
-      aggregatedTickets.foreach { (queryVertexId, tickets) =>
+      aggregatedTickets.process { (queryVertexId, tickets) =>
         val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
         sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, tickets), targetId)
       }
-      aggregatedTickets.clear
     }
     if (!aggregatedCardinalities.isEmpty) {
-      aggregatedCardinalities.foreach { (targetId, cardinalityIncrement) =>
+      aggregatedCardinalities.process { (targetId, cardinalityIncrement) =>
         sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, cardinalityIncrement), targetId)
       }
-      aggregatedCardinalities.clear
     }
     if (pendingSignals > 0) {
       var workerId = 0
