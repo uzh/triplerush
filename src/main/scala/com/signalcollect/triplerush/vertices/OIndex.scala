@@ -25,7 +25,7 @@ import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.util.SplayIntSet
 
 final class OIndex(id: Long) extends CardinalityCountingIndex(id)
-  with Forwarding[SplayIntSet] {
+  with Forwarding[Any] {
 
   def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(0, childDelta, id.o)
 

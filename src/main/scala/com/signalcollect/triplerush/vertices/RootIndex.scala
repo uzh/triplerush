@@ -23,7 +23,7 @@ import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.util.SplayIntSet
 
 final class RootIndex extends OptimizedIndexVertex(EfficientIndexPattern(0, 0, 0))
-  with Forwarding[SplayIntSet] {
+  with Forwarding[Any] {
 
   def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(0, childDelta, 0) 
 

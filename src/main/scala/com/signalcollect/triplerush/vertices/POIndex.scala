@@ -28,7 +28,7 @@ import com.signalcollect.triplerush.SubjectCountSignal
 import com.signalcollect.util.SplayIntSet
 
 final class POIndex(id: Long) extends OptimizedIndexVertex(id)
-  with Binding[SplayIntSet] {
+  with Binding[Any] {
 
   @inline def bindIndividualQuery(childDelta: Int, query: Array[Int]): Array[Int] = {
     query.bind(childDelta, id.p, id.o)

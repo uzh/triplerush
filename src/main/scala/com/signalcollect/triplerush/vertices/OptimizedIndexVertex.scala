@@ -24,34 +24,80 @@ import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.ChildIdReply
 import com.signalcollect.triplerush.util.MemoryEfficientSplayIntSet
 import com.signalcollect.util.SplayIntSet
+import com.signalcollect.util.Ints
+import com.signalcollect.util.FastInsertIntSet
+import com.signalcollect.util.SplayNode
 
 /**
  * Stores the SplayIntSet with the optimized child deltas in the state.
  */
 abstract class OptimizedIndexVertex(
-  id: Long) extends IndexVertex[SplayIntSet](id) {
+  id: Long) extends IndexVertex[Any](id) {
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     super.afterInitialization(graphEditor)
-    state = new MemoryEfficientSplayIntSet
+    //state = new MemoryEfficientSplayIntSet
+    //      def overheadFraction = 0.01f
+    //  def maxNodeIntSetSize = 1000
+    //      val repr = Ints.createEmptyFastInsertIntSet
+    //      new FastInsertIntSet(repr).insert(i, overheadFraction)
+    state = Ints.createEmptyFastInsertIntSet
   }
 
   def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
-    graphEditor.sendSignal(ChildIdReply(state.toBuffer.toArray), requestor)
+    val childIds = state match {
+      case a: Array[Byte] =>
+        new FastInsertIntSet(a).toBuffer
+      case s: SplayIntSet =>
+        s.toBuffer
+    }
+    graphEditor.sendSignal(ChildIdReply(childIds.toArray), requestor)
   }
 
   override def edgeCount = {
-    if (state != null) state.size else 0
+    if (state != null) numberOfStoredChildDeltas else 0
   }
-  
-  def cardinality = state.size
 
-  @inline def foreachChildDelta(f: Int => Unit) = state.foreach(f)
+  def cardinality = numberOfStoredChildDeltas
+
+  @inline final def numberOfStoredChildDeltas = {
+    state match {
+      case a: Array[Byte] =>
+        new FastInsertIntSet(a).size
+      case s: SplayIntSet =>
+        s.size
+    }
+  }
+
+  @inline def foreachChildDelta(f: Int => Unit) = {
+    state match {
+      case a: Array[Byte] =>
+        new FastInsertIntSet(a).foreach(f)
+      case s: SplayIntSet =>
+        s.foreach(f)
+    }
+  }
 
   def addChildDelta(delta: Int): Boolean = {
-    val deltasBeforeInsert = state
-    val wasInserted = state.insert(delta)
-    wasInserted
+    state match {
+      case a: Array[Byte] =>
+        val sizeBefore = new FastInsertIntSet(a).size
+        val intSetAfter = new FastInsertIntSet(a).insert(delta, 0.01f)
+        val sizeAfter = new FastInsertIntSet(intSetAfter).size
+        
+        if (sizeAfter >= 1000) {
+          val splayIntSet = new MemoryEfficientSplayIntSet
+          val root = new SplayNode(intSetAfter)
+          splayIntSet.initializeWithRoot(root)
+          state = splayIntSet
+        } else {
+          state = intSetAfter
+        }
+        sizeAfter > sizeBefore
+      case s: SplayIntSet =>
+        val wasInserted = s.insert(delta)
+        wasInserted
+    }
   }
 
 }
