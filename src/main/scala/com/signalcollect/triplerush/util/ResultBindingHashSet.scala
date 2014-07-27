@@ -153,7 +153,6 @@ class ResultBindingsHashSet(
           throw new OutOfMemoryError("The hash map is full and cannot be expanded any further.")
         }
       }
-      add(key)
     }
     alreadyContained
   }
