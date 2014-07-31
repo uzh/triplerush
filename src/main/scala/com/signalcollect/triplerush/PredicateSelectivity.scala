@@ -59,10 +59,14 @@ class PredicateSelectivity(tr: TripleRush) {
   val ps = predicates.size
   //println(s"Computing selectivities for $ps * $ps = ${ps * ps} predicate combinations ...")
 
-  var outOut = Map[(Int, Int), Long]()
-  var inOut = Map[(Int, Int), Long]()
-  var inIn = Map[(Int, Int), Long]()
-  def outIn(p1: Int, p2: Int) = inOut((p2, p1))
+  private var _outOut = Map[(Int, Int), Long]()
+  private var _inOut = Map[(Int, Int), Long]()
+  private var _inIn = Map[(Int, Int), Long]()
+  
+  def outOut(p1: Int, p2: Int) = _outOut((p1, p2))
+  def inOut(p1: Int, p2: Int) = _inOut((p1, p2))
+  def inIn(p1: Int, p2: Int) = _inIn((p1, p2))
+  def outIn(p1: Int, p2: Int) = _inOut((p2, p1))
 
   val optimizer = Some(GreedyCardinalityOptimizer)
   val queriesTotal = ps * ps * 3
@@ -111,9 +115,9 @@ class PredicateSelectivity(tr: TripleRush) {
             Long.MaxValue
         }
 
-      outOut += (p1, p2) -> outOutResultSize
-      inOut += (p1, p2) -> inOutResultSize
-      inIn += (p1, p2) -> inInResultSize
+      _outOut += (p1, p2) -> outOutResultSize
+      _inOut += (p1, p2) -> inOutResultSize
+      _inIn += (p1, p2) -> inInResultSize
 
       queriesSoFar += 3
     }
@@ -121,8 +125,8 @@ class PredicateSelectivity(tr: TripleRush) {
   //println(s"Index statistics complete, $queriesTotal queries were executed.")
 
   override def toString = {
-    s"""outOut: $outOut
-      inOut: $inOut
-      inIn: $inIn"""
+    s"""outOut: ${_outOut}
+      inOut: ${_inOut}
+      inIn: ${_inIn}"""
   }
 }

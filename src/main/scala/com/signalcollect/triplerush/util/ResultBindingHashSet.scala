@@ -21,6 +21,7 @@ package com.signalcollect.triplerush.util
 import scala.Array.canBuildFrom
 import scala.reflect.ClassTag
 import scala.util.hashing.MurmurHash3._
+import annotation.switch
 
 class ResultBindingWrapper(val bindings: Array[Int]) extends AnyVal {
 
@@ -45,7 +46,7 @@ class ResultBindingWrapper(val bindings: Array[Int]) extends AnyVal {
    */
   def hashCodeLike: Int = {
     val length = bindings.length
-    length match {
+    (length: @switch) match {
       case 0 => 0
       case 1 => bindings(0)
       case 2 => finalizeHash(mixLast(bindings(0), bindings(1)), 3)
