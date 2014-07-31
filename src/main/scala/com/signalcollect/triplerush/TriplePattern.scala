@@ -86,7 +86,7 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
     TriplePattern(s, p, o)
   }
 
-  @inline def parentIds: List[Long] = {
+  def parentIds: List[Long] = {
     toTriplePattern.parentPatterns.map(_.toEfficientIndexPattern)
   }
 
