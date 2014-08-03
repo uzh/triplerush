@@ -26,9 +26,9 @@ import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.QueryIds
 
-trait Binding[State]
-  extends IndexVertex[State]
-  with ParentBuilding[State] {
+trait Binding
+  extends IndexVertex[Any]
+  with ParentBuilding[Any] {
 
   def onEdgeAdded(ge: GraphEditor[Long, Any])
 

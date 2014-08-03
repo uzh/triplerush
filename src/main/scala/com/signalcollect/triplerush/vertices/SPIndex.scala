@@ -28,7 +28,7 @@ import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.util.SplayIntSet
 
 final class SPIndex(id: Long) extends OptimizedIndexVertex(id)
-  with Binding[Any] {
+  with Binding {
 
   @inline def bindIndividualQuery(childDelta: Int, query: Array[Int]): Array[Int] = {
     query.bind(id.s, id.p, childDelta)

@@ -36,17 +36,24 @@ abstract class OptimizedIndexVertex(
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     super.afterInitialization(graphEditor)
-    state = Ints.createEmptyFastInsertIntSet
   }
 
   def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
-    val childIds = state match {
-      case a: Array[Byte] =>
-        new FastInsertIntSet(a).toBuffer
-      case s: SplayIntSet =>
-        s.toBuffer
+    val childIds: Array[Int] = {
+      if (state == null) {
+        Array[Int]() // Root vertex in an empty store.
+      } else {
+        state match {
+          case i: Int =>
+            Array(i)
+          case a: Array[Byte] =>
+            new FastInsertIntSet(a).toBuffer.toArray
+          case s: SplayIntSet =>
+            s.toBuffer.toArray
+        }
+      }
     }
-    graphEditor.sendSignal(ChildIdReply(childIds.toArray), requestor)
+    graphEditor.sendSignal(ChildIdReply(childIds), requestor)
   }
 
   override def edgeCount = {
@@ -57,6 +64,8 @@ abstract class OptimizedIndexVertex(
 
   @inline final def numberOfStoredChildDeltas = {
     state match {
+      case i: Int =>
+        if (i != 0) 1 else 0
       case a: Array[Byte] =>
         new FastInsertIntSet(a).size
       case s: SplayIntSet =>
@@ -66,6 +75,8 @@ abstract class OptimizedIndexVertex(
 
   @inline def foreachChildDelta(f: Int => Unit) = {
     state match {
+      case i: Int =>
+        f(i) // No check for 0, as an index vertex always needs to have at elast one child delta set at this point.
       case a: Array[Byte] =>
         new FastInsertIntSet(a).foreach(f)
       case s: SplayIntSet =>
@@ -74,24 +85,38 @@ abstract class OptimizedIndexVertex(
   }
 
   def addChildDelta(delta: Int): Boolean = {
-    state match {
-      case a: Array[Byte] =>
-        val sizeBefore = new FastInsertIntSet(a).size
-        val intSetAfter = new FastInsertIntSet(a).insert(delta, 0.01f)
-        val sizeAfter = new FastInsertIntSet(intSetAfter).size
-        
-        if (sizeAfter >= 1000) {
-          val splayIntSet = new MemoryEfficientSplayIntSet
-          val root = new SplayNode(intSetAfter)
-          splayIntSet.initializeWithRoot(root)
-          state = splayIntSet
-        } else {
-          state = intSetAfter
-        }
-        sizeAfter > sizeBefore
-      case s: SplayIntSet =>
-        val wasInserted = s.insert(delta)
-        wasInserted
+    if (state == null) {
+      state = delta
+      true
+    } else {
+      state match {
+        case i: Int =>
+          if (delta != i) {
+            var intSet = Ints.createEmptyFastInsertIntSet
+            intSet = new FastInsertIntSet(intSet).insert(i, 0.01f)
+            state = new FastInsertIntSet(intSet).insert(delta, 0.01f)
+            true
+          } else {
+            false
+          }
+        case a: Array[Byte] =>
+          val sizeBefore = new FastInsertIntSet(a).size
+          val intSetAfter = new FastInsertIntSet(a).insert(delta, 0.01f)
+          val sizeAfter = new FastInsertIntSet(intSetAfter).size
+
+          if (sizeAfter >= 1000) {
+            val splayIntSet = new MemoryEfficientSplayIntSet
+            val root = new SplayNode(intSetAfter)
+            splayIntSet.initializeWithRoot(root)
+            state = splayIntSet
+          } else {
+            state = intSetAfter
+          }
+          sizeAfter > sizeBefore
+        case s: SplayIntSet =>
+          val wasInserted = s.insert(delta)
+          wasInserted
+      }
     }
   }
 

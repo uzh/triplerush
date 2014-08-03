@@ -29,7 +29,7 @@ import com.signalcollect.util.SearchableIntSet
 import com.signalcollect.triplerush.QueryIds
 
 final class SOIndex(id: Long) extends SearchableIndexVertex(id)
-  with Binding[Array[Int]] {
+  with Binding {
 
   override def onEdgeAdded(ge: GraphEditor[Long, Any]) {}
 
@@ -39,7 +39,7 @@ final class SOIndex(id: Long) extends SearchableIndexVertex(id)
   override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]) {
     val pattern = c.forPattern
     if (pattern.isFullyBound) {
-      val exists = new SearchableIntSet(state).contains(pattern.p)
+      val exists = childIdsContain(pattern.p)
       if (exists) {
         graphEditor.sendSignal(
           CardinalityReply(pattern, 1), c.requestor)
@@ -64,7 +64,7 @@ final class SOIndex(id: Long) extends SearchableIndexVertex(id)
     val patternP = query.lastPatternP
     if (patternP > 0 && query.lastPatternS > 0 && query.lastPatternO > 0) {
       // We are looking for a specific, fully bound triple pattern. This means that we have to do a binary search on the targetIds.
-      if (new SearchableIntSet(state).contains(patternP)) {
+      if (childIdsContain(patternP)) {
         routeSuccessfullyBound(query.copyWithoutLastPattern, graphEditor)
       } else {
         // Failed query

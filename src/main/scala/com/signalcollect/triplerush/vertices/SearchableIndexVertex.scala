@@ -28,39 +28,84 @@ import com.signalcollect.util.SearchableIntSet
  * Stores the child delta array in the state.
  */
 abstract class SearchableIndexVertex[SignalType, State](
-  id: Long) extends IndexVertex[Array[Int]](id) {
+  id: Long) extends IndexVertex[Any](id) {
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     super.afterInitialization(graphEditor)
-    state = Array[Int]()
+  }
+
+  @inline final def childIdsContain(n: Int): Boolean = {
+    state match {
+      case i: Int =>
+        if (i != n) false else true
+      case a: Array[Int] =>
+        new SearchableIntSet(a).contains(n)
+    }
   }
 
   def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
-    graphEditor.sendSignal(ChildIdReply(state.toBuffer.toArray), requestor)
+    state match {
+      case i: Int =>
+        graphEditor.sendSignal(ChildIdReply(Array(i)), requestor)
+      case a: Array[Int] =>
+        graphEditor.sendSignal(ChildIdReply(a.toArray), requestor)
+    }
   }
 
   @inline def foreachChildDelta(f: Int => Unit) = {
-    var i = 0
-    val l = state.length
-    while (i < l) {
-      f(state(i))
-      i += 1
+    // state is not allowed to be null at this point.
+    state match {
+      case i: Int =>
+        f(i)
+      case a: Array[Int] =>
+        var i = 0
+        val l = a.length
+        while (i < l) {
+          f(a(i))
+          i += 1
+        }
     }
   }
 
   override def edgeCount = {
-    if (state != null) state.length else 0
+    if (state != null) {
+      state match {
+        case i: Int =>
+          1
+        case a: Array[Int] =>
+          a.length
+      }
+    } else {
+      0
+    }
   }
 
-  def cardinality = state.length
-
-  def forechildDeltas: Traversable[Int] = state
+  def cardinality = edgeCount
 
   def addChildDelta(delta: Int): Boolean = {
-    val deltasBeforeInsert = state
-    state = new SearchableIntSet(state).insert(delta)
-    val wasInserted = deltasBeforeInsert != state // Reference comparison, if a new array was allocated, then an insert happened.
-    wasInserted
+    if (state == null) {
+      state = delta
+      true
+    } else {
+      state match {
+        case i: Int =>
+          if (delta != i) {
+            if (i > delta) {
+              state = Array(delta, i)
+            } else {
+              state = Array(i, delta)
+            }
+            true
+          } else {
+            false
+          }
+        case a: Array[Int] =>
+          val deltasBeforeInsert = a
+          state = new SearchableIntSet(a).insert(delta)
+          val wasInserted = deltasBeforeInsert != state // Reference comparison, if a new array was allocated, then an insert happened.
+          wasInserted
+      }
+    }
   }
 
 }
