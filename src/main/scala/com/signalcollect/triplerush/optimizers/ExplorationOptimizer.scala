@@ -165,10 +165,10 @@ final class ExplorationOptimizer(
         fringe = fringeAfterExploration)
     }
 
-    if (sizeOfFullPlan > 8) {
+    /*if (sizeOfFullPlan > 8) {
       // The exploration optimizer is awful for queries with many patterns, use the clever cardinality optimizer instead.
       CleverCardinalityOptimizer.optimize(cardinalities, predicateStats)
-    } else {
+    } else {*/
       val allPatterns = cardinalities.keySet
       val planHeap = new QueryPlanMinHeap(100 * sizeOfFullPlan * sizeOfFullPlan)
       triplePatterns.foreach { tp =>
@@ -201,7 +201,7 @@ final class ExplorationOptimizer(
       val resultOrder = goodCompletePlan.patternOrdering.toArray
       reverseMutableArray(resultOrder)
       resultOrder
-    }
+    //}
   }
 }
 
