@@ -39,7 +39,7 @@ abstract class AbstractQueryVertex[StateType](
   val tickets: Long,
   val numberOfSelectVariables: Int,
   val optimizer: Option[Optimizer]) extends BaseVertex[StateType] {
-  
+
   val numberOfPatternsInOriginalQuery: Int = query.length
 
   val expectedCardinalityReplies: Int = numberOfPatternsInOriginalQuery
@@ -237,7 +237,7 @@ abstract class AbstractQueryVertex[StateType](
   }
 
   def processTickets(t: Long) {
-    receivedTickets += math.abs(t)
+    receivedTickets += { if (t < 0) -t else t }  // inlined math.abs
     if (t < 0) {
       complete = false
     }
