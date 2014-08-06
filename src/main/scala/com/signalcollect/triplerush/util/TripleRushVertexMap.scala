@@ -23,6 +23,53 @@ import com.signalcollect.interfaces.VertexStore
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import scala.util.hashing.MurmurHash3._
 
+object Hashing {
+  /**
+   * Inlined Murmur3, equivalent to:
+   * finalizeHash(mixLast(a, b), 7)
+   */
+  @inline final def hash(a: Int, b: Int) = {
+    var k = b
+    k *= 0xcc9e2d51
+    k = (k << 15) | (k >>> -15)
+    k *= 0x1b873593
+    var h = a ^ k
+    h ^= 7
+    h ^= h >>> 16
+    h *= 0x85ebca6b
+    h ^= h >>> 13
+    h *= 0xc2b2ae35
+    h ^= h >>> 16
+    h
+  }
+
+  @inline final def avalanche(hash: Int): Int = {
+    var h = hash
+    h ^= h >>> 16
+    h *= 0x85ebca6b
+    h ^= h >>> 13
+    h *= 0xc2b2ae35
+    h ^= h >>> 16
+    h
+  }
+
+  @inline final def finalizeHash(h: Int, length: Int): Int = avalanche(h ^ length)
+
+  @inline final def rotateLeft(i: Int, distance: Int): Int = {
+    (i << distance) | (i >>> -distance)
+  }
+
+  @inline final def mixLast(a: Int, b: Int): Int = {
+    var k = b
+
+    k *= 0xcc9e2d51
+    k = rotateLeft(k, 15)
+    k *= 0x1b873593
+
+    a ^ k
+  }
+}
+
 // A special adaptation of LongHashMap[Vertex[Long, _, Long, Any]].
 // We allow arbitrary types for the vertex id to make
 // the usage of the framework simple.
@@ -250,8 +297,7 @@ class TripleRushVertexMap(
   }
 
   private[this] final def keyToPosition(efficientIndexPattern: Long): Int = {
-    val triplePatternHash = finalizeHash(mixLast(efficientIndexPattern.extractFirst, efficientIndexPattern.extractSecond), 7)
-    triplePatternHash & mask
+    Hashing.hash(efficientIndexPattern.extractFirst, efficientIndexPattern.extractSecond) & mask
   }
 
   private[this] final def nextPowerOfTwo(x: Int): Int = {
