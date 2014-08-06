@@ -26,13 +26,16 @@ import com.signalcollect.triplerush.EfficientIndexPattern._
 import scala.util.hashing.MurmurHash3._
 
 class SingleNodeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
-  assert(numberOfNodes == 1, "This triple mapper should only be used in single-instance TripleRush.")
+  if (numberOfNodes != 1) {
+    throw new Exception("This triple mapper should only be used in single-instance TripleRush.")
+  }
+
   val numberOfWorkers = numberOfNodes * workersPerNode
 
   def getWorkerIdForVertexId(vertexId: Long): Int = {
     val first = vertexId.extractFirst
     val second = vertexId.extractSecond
-    (finalizeHash(mixLast(first, second), 3) & Int.MaxValue) % numberOfWorkers
+    ((first + second) & Int.MaxValue) % numberOfWorkers
   }
 
   def getWorkerIdForVertexIdHash(vertexIdHash: Int): Int = throw new UnsupportedOperationException("This mapper does not support mapping by vertex hash.")

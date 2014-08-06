@@ -70,9 +70,10 @@ trait Binding
     } else {
       val edges = edgeCount
       val totalTickets = query.tickets
-      val avg = math.abs(totalTickets) / edges
+      val absoluteValueOfTotalTickets = if (totalTickets < 0) -totalTickets else totalTickets  // inlined math.abs
+      val avg = absoluteValueOfTotalTickets / edges
       val complete = avg > 0 && totalTickets > 0
-      var extras = math.abs(totalTickets) % edges
+      var extras = absoluteValueOfTotalTickets % edges
       val averageTicketQuery = query.copyWithTickets(avg, complete)
       val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
       def bind(childDelta: Int) {

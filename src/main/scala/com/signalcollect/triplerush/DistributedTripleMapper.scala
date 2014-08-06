@@ -29,42 +29,32 @@ class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
   val numberOfWorkers = numberOfNodes * workersPerNode
 
   def getWorkerIdForVertexId(vertexId: Long): Int = {
-    /**
-     * Try to map things with to a node based on the subject/object, wherever possible.
-     * Load balance over the workers of that node by using other unused triple information.
-     */
-    if (vertexId.isQueryId) {
-      // Avoid issues with mod on negative numbers by cutting off the 2s complement 1 at the front.
-      // This guarantees a 'positive' outcome. :)
-      // Always puts query vertices on node 0.
-      (QueryIds.extractQueryIdFromLong(vertexId) & Int.MaxValue) % workersPerNode
-    } else {
-      // Duplicated code, we don't want to create any new objects here.
-      val first = vertexId.extractFirst
-      val second = vertexId.extractSecond
-      val s = math.max(0, first)
-      val o = math.max(0, second)
-      val p = if (first < 0) {
-        first & Int.MaxValue
+    val first = vertexId.extractFirst
+    val second = vertexId.extractSecond
+    if (first < 0) {
+      if (second < 0) {
+        // It's a query id, map to first node and load balance on the workers there.
+        ((first + second) & Int.MaxValue) % workersPerNode
       } else {
-        if (second < 0) { // second < 0
-          second & Int.MaxValue
+        // First encodes a predicate, second encodes an object.
+        if (second > 0) {
+          // Object is not a wildcard and we use it for node assignment.
+          val loadBalanceId = (first + second) & Int.MaxValue
+          workerIdOptimized(nodeAssignmentId = second, nodeLoadBalanceId = loadBalanceId)
         } else {
-          0
+          // Everything but the predicate is a wildcard. We use the predicate for both node assignment and load balancing. 
+          val p = first & Int.MaxValue
+          workerIdOptimized(nodeAssignmentId = p, nodeLoadBalanceId = p)
         }
       }
-      val loadBalanceId = finalizeHash(mixLast(first, second), 3) & Int.MaxValue
-      if (s > 0) {
-        workerIdOptimized(nodeAssignmentId = s, nodeLoadBalanceId = loadBalanceId)
-      } else if (o > 0) {
-        workerIdOptimized(nodeAssignmentId = o, nodeLoadBalanceId = loadBalanceId)
-      } else if (p > 0) {
-        workerIdOptimized(nodeAssignmentId = p, nodeLoadBalanceId = loadBalanceId)
-      } else {
-        // Root, put it on the last node, so it does not collide with the node which has the coordinator, when there are multiple nodes.
-        // Put it on the second worker there.
-        workerIdOptimized(nodeAssignmentId = numberOfNodes - 1, nodeLoadBalanceId = 1)
-      }
+    } else if (first > 0) {
+      // First represents the subject and we use it for node assignment..
+      val loadBalanceId = (first + second) & Int.MaxValue
+      workerIdOptimized(nodeAssignmentId = first, nodeLoadBalanceId = loadBalanceId)
+    } else {
+      // Subject is a wildcard, we use whatever is in second for node assignment and load balancing.
+      val predicateOrObject = second & Int.MaxValue
+      workerIdOptimized(nodeAssignmentId = predicateOrObject, nodeLoadBalanceId = predicateOrObject)
     }
   }
 
@@ -72,7 +62,7 @@ class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
    * Asserts that both nodeAssignmentId and nodeBalanceId
    * are larger than or equal to zero.
    */
-  def workerIdOptimized(nodeAssignmentId: Int, nodeLoadBalanceId: Int): Int = {
+  @inline final def workerIdOptimized(nodeAssignmentId: Int, nodeLoadBalanceId: Int): Int = {
     val nodeId = nodeAssignmentId % numberOfNodes
     val workerOnNode = nodeLoadBalanceId % workersPerNode
     nodeId * workersPerNode + workerOnNode
