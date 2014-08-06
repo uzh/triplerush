@@ -27,7 +27,7 @@ import com.signalcollect.interfaces.VertexStore
 class TripleRushVertexMapStorage extends Storage[Long, Any] {
 
   val vertices = vertexStoreFactory
-  protected def vertexStoreFactory: VertexStore[Long, Any] = new TripleRushVertexMap(initialSize = 32768, rehashFraction = .8f)
+  protected def vertexStoreFactory: VertexStore[Long, Any] = new TripleRushVertexMap(initialSize = 32768, rehashFraction = .4f)
 
   val toCollect = vertexSignalFactory //holds all signals that are not collected yet
   protected def vertexSignalFactory = new TripleRushVertexMap(initialSize = 2, rehashFraction = .9f)
