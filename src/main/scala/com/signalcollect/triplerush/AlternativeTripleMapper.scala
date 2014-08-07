@@ -24,8 +24,15 @@ import com.signalcollect.interfaces.MapperFactory
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import scala.util.hashing.MurmurHash3._
 
-class AlternativeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
+class AlternativeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int, predicateIndexVerticesOnNode0: Boolean) extends VertexToWorkerMapper[Long] {
+
   val numberOfWorkers = numberOfNodes * workersPerNode
+
+  val modForPredicates = if (predicateIndexVerticesOnNode0) {
+    workersPerNode
+  } else {
+    numberOfWorkers
+  }
 
   def getWorkerIdForVertexId(vertexId: Long): Int = {
     val first = vertexId.extractFirst
@@ -40,7 +47,7 @@ class AlternativeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
         ((first + second) & Int.MaxValue) % workersPerNode
       } else {
         // Only a predicate is set, the other two are wildcards. This means that the predicate is stored in first.
-        (first & Int.MaxValue) % numberOfWorkers
+        (first & Int.MaxValue) % modForPredicates
       }
     }
   }
@@ -48,6 +55,6 @@ class AlternativeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
   def getWorkerIdForVertexIdHash(vertexIdHash: Int): Int = throw new UnsupportedOperationException("This mapper does not support mapping by vertex hash.")
 }
 
-object AlternativeTripleMapperFactory extends MapperFactory[Long] {
-  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new DistributedTripleMapper(numberOfNodes, workersPerNode)
+class AlternativeTripleMapperFactory(predicateNodesOnNode0: Boolean) extends MapperFactory[Long] {
+  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new AlternativeTripleMapper(numberOfNodes, workersPerNode, predicateNodesOnNode0)
 }
