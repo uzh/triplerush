@@ -24,32 +24,23 @@ import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.interfaces.MapperFactory
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import scala.util.hashing.MurmurHash3._
-import com.signalcollect.triplerush.util.Hashing
 
-class TripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
+class SingleNodeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
+  if (numberOfNodes != 1) {
+    throw new Exception("This triple mapper should only be used in single-instance TripleRush.")
+  }
+
   val numberOfWorkers = numberOfNodes * workersPerNode
 
   def getWorkerIdForVertexId(vertexId: Long): Int = {
     val first = vertexId.extractFirst
-    if (first > 0) {
-      first % numberOfWorkers
-    } else {
-      val second = vertexId.extractSecond
-      if (second > 0) {
-        second % numberOfWorkers
-      } else if (first < 0 && second < 0) {
-        // It's a query ID, we need to put it on node 1.
-        ((first + second) & Int.MaxValue) % workersPerNode
-      } else {
-        // Only a predicate is set, the other two are wildcards. This means that the predicate is stored in first.
-        (first & Int.MaxValue) % numberOfWorkers
-      }
-    }
+    val second = vertexId.extractSecond
+    ((first + second) & Int.MaxValue) % numberOfWorkers
   }
 
   def getWorkerIdForVertexIdHash(vertexIdHash: Int): Int = throw new UnsupportedOperationException("This mapper does not support mapping by vertex hash.")
 }
 
-object TripleMapperFactory extends MapperFactory[Long] {
-  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new TripleMapper(numberOfNodes, workersPerNode)
+object SingleNodeTripleMapperFactory extends MapperFactory[Long] {
+  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new SingleNodeTripleMapper(numberOfNodes, workersPerNode)
 }

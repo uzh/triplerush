@@ -47,11 +47,13 @@ import com.signalcollect.triplerush.util.TripleRushStorage
 import com.signalcollect.GraphBuilder
 import com.signalcollect.triplerush.util.TripleRushWorkerFactory
 import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
+import com.signalcollect.interfaces.MapperFactory
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
   optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
   val dictionary: Dictionary = new HashMapDictionary(),
+  tripleMapperFactory: Option[MapperFactory[Long]] = None,
   console: Boolean = false) extends QueryEngine {
 
   var canExecute = false
@@ -61,48 +63,56 @@ case class TripleRush(
     withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
     withEdgeAddedToNonExistentVertexHandlerFactory(TripleRushEdgeAddedToNonExistentVertexHandlerFactory).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
-    withMapperFactory(TripleMapperFactory).
-    withStorageFactory(TripleRushStorage).
-    withWorkerFactory(new TripleRushWorkerFactory[Any]).
-    withBlockingGraphModificationsSupport(false).
-    withHeartbeatInterval(500).
-    withEagerIdleDetection(false).
-    withKryoRegistrations(List(
-      "com.signalcollect.triplerush.vertices.RootIndex",
-      "com.signalcollect.triplerush.vertices.SIndex",
-      "com.signalcollect.triplerush.vertices.PIndex",
-      "com.signalcollect.triplerush.vertices.OIndex",
-      "com.signalcollect.triplerush.vertices.SPIndex",
-      "com.signalcollect.triplerush.vertices.POIndex",
-      "com.signalcollect.triplerush.vertices.SOIndex",
-      "com.signalcollect.triplerush.TriplePattern",
-      "com.signalcollect.triplerush.PlaceholderEdge",
-      "com.signalcollect.triplerush.CardinalityRequest",
-      "com.signalcollect.triplerush.CardinalityReply",
-      "com.signalcollect.triplerush.PredicateStatsReply",
-      "com.signalcollect.triplerush.ChildIdRequest",
-      "com.signalcollect.triplerush.ChildIdReply",
-      "com.signalcollect.triplerush.SubjectCountSignal",
-      "com.signalcollect.triplerush.ObjectCountSignal",
-      "Array[com.signalcollect.triplerush.TriplePattern]",
-      "com.signalcollect.interfaces.AddEdge",
-      "com.signalcollect.triplerush.CombiningMessageBusFactory",
-      "com.signalcollect.triplerush.TripleMapperFactory$",
-      "com.signalcollect.triplerush.TripleRush$$anonfun$loadNtriples$1",
-      "com.signalcollect.triplerush.PredicateStats",
-      "com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex", // Only for local serialization test.
-      "com.signalcollect.triplerush.util.ResultIterator", // Only for local serialization test.
-      "java.util.concurrent.atomic.AtomicBoolean", // Only for local serialization test.
-      "java.util.concurrent.LinkedBlockingQueue", // Only for local serialization test.
-      "scala.reflect.ManifestFactory$$anon$10",
-      "com.signalcollect.triplerush.util.TripleRushStorage$",
-      "akka.actor.RepointableActorRef",
-      "com.signalcollect.triplerush.TripleRushEdgeAddedToNonExistentVertexHandlerFactory$",
-      "com.signalcollect.factory.scheduler.Throughput$mcJ$sp",
-      "com.signalcollect.triplerush.TripleRushUndeliverableSignalHandlerFactory$",
-      "com.signalcollect.triplerush.util.TripleRushWorkerFactory",
-      "com.signalcollect.interfaces.BulkSignalNoSourceIds$mcJ$sp",
-      "com.signalcollect.interfaces.SignalMessageWithoutSourceId$mcJ$sp")).build
+    withMapperFactory(
+      tripleMapperFactory.getOrElse(
+        if (graphBuilder.config.preallocatedNodes.isEmpty && graphBuilder.config.nodeProvisioner.isInstanceOf[LocalNodeProvisioner[_, _]]) {
+          SingleNodeTripleMapperFactory
+        } else {
+          DistributedTripleMapperFactory
+        })).
+      withStorageFactory(TripleRushStorage).
+      withWorkerFactory(new TripleRushWorkerFactory[Any]).
+      withBlockingGraphModificationsSupport(false).
+      withHeartbeatInterval(500).
+      withEagerIdleDetection(false).
+      withKryoRegistrations(List(
+        "com.signalcollect.triplerush.vertices.RootIndex",
+        "com.signalcollect.triplerush.vertices.SIndex",
+        "com.signalcollect.triplerush.vertices.PIndex",
+        "com.signalcollect.triplerush.vertices.OIndex",
+        "com.signalcollect.triplerush.vertices.SPIndex",
+        "com.signalcollect.triplerush.vertices.POIndex",
+        "com.signalcollect.triplerush.vertices.SOIndex",
+        "com.signalcollect.triplerush.TriplePattern",
+        "com.signalcollect.triplerush.PlaceholderEdge",
+        "com.signalcollect.triplerush.CardinalityRequest",
+        "com.signalcollect.triplerush.CardinalityReply",
+        "com.signalcollect.triplerush.PredicateStatsReply",
+        "com.signalcollect.triplerush.ChildIdRequest",
+        "com.signalcollect.triplerush.ChildIdReply",
+        "com.signalcollect.triplerush.SubjectCountSignal",
+        "com.signalcollect.triplerush.ObjectCountSignal",
+        "Array[com.signalcollect.triplerush.TriplePattern]",
+        "com.signalcollect.interfaces.AddEdge",
+        "com.signalcollect.triplerush.CombiningMessageBusFactory",
+        "com.signalcollect.triplerush.SingleNodeTripleMapperFactory$",
+        "com.signalcollect.triplerush.DistributedTripleMapperFactory$",
+        "com.signalcollect.triplerush.AlternativeTripleMapperFactory$",
+        "com.signalcollect.triplerush.TripleRush$$anonfun$loadNtriples$1",
+        "com.signalcollect.triplerush.PredicateStats",
+        "com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex", // Only for local serialization test.
+        "com.signalcollect.triplerush.util.ResultIterator", // Only for local serialization test.
+        "java.util.concurrent.atomic.AtomicBoolean", // Only for local serialization test.
+        "java.util.concurrent.LinkedBlockingQueue", // Only for local serialization test.
+        "scala.reflect.ManifestFactory$$anon$10",
+        "com.signalcollect.triplerush.util.TripleRushStorage$",
+        "akka.actor.RepointableActorRef",
+        "com.signalcollect.triplerush.TripleRushEdgeAddedToNonExistentVertexHandlerFactory$",
+        "com.signalcollect.factory.scheduler.Throughput$mcJ$sp",
+        "com.signalcollect.triplerush.TripleRushUndeliverableSignalHandlerFactory$",
+        "com.signalcollect.triplerush.util.TripleRushWorkerFactory",
+        "com.signalcollect.interfaces.BulkSignalNoSourceIds$mcJ$sp",
+        "com.signalcollect.interfaces.SignalMessageWithoutSourceId$mcJ$sp")).build
   val system = ActorSystemRegistry.retrieve("SignalCollect").get
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
@@ -199,10 +209,10 @@ case class TripleRush(
     graph.addVertex(queryVertex)
     (resultPromise.future, statsPromise.future)
   }
-  
+
   def resultIteratorForQuery(
     query: Seq[TriplePattern]) = resultIteratorForQuery(query, None, None, Long.MaxValue)
-  
+
   /**
    * If the optimizer is defined, uses that one, else uses the default.
    */

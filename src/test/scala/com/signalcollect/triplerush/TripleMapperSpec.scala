@@ -11,7 +11,7 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
   val workersPerNode = 24
   val step = numberOfNodes * workersPerNode
 
-  val m = new TripleMapper(numberOfNodes = numberOfNodes, workersPerNode = workersPerNode)
+  val m = new DistributedTripleMapper(numberOfNodes = numberOfNodes, workersPerNode = workersPerNode)
 
   def nodeId(workerId: Int) = (((workerId & Int.MaxValue) % step) / workersPerNode).floor.toInt
   def workerId(workerId: Int) = (workerId & Int.MaxValue) % workersPerNode
@@ -46,16 +46,15 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
     }, minSuccessful(100))
   }
 
-  // We don't want this property anymore, locality is more important.
-//  it should "usually assign triples that share subject/object to different workers on the same node, when their predicates are different" in {
-//    check((id: Int) => {
-//      (id > 0) ==> {
-//        val w1 = workerId(m.getWorkerIdForVertexId(EfficientIndexPattern(id, 2, 0)))
-//        val w2 = workerId(m.getWorkerIdForVertexId(EfficientIndexPattern(0, 5, id)))
-//        w1 != w2
-//      }
-//    }, minSuccessful(100))
-//  }
+  it should "usually assign triples that share subject/object to different workers on the same node, when their predicates are different" in {
+    check((id: Int) => {
+      (id > 0) ==> {
+        val w1 = workerId(m.getWorkerIdForVertexId(EfficientIndexPattern(id, 2, 0)))
+        val w2 = workerId(m.getWorkerIdForVertexId(EfficientIndexPattern(0, 5, id)))
+        w1 != w2
+      }
+    }, minSuccessful(100))
+  }
 
   /**
    * Usually small ids are more frequent. Try to avoid putting them all
