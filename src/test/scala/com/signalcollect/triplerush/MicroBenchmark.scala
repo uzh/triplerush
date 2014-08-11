@@ -4,7 +4,7 @@ import com.signalcollect.triplerush.sparql.Sparql
 
 object MicroBenchmark extends App {
 
-  implicit val tr = new TripleRush
+  implicit val tr = new TripleRush//(tripleMapperFactory = Some(new AlternativeTripleMapperFactory(predicateNodesOnNode0 = false)))
   Lubm.load(tr)
   val runs = 10000 //Best time: 6.5 milliseconds
   val bestTime = (1 to runs).map(x => runAllLubmQueries).min
