@@ -2,7 +2,7 @@
  *  @author Philip Stutz
  *  @author Christian Tschanz
  *
- *  Copyright 2013 University of Zurich
+ *  Copyright 2014 University of Zurich
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import scala.util.hashing.MurmurHash3._
 /*
  * HashMap Long keys and Int values.
  */
-class TriplePatternIntHashMap(
+class CompositeLongIntHashMap(
   initialSize: Int = 32768,
   rehashFraction: Float = 0.75f) {
   assert(initialSize > 0)
