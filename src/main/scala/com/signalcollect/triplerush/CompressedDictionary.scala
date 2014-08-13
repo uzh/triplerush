@@ -19,15 +19,145 @@
 
 package com.signalcollect.triplerush
 
+import java.util.concurrent.locks.ReentrantReadWriteLock
+
+import com.signalcollect.triplerush.util.CompositeLongIntHashMap
+import com.signalcollect.util.IntLongHashMap
+
 class CompressedDictionary extends Dictionary {
 
-  def contains(s: String): Boolean = ???
-  def apply(s: String): Int = ???
-  def apply(id: Int): String = ???
+  val idToPrefixedId = new IntLongHashMap(initialSize = 128, rehashFraction = 0.4f)
+  val prefixedIdToId = new CompositeLongIntHashMap(initialSize = 128, rehashFraction = 0.4f)
+  val impl = new HashMapDictionary
+
+  private val lock = new ReentrantReadWriteLock
+  private val read = lock.readLock
+  private val write = lock.writeLock
+
+  def contains(s: String): Boolean = {
+    val hashIndex = s.indexOf('#', 1)
+    if (hashIndex > 0 && hashIndex < (s.length - 1)) {
+      val prefix = s.substring(0, hashIndex + 1)
+      val remainder = s.substring(hashIndex + 1)
+      val prefixId = impl.apply(prefix)
+      val remainderId = impl.apply(remainder)
+      val compositeLongRepresentation = EfficientIndexPattern.embed2IntsInALong(prefixId, remainderId)
+      val potentiallyExistingCompositeId = prefixedIdToId.get(compositeLongRepresentation)
+      potentiallyExistingCompositeId > 0
+    } else {
+      impl.contains(s)
+    }
+  }
+
+  // TODO: Test with string that ends with a hash
+  def apply(s: String): Int = {
+    val hashIndex = s.indexOf('#', 1)
+    if (hashIndex != -1 && hashIndex < (s.length - 1)) {
+      val prefix = s.substring(0, hashIndex + 1)
+      val remainder = s.substring(hashIndex + 1)
+      val prefixId = impl.apply(prefix)
+      val remainderId = impl.apply(remainder)
+      val compositeLongRepresentation = EfficientIndexPattern.embed2IntsInALong(prefixId, remainderId)
+      write.lock
+      try {
+        val potentiallyExistingCompositeId = prefixedIdToId.get(compositeLongRepresentation)
+        if (potentiallyExistingCompositeId > 0) {
+          potentiallyExistingCompositeId
+        } else {
+          val compositeId = impl.reserveId
+          idToPrefixedId.put(compositeId, compositeLongRepresentation)
+          prefixedIdToId.put(compositeLongRepresentation, compositeId)
+          compositeId
+        }
+      } finally {
+        write.unlock
+      }
+    } else {
+      impl.apply(s)
+    }
+  }
+
+  @inline final def unsafeGetEncoded(s: String): Int = {
+    val hashIndex = s.indexOf('#', 1)
+    if (hashIndex != -1 && hashIndex < (s.length - 1)) {
+      val prefix = s.substring(0, hashIndex + 1)
+      val remainder = s.substring(hashIndex + 1)
+      val prefixId = impl.unsafeGetEncoded(prefix)
+      if (prefixId > 0) {
+        val remainderId = impl.unsafeGetEncoded(remainder)
+        if (remainderId > 0) {
+          val compositeLongRepresentation = EfficientIndexPattern.embed2IntsInALong(prefixId, remainderId)
+          val potentiallyExistingCompositeId = prefixedIdToId.get(compositeLongRepresentation)
+          potentiallyExistingCompositeId
+        } else {
+          0
+        }
+      } else {
+        0
+      }
+    } else {
+      impl.unsafeGetEncoded(s)
+    }
+  }
+
+  def apply(id: Int): String = {
+    read.lock
+    try {
+      val prefixedId = idToPrefixedId.get(id)
+      if (prefixedId != 0) {
+        val prefixId = new EfficientIndexPattern(prefixedId).extractFirst
+        val remainderId = new EfficientIndexPattern(prefixedId).extractSecond
+        impl.apply(prefixId) + impl.apply(remainderId)
+      } else {
+        impl.apply(id)
+      }
+    } finally {
+      read.unlock
+    }
+  }
+
   // Can only be called, when there are no concurrent writes.
-  def unsafeDecode(id: Int): String = ???
-  def decode(id: Int): Option[String] = ???
-  def clear = ???
-  def loadFromFile(fileName: String) = ???
+  @inline final def unsafeDecode(id: Int): String = {
+    val prefixedId = idToPrefixedId.get(id)
+    if (prefixedId != 0) {
+      val prefixId = new EfficientIndexPattern(prefixedId).extractFirst
+      val remainderId = new EfficientIndexPattern(prefixedId).extractSecond
+      impl.apply(prefixId) + impl.apply(remainderId)
+    } else {
+      impl.apply(id)
+    }
+  }
+
+  def decode(id: Int): Option[String] = {
+    read.lock
+    try {
+      val prefixedId = idToPrefixedId.get(id)
+      if (prefixedId != 0) {
+        val prefixId = new EfficientIndexPattern(prefixedId).extractFirst
+        val remainderId = new EfficientIndexPattern(prefixedId).extractSecond
+        Some(impl.apply(prefixId) + impl.apply(remainderId))
+      } else {
+        val decoded = impl.apply(id)
+        if (decoded != null) {
+          Some(decoded)
+        } else {
+          None
+        }
+      }
+    } finally {
+      read.unlock
+    }
+  }
+
+  def clear = {
+    write.lock
+    try {
+      impl.clear
+      idToPrefixedId.clear
+      prefixedIdToId.clear
+    } finally {
+      write.unlock
+    }
+  }
 
 }

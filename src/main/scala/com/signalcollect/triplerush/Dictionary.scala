@@ -34,9 +34,9 @@ trait Dictionary {
   def apply(id: Int): String
   // Can only be called, when there are no concurrent writes.
   def unsafeDecode(id: Int): String
+  def unsafeGetEncoded(s: String): Int
   def decode(id: Int): Option[String]
   def clear
-  def loadFromFile(fileName: String)
 }
 
 class HashMapDictionary(
@@ -72,6 +72,23 @@ class HashMapDictionary(
     }
   }
 
+  @inline final def unsafeGetEncoded(s: String): Int = {
+    string2Id.get(s)
+  }
+  
+  def reserveId: Int = {
+    write.lock
+    var reserved = 0
+    try {
+      maxId += 1
+      id2String += null
+      reserved = maxId
+    } finally {
+      write.unlock
+    }
+    reserved
+  }
+  
   def apply(s: String): Int = {
     read.lock
     val existingEncoding: Int = try {
@@ -111,7 +128,7 @@ class HashMapDictionary(
    *
    *  Only call if there are no concurrent modifications of the dictionary.
    */
-  def unsafeDecode(id: Int): String = {
+  @inline final def unsafeDecode(id: Int): String = {
     id2String(id)
   }
 

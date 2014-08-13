@@ -52,7 +52,7 @@ import com.signalcollect.interfaces.MapperFactory
 case class TripleRush(
   graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
   optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
-  val dictionary: Dictionary = new HashMapDictionary(),
+  val dictionary: Dictionary = new CompressedDictionary(),
   tripleMapperFactory: Option[MapperFactory[Long]] = None,
   console: Boolean = false) extends QueryEngine {
 
