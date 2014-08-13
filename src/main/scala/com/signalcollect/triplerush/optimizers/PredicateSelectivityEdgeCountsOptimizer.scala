@@ -144,7 +144,7 @@ final class PredicateSelectivityEdgeCountsOptimizer(predicateSelectivity: Predic
           math.min(cardinalities(candidate), numberOfPredicates)
         } //*,p,*
         else if (!isSubjectBound && !isObjectBound) {
-          math.min(cardinalities(candidate), stats.edgeCount * stats.subjectCount)
+          math.min(cardinalities(candidate), stats.edgeCount * stats.objectCount)
         } else {
           cardinalities(candidate)
         }
