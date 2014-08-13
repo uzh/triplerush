@@ -75,8 +75,7 @@ abstract class AbstractQueryVertex[StateType](
       } else {
         dispatchedQuery = None
         // All stats processed, but no results, we can safely remove the query vertex now.
-        reportResults
-        requestQueryVertexRemoval(graphEditor)
+        reportResultsAndRequestQueryVertexRemoval(graphEditor)
       }
     }
   }
@@ -148,8 +147,7 @@ abstract class AbstractQueryVertex[StateType](
       case deliveredTickets: Long =>
         processTickets(deliveredTickets)
         if (receivedTickets == tickets) {
-          reportResults
-          requestQueryVertexRemoval(graphEditor)
+          reportResultsAndRequestQueryVertexRemoval(graphEditor)
         }
       case bindings: Array[_] =>
         handleBindings(bindings.asInstanceOf[Array[Array[Int]]])
@@ -237,7 +235,7 @@ abstract class AbstractQueryVertex[StateType](
   }
 
   def processTickets(t: Long) {
-    receivedTickets += { if (t < 0) -t else t }  // inlined math.abs
+    receivedTickets += { if (t < 0) -t else t } // inlined math.abs
     if (t < 0) {
       complete = false
     }

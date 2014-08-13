@@ -48,6 +48,8 @@ import com.signalcollect.GraphBuilder
 import com.signalcollect.triplerush.util.TripleRushWorkerFactory
 import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
 import com.signalcollect.interfaces.MapperFactory
+import com.signalcollect.triplerush.vertices.query.QueryPlanningResult
+import com.signalcollect.triplerush.vertices.query.QueryPlanningVertex
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
@@ -189,6 +191,14 @@ case class TripleRush(
   def executeQuery(q: Seq[TriplePattern], optimizer: Option[Optimizer] = None, tickets: Long = Long.MaxValue): Traversable[Array[Int]] = {
     val (resultFuture, statsFuture) = executeAdvancedQuery(q, optimizer, tickets = tickets)
     val result = Await.result(resultFuture, 7200.seconds)
+    result
+  }
+
+  def getQueryPlan(query: Seq[TriplePattern], optimizer: Optimizer): QueryPlanningResult = {
+    val resultPromise = Promise[QueryPlanningResult]()
+    val queryVertex = new QueryPlanningVertex(query, resultPromise, optimizer)
+    graph.addVertex(queryVertex)
+    val result = Await.result(resultPromise.future, 7200.seconds)
     result
   }
 
