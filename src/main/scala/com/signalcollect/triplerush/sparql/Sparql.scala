@@ -43,17 +43,19 @@ case class Sparql(
   orderBy: Option[Int] = None,
   limit: Option[Int] = None) {
 
+  private val d = tr.dictionary
+
   assert(orderBy.isDefined == limit.isDefined, "ORDER BY and LIMIT are only supprted when both are used together.")
 
   protected val numberOfSelectVariables = selectVariableIds.size
 
   def withOptimizer(o: Optimizer) = this.copy(optimizer = Some(o))
-  
+
   protected def lookupVariableBinding(encodedResult: Array[Int])(variableName: String): String = {
     val id = variableNameToId(variableName)
     val index = VariableEncoding.variableIdToDecodingIndex(id)
     val encodedBinding = encodedResult(index)
-    tr.dictionary.unsafeDecode(encodedBinding)
+    d.unsafeDecode(encodedBinding)
   }
 
   protected class DecodingIterator(encodedIterator: Iterator[Array[Int]]) extends Iterator[String => String] {
@@ -69,7 +71,7 @@ case class Sparql(
       new DecodingIterator(encodedResults)
     } else if (orderBy.isDefined && limit.isDefined) {
       val orderByIndex = VariableEncoding.variableIdToDecodingIndex(orderBy.get)
-      @inline def orderByStringForBinding(bindings: Array[Int]) = tr.dictionary.unsafeDecode(bindings(orderByIndex))
+      @inline def orderByStringForBinding(bindings: Array[Int]) = d.unsafeDecode(bindings(orderByIndex))
       val iterator = encodedResults
       val topK = limit.get
       implicit val ordering = Ordering.by((bindings: Array[Int]) => orderByStringForBinding(bindings))
@@ -122,6 +124,7 @@ object Sparql {
    *  If the query might have results returns Some(Sparql), else returns None.
    */
   def apply(query: String)(implicit tr: TripleRush): Option[Sparql] = {
+    val d = tr.dictionary
     val parsed: ParsedSparqlQuery = SparqlParser.parse(query)
     var containsEntryThatIsNotInDictionary = false
     val prefixes = parsed.prefixes
@@ -173,8 +176,9 @@ object Sparql {
           case Variable(name) =>
             encodeVariable(name)
           case StringLiteral(s) =>
-            if (tr.dictionary.contains(s)) {
-              tr.dictionary(s)
+            val decoded = d.unsafeGetEncoded(s)
+            if (decoded > 0) {
+              decoded
             } else {
               // Literal not in store, no results.
               containsEntryThatIsNotInDictionary = true
@@ -186,8 +190,9 @@ object Sparql {
             } else {
               expandPrefix(url)
             }
-            if (tr.dictionary.contains(expandedUrl)) {
-              tr.dictionary(expandedUrl)
+            val decoded = d.unsafeGetEncoded(expandedUrl)
+            if (decoded > 0) {
+              decoded
             } else {
               // Url not in store, no results.
               containsEntryThatIsNotInDictionary = true

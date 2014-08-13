@@ -32,13 +32,13 @@ import QueryParticle._
 import scala.collection.mutable.ArrayBuffer
 import com.signalcollect.util.IntLongHashMap
 import com.signalcollect.util.IntHashMap
-import com.signalcollect.triplerush.util.TriplePatternIntHashMap
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import com.signalcollect.util.IntIntHashMap
 import akka.actor.ActorSystem
 import com.signalcollect.interfaces.BulkSignal
 import com.signalcollect.interfaces.BulkSignalNoSourceIds
 import com.signalcollect.interfaces.SignalMessageWithoutSourceId
+import com.signalcollect.triplerush.util.CompositeLongIntHashMap
 
 class SignalBulkerWithoutIds[@specialized(Long) Id: ClassTag, Signal: ClassTag](size: Int) {
   private var itemCount = 0
@@ -115,7 +115,7 @@ final class CombiningMessageBus[Signal: ClassTag](
 
   val aggregatedTickets = new IntLongHashMap(initialSize = 8)
   val aggregatedResults = new IntHashMap[ResultBulker](initialSize = 8)
-  val aggregatedCardinalities = new TriplePatternIntHashMap(initialSize = 8)
+  val aggregatedCardinalities = new CompositeLongIntHashMap(initialSize = 8)
   val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
   override def sendSignal(signal: Signal, targetId: Long) {
