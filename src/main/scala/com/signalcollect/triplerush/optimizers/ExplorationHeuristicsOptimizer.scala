@@ -7,6 +7,7 @@ import com.signalcollect.triplerush.PredicateStats
 import scala.collection.mutable.ArrayBuffer
 import com.signalcollect.triplerush.Dictionary
 import scala.collection.immutable.Map
+import com.signalcollect.triplerush.TriplePattern
 
 final class ExplorationHeuristicsOptimizer(
   val predicateSelectivity: PredicateSelectivity,
@@ -36,7 +37,7 @@ final class ExplorationHeuristicsOptimizer(
      * returns:
      * 		optimal ordering of candidate with previously picked patterns, together with the corresponding costs: size of frontier, exploration cost, totalcost
      */
-    def costOfPatternGivenPrevious(candidate: TriplePattern, previous: (List[TriplePattern], CostEstimate)): (List[TriplePattern], CostEstimate) = {
+    /*def costOfPatternGivenPrevious(candidate: TriplePattern, previous: (List[TriplePattern], CostEstimate)): (List[TriplePattern], CostEstimate) = {
       val cost: (List[TriplePattern], CostEstimate) = {
         val res = costForPattern(candidate, previous)
         if (res.lastExploration == 0) {
@@ -46,7 +47,7 @@ final class ExplorationHeuristicsOptimizer(
         }
       }
       cost
-    }
+    }*/
 
     /**
      * parameters:
@@ -55,7 +56,7 @@ final class ExplorationHeuristicsOptimizer(
      * returns:
      * 		cost of the order: size of frontier, exploration cost, totalcost
      */
-    def costForPattern(candidate: TriplePattern, previous: (List[TriplePattern], CostEstimate)): CostEstimate = {
+    /*def costForPattern(candidate: TriplePattern, previous: (List[TriplePattern], CostEstimate)): CostEstimate = {
       val exploreCost = previous._2.frontier * exploreCostForCandidatePattern(candidate, previous._1)
       val frontierSize = frontierSizeForCandidatePattern(candidate, exploreCost, previous._1)
       if (frontierSize == 0) {
@@ -63,13 +64,13 @@ final class ExplorationHeuristicsOptimizer(
       } else {
         CostEstimate(frontierSize, exploreCost, exploreCost)
       }
-    }
+    }*/
 
     /**
      * returns lookupcost for the candidate pattern, given the cost of previous pattern order
      */
-    def exploreCostForCandidatePattern(candidate: TriplePattern, pickedPatterns: List[TriplePattern]): Double = {
-      val boundVariables = pickedPatterns.foldLeft(Set.empty[Int]) { case (result, current) => result.union(current.variableSet) }
+    def exploreCostForCandidatePattern(candidate: TriplePattern, pickedPatterns: List[TriplePattern], boundVariables: Set[Int]): Double = {
+      //val boundVariables = pickedPatterns.foldLeft(Set.empty[Int]) { case (result, current) => result.union(current.variableSet) }
       val intersectionVariables = boundVariables.intersect(candidate.variableSet)
       val numberOfPredicates = predicateSelectivity.predicates.size
       val predicateIndexForCandidate = candidate.p
@@ -93,7 +94,7 @@ final class ExplorationHeuristicsOptimizer(
           math.min(cardinalities(candidate), numberOfPredicates)
         } //*,p,*
         else if (!isSubjectBound && !isObjectBound) {
-          math.min(cardinalities(candidate), stats.edgeCount * stats.subjectCount)
+          math.min(cardinalities(candidate), stats.edgeCount * stats.objectCount)
         } else {
           cardinalities(candidate)
         }
@@ -106,8 +107,8 @@ final class ExplorationHeuristicsOptimizer(
     /**
      * returns frontierSize for the candidate pattern, given the cost of previous pattern order and previous pattern order
      */
-    def frontierSizeForCandidatePattern(candidate: TriplePattern, exploreCostOfCandidate: Double, pickedPatterns: List[TriplePattern]): Double = {
-      val boundVariables = pickedPatterns.foldLeft(Set.empty[Int]) { case (result, current) => result.union(current.variableSet) }
+    def frontierSizeForCandidatePattern(candidate: TriplePattern, exploreCostOfCandidate: Double, pickedPatterns: List[TriplePattern], boundVariables: Set[Int]): Double = {
+      //val boundVariables = pickedPatterns.foldLeft(Set.empty[Int]) { case (result, current) => result.union(current.variableSet) }
 
       if (pickedPatterns.isEmpty) {
         exploreCostOfCandidate
@@ -146,10 +147,13 @@ final class ExplorationHeuristicsOptimizer(
 
     val triplePatterns = cardinalities.keys.toArray
     val sizeOfFullPlan = cardinalities.size
-
+    var sizeOfEasilyBindablePatterns = 0
     def analyzeQuery(): Map[Int, ArrayBuffer[TriplePattern]] = {
+
+      //map from variable (vertex) to set of associated patterns (possibly empty)
       var starMap = Map.empty[Int, Set[TriplePattern]].withDefaultValue(Set.empty)
       triplePatterns.map {
+        //add patterns associated with each subject and object (vertex) to the map
         tp =>
           var tpSet = starMap(tp.s)
           starMap += tp.s -> (tpSet + tp)
@@ -161,6 +165,9 @@ final class ExplorationHeuristicsOptimizer(
       //val keys = starMap.filter(_._2.size > 1).map(x => x._1 -> x._2.size)
 
       //val rearrangedStarMap = sortedStarMap.map {
+
+      //go through starMap to find the set of easily bindable patterns for each vertex
+      //if there's a 1-1 relation between the subject and object of the pattern, it is easily bindable
       val rearrangedStarMap = starMap.map {
         case (vertex, patterns) =>
           val rearrangedStar = ArrayBuffer[TriplePattern]()
@@ -169,6 +176,7 @@ final class ExplorationHeuristicsOptimizer(
               val stats = predicateStats(tp.p)
               if ((tp.s > 0 && stats.objectCount == 1) || (tp.o > 0 && stats.subjectCount == 1)) {
                 rearrangedStar.append(tp)
+                sizeOfEasilyBindablePatterns += 1
               }
             //else if (!keys.contains(otherEnd) || keys(otherEnd) > patterns.size)
             //rearrangedStar.append(tp)
@@ -180,12 +188,14 @@ final class ExplorationHeuristicsOptimizer(
     }
 
     val easilyBindablePatterns = analyzeQuery
-    val sizeOfEasilyBindablePatterns = easilyBindablePatterns.foldLeft(0)(_ + _._2.size)
+    //val sizeOfEasilyBindablePatterns = easilyBindablePatterns.foldLeft(0)(_ + _._2.size)
     //println(s"cardinalities: ${cardinalities.mkString(", ")}")
     //println(s"easily bindable patterns: ${easilyBindablePatterns.mkString(", ")}, size: $sizeOfEasilyBindablePatterns")
-    if(sizeOfEasilyBindablePatterns == 0){
-    	val alternativeOptimizer = new ExplorationOptimizer(predicateSelectivity, useHeuristic = true)
-    	return alternativeOptimizer.optimize(cardinalities, predicateStats)
+
+    //if there are no easily bindable patterns, simply use the exploration optimizer
+    if (sizeOfEasilyBindablePatterns == 0) {
+      val alternativeOptimizer = new ExplorationOptimizer(predicateSelectivity, useHeuristic = false)
+      return alternativeOptimizer.optimize(cardinalities, predicateStats)
     }
 
     def extend(p: QueryPlan, tp: TriplePattern, boundVars: Set[Int]): QueryPlan = {
@@ -196,8 +206,10 @@ final class ExplorationHeuristicsOptimizer(
       val newPatternOrdering = p.patternOrdering ::: easyToBindPatterns.toList
       //val newPatternOrdering = easyToBindPatterns.toList ::: p.patternOrdering
 
+      val boundVariables = newPatternOrdering.foldLeft(Set.empty[Int]) { case (result, current) => result.union(current.variableSet) }
+      
       //val exploreCost = exploreCostForCandidatePattern(tp, p.patternOrdering)
-      val exploreCost = exploreCostForCandidatePattern(tp, newPatternOrdering)
+      val exploreCost = exploreCostForCandidatePattern(tp, newPatternOrdering, boundVars)
       //val newCostSoFar = p.costSoFar + exploreCost
       val newCostSoFar = p.costSoFar + costOfEasyBinding + exploreCost
       //val matchedPatternsSoFar = p.id.size + 1
@@ -210,7 +222,7 @@ final class ExplorationHeuristicsOptimizer(
         newCostSoFar
       }
       //val fringeAfterExploration = frontierSizeForCandidatePattern(tp, exploreCost, p.patternOrdering)
-      val fringeAfterExploration = frontierSizeForCandidatePattern(tp, exploreCost, newPatternOrdering)
+      val fringeAfterExploration = frontierSizeForCandidatePattern(tp, exploreCost, newPatternOrdering, boundVars)
       QueryPlan(
         //id = p.id + tp,
         id = newPatternOrdering.toSet + tp,
@@ -233,22 +245,22 @@ final class ExplorationHeuristicsOptimizer(
         fringe = cardinality)
       planHeap.insert(atomicPlan)
 
-      //println(s"inserted ${atomicPlan} to planheap")
-
-      val easilyBindable = Set(tp.s, tp.o).foldLeft(Set.empty[TriplePattern]) { case (result, current) => result.union(easilyBindablePatterns(current).toSet) }
-      if (easilyBindable.size > 0) {
-        val sizeOfPatternsSoFar = easilyBindable.size + 1
-        val costSoFar = cardinality + cardinality * (easilyBindable.size)
+      //val easilyBindable = Set(tp.s, tp.o).foldLeft(Set.empty[TriplePattern]) { case (result, current) => result.union(easilyBindablePatterns(current).toSet) }
+      val easilyBindableForThisPattern = easilyBindablePatterns(tp.s) ++ easilyBindablePatterns(tp.o)
+      if (easilyBindableForThisPattern.size > 0) {
+        easilyBindableForThisPattern.append(tp)
+        val sizeOfPatternsSoFar = easilyBindableForThisPattern.size + 1
+        val costSoFar = cardinality + cardinality * (easilyBindableForThisPattern.size)
         val estimatedCost = costSoFar + (sizeOfFullPlan - sizeOfPatternsSoFar) * costSoFar / sizeOfPatternsSoFar
 
         val atomicPlanWithEasyBindable = QueryPlan(
-          id = easilyBindable,
+          id = easilyBindableForThisPattern.toSet,
           costSoFar = costSoFar,
           estimatedTotalCost = estimatedCost,
 
-          patternOrdering = easilyBindable.toList ::: List(tp),
+          patternOrdering = easilyBindableForThisPattern.toList,
+          //patternOrdering = easilyBindable.toList ::: List(tp),
           //patternOrdering = tp :: easilyBindable.toList,
-
           fringe = costSoFar)
         planHeap.insert(atomicPlanWithEasyBindable)
         //println(s"inserted ${atomicPlanWithEasyBindable}, to planheap")
