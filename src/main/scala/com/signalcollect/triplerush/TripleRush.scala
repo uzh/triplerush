@@ -97,6 +97,7 @@ case class TripleRush(
         "com.signalcollect.triplerush.CombiningMessageBusFactory",
         "com.signalcollect.triplerush.SingleNodeTripleMapperFactory$",
         "com.signalcollect.triplerush.DistributedTripleMapperFactory$",
+        "com.signalcollect.triplerush.LoadBalancingTripleMapperFactory$",
         "com.signalcollect.triplerush.AlternativeTripleMapperFactory",
         "com.signalcollect.triplerush.TripleRush$$anonfun$loadNtriples$1",
         "com.signalcollect.triplerush.PredicateStats",
