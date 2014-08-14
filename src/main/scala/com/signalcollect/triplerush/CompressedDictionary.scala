@@ -35,15 +35,13 @@ class CompressedDictionary extends Dictionary {
   private val write = lock.writeLock
 
   /**
-   * Split at the hash if there is one, else split at the last occurrence of a slash.
+   * Search for the last useful occurrence of a slash, then check if a hash still appears after that.
    */
   @inline final def getSplitIndex(s: String): Int = {
-    val hashIndex = s.indexOf('#', 1)
-    if (hashIndex == -1) {
-      s.lastIndexOf('/')
-    } else {
-      hashIndex
-    }
+    val slashSearchStartIndex = s.length - 2
+    val slashIndex = s.lastIndexOf('/', slashSearchStartIndex)
+    val hashIndex = s.indexOf('#', slashIndex)
+    math.max(slashIndex, hashIndex)
   }
 
   def contains(s: String): Boolean = {
