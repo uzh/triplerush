@@ -34,27 +34,46 @@ class CompressedDictionary extends Dictionary {
   private val read = lock.readLock
   private val write = lock.writeLock
 
-  def contains(s: String): Boolean = {
+  /**
+   * Split at the hash if there is one, else split at the last occurrence of a slash.
+   */
+  @inline final def getSplitIndex(s: String): Int = {
     val hashIndex = s.indexOf('#', 1)
-    if (hashIndex > 0 && hashIndex < (s.length - 1)) {
-      val prefix = s.substring(0, hashIndex + 1)
-      val remainder = s.substring(hashIndex + 1)
+    if (hashIndex == -1) {
+      s.lastIndexOf('/')
+    } else {
+      hashIndex
+    }
+  }
+
+  def contains(s: String): Boolean = {
+    val splitIndex = getSplitIndex(s)
+    if (splitIndex > 0 && splitIndex < (s.length - 1)) {
+      val prefix = s.substring(0, splitIndex + 1)
+      val remainder = s.substring(splitIndex + 1)
       val prefixId = impl.apply(prefix)
-      val remainderId = impl.apply(remainder)
-      val compositeLongRepresentation = EfficientIndexPattern.embed2IntsInALong(prefixId, remainderId)
-      val potentiallyExistingCompositeId = prefixedIdToId.get(compositeLongRepresentation)
-      potentiallyExistingCompositeId > 0
+      if (prefixId > 0) {
+        val remainderId = impl.apply(remainder)
+        if (remainderId > 0) {
+          val compositeLongRepresentation = EfficientIndexPattern.embed2IntsInALong(prefixId, remainderId)
+          val potentiallyExistingCompositeId = prefixedIdToId.get(compositeLongRepresentation)
+          potentiallyExistingCompositeId > 0
+        } else {
+          false
+        }
+      } else {
+        false
+      }
     } else {
       impl.contains(s)
     }
   }
 
-  // TODO: Test with string that ends with a hash
   def apply(s: String): Int = {
-    val hashIndex = s.indexOf('#', 1)
-    if (hashIndex != -1 && hashIndex < (s.length - 1)) {
-      val prefix = s.substring(0, hashIndex + 1)
-      val remainder = s.substring(hashIndex + 1)
+    val splitIndex = getSplitIndex(s)
+    if (splitIndex > 0 && splitIndex < (s.length - 1)) {
+      val prefix = s.substring(0, splitIndex + 1)
+      val remainder = s.substring(splitIndex + 1)
       val prefixId = impl.apply(prefix)
       val remainderId = impl.apply(remainder)
       val compositeLongRepresentation = EfficientIndexPattern.embed2IntsInALong(prefixId, remainderId)
@@ -78,10 +97,10 @@ class CompressedDictionary extends Dictionary {
   }
 
   @inline final def unsafeGetEncoded(s: String): Int = {
-    val hashIndex = s.indexOf('#', 1)
-    if (hashIndex != -1 && hashIndex < (s.length - 1)) {
-      val prefix = s.substring(0, hashIndex + 1)
-      val remainder = s.substring(hashIndex + 1)
+    val splitIndex = getSplitIndex(s)
+    if (splitIndex > 0 && splitIndex < (s.length - 1)) {
+      val prefix = s.substring(0, splitIndex + 1)
+      val remainder = s.substring(splitIndex + 1)
       val prefixId = impl.unsafeGetEncoded(prefix)
       if (prefixId > 0) {
         val remainderId = impl.unsafeGetEncoded(remainder)
