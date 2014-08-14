@@ -110,7 +110,7 @@ class HeuristicOptimizerSpec extends FlatSpec with Checkers with TestAnnouncemen
             tr.shutdown
           }
           true
-      }, minSuccessful(500))
+      }, minSuccessful(20))
   }
 
   def computePlanAndCosts(
