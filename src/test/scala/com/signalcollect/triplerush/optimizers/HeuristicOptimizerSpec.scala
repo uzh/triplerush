@@ -79,7 +79,6 @@ class HeuristicOptimizerSpec extends FlatSpec with Checkers with TestAnnouncemen
               val explorationOptimizedQuery = explorationOptimizer.optimize(cardinalities, predicateStats)
               val heuristicsOptimizedQuery = heuristicsOptimizer.optimize(cardinalities, predicateStats)
               assert(explorationOptimizedQuery.toList == heuristicsOptimizedQuery.toList)
-              println("success")
               /*val predicateSelectivityOptimizedQuery = predicateSelectivityOptimizer.optimize(cardinalities, predicateStats)
               val costMap = computePlanAndCosts(stats, predicateStats, cardinalities)
 
