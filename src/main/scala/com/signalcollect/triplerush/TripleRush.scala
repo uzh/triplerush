@@ -194,9 +194,10 @@ case class TripleRush(
     result
   }
 
-  def getQueryPlan(query: Seq[TriplePattern], optimizer: Optimizer): QueryPlanningResult = {
+  def getQueryPlan(query: Seq[TriplePattern], optimizerOption: Option[Optimizer] = None): QueryPlanningResult = {
     val resultPromise = Promise[QueryPlanningResult]()
-    val queryVertex = new QueryPlanningVertex(query, resultPromise, optimizer)
+    val usedOptimizer = optimizerOption.getOrElse(optimizer.get)
+    val queryVertex = new QueryPlanningVertex(query, resultPromise, usedOptimizer)
     graph.addVertex(queryVertex)
     val result = Await.result(resultPromise.future, 7200.seconds)
     result
