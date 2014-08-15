@@ -28,6 +28,10 @@ object ExplorationOptimizerCreator extends Function1[TripleRush, Option[Optimize
     val optimizer = new ExplorationOptimizer(stats)
     Some(optimizer)
   }
+  
+  override def toString: String = {
+    "ExplorationOptimizer"
+  }
 }
 
 object ExplorationOptimizerCreatorWithHeuristic extends Function1[TripleRush, Option[Optimizer]] {
