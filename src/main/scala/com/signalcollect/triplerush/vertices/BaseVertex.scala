@@ -35,7 +35,6 @@ abstract class BaseVertex[State]
   }
 
   def targetIds: Traversable[Long] = None
-  override def expose: Map[String, Any] = Map[String, Any]("Description" -> toString)
   override def deliverSignalWithSourceId(signal: Any, sourceId: Long, graphEditor: GraphEditor[Long, Any]): Boolean = throw new Exception("TripleRush only uses messages without the source ID.")
   override def scoreCollect = 0
   override def scoreSignal = 0

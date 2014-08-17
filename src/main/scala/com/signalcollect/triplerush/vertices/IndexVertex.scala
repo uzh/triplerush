@@ -38,18 +38,15 @@ abstract class IndexVertex[State](val id: Long)
   extends BaseVertex[State]
   with ParentBuilding[State] {
 
-  override def toString = {
+  override def expose: Map[String, Any] = {
     val indexType = getClass.getSimpleName
     val d = TrGlobal.dictionary
     val p = new EfficientIndexPattern(id)
-    if (d.isDefined) {
-      val sString = d.get(p.s)
-      val pString = d.get(p.p)
-      val oString = d.get(p.o)
-      s"$indexType:\n\tSubject=$sString (ID=${p.s}),\n\tPredicate=$pString (ID=${p.p}),\n\tObject=$oString (ID=${p.o}))"
-    } else {
-      s"$indexType(\n\tSubjectID=${p.s},\n\tPredicateID=${p.p},\n\tObjectID=${p.o})"
-    }
+    Map[String, Any](
+      "Subject" -> d.get(p.s),
+      "Predicate" -> d.get(p.p),
+      "Object" -> d.get(p.o),
+      "TriplePattern" -> s"(SID=${p.s}, PID=${p.p}, OID=${p.o})")
   }
 
   def foreachChildDelta(f: Int => Unit)
