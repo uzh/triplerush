@@ -28,6 +28,8 @@ import com.signalcollect.triplerush.ChildIdRequest
 import com.signalcollect.triplerush.ObjectCountSignal
 import com.signalcollect.triplerush.PlaceholderEdge
 import com.signalcollect.triplerush.SubjectCountSignal
+import com.signalcollect.triplerush.TrGlobal
+import com.signalcollect.triplerush.EfficientIndexPattern
 
 /**
  * This vertex represents part of the TripleRush index.
@@ -35,6 +37,20 @@ import com.signalcollect.triplerush.SubjectCountSignal
 abstract class IndexVertex[State](val id: Long)
   extends BaseVertex[State]
   with ParentBuilding[State] {
+
+  override def toString = {
+    val indexType = getClass.getSimpleName
+    val d = TrGlobal.dictionary
+    val p = new EfficientIndexPattern(id)
+    if (d.isDefined) {
+      val sString = d.get(p.s)
+      val pString = d.get(p.p)
+      val oString = d.get(p.o)
+      s"$indexType:\n\tSubject=$sString (ID=${p.s}),\n\tPredicate=$pString (ID=${p.p}),\n\tObject=$oString (ID=${p.o}))"
+    } else {
+      s"$indexType(\n\tSubjectID=${p.s},\n\tPredicateID=${p.p},\n\tObjectID=${p.o})"
+    }
+  }
 
   def foreachChildDelta(f: Int => Unit)
 
