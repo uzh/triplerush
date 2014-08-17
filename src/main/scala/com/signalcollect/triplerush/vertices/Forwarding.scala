@@ -26,6 +26,16 @@ import com.signalcollect.triplerush.QueryIds
 
 trait Forwarding[State] extends IndexVertex[State] {
 
+  override def targetIds: Traversable[Long] = {
+    new Traversable[Long] {
+      def foreach[U](f: Long => U) {
+        foreachChildDelta { delta =>
+          f(nextRoutingAddress(delta))
+        }
+      }
+    }
+  }
+
   def nextRoutingAddress(childDelta: Int): Long
 
   override def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]) {

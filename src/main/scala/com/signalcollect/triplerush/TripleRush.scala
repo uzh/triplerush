@@ -50,6 +50,14 @@ import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
 import com.signalcollect.interfaces.MapperFactory
 import com.signalcollect.triplerush.vertices.query.QueryPlanningResult
 import com.signalcollect.triplerush.vertices.query.QueryPlanningVertex
+import java.util.concurrent.atomic.AtomicReference
+
+/**
+ * Global accessors for the console visualization.
+ */
+object TrGlobal {
+  var dictionary: Option[Dictionary] = None
+}
 
 case class TripleRush(
   graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
@@ -57,6 +65,8 @@ case class TripleRush(
   val dictionary: Dictionary = new CompressedDictionary(),
   tripleMapperFactory: Option[MapperFactory[Long]] = None,
   console: Boolean = false) extends QueryEngine {
+
+  TrGlobal.dictionary = Some(dictionary)
 
   var canExecute = false
 
