@@ -29,33 +29,6 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.EfficientIndexPattern
 
 case object FileLoader {
-  def loadNtriplesFile(dictionary: Dictionary, ntriplesFilename: String)(graphEditor: GraphEditor[Long, Any]) {
-    val is = new FileInputStream(ntriplesFilename)
-    val nxp = new NxParser(is)
-    println(s"Reading triples from $ntriplesFilename ...")
-    var triplesLoaded = 0
-    while (nxp.hasNext) {
-      val triple = nxp.next
-      val predicateString = triple(1).toString
-      val subjectString = triple(0).toString
-      val objectString = triple(2).toString
-      val sId = dictionary(subjectString)
-      val pId = dictionary(predicateString)
-      val oId = dictionary(objectString)
-      val tp = TriplePattern(sId, pId, oId)
-      if (!tp.isFullyBound) {
-        println(s"Problem: $tp, triple #${triplesLoaded + 1} in file $ntriplesFilename is not fully bound.")
-      } else {
-        addEncodedTriple(sId, pId, oId, graphEditor)
-      }
-      triplesLoaded += 1
-      if (triplesLoaded % 10000 == 0) {
-        println(s"Loaded $triplesLoaded triples from file $ntriplesFilename ...")
-      }
-    }
-    println(s"Done loading triples from $ntriplesFilename. Loaded a total of $triplesLoaded triples.")
-    is.close
-  }
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Long, Any]) {
     assert(sId > 0 && pId > 0 && oId > 0)
