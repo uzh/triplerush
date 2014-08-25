@@ -39,6 +39,7 @@ class TripleRushWorker[Signal: ClassTag](
   heartbeatIntervalInMilliseconds: Int,
   eagerIdleDetection: Boolean,
   throttlingEnabled: Boolean,
+  throttlingDuringLoadingEnabled: Boolean,
   supportBlockingGraphModificationsInVertex: Boolean) extends AkkaWorker[Long, Signal](
   workerId,
   numberOfWorkers,
@@ -53,6 +54,7 @@ class TripleRushWorker[Signal: ClassTag](
   heartbeatIntervalInMilliseconds,
   eagerIdleDetection,
   throttlingEnabled,
+  throttlingDuringLoadingEnabled,
   supportBlockingGraphModificationsInVertex) {
 
   override val worker = new WorkerImplementation[Long, Signal](

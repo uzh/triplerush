@@ -46,6 +46,7 @@ class TripleRushWorkerFactory[Signal: ClassTag] extends WorkerFactory[Long, Sign
     heartbeatIntervalInMilliseconds: Int,
     eagerIdleDetection: Boolean,
     throttlingEnabled: Boolean,
+    throttlingDuringLoadingEnabled: Boolean,
     supportBlockingGraphModificationsInVertex: Boolean): AkkaWorker[Long, Signal] = {
     new TripleRushWorker[Signal](
       workerId,
@@ -61,6 +62,7 @@ class TripleRushWorkerFactory[Signal: ClassTag] extends WorkerFactory[Long, Sign
       heartbeatIntervalInMilliseconds,
       eagerIdleDetection,
       throttlingEnabled,
+      throttlingDuringLoadingEnabled,
       supportBlockingGraphModificationsInVertex)
   }
   override def toString: String = "TripleRushWorkerFactory"
