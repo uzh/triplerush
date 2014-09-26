@@ -133,7 +133,7 @@ case class TripleRush(
 
   def prepareExecution {
     graph.awaitIdle
-    graph.execute(ExecutionConfiguration.withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+    graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
     graph.awaitIdle
     canExecute = true
     optimizer = optimizerCreator(this)
