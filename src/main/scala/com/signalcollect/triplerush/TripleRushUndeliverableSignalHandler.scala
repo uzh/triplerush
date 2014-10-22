@@ -41,7 +41,7 @@ case object TripleRushUndeliverableSignalHandler extends UndeliverableSignalHand
       case CardinalityRequest(forPattern: TriplePattern, requestor: Long) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor)
       case ChildIdRequest =>
-        graphEditor.sendSignal(ChildIdReply(Array()), senderId.get, Some(inexistentTargetId))
+        graphEditor.sendSignal(ChildIdReply(Array()), senderId.get, inexistentTargetId)
       case s: SubjectCountSignal =>
         // This count could potentially arrive before the vertex is created.
         val predicateIndex = new PIndex(inexistentTargetId.asInstanceOf[Long])
