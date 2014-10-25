@@ -86,7 +86,7 @@ case class TripleRush(
       withStorageFactory(TripleRushStorage).
       withWorkerFactory(new TripleRushWorkerFactory[Any]).
       withBlockingGraphModificationsSupport(false).
-      withHeartbeatInterval(500).
+      withStatsReportingInterval(500).
       withEagerIdleDetection(false).
       withKryoRegistrations(List(
         "com.signalcollect.triplerush.vertices.RootIndex",
