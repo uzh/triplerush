@@ -1,4 +1,5 @@
-import AssemblyKeys._ 
+import AssemblyKeys._
+ 
 assemblySettings
 
 /** Project */
@@ -9,6 +10,16 @@ version := "1.0-SNAPSHOT"
 organization := "com.signalcollect"
 
 scalaVersion := "2.11.2"
+
+/** 
+ * See https://github.com/sbt/sbt-assembly/issues/123
+ */
+mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+  {
+    case PathList(ps @ _*) if ps.last == ".DS_Store" => MergeStrategy.discard
+    case other => old(other)
+  }
+}
 
 scalacOptions ++= Seq("-optimize", "-Ydelambdafy:inline", "-Yclosure-elim", "-Yinline-warnings", "-Ywarn-adapted-args", "-Ywarn-inaccessible", "-feature", "-deprecation")
 
