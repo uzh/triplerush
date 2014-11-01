@@ -19,19 +19,9 @@
 
 package com.signalcollect.triplerush
 
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
 import org.scalatest.FlatSpec
-import org.scalatest.prop.Checkers
-import com.signalcollect.triplerush.QueryParticle._
-import scala.util.Random
-import scala.annotation.tailrec
-import org.scalacheck.Gen
-import org.scalacheck.Gen._
-import org.scalacheck.Arbitrary
-import org.scalacheck.Prop
-import org.scalacheck.Prop.BooleanOperators
-import com.signalcollect.triplerush.jena.Jena
+
+import com.signalcollect.util.TestAnnouncements
 
 class CompressedDictionarySpec extends FlatSpec with TestAnnouncements {
 

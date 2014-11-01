@@ -6,6 +6,7 @@ import org.scalacheck.Arbitrary
 import org.scalatest.prop.Checkers
 import org.scalacheck.Gen._
 import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
+import com.signalcollect.util.TestAnnouncements
 
 class EmptyQuerySpec extends FlatSpec with Matchers with TestAnnouncements {
 

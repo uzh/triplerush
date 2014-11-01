@@ -21,10 +21,10 @@ package com.signalcollect.triplerush.sparql
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import com.signalcollect.triplerush.TestAnnouncements
 import com.signalcollect.triplerush.TripleRush
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import com.signalcollect.util.TestAnnouncements
 
 class UnionSpec extends FlatSpec with Matchers with TestAnnouncements {
 

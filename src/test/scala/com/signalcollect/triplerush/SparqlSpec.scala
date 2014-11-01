@@ -24,6 +24,7 @@ import com.signalcollect.GraphBuilder
 import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer
 import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 import com.signalcollect.triplerush.sparql.Sparql
+import com.signalcollect.util.TestAnnouncements
 
 class SparqlSpec extends FlatSpec with TestAnnouncements {
 

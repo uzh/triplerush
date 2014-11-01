@@ -28,6 +28,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Gen._
+import com.signalcollect.util.TestAnnouncements
 
 class QueryParticleSpec extends FlatSpec with ShouldMatchers with Checkers with TestAnnouncements {
 

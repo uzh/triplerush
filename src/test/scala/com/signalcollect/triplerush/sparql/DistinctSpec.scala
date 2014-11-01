@@ -21,9 +21,8 @@ package com.signalcollect.triplerush.sparql
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
-import com.signalcollect.triplerush.TestAnnouncements
 import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.util.TestAnnouncements
 
 class DistinctSpec extends FlatSpec with Matchers with TestAnnouncements {
 

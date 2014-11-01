@@ -21,6 +21,7 @@
 package com.signalcollect.triplerush
 
 import org.scalatest.FlatSpec
+import com.signalcollect.util.TestAnnouncements
 
 class IndexSpec extends FlatSpec with TestAnnouncements {
 

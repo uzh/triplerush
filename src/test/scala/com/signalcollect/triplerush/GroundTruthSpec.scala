@@ -39,6 +39,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import java.io.File
 import com.signalcollect.triplerush.sparql.Sparql
+import com.signalcollect.util.TestAnnouncements
 
 object Lubm {
 

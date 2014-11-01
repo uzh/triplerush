@@ -21,7 +21,7 @@ package com.signalcollect.triplerush.util
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import com.signalcollect.triplerush.TestAnnouncements
+import com.signalcollect.util.TestAnnouncements
 
 class ArrayOfArraysTraversableSpec extends FlatSpec with Matchers with TestAnnouncements {
 

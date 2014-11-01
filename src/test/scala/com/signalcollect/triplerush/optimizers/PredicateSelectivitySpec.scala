@@ -5,7 +5,7 @@ import org.scalatest.prop.Checkers
 import com.signalcollect.triplerush.PredicateSelectivity
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.TestAnnouncements
+import com.signalcollect.util.TestAnnouncements
 
 class PredicateSelectivitySpec extends FlatSpec with Checkers with TestAnnouncements {
 

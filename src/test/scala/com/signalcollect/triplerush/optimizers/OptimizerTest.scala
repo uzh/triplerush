@@ -1,6 +1,5 @@
 package com.signalcollect.triplerush.optimizers
 
-import com.signalcollect.triplerush.TestAnnouncements
 import org.scalatest.prop.Checkers
 import org.scalatest.FlatSpec
 import org.scalatest.ShouldMatchers
@@ -10,6 +9,7 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.Dictionary
 import com.signalcollect.triplerush.PredicateStats
 import com.signalcollect.triplerush.sparql.Sparql
+import com.signalcollect.util.TestAnnouncements
 
 class OptimizerTest extends FlatSpec with Checkers with TestAnnouncements {
   "Optimizer" should "handle SPARQL queries" in {

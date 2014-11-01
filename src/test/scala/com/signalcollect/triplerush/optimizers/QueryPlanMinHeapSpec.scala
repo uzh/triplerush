@@ -27,7 +27,7 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Gen._
 import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.TestAnnouncements
+import com.signalcollect.util.TestAnnouncements
 
 class QueryPlanMinHeapSpec extends FlatSpec with ShouldMatchers with Checkers with TestAnnouncements {
 

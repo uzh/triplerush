@@ -1,10 +1,8 @@
 package com.signalcollect.triplerush
 
-import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.triplerush.vertices.OptimizedIndexVertex
 import com.signalcollect.util.FastInsertIntSet
 import com.signalcollect.util.SplayIntSet
-import com.signalcollect.util.FastInsertIntSet
 
 object SplayIntSetDiagnostics extends App {
 

@@ -21,7 +21,6 @@ package com.signalcollect.triplerush.serialization
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import com.signalcollect.triplerush.TestAnnouncements
 import com.signalcollect.triplerush.TripleRush
 import scala.concurrent.duration._
 import collection.JavaConversions._
@@ -30,6 +29,7 @@ import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 import com.signalcollect.GraphBuilder
+import com.signalcollect.util.TestAnnouncements
 
 class TripleRushSerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
 

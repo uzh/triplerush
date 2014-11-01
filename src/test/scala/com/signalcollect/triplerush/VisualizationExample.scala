@@ -1,6 +1,5 @@
 package com.signalcollect.triplerush
 
-import com.signalcollect.triplerush.sparql.Sparql
 import java.io.File
 
 object VisualizationExample extends App {

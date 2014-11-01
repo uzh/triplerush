@@ -21,7 +21,6 @@ package com.signalcollect.triplerush.sparql
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import com.signalcollect.triplerush.TestAnnouncements
 import com.signalcollect.triplerush.TripleRush
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -30,6 +29,7 @@ import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.query.QueryExecutionFactory
 import com.hp.hpl.jena.rdf.model.ResourceFactory
 import collection.JavaConversions._
+import com.signalcollect.util.TestAnnouncements
 
 class OrderByPlusLimitSpec extends FlatSpec with Matchers with TestAnnouncements {
 

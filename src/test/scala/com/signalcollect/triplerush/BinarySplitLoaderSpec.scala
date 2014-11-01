@@ -1,7 +1,9 @@
 package com.signalcollect.triplerush
 
-import org.scalatest.FlatSpec
 import java.io.File
+
+import org.scalatest.FlatSpec
+import com.signalcollect.util.TestAnnouncements
 
 class BinarySplitLoaderSpec extends FlatSpec with TestAnnouncements {
 

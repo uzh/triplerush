@@ -12,10 +12,10 @@ import com.signalcollect.triplerush.TripleGenerators.queryPatterns
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.triplerush.TripleGenerators._
-import com.signalcollect.triplerush.TestAnnouncements
 import org.scalacheck.Prop
 import com.signalcollect.triplerush.PredicateStats
 import com.signalcollect.triplerush.PredicateStats
+import com.signalcollect.util.TestAnnouncements
 
 case class CostEstimate(frontier: Double, lastExploration: Double, explorationSum: Double)
 

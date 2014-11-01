@@ -4,6 +4,7 @@ import org.scalatest.prop.Checkers
 import org.scalacheck.Prop._
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
+import com.signalcollect.util.TestAnnouncements
 
 class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnnouncements {
 

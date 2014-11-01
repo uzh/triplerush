@@ -32,6 +32,7 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Prop
 import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
+import com.signalcollect.util.TestAnnouncements
 
 class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
 
