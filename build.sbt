@@ -9,7 +9,7 @@ version := "1.0-SNAPSHOT"
 
 organization := "com.signalcollect"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.4"
 
 /** 
  * See https://github.com/sbt/sbt-assembly/issues/123
@@ -37,7 +37,7 @@ excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
 
 /** Dependencies */
 libraryDependencies ++= Seq(
-  "org.scala-lang" % "scala-library" % "2.11.2"  % "compile",
+  "org.scala-lang" % "scala-library" % scalaVersion.value % "compile",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.2" % "compile",
   "org.apache.jena" % "apache-jena-libs" % "2.11.1" % "test",
   "junit" % "junit" % "4.8.2"  % "test",
