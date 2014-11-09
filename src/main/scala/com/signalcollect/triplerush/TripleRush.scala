@@ -84,6 +84,8 @@ case class TripleRush(
           DistributedTripleMapperFactory
         })).
       withStorageFactory(TripleRushStorage).
+      withThrottlingEnabled(false).
+      withThrottlingDuringLoadingEnabled(true).
       withWorkerFactory(new TripleRushWorkerFactory[Any]).
       withBlockingGraphModificationsSupport(false).
       withStatsReportingInterval(500).
