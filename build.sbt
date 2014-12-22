@@ -5,7 +5,7 @@ assemblySettings
 /** Project */
 name := "triplerush"
 
-version := "1.0"
+version := "1.0.1-SNAPSHOT"
 
 organization := "com.signalcollect"
 
@@ -33,7 +33,7 @@ EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
 
 EclipseKeys.withSource := true
 
-jarName in assembly := "triplerush-1.0.0.jar"
+jarName in assembly := "triplerush.jar"
 
 excludedJars in assembly <<= (fullClasspath in assembly) map { cp => 
   cp filter {_.data.getName == "minlog-1.2.jar"}
