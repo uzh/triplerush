@@ -52,6 +52,8 @@ libraryDependencies ++= Seq(
   "org.easymock" % "easymock" % "3.3" % "test"
   )
 
+resolvers += "Ifi Public" at "https://maven.ifi.uzh.ch/maven2/content/groups/public/"
+
 seq(bintraySettings:_*)
 
 pomExtra := (
