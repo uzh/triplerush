@@ -57,10 +57,10 @@ resolvers += "Ifi Public" at "https://maven.ifi.uzh.ch/maven2/content/groups/pub
 seq(bintraySettings:_*)
 
 pomExtra := (
- <url>https://github.com/uzh/signal-collect</url>
+ <url>https://github.com/uzh/triplerush</url>
  <scm>
-   <url>git@github.com:uzh/signal-collect.git</url>
-   <connection>scm:git:git@github.com:uzh/signal-collect.git</connection>
+   <url>git@github.com:uzh/triplerush.git</url>
+   <connection>scm:git:git@github.com:uzh/triplerush.git</connection>
  </scm>
  <developers>
    <developer>
