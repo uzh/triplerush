@@ -52,6 +52,7 @@ import com.signalcollect.triplerush.vertices.query.QueryPlanningResult
 import com.signalcollect.triplerush.vertices.query.QueryPlanningVertex
 import java.util.concurrent.atomic.AtomicReference
 import com.signalcollect.triplerush.loading.NtriplesLoader
+import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 
 /**
  * Global accessors for the console visualization.
@@ -68,8 +69,6 @@ case class TripleRush(
   console: Boolean = false) extends QueryEngine {
 
   TrGlobal.dictionary = Some(dictionary)
-
-  var canExecute = false
 
   val graph = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, 1024)).
@@ -132,6 +131,11 @@ case class TripleRush(
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
   var optimizer: Option[Optimizer] = None
+
+  var canExecute = false
+
+  // Automatically initialize query execution when there is no optimizer.
+  if (optimizerCreator == NoOptimizerCreator) prepareExecution
 
   def prepareExecution {
     graph.awaitIdle

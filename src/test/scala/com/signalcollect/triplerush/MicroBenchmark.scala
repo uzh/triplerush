@@ -14,7 +14,7 @@ object MicroBenchmark extends App {
   def runAllLubmQueries: Double = {
     val startTime = System.nanoTime
     for (queryString <- Lubm.sparqlQueries) {
-      val query = Sparql(queryString).get
+      val query = Sparql(queryString).asInstanceOf[Sparql]
       val results = query.encodedResults
       var resultCounter = 0
       while (results.hasNext) {

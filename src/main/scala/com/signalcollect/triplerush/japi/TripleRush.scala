@@ -61,11 +61,7 @@ class TripleRush {
    */
   def sparql(query: String): Iterator[String => String] = {
     val scalaSparql = Sparql(query)(wrappedScalaTripleRush)
-    if (scalaSparql.isEmpty) {
-      Iterator.empty
-    } else {
-      scalaSparql.get.resultIterator
-    }
+    scalaSparql.resultIterator
   }
 
   /**

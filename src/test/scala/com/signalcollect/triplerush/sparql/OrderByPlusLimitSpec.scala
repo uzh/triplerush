@@ -51,7 +51,7 @@ LIMIT 3
       tr.addTriple("http://SomeProduct5", "http://www.w3.org/2000/01/rdf-schema#label", "http://E")
       tr.addTriple("http://SomeProduct1", "http://www.w3.org/2000/01/rdf-schema#label", "http://A")
       tr.prepareExecution
-      val query = Sparql(sparql).get
+      val query = Sparql(sparql)
       //      val jena = ModelFactory.createDefaultModel
       //      val label = ResourceFactory.createProperty("http://www.w3.org/2000/01/rdf-schema#label")
       //      val p1 = ResourceFactory.createResource("http://SomeProduct1")

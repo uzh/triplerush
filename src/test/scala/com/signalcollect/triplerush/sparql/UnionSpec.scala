@@ -45,7 +45,7 @@ SELECT ?name WHERE {
       tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "Harold")
       tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "Arthur")
       tr.prepareExecution
-      val query = Sparql(sparql).get
+      val query = Sparql(sparql)
       val result = query.resultIterator.map(_("name")).toSet
       assert(result === Set("Harold", "Arthur"))
     } finally {

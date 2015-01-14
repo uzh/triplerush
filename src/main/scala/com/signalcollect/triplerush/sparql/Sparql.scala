@@ -29,6 +29,14 @@ import com.signalcollect.triplerush.util.ResultBindingsHashSet
 import scala.collection.mutable.PriorityQueue
 import com.signalcollect.triplerush.optimizers.Optimizer
 
+sealed trait SparqlQueryResult {
+  def resultIterator: Iterator[String => String]
+}
+
+object EmptyResult extends SparqlQueryResult {
+  def resultIterator = Iterator.empty
+}
+
 /**
  * Class for SPARQL Query executions.
  */
@@ -41,7 +49,7 @@ case class Sparql(
   idToVariableName: IndexedSeq[String] = Vector(),
   isDistinct: Boolean = false,
   orderBy: Option[Int] = None,
-  limit: Option[Int] = None) {
+  limit: Option[Int] = None) extends SparqlQueryResult {
 
   private val d = tr.dictionary
 
@@ -123,7 +131,7 @@ object Sparql {
   /**
    *  If the query might have results returns Some(Sparql), else returns None.
    */
-  def apply(query: String)(implicit tr: TripleRush): Option[Sparql] = {
+  def apply(query: String)(implicit tr: TripleRush): SparqlQueryResult = {
     val d = tr.dictionary
     val parsed: ParsedSparqlQuery = SparqlParser.parse(query)
     var containsEntryThatIsNotInDictionary = false
@@ -213,18 +221,17 @@ object Sparql {
     val encodedPatternUnions = select.patternUnions.map(dictionaryEncodePatterns)
 
     if (containsEntryThatIsNotInDictionary) {
-      None
+      EmptyResult
     } else {
-      Some(
-        Sparql(
-          tr = tr,
-          encodedPatternUnions = encodedPatternUnions,
-          selectVariableIds = selectVariableIds,
-          variableNameToId = variableNameToId,
-          idToVariableName = idToVariableName,
-          isDistinct = parsed.select.isDistinct,
-          orderBy = select.orderBy.map(variableNameToId),
-          limit = select.limit))
+      Sparql(
+        tr = tr,
+        encodedPatternUnions = encodedPatternUnions,
+        selectVariableIds = selectVariableIds,
+        variableNameToId = variableNameToId,
+        idToVariableName = idToVariableName,
+        isDistinct = parsed.select.isDistinct,
+        orderBy = select.orderBy.map(variableNameToId),
+        limit = select.limit)
     }
   }
 }

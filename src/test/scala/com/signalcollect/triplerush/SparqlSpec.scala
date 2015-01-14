@@ -25,6 +25,7 @@ import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOpt
 import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.util.TestAnnouncements
+import com.signalcollect.triplerush.sparql.EmptyResult
 
 class SparqlSpec extends FlatSpec with TestAnnouncements {
 
@@ -41,9 +42,7 @@ WHERE {
     	?X <http://d> <http://e>
 }
 """
-      val queryOption = Sparql(sparql)
-      assert(queryOption.isDefined)
-      val query = queryOption.get
+      val query = Sparql(sparql).asInstanceOf[Sparql]
       val decodedResults = query.resultIterator.map(_("X"))
       assert(decodedResults.toSet === Set("http://a"))
     } catch {
@@ -69,9 +68,7 @@ WHERE {
     	?X <http://d> <http://e>
 }
 """
-      val queryOption = Sparql(sparql)
-      assert(queryOption.isDefined)
-      val query = queryOption.get
+      val query = Sparql(sparql).asInstanceOf[Sparql]
       val decodedResults = query.resultIterator.map(_("X"))
       assert(decodedResults.toSet === Set())
     } catch {
@@ -97,8 +94,8 @@ WHERE {
     	?X <http://d> <http://e>
 }
 """
-      val queryOption = Sparql(sparql)
-      assert(queryOption.isEmpty)
+      val result = Sparql(sparql)
+      assert(result == EmptyResult)
     } finally {
       tr.shutdown
     }

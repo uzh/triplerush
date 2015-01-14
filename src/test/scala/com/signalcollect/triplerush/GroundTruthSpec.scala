@@ -255,7 +255,7 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
   }
 
   def executeOnQueryEngine(q: String): List[Bindings] = {
-    val sparql = Sparql(q).get
+    val sparql = Sparql(q).asInstanceOf[Sparql]
     val bindings = sparql.resultIterator
     val bindingsList = bindings.map { binding =>
       val bindingsMap = sparql.selectVariableIds.map(

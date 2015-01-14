@@ -30,7 +30,7 @@ class OptimizerTest extends FlatSpec with Checkers with TestAnnouncements {
 		  <http://a> <http://p> ?A .
 		  ?A <http://p> ?T
       }"""
-      val query = Sparql(queryString).get
+      val query = Sparql(queryString)
       val result = query.resultIterator.toList
     } finally {
       tr.shutdown
