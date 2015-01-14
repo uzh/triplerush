@@ -45,8 +45,6 @@ case class Select(
 
 object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversions {
 
-  lexical.delimiters ++= List(
-    "(", ")", ",", ":", "<", ">")
   protected override val whiteSpace = """(\s|//.*|(?m)/\*(\*(?!/)|[^*])*\*/)+""".r
 
   def defaultParser = sparqlQuery
@@ -59,10 +57,21 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   val orderBy = "ORDER" ~> "BY"
   val limit = "LIMIT"
 
-  val url: Parser[String] = "[-a-zA-Z0-9:/\\.#_]+".r
+  val http = "http://"
+  val urlRemainder: Parser[String] = "[-a-zA-Z0-9:/\\.#_=]+".r
+
+  val url: Parser[String] = "<" ~> http ~> urlRemainder <~ ">" ^^ {
+    case remainder =>
+      http + remainder
+  }
+
+  val prefixedUrl: Parser[String] = identifier ~ ":" ~ urlRemainder ^^ {
+    case prefixString ~ colon ~ remainder =>
+      prefixString + ":" + remainder
+  }
 
   val iri: Parser[Iri] = {
-    (("<" ~> url <~ ">") | url) ^^ {
+    (url | prefixedUrl) ^^ {
       case url =>
         Iri(url)
     }
@@ -89,7 +98,7 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   }
 
   val prefixDeclaration: Parser[(String, String)] = {
-    ((prefix ~> identifier) <~ ":" ~! "<") ~! url <~ ">" ^^ {
+    ((prefix ~> identifier) <~ ":") ~! url ^^ {
       case prefix ~ expanded =>
         (prefix, expanded)
     }
@@ -102,11 +111,15 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   val a: Parser[Iri] = {
     "a" ^^^ {
       Iri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-    } 
+    }
   }
-  
+
+  val predicate: Parser[VariableOrBound] = {
+    variable | iri | a | stringLiteral
+  }
+
   val pattern: Parser[ParsedPattern] = {
-    variableOrBound ~! (a | variableOrBound) ~! variableOrBound ^^ {
+    variableOrBound ~! predicate ~! variableOrBound ^^ {
       case s ~ p ~ o =>
         ParsedPattern(s, p, o)
     }
@@ -125,7 +138,7 @@ object SparqlParser extends ParseHelper[ParsedSparqlQuery] with ImplicitConversi
   }
 
   val selectDeclaration: Parser[Select] = {
-    ((select ~> opt(distinct) ~ rep1sep(variableName, opt(","))) <~ where) ~! unionOfPatternLists ~
+    ((select ~> opt(distinct) ~ rep1sep(variableName, opt(","))) <~ opt(where)) ~! unionOfPatternLists ~
       opt(orderBy ~> variableName) ~
       opt(limit ~> integer) <~
       opt(";") ^^ {

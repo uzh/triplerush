@@ -144,9 +144,52 @@ WHERE {
       tr.addTriple("http://dbpedia.org/resource/Some_Person", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://dbpedia.org/resource/Thing")
       tr.addTriple("http://dbpedia.org/resource/Thing", "http://dbpedia.org/property/wikilink", "Link")
       tr.prepareExecution
-      val query = Sparql(q)(tr).get
+      val query = Sparql(q)(tr)
       val result = query.resultIterator
       assert(result.toList.map(_("A")) === List("http://dbpedia.org/resource/Thing"))
+    } finally {
+      tr.shutdown
+    }
+  }
+
+  it should "not require the WHERE keyword" in {
+    val q = """
+SELECT ?T ?A
+{
+      <http://dbpedia.org/resource/Some_Person> a ?A .
+      ?A <http://dbpedia.org/property/wikilink> ?T
+}
+"""
+    val tr = new TripleRush
+    try {
+      tr.addTriple("http://dbpedia.org/resource/Some_Person", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://dbpedia.org/resource/Thing")
+      tr.addTriple("http://dbpedia.org/resource/Thing", "http://dbpedia.org/property/wikilink", "Link")
+      tr.prepareExecution
+      val query = Sparql(q)(tr)
+      val result = query.resultIterator
+      assert(result.toList.map(_("A")) === List("http://dbpedia.org/resource/Thing"))
+    } finally {
+      tr.shutdown
+    }
+  }
+
+  it should "should support a prefix that starts with 'a' in predicate position" in {
+    val q = """
+    PREFIX abc: <http://www.abc.com/hello#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX def: <http://def.org/world#>
+    SELECT ?widget
+    WHERE {
+     abc:id-1 abc:hasWidget ?widgetA .
+     ?widgetB def:OTHER_Predicate ?widgetA .
+     ?widgetB rdfs:subClassOf abc:Widgets .
+    }"""
+    val tr = new TripleRush
+    try {
+      tr.prepareExecution
+      val query = Sparql(q)(tr)
+      val result = query.resultIterator
+      assert(result.toList === List())
     } finally {
       tr.shutdown
     }
