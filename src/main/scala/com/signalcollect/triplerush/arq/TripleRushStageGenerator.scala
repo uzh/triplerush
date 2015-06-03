@@ -20,7 +20,6 @@
 package com.signalcollect.triplerush.arq
 
 import scala.collection.JavaConversions.{ asJavaIterator, asScalaBuffer, asScalaIterator, iterableAsScalaIterable }
-
 import com.hp.hpl.jena.graph.{ Node, NodeFactory, Node_Literal, Node_URI, Node_Variable }
 import com.hp.hpl.jena.sparql.core.{ BasicPattern, Var }
 import com.hp.hpl.jena.sparql.engine.{ ExecutionContext, QueryIterator }
@@ -29,6 +28,7 @@ import com.hp.hpl.jena.sparql.engine.iterator.{ QueryIterConcat, QueryIterPlainW
 import com.hp.hpl.jena.sparql.engine.main.StageGenerator
 import com.signalcollect.triplerush.{ Dictionary, TriplePattern, TripleRush }
 import com.signalcollect.triplerush.sparql.VariableEncoding
+import com.hp.hpl.jena.sparql.engine.iterator.QueryIterSingleton
 
 // TODO: Make all of this more elegant and more efficient.
 class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator {
@@ -69,16 +69,18 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
       (query, unbound) = createBoundQuery(
         dictionary, tripleRushQuery, parentBinding, variableNameToId, idToVariableName)
       decodedResults = if (unbound.isEmpty) {
-        Iterator.single(parentBinding)
+        QueryIterSingleton.create(parentBinding, execCxt)
       } else {
         val results = tr.resultIteratorForQuery(query)
-        val iterator = results.map { result => decodeResult(dictionary, parentBinding, unbound, result, variableNameToId) }
-        iterator
+        val iterator = results.map { result =>
+          decodeResult(dictionary, parentBinding, unbound, result, variableNameToId)
+        }
+        new QueryIterPlainWrapper(iterator)
       }
     } yield decodedResults
     val bindingIterator = new QueryIterConcat(execCxt)
     for { i <- bindingIterators } {
-      bindingIterator.add(new QueryIterPlainWrapper(i))
+      bindingIterator.add(i)
     }
     bindingIterator
   }
