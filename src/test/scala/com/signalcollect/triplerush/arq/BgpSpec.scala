@@ -84,43 +84,80 @@ SELECT ?name ?project WHERE {
     }
   }
 
-  //OPTIONAL { ?a foaf:img ?img }
-  //FILTER (!bound(?member2)) .
+  it should "support a nested query with GROUP BY and FILTER" in {
+    val sparql = """
+  PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
+  SELECT ?person ?projectCount
+  WHERE {
+    {
+      SELECT ?person (COUNT(?project) as ?projectCount)
+      WHERE {
+        ?person foaf:name ?name .
+        ?person foaf:currentProject ?project .    
+      }
+      GROUP BY ?person
+    }
+    FILTER (?projectCount > 1)
+  }
+  """
+    val tr = new TripleRush
+    val graph = new TripleRushGraph(tr)
+    implicit val model = graph.getModel
+    try {
+      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "Arnie")
+      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/name", "Bob")
+      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "Gardening")
+      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "Skydiving")
+      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/currentProject", "Volleyball")
+      tr.prepareExecution
+      val results = Sparql(sparql)
+      val resultBindings = results.map { bindings =>
+        bindings.getResource("person").toString
+      }.toSet
+      assert(resultBindings === Set("http://PersonA"))
+    } finally {
+      tr.shutdown
+    }
+  }
 
-  //  it should "return the results of a nested BGP query" in {
-  //    val sparql = """
-  //PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
-  //SELECT ?name ?projectCount WHERE {
-  //  ?person foaf:name ?name .
-  //  {
-  //    SELECT (COUNT(?project) as ?projectCount)
-  //    {
-  //      ?person foaf:currentProject ?project .
-  //    }
-  //    GROUP BY ?person
-  //  }
-  //}
-  //"""
-  //    //  FILTER (?projectCount > 1)
-  //    val tr = new TripleRush
-  //    val graph = new TripleRushGraph(tr)
-  //    implicit val model = graph.getModel
-  //    try {
-  //      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "Arnie")
-  //      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/name", "Bob")
-  //      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "Gardening")
-  //      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "Skydiving")
-  //      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/currentProject", "Volleyball")
-  //      tr.prepareExecution
-  //      val results = Sparql(sparql)
-  //      val resultBindings = results.map { bindings =>
-  //        println(s"person ${bindings.getLiteral("name").getString} has project count ${bindings.getLiteral("projectCount").getInt}")
-  //        bindings.get("name").asLiteral.getString
-  //      }.toSet
-  //      assert(resultBindings === Set("Arnie"))
-  //    } finally {
-  //      tr.shutdown
-  //    }
-  //  }
+  /**
+   * Example from spec: http://www.w3.org/TR/sparql11-query/#subqueries
+   */
+  it should "support a nested query with MIN aggregation" in {
+    val sparql = """
+  PREFIX : <http://people.example/>
+  SELECT ?y ?minName
+  WHERE {
+    :alice :knows ?y .
+    {
+      SELECT ?y (MIN(?name) AS ?minName)
+      WHERE {
+        ?y :name ?name .
+      } GROUP BY ?y
+    }
+  }
+  """
+    val tr = new TripleRush
+    val graph = new TripleRushGraph(tr)
+    implicit val model = graph.getModel
+    try {
+      tr.addTriple("http://people.example/alice", "http://people.example/knows", "http://people.example/bob")
+      tr.addTriple("http://people.example/alice", "http://people.example/knows", "http://people.example/carol")
+      tr.addTriple("http://people.example/bob", "http://people.example/name", "Bob")
+      tr.addTriple("http://people.example/bob", "http://people.example/name", "Bob Bar")
+      tr.addTriple("http://people.example/bob", "http://people.example/name", "B. Bar")
+      tr.addTriple("http://people.example/carol", "http://people.example/name", "Carol")
+      tr.addTriple("http://people.example/carol", "http://people.example/name", "Carol Baz")
+      tr.addTriple("http://people.example/carol", "http://people.example/name", "C. Baz")
+      tr.prepareExecution
+      val results = Sparql(sparql)
+      val resultBindings = results.map { bindings =>
+        bindings.getLiteral("minName").getString
+      }.toSet
+      assert(resultBindings === Set("B. Bar", "C. Baz"))
+    } finally {
+      tr.shutdown
+    }
+  }
 
 }
