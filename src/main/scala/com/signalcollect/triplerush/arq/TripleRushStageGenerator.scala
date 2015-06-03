@@ -32,7 +32,7 @@ import com.signalcollect.triplerush.{ Dictionary, TriplePattern, TripleRush }
 import com.signalcollect.triplerush.sparql.VariableEncoding
 
 // TODO: Make all of this more elegant and more efficient.
-class TripleRushStageGeneratior(val other: StageGenerator) extends StageGenerator {
+class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator {
 
   def execute(pattern: BasicPattern, input: QueryIterator, execCxt: ExecutionContext): QueryIterator = {
     execCxt.getActiveGraph match {

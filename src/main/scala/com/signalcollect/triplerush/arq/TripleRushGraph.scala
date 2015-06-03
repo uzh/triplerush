@@ -22,16 +22,25 @@ package com.signalcollect.triplerush.arq
 import scala.collection.JavaConversions.asJavaIterator
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-
 import com.hp.hpl.jena.graph._
 import com.hp.hpl.jena.graph.impl.GraphBase
 import com.hp.hpl.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
 import com.signalcollect.triplerush.{ Dictionary, TriplePattern, TripleRush }
+import com.hp.hpl.jena.sparql.engine.main.StageGenerator
+import com.hp.hpl.jena.query.ARQ
+import com.hp.hpl.jena.rdf.model.ModelFactory
 
 /**
  * A TripleRush implementation of the Jena Graph interface.
  */
-class TripleRushGraph(tr: TripleRush) extends GraphBase with GraphStatisticsHandler {
+class TripleRushGraph(tr: TripleRush = new TripleRush) extends GraphBase with GraphStatisticsHandler {
+
+  def getModel = ModelFactory.createModelForGraph(this)
+
+  // Set TripleRushStageGenerator as default for all queries.
+  val originalStageGen = ARQ.getContext.get(ARQ.stageGenerator).asInstanceOf[StageGenerator]
+  val tripleRushStageGen = new TripleRushStageGenerator(originalStageGen)
+  ARQ.getContext.set(ARQ.stageGenerator, tripleRushStageGen)
 
   def getStatistic(s: Node, p: Node, o: Node): Long = {
     val q = Seq(arqNodesToPattern(s, p, o))
@@ -61,7 +70,7 @@ class TripleRushGraph(tr: TripleRush) extends GraphBase with GraphStatisticsHand
   }
 
   def graphBaseFind(triplePattern: Triple): ExtendedIterator[Triple] = {
-    val pattern = TripleToPattern(triplePattern)
+    val pattern = tripleToPattern(triplePattern)
     val resultIterator = tr.resultIteratorForQuery(Seq(pattern))
     val sOption = nodeToString(triplePattern.getSubject)
     val pOption = nodeToString(triplePattern.getPredicate)
@@ -75,10 +84,8 @@ class TripleRushGraph(tr: TripleRush) extends GraphBase with GraphStatisticsHand
   }
 
   override def graphBaseSize: Int = {
-    val s = NodeFactory.createVariable("s")
-    val p = NodeFactory.createVariable("p")
-    val o = NodeFactory.createVariable("o")
-    val sizeAsLong = getStatistic(s, p, o)
+    val wildcard = Node.ANY
+    val sizeAsLong = getStatistic(wildcard, wildcard, wildcard)
     if (sizeAsLong <= Int.MaxValue) {
       sizeAsLong.toInt
     } else {
@@ -89,40 +96,32 @@ class TripleRushGraph(tr: TripleRush) extends GraphBase with GraphStatisticsHand
   private def nodeToString(n: Node): Option[String] = {
     if (n.isURI || n.isLiteral) {
       Some(n.toString)
-    } else if (n.isVariable) {
+    } else if (n.isVariable || (!n.isConcrete && !n.isBlank)) {
       None
     } else {
       throw new UnsupportedOperationException(s"TripleRush does not support node $n of type ${n.getClass.getSimpleName}.")
     }
   }
 
-  private def TripleToPattern(triple: Triple): TriplePattern = {
-    arqNodesToPattern(triple.getSubject, triple.getPredicate, triple.getMatchObject)
+  private def tripleToPattern(triple: Triple): TriplePattern = {
+    arqNodesToPattern(triple.getSubject, triple.getPredicate, triple.getObject)
   }
 
   // TODO: Make more efficient by unrolling everything and getting rid of the map.
   private def arqNodesToPattern(s: Node, p: Node, o: Node): TriplePattern = {
     var nextVariableId = -1
-    var variableMap = Map.empty[String, Int]
     @inline def nodeToId(n: Node): Int = {
       n match {
-        case variable: Node_Variable =>
-          val name = variable.getName
-          if (variableMap.contains(name)) {
-            // Reuse ID.
-            variableMap(name)
-          } else {
-            val id = nextVariableId
-            nextVariableId -= 1
-            variableMap += ((name, id))
-            id
-          }
+        case variable: Node_ANY =>
+          val id = nextVariableId
+          nextVariableId -= 1
+          id
         case uri: Node_URI =>
           tr.dictionary(uri.toString(null, false))
         case literal: Node_Literal =>
           tr.dictionary(literal.toString(null, false))
         case other =>
-          throw new UnsupportedOperationException(s"TripleRush does not yet support node $other of type ${other.getClass.getSimpleName}.")
+          throw new UnsupportedOperationException(s"TripleRush Graph does not support node $other of type ${other.getClass.getSimpleName}.")
       }
     }
     val sId = nodeToId(s)
