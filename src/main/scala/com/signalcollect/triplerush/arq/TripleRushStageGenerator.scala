@@ -19,8 +19,7 @@
 
 package com.signalcollect.triplerush.arq
 
-import scala.annotation.migration
-import scala.collection.JavaConversions.{ asJavaIterator, asScalaBuffer, asScalaIterator }
+import scala.collection.JavaConversions.{ asJavaIterator, asScalaBuffer, asScalaIterator, iterableAsScalaIterable }
 
 import com.hp.hpl.jena.graph.{ Node, NodeFactory, Node_Literal, Node_URI, Node_Variable }
 import com.hp.hpl.jena.sparql.core.{ BasicPattern, Var }
@@ -36,8 +35,8 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
 
   def execute(pattern: BasicPattern, input: QueryIterator, execCxt: ExecutionContext): QueryIterator = {
     execCxt.getActiveGraph match {
-      case tr: TripleRush => executeOnTripleRush(tr, pattern, input, execCxt)
-      case _              => other.execute(pattern, input, execCxt)
+      case graph: TripleRushGraph => executeOnTripleRush(graph.tr, pattern, input, execCxt)
+      case _                      => other.execute(pattern, input, execCxt)
     }
   }
 
@@ -153,6 +152,13 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
     idToVar: Vector[Var]): (TriplePattern, Map[String, Int], Vector[Var]) = {
     var variableNameToId = varToId
     var idToVariableName = idToVar
+    var nextVariableId = {
+      if (variableNameToId.isEmpty) {
+        -1
+      } else {
+        variableNameToId.values.min - 1
+      }
+    }
     @inline def nodeToId(n: Node): Int = {
       n match {
         case variable: Node_Variable =>
@@ -160,9 +166,10 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
           if (variableNameToId.contains(variableName)) {
             variableNameToId(variableName) // Reuse ID.
           } else {
-            val id = variableNameToId.values.min - 1
+            val id = nextVariableId
             variableNameToId += ((variableName, id))
             idToVariableName = idToVariableName :+ Var.alloc(variableName)
+            nextVariableId -= 1
             id
           }
         case uri: Node_URI =>

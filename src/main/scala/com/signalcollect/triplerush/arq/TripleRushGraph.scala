@@ -33,13 +33,18 @@ import com.hp.hpl.jena.rdf.model.ModelFactory
 /**
  * A TripleRush implementation of the Jena Graph interface.
  */
-class TripleRushGraph(tr: TripleRush = new TripleRush) extends GraphBase with GraphStatisticsHandler {
+class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase with GraphStatisticsHandler {
 
   def getModel = ModelFactory.createModelForGraph(this)
 
   // Set TripleRushStageGenerator as default for all queries.
-  val originalStageGen = ARQ.getContext.get(ARQ.stageGenerator).asInstanceOf[StageGenerator]
-  val tripleRushStageGen = new TripleRushStageGenerator(originalStageGen)
+  val tripleRushStageGen = ARQ.getContext.get(ARQ.stageGenerator) match {
+    case g: TripleRushStageGenerator =>
+      new TripleRushStageGenerator(g.other)
+    case otherGraph: StageGenerator =>
+      new TripleRushStageGenerator(otherGraph)
+    case _: Any => throw new Exception("No valid stage generator found.")
+  }
   ARQ.getContext.set(ARQ.stageGenerator, tripleRushStageGen)
 
   def getStatistic(s: Node, p: Node, o: Node): Long = {
