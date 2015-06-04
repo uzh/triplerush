@@ -17,7 +17,7 @@
  *  
  */
 
-package com.signalcollect.triplerush.arq
+package com.signalcollect.triplerush.sparql
 
 import scala.collection.JavaConversions.{ asJavaIterator, asScalaBuffer, asScalaIterator, iterableAsScalaIterable }
 import com.hp.hpl.jena.graph.{ Node, NodeFactory, Node_Literal, Node_URI, Node_Variable }
@@ -27,7 +27,6 @@ import com.hp.hpl.jena.sparql.engine.binding.{ Binding, BindingHashMap }
 import com.hp.hpl.jena.sparql.engine.iterator.{ QueryIterConcat, QueryIterPlainWrapper }
 import com.hp.hpl.jena.sparql.engine.main.StageGenerator
 import com.signalcollect.triplerush.{ Dictionary, TriplePattern, TripleRush }
-import com.signalcollect.triplerush.sparql.VariableEncoding
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIterSingleton
 
 // TODO: Make all of this more elegant and more efficient.

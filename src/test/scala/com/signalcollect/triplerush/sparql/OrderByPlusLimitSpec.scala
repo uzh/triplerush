@@ -1,7 +1,7 @@
 /*
  *  @author Philip Stutz
  *  
- *  Copyright 2014 University of Zurich
+ *  Copyright 2015 iHealth Technologies
  *      
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import com.signalcollect.util.TestAnnouncements
 
 class OrderByPlusLimitSpec extends FlatSpec with Matchers with TestAnnouncements {
 
-  "ORDER BY and LIMIT" should "return the same results as Jena for IRIs" in {
+  "ARQ ORDER BY and LIMIT" should "return the same results as Jena for IRIs" in {
     val sparql = """
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?product ?label
@@ -43,7 +43,9 @@ WHERE {
 ORDER BY ?label
 LIMIT 3
 """
-    implicit val tr = new TripleRush
+    val tr = new TripleRush
+    val graph = new TripleRushGraph(tr)
+    implicit val model = graph.getModel
     try {
       tr.addTriple("http://SomeProduct2", "http://www.w3.org/2000/01/rdf-schema#label", "http://B")
       tr.addTriple("http://SomeProduct3", "http://www.w3.org/2000/01/rdf-schema#label", "http://C")
@@ -51,30 +53,10 @@ LIMIT 3
       tr.addTriple("http://SomeProduct5", "http://www.w3.org/2000/01/rdf-schema#label", "http://E")
       tr.addTriple("http://SomeProduct1", "http://www.w3.org/2000/01/rdf-schema#label", "http://A")
       tr.prepareExecution
-      val query = Sparql(sparql)
-      //      val jena = ModelFactory.createDefaultModel
-      //      val label = ResourceFactory.createProperty("http://www.w3.org/2000/01/rdf-schema#label")
-      //      val p1 = ResourceFactory.createResource("http://SomeProduct1")
-      //      val p2 = ResourceFactory.createResource("http://SomeProduct2")
-      //      val p3 = ResourceFactory.createResource("http://SomeProduct3")
-      //      val p4 = ResourceFactory.createResource("http://SomeProduct4")
-      //      val p5 = ResourceFactory.createResource("http://SomeProduct5")
-      //      val a = ResourceFactory.createResource("http://A")
-      //      val b = ResourceFactory.createResource("http://B")
-      //      val c = ResourceFactory.createResource("http://C")
-      //      val d = ResourceFactory.createResource("http://D")
-      //      val e = ResourceFactory.createResource("http://E")
-      //      jena.add(ResourceFactory.createStatement(p1, label, a))
-      //      jena.add(ResourceFactory.createStatement(p2, label, b))
-      //      jena.add(ResourceFactory.createStatement(p3, label, c))
-      //      jena.add(ResourceFactory.createStatement(p4, label, d))
-      //      jena.add(ResourceFactory.createStatement(p5, label, e))
-      //      val jenaQuery = QueryFactory.create(sparql)
-      //      val jenaQueryExecution = QueryExecutionFactory.create(jenaQuery, jena)
-      //      val jenaResultIterator = jenaQueryExecution.execSelect
-      //      println(jenaResultIterator.toList.map(_.get("label")))
-      val result = query.resultIterator.map(bindings => (bindings("label"), bindings("product"))).toList
-      assert(result === List(("http://A", "http://SomeProduct1"), ("http://B", "http://SomeProduct2"), ("http://C", "http://SomeProduct3")))
+      val results = Sparql(sparql)
+      val bindingsList = results.toList.map(bindings =>
+        (bindings.get("label").asResource.toString, bindings.get("product").asResource.toString)).toList
+      assert(bindingsList === List(("http://A", "http://SomeProduct1"), ("http://B", "http://SomeProduct2"), ("http://C", "http://SomeProduct3")))
     } finally {
       tr.shutdown
     }

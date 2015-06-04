@@ -17,7 +17,7 @@
  *  
  */
 
-package com.signalcollect.triplerush.arq
+package com.signalcollect.triplerush.sparql
 
 import scala.collection.JavaConversions.asScalaIterator
 

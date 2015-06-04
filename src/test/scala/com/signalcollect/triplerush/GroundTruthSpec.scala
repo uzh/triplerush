@@ -36,6 +36,8 @@ import org.scalatest.Matchers
 import java.io.File
 import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.util.TestAnnouncements
+import com.signalcollect.triplerush.sparql.TripleRushGraph
+import collection.JavaConversions._
 
 object Lubm {
 
@@ -54,50 +56,53 @@ object Lubm {
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X	
-WHERE
-{?X rdf:type ub:GraduateStudent .
-  ?X ub:takesCourse "http://www.Department0.University0.edu/GraduateCourse0"}
+WHERE {
+  ?X rdf:type ub:GraduateStudent .
+  ?X ub:takesCourse "http://www.Department0.University0.edu/GraduateCourse0"
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X ?Y ?Z
-WHERE
-{?X rdf:type ub:GraduateStudent .
+WHERE {
+  ?X rdf:type ub:GraduateStudent .
   ?Y rdf:type ub:University .
   ?Z rdf:type ub:Department .
   ?X ub:memberOf ?Z .
   ?Z ub:subOrganizationOf ?Y .
-  ?X ub:undergraduateDegreeFrom ?Y}
+  ?X ub:undergraduateDegreeFrom ?Y
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
-WHERE
-{?X rdf:type ub:Publication .
-  ?X ub:publicationAuthor 
-        <http://www.Department0.University0.edu/AssistantProfessor0>}
+WHERE {
+  ?X rdf:type ub:Publication .
+  ?X ub:publicationAuthor <http://www.Department0.University0.edu/AssistantProfessor0>
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X ?Y1 ?Y2 ?Y3
-WHERE
-{
+WHERE {
   ?X ub:worksFor <http://www.Department0.University0.edu> .
         ?X rdf:type ub:Professor .
   ?X ub:name ?Y1 .
   ?X ub:emailAddress ?Y2 .
-  ?X ub:telephone ?Y3}
+  ?X ub:telephone ?Y3
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
-WHERE
-{?X rdf:type ub:Person .
-  ?X ub:memberOf <http://www.Department0.University0.edu>}
+WHERE {
+  ?X rdf:type ub:Person .
+  ?X ub:memberOf <http://www.Department0.University0.edu>
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -107,76 +112,84 @@ SELECT ?X WHERE {?X rdf:type ub:Student}
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
-SELECT ?X, ?Y
-WHERE 
-{?X rdf:type ub:Student .
+SELECT ?X ?Y
+WHERE {
+  ?X rdf:type ub:Student .
   ?Y rdf:type ub:Course .
   ?X ub:takesCourse ?Y .
-  <http://www.Department0.University0.edu/AssociateProfessor0> ub:teacherOf ?Y}
+  <http://www.Department0.University0.edu/AssociateProfessor0> ub:teacherOf ?Y
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
-SELECT ?X, ?Y, ?Z
-WHERE
-{?X rdf:type ub:Student .
+SELECT ?X ?Y ?Z
+WHERE {
+  ?X rdf:type ub:Student .
   ?Y rdf:type ub:Department .
   ?X ub:memberOf ?Y .
   ?Y ub:subOrganizationOf <http://www.University0.edu> .
-  ?X ub:emailAddress ?Z}
+  ?X ub:emailAddress ?Z
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
-SELECT ?X, ?Y, ?Z
-WHERE
-{?X rdf:type ub:Student .
+SELECT ?X ?Y ?Z
+WHERE {
+  ?X rdf:type ub:Student .
   ?Y rdf:type ub:Faculty .
   ?Z rdf:type ub:Course .
   ?X ub:advisor ?Y .
   ?Y ub:teacherOf ?Z .
-  ?X ub:takesCourse ?Z}
+  ?X ub:takesCourse ?Z
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
-WHERE
-{?X rdf:type ub:Student .
+WHERE {
+  ?X rdf:type ub:Student .
   ?X ub:takesCourse
-<http://www.Department0.University0.edu/GraduateCourse0>}
+  <http://www.Department0.University0.edu/GraduateCourse0>
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
-WHERE
-{?X rdf:type ub:ResearchGroup .
-  ?X ub:subOrganizationOf <http://www.University0.edu>}
+WHERE {
+  ?X rdf:type ub:ResearchGroup .
+  ?X ub:subOrganizationOf <http://www.University0.edu>
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
-SELECT ?X, ?Y
-WHERE
-{?X rdf:type ub:Chair .
+SELECT ?X ?Y
+WHERE {
+  ?X rdf:type ub:Chair .
   ?Y rdf:type ub:Department .
   ?X ub:worksFor ?Y .
-  ?Y ub:subOrganizationOf <http://www.University0.edu>}
+  ?Y ub:subOrganizationOf <http://www.University0.edu>
+}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X WHERE {
+  ?X rdf:type ub:Person .
+  <http://www.University0.edu> ub:hasAlumnus ?X
+}
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
-WHERE
-{?X rdf:type ub:Person .
-  <http://www.University0.edu> ub:hasAlumnus ?X}
-""",
-    """
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
-SELECT ?X
-WHERE {?X rdf:type ub:UndergraduateStudent}
+WHERE {
+  ?X rdf:type ub:UndergraduateStudent
+}
 """)
 
 }
@@ -241,7 +254,9 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
     runTest(14)
   }
 
-  implicit val tr = new TripleRush
+  val tr = new TripleRush
+  val graph = new TripleRushGraph(tr)
+  implicit val model = graph.getModel
   Lubm.load(tr)
 
   override def afterAll {
@@ -250,21 +265,16 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
   }
 
   def executeOnQueryEngine(q: String): List[Bindings] = {
-    val sparql = Sparql(q).asInstanceOf[Sparql]
-    val bindings = sparql.resultIterator
+    val bindings = Sparql(q)
     val bindingsList = bindings.map { binding =>
-      val bindingsMap = sparql.selectVariableIds.map(
-        variableId => sparql.idToVariableName(math.abs(variableId) - 1)).map(variable => (variable, binding(variable))).toMap
+      val bindingsMap = bindings.getResultVars.map(
+        variable => (variable, binding.get(variable).toString)).toMap
       bindingsMap
     }.toList
     val sortedBindings: List[TreeMap[String, String]] = bindingsList.
       map(unsortedBindings => TreeMap(unsortedBindings.toArray: _*))
-    val sortedBindingList = (sortedBindings sortBy (map => map.values)).toList
+    val sortedBindingList = (sortedBindings.sortBy(map => map.values)).toList
     sortedBindingList
-  }
-
-  def bindingsToMap(bindings: Array[Int]): Map[Int, Int] = {
-    (((-1 to -bindings.length by -1).zip(bindings))).toMap
   }
 
   type Bindings = TreeMap[String, String]

@@ -1,19 +1,19 @@
 package com.signalcollect.triplerush.optimizers
 
-import org.scalatest.prop.Checkers
+import scala.collection.JavaConversions.asScalaIterator
+
 import org.scalatest.FlatSpec
-import org.scalatest.ShouldMatchers
-import com.signalcollect.triplerush.TripleRush
-import com.signalcollect.triplerush.PredicateSelectivity
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.Dictionary
-import com.signalcollect.triplerush.PredicateStats
-import com.signalcollect.triplerush.sparql.Sparql
+import org.scalatest.prop.Checkers
+
+import com.signalcollect.triplerush.{ PredicateSelectivity, PredicateStats, TriplePattern, TripleRush }
+import com.signalcollect.triplerush.sparql.{ Sparql, TripleRushGraph }
 import com.signalcollect.util.TestAnnouncements
 
 class OptimizerTest extends FlatSpec with Checkers with TestAnnouncements {
   "Optimizer" should "handle SPARQL queries" in {
-    implicit val tr = new TripleRush
+    val tr = new TripleRush()
+    val graph = new TripleRushGraph(tr)
+    implicit val model = graph.getModel
     try {
       tr.addTriple("http://a", "http://p", "http://b")
       tr.addTriple("http://a", "http://p", "http://c")
@@ -31,7 +31,7 @@ class OptimizerTest extends FlatSpec with Checkers with TestAnnouncements {
 		  ?A <http://p> ?T
       }"""
       val query = Sparql(queryString)
-      val result = query.resultIterator.toList
+      val result = query.toList
     } finally {
       tr.shutdown
     }

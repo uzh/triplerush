@@ -17,7 +17,7 @@
  *  
  */
 
-package com.signalcollect.triplerush.arq
+package com.signalcollect.triplerush.sparql
 
 import com.hp.hpl.jena.graph.{ NodeFactory, Triple }
 import com.signalcollect.triplerush.Dictionary
