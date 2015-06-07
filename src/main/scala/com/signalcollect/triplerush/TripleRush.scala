@@ -132,7 +132,7 @@ case class TripleRush(
   graph.addVertex(new RootIndex)
   var optimizer: Option[Optimizer] = None
 
-  var canExecute = false
+  private[this] var canExecute = false
 
   // Automatically initialize query execution when there is no optimizer.
   if (optimizerCreator == NoOptimizerCreator) prepareExecution

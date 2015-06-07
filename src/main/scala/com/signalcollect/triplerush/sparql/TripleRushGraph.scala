@@ -22,13 +22,14 @@ package com.signalcollect.triplerush.sparql
 import scala.collection.JavaConversions.asJavaIterator
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import com.hp.hpl.jena.graph._
+
+import com.hp.hpl.jena.graph.{ GraphEvents, GraphStatisticsHandler, Node, Node_ANY, Node_Literal, Node_URI, Triple }
 import com.hp.hpl.jena.graph.impl.GraphBase
-import com.hp.hpl.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
-import com.signalcollect.triplerush.{ Dictionary, TriplePattern, TripleRush }
-import com.hp.hpl.jena.sparql.engine.main.StageGenerator
 import com.hp.hpl.jena.query.ARQ
 import com.hp.hpl.jena.rdf.model.ModelFactory
+import com.hp.hpl.jena.sparql.engine.main.StageGenerator
+import com.hp.hpl.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
+import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
 
 /**
  * A TripleRush implementation of the Jena Graph interface.
