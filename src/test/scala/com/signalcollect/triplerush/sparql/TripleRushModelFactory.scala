@@ -14,4 +14,12 @@ class TripleRushModelFactory extends TestingModelFactory {
     graph.getModel
   }
 
+  def getPrefixMapping(): PrefixMapping = {
+    ???
+  }
+
+  def createModel(base: Graph): Model = {
+    ???
+  }
+
 }

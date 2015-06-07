@@ -49,7 +49,8 @@ libraryDependencies ++= Seq(
   "org.apache.jena" % "apache-jena-libs" % "2.13.0" % "test",
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",
   "org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
-  "org.easymock" % "easymock" % "3.3.1" % "test"
+  "org.easymock" % "easymock" % "3.3.1" % "test",
+  "junit" % "junit" % "4.12" % "test"
 )
 
 resolvers += "Ifi Public" at "https://maven.ifi.uzh.ch/maven2/content/groups/public/"
