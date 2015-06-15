@@ -62,11 +62,11 @@ object TrGlobal {
 }
 
 case class TripleRush(
-  graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
-  optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
-  val dictionary: Dictionary = new CompressedDictionary(),
-  tripleMapperFactory: Option[MapperFactory[Long]] = None,
-  console: Boolean = false) extends QueryEngine {
+    graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
+    optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
+    val dictionary: Dictionary = new CompressedDictionary(),
+    tripleMapperFactory: Option[MapperFactory[Long]] = None,
+    console: Boolean = false) extends QueryEngine {
 
   TrGlobal.dictionary = Some(dictionary)
 
@@ -127,7 +127,7 @@ case class TripleRush(
         "com.signalcollect.triplerush.util.TripleRushWorkerFactory",
         "com.signalcollect.interfaces.BulkSignalNoSourceIds$mcJ$sp",
         "com.signalcollect.interfaces.SignalMessageWithoutSourceId$mcJ$sp")).build
-  val system = ActorSystemRegistry.retrieve("SignalCollect").get
+  val system = graphBuilder.config.actorSystem.getOrElse(ActorSystemRegistry.retrieve("SignalCollect").get)
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
   var optimizer: Option[Optimizer] = None
