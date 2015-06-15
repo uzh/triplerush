@@ -21,10 +21,24 @@ package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.util.SplayIntSet
+import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
+import com.signalcollect.triplerush.QueryIds
 
 final class RootIndex extends OptimizedIndexVertex(EfficientIndexPattern(0, 0, 0))
-  with Forwarding[Any] {
+    with Forwarding[Any] {
 
-  def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(0, childDelta, 0) 
+  override def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]) {
+    // Root index is the only one that might have no outgoing edges.
+    if (edgeCount == 0) {
+      // No outgoing edges: Fail query immediately.
+      val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
+      graphEditor.sendSignal(query.tickets, queryVertexId)
+    } else {
+      super.processQuery(query, graphEditor)
+    }
+  }
+
+  def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(0, childDelta, 0)
 
 }
