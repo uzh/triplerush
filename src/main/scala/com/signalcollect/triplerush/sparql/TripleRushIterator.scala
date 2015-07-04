@@ -21,8 +21,11 @@ package com.signalcollect.triplerush.sparql
 
 import com.hp.hpl.jena.graph.{ NodeFactory, Triple }
 import com.signalcollect.triplerush.Dictionary
+import com.hp.hpl.jena.graph.impl.LiteralLabelFactory
+import com.hp.hpl.jena.datatypes.TypeMapper
 
 object TripleRushIterator {
+
   /**
    * Assumes queries of the form `?s ?p ?o`, where in the place of each variable there could also be an IRI or literal.
    */
@@ -32,40 +35,28 @@ object TripleRushIterator {
     oOption: Option[String],
     dictionary: Dictionary,
     i: Iterator[Array[Int]]): Iterator[Triple] = {
-    val sNode = sOption.map(NodeFactory.createURI(_))
-    val pNode = pOption.map(NodeFactory.createURI(_))
-    val oNode = {
-      oOption.map { o =>
-        if (o.startsWith("http://")) {
-          NodeFactory.createURI(o)
-        } else {
-          NodeFactory.createLiteral(o)
-        }
-      }
-    }
+    val sNode = sOption.map(NodeConversion.stringToNode(_))
+    val pNode = pOption.map(NodeConversion.stringToNode(_))
+    val oNode = oOption.map(NodeConversion.stringToNode(_))
+
     @inline def toTriple(r: Array[Int]): Triple = {
       var i = 0
       val s = sNode.getOrElse {
-        val n = NodeFactory.createURI(dictionary.unsafeDecode(r(i)))
+        val n = NodeConversion.stringToNode(dictionary.unsafeDecode(r(i)))
         i += 1
         n
       }
       val p = pNode.getOrElse {
-        val n = NodeFactory.createURI(dictionary.unsafeDecode(r(i)))
+        val n = NodeConversion.stringToNode(dictionary.unsafeDecode(r(i)))
         i += 1
         n
       }
       val o = oNode.getOrElse {
-        val decoded = dictionary.unsafeDecode(r(i))
-        val n = if (decoded.startsWith("http://")) {
-          NodeFactory.createURI(decoded)
-        } else {
-          NodeFactory.createLiteral(decoded)
-        }
-        n
+        NodeConversion.stringToNode(dictionary.unsafeDecode(r(i)))
       }
       new Triple(s, p, o)
     }
+
     i.map(toTriple(_))
   }
 

@@ -28,6 +28,7 @@ import com.hp.hpl.jena.sparql.engine.iterator.{ QueryIterConcat, QueryIterPlainW
 import com.hp.hpl.jena.sparql.engine.main.StageGenerator
 import com.signalcollect.triplerush.{ Dictionary, TriplePattern, TripleRush }
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIterSingleton
+import com.hp.hpl.jena.graph.Node_Blank
 
 // TODO: Make all of this more elegant and more efficient.
 class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator {
@@ -95,11 +96,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
       val variableId = varToId(variable.getVarName)
       val encoded = result(VariableEncoding.variableIdToDecodingIndex(variableId))
       val decoded = dictionary.unsafeDecode(encoded)
-      val node = if (decoded.startsWith("http://")) {
-        NodeFactory.createURI(decoded)
-      } else {
-        NodeFactory.createLiteral(decoded)
-      }
+      val node = NodeConversion.stringToNode(decoded)
       binding.add(variable, node)
     }
     binding
@@ -151,40 +148,47 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
     s: Node, p: Node, o: Node,
     varToId: Map[String, Int],
     idToVar: Vector[Var]): (TriplePattern, Map[String, Int], Vector[Var]) = {
-    var variableNameToId = varToId
-    var idToVariableName = idToVar
-    var nextVariableId = {
-      if (variableNameToId.isEmpty) {
+    var nameToId = varToId
+    var idToName = idToVar
+    var nextId = {
+      if (nameToId.isEmpty) {
         -1
       } else {
-        variableNameToId.values.min - 1
+        nameToId.values.min - 1
       }
     }
     @inline def nodeToId(n: Node): Int = {
       n match {
         case variable: Node_Variable =>
           val variableName = variable.getName
-          if (variableNameToId.contains(variableName)) {
-            variableNameToId(variableName) // Reuse ID.
+          if (nameToId.contains(variableName)) {
+            nameToId(variableName) // Reuse ID.
           } else {
-            val id = nextVariableId
-            variableNameToId += ((variableName, id))
-            idToVariableName = idToVariableName :+ Var.alloc(variableName)
-            nextVariableId -= 1
+            val id = nextId
+            nameToId += ((variableName, id))
+            idToName = idToName :+ Var.alloc(variableName)
+            nextId -= 1
             id
           }
-        case uri: Node_URI =>
-          dictionary(uri.toString(null, false))
-        case literal: Node_Literal =>
-          dictionary(literal.toString(null, false))
-        case other =>
-          throw new UnsupportedOperationException(s"TripleRush does not yet support node $other of type ${other.getClass.getSimpleName}.")
+        case blank: Node_Blank =>
+          val name = blank.getBlankNodeLabel
+          if (nameToId.contains(name)) {
+            nameToId(name) // Reuse ID.
+          } else {
+            val id = nextId
+            nameToId += ((name, id))
+            idToName = idToName :+ Var.alloc(name)
+            nextId -= 1
+            id
+          }
+        case other: Node =>
+          dictionary(NodeConversion.nodeToString(other))
       }
     }
     val sId = nodeToId(s)
     val pId = nodeToId(p)
     val oId = nodeToId(o)
-    (TriplePattern(sId, pId, oId), variableNameToId, idToVariableName)
+    (TriplePattern(sId, pId, oId), nameToId, idToName)
   }
 
 }

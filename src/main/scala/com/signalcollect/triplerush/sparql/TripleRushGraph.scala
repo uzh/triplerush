@@ -30,6 +30,7 @@ import com.hp.hpl.jena.sparql.engine.main.StageGenerator
 import com.hp.hpl.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
 import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
 import com.hp.hpl.jena.graph.Node_Blank
+import com.hp.hpl.jena.graph.Node_Variable
 
 /**
  * A TripleRush implementation of the Jena Graph interface.
@@ -58,11 +59,18 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
 
   override def createStatisticsHandler = this
 
+  /**
+   * Meaning of prefixes in the encoded string:
+   * - Everything that starts with a letter is interpreted as an IRI,
+   * because their schema has to start with a letter.
+   * - If a string starts with a digit or a hyphen, then it is interpreted as an integer literal.
+   * - If a string starts with `"` or "<", then it is interpreted as a general literal.
+   */
   override def performAdd(triple: Triple): Unit = {
-    val s = triple.getSubject.toString
-    val p = triple.getPredicate.toString
-    val o = triple.getObject.toString
-    tr.addTriple(s, p, o)
+    val sString = NodeConversion.nodeToString(triple.getSubject)
+    val pString = NodeConversion.nodeToString(triple.getPredicate)
+    val oString = NodeConversion.nodeToString(triple.getObject)
+    tr.addTriple(sString, pString, oString)
   }
 
   override def clear: Unit = {
@@ -76,12 +84,16 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
   }
 
   def graphBaseFind(triplePattern: Triple): ExtendedIterator[Triple] = {
-    val pattern = tripleToPattern(triplePattern)
+    println(s"graphBaseFind($triplePattern)")
+    val s = triplePattern.getSubject
+    val p = triplePattern.getPredicate
+    val o = triplePattern.getObject
+    val pattern = arqNodesToPattern(s, p, o)
     val resultIterator = tr.resultIteratorForQuery(Seq(pattern))
-    val sOption = nodeToString(triplePattern.getSubject)
-    val pOption = nodeToString(triplePattern.getPredicate)
-    val oOption = nodeToString(triplePattern.getObject)
-    val convertedIterator = TripleRushIterator.convert(sOption, pOption, oOption, tr.dictionary, resultIterator)
+    val concreteS = if (s.isConcrete) Some(NodeConversion.nodeToString(s)) else None
+    val concreteP = if (p.isConcrete) Some(NodeConversion.nodeToString(p)) else None
+    val concreteO = if (o.isConcrete) Some(NodeConversion.nodeToString(o)) else None
+    val convertedIterator = TripleRushIterator.convert(concreteS, concreteP, concreteO, tr.dictionary, resultIterator)
     WrappedIterator.createNoRemove(convertedIterator)
   }
 
@@ -99,21 +111,7 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
     }
   }
 
-  private def nodeToString(n: Node): Option[String] = {
-    if (n.isURI || n.isLiteral) {
-      Some(n.toString)
-    } else if (n.isVariable || (!n.isConcrete && !n.isBlank)) {
-      None
-    } else {
-      throw new UnsupportedOperationException(s"TripleRush does not support node $n of type ${n.getClass.getSimpleName}.")
-    }
-  }
-
-  private def tripleToPattern(triple: Triple): TriplePattern = {
-    arqNodesToPattern(triple.getSubject, triple.getPredicate, triple.getObject)
-  }
-
-  // TODO: Make more efficient by unrolling everything and getting rid of the map.
+  // TODO: Make more efficient by unrolling everything.
   private def arqNodesToPattern(s: Node, p: Node, o: Node): TriplePattern = {
     var nextVariableId = -1
     @inline def nodeToId(n: Node): Int = {
@@ -122,16 +120,12 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
           val id = nextVariableId
           nextVariableId -= 1
           id
-        case uri: Node_URI =>
-          tr.dictionary(uri.toString(null, false))
-        case literal: Node_Literal =>
-          tr.dictionary(literal.toString(null, false))
+        case variable: Node_Variable =>
+          throw new UnsupportedOperationException("Variable nodes are not supported in find patterns.")
         case blank: Node_Blank =>
-          val id = nextVariableId
-          nextVariableId -= 1
-          id
+          throw new UnsupportedOperationException("Blank nodes are not supported in find patterns.")
         case other =>
-          throw new UnsupportedOperationException(s"TripleRush Graph does not support node $other of type ${other.getClass.getSimpleName}.")
+          tr.dictionary(NodeConversion.nodeToString(other))
       }
     }
     val sId = nodeToId(s)
