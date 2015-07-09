@@ -31,6 +31,7 @@ import com.hp.hpl.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
 import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
 import com.hp.hpl.jena.graph.Node_Blank
 import com.hp.hpl.jena.graph.Node_Variable
+import com.hp.hpl.jena.graph.Capabilities
 
 /**
  * A TripleRush implementation of the Jena Graph interface.
@@ -98,7 +99,11 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
   }
 
   override def graphBaseContains(t: Triple): Boolean = {
-    getStatistic(t.getSubject, t.getPredicate, t.getObject) >= 1
+    val c = getStatistic(t.getSubject, t.getPredicate, t.getObject) >= 1
+    // problem for object = \"comment\"@en
+    val o = t.getObject
+    println(s"graphBaseContains($t, where o.isLiteral = ${o.isLiteral})=$c")
+    c
   }
 
   override def graphBaseSize: Int = {
@@ -112,6 +117,7 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
   }
 
   // TODO: Make more efficient by unrolling everything.
+  // TODO: Does not support using the same variable/blank node multiple times. Test if this case needs to be supported.
   private def arqNodesToPattern(s: Node, p: Node, o: Node): TriplePattern = {
     var nextVariableId = -1
     @inline def nodeToId(n: Node): Int = {
@@ -121,9 +127,9 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
           nextVariableId -= 1
           id
         case variable: Node_Variable =>
-          throw new UnsupportedOperationException("Variable nodes are not supported in find patterns.")
+          throw new UnsupportedOperationException("Variables not supported.")
         case blank: Node_Blank =>
-          throw new UnsupportedOperationException("Blank nodes are not supported in find patterns.")
+          tr.dictionary(NodeConversion.nodeToString(blank))
         case other =>
           tr.dictionary(NodeConversion.nodeToString(other))
       }
@@ -132,6 +138,18 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
     val pId = nodeToId(p)
     val oId = nodeToId(o)
     TriplePattern(sId, pId, oId)
+  }
+
+  override val getCapabilities = new Capabilities {
+    val sizeAccurate = true
+    val addAllowed = true
+    def addAllowed(everyTriple: Boolean) = true
+    val deleteAllowed = false
+    def deleteAllowed(everyTriple: Boolean) = false
+    val iteratorRemoveAllowed = false
+    val canBeEmpty = true
+    val findContractSafe = true
+    val handlesLiteralTyping = false
   }
 
 }
