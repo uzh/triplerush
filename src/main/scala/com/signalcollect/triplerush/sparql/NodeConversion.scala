@@ -17,7 +17,11 @@ object NodeConversion {
         case i: Integer =>
           i.toString
         case s: String =>
-          n.toString
+          if (n.getLiteralIsXML) {
+            "<" + s
+          } else {
+            n.toString
+          }
         case other =>
           throw new UnsupportedOperationException(s"Literal $n not supported.")
       }
@@ -36,7 +40,9 @@ object NodeConversion {
       case c: Char if (c.isLetter) =>
         NodeFactory.createURI(s)
       case c: Char if (c == '-' || c.isDigit) =>
-        NodeFactory.createLiteral(LiteralLabelFactory.createTypedLiteral(c.toInt))
+        val dt = TypeMapper.getInstance.getTypeByName("http://www.w3.org/2001/XMLSchema#integer")
+        val label = LiteralLabelFactory.create(s, dt)
+        NodeFactory.createLiteral(label)
       case '"' =>
         if (s.last == '"') {
           // Simple case, no type or language tag.
@@ -61,7 +67,7 @@ object NodeConversion {
           }
         }
       case '<' =>
-        throw new UnsupportedOperationException(s"XML literal $s is not supported.")
+        NodeFactory.createLiteral(s.tail, null, true)
       case '_' =>
         NodeFactory.createAnon(AnonId.create(s.tail))
       case other =>
