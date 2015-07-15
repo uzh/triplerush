@@ -134,9 +134,6 @@ case class TripleRush(
 
   private[this] var canExecute = false
 
-  // Automatically initialize query execution when there is no optimizer.
-  if (optimizerCreator == NoOptimizerCreator) prepareExecution
-
   def prepareExecution {
     graph.awaitIdle
     graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
@@ -185,7 +182,7 @@ case class TripleRush(
     graph.addEdge(po, new PlaceholderEdge(sId))
     graph.addEdge(so, new PlaceholderEdge(pId))
     graph.addEdge(sp, new PlaceholderEdge(oId))
-    if (canExecute) {
+    if (canExecute) { 
       graph.awaitIdle
       graph.log.warning("Added a triple when execution was already prepared. To safeguard against not seeing the change the addition is blocking, which is slow.")
     }
