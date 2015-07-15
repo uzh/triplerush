@@ -20,11 +20,22 @@ class GraphTestSuite
 class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
 
   def getGraph: Graph = {
-    val trSystem = ActorSystem(UUID.randomUUID.toString)
-    val tr = new TripleRush(
-      graphBuilder = new GraphBuilder[Long, Any]().withActorSystem(trSystem))
+    val tr = getTripleRushInstance
     tr.prepareExecution
     new TripleRushGraph(tr)
+  }
+
+  private[this] def getTripleRushInstance: TripleRush = {
+    val trSystem = ActorSystem(UUID.randomUUID.toString)
+    new TripleRush(graphBuilder = new GraphBuilder[Long, Any]().withActorSystem(trSystem))
+  }
+
+  override def getGraphWith(facts: String): Graph = {
+    val tr = getTripleRushInstance
+    val g = new TripleRushGraph(tr)
+    GraphTestBase.graphAdd(g, facts)
+    tr.prepareExecution
+    g
   }
 
   override def testIsomorphismFile() {
