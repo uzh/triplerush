@@ -47,7 +47,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       val triples = Set(TriplePattern(1, 2, 3))
       val query = List(TriplePattern(-1, 4, -1))
       val trCount = TestHelper.count(tr, triples, query)
-      val trResults = TestHelper.execute(tr, triples, query)
+      val trResults = TestHelper.execute(tr, Set(), query)
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
@@ -60,7 +60,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       val triples = Set(TriplePattern(1, 2, 3))
       val query = List(TriplePattern(1, 2, 3))
       val trCount = TestHelper.count(tr, triples, query)
-      val trResults = TestHelper.execute(tr, triples, query)
+      val trResults = TestHelper.execute(tr, Set(), query)
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
@@ -73,7 +73,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       val triples = Set(TriplePattern(8, 23, 19), TriplePattern(13, 25, 5), TriplePattern(6, 23, 18))
       val query = List()
       val trCount = TestHelper.count(tr, triples, query)
-      val trResults = TestHelper.execute(tr, triples, query)
+      val trResults = TestHelper.execute(tr, Set(), query)
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
@@ -86,7 +86,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       val triples = Set(TriplePattern(1, 2, 3))
       val query = List(TriplePattern(1, 4, 3))
       val trCount = TestHelper.count(tr, triples, query)
-      val trResults = TestHelper.execute(tr, triples, query)
+      val trResults = TestHelper.execute(tr, Set(), query)
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
@@ -147,7 +147,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       val triples = Set(TriplePattern(4, 3, 4))
       val query = List(TriplePattern(-1, 3, -1))
       val trCount = TestHelper.count(tr, triples, query)
-      val trResults = TestHelper.execute(tr, triples, query)
+      val trResults = TestHelper.execute(tr, Set(), query)
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
@@ -162,7 +162,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
         TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
       val query = List(TriplePattern(-2, -1, 3))
       val trCount = TestHelper.count(tr, triples, query)
-      val trResults = TestHelper.execute(tr, triples, query)
+      val trResults = TestHelper.execute(tr, Set(), query)
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
@@ -177,7 +177,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
         TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
       val query = List(TriplePattern(3, 4, 2), TriplePattern(-2, -1, -3))
       val trCount = TestHelper.count(tr, triples, query)
-      val trResults = TestHelper.execute(tr, triples, query)
+      val trResults = TestHelper.execute(tr, Set(), query)
       assert(trResults.size === trCount, s"Bindings found: ${trResults.size}, counting query results: $trCount")
     } finally {
       tr.shutdown
@@ -192,7 +192,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
         TriplePattern(4, 4, 1), TriplePattern(4, 4, 3))
       val query = List(TriplePattern(1, 2, 3), TriplePattern(-2, -1, 3))
       val trCount = TestHelper.count(tr, triples, query)
-      val trResults = TestHelper.execute(tr, triples, query)
+      val trResults = TestHelper.execute(tr, Set(), query)
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
@@ -212,7 +212,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     try {
       val query = List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25))
       val trCount = TestHelper.count(tr, triples, query)
-      val trResults = TestHelper.execute(tr, triples, query)
+      val trResults = TestHelper.execute(tr, Set(), query)
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown

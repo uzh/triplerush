@@ -42,10 +42,10 @@ SELECT ?name ?project WHERE {
     val graph = new TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
-      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "Arnie")
-      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/name", "Bob")
-      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "Gardening")
-      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/currentProject", "Volleyball")
+      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "\"Arnie\"")
+      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/name", "\"Bob\"")
+      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "\"Gardening\"")
+      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/currentProject", "\"Volleyball\"")
       tr.prepareExecution
       val results = Sparql(sparql)
       val resultBindings = results.map(_.get("project").asLiteral.getString).toSet
@@ -70,11 +70,11 @@ SELECT ?name ?project WHERE {
     val graph = new TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
-      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "Arnie")
-      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/name", "Bob")
-      tr.addTriple("http://PersonC", "http://xmlns.com/foaf/0.1/name", "Caroline")
-      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "Gardening")
-      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/currentProject", "Volleyball")
+      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "\"Arnie\"")
+      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/name", "\"Bob\"")
+      tr.addTriple("http://PersonC", "http://xmlns.com/foaf/0.1/name", "\"Caroline\"")
+      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "\"Gardening\"")
+      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/currentProject", "\"Volleyball\"")
       tr.prepareExecution
       val results = Sparql(sparql)
       val resultBindings = results.map(_.get("name").asLiteral.getString).toSet
@@ -104,11 +104,11 @@ SELECT ?name ?project WHERE {
     val graph = new TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
-      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "Arnie")
-      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/name", "Bob")
-      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "Gardening")
-      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "Skydiving")
-      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/currentProject", "Volleyball")
+      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "\"Arnie\"")
+      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/name", "\"Bob\"")
+      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "\"Gardening\"")
+      tr.addTriple("http://PersonA", "http://xmlns.com/foaf/0.1/currentProject", "\"Skydiving\"")
+      tr.addTriple("http://PersonB", "http://xmlns.com/foaf/0.1/currentProject", "\"Volleyball\"")
       tr.prepareExecution
       val results = Sparql(sparql)
       val resultBindings = results.map { bindings =>
@@ -143,12 +143,12 @@ SELECT ?name ?project WHERE {
     try {
       tr.addTriple("http://people.example/alice", "http://people.example/knows", "http://people.example/bob")
       tr.addTriple("http://people.example/alice", "http://people.example/knows", "http://people.example/carol")
-      tr.addTriple("http://people.example/bob", "http://people.example/name", "Bob")
-      tr.addTriple("http://people.example/bob", "http://people.example/name", "Bob Bar")
-      tr.addTriple("http://people.example/bob", "http://people.example/name", "B. Bar")
-      tr.addTriple("http://people.example/carol", "http://people.example/name", "Carol")
-      tr.addTriple("http://people.example/carol", "http://people.example/name", "Carol Baz")
-      tr.addTriple("http://people.example/carol", "http://people.example/name", "C. Baz")
+      tr.addTriple("http://people.example/bob", "http://people.example/name", "\"Bob\"")
+      tr.addTriple("http://people.example/bob", "http://people.example/name", "\"Bob Bar\"")
+      tr.addTriple("http://people.example/bob", "http://people.example/name", "\"B. Bar\"")
+      tr.addTriple("http://people.example/carol", "http://people.example/name", "\"Carol\"")
+      tr.addTriple("http://people.example/carol", "http://people.example/name", "\"Carol Baz\"")
+      tr.addTriple("http://people.example/carol", "http://people.example/name", "\"C. Baz\"")
       tr.prepareExecution
       val results = Sparql(sparql)
       val resultBindings = results.map { bindings =>

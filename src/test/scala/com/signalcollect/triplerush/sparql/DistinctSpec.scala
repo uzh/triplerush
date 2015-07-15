@@ -37,9 +37,9 @@ SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
     val graph = new TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
-      tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-      tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-      tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "Arthur")
+      tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+      tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+      tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "\"Arthur\"")
       tr.prepareExecution
       val results = Sparql(sparql)
       assert(results.size === 2)
@@ -57,9 +57,9 @@ SELECT (COUNT(DISTINCT ?name) as ?count) WHERE { ?x foaf:name ?name }
     val graph = new TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
-      tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-      tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "Harold")
-      tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "Arthur")
+      tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+      tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+      tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "\"Arthur\"")
       tr.prepareExecution
       val results = Sparql(sparql)
       assert(results.hasNext === true)
