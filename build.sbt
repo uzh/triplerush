@@ -53,8 +53,6 @@ libraryDependencies ++= Seq(
   "junit" % "junit" % "4.12" % "test"
 )
 
-resolvers += "Ifi Public" at "https://maven.ifi.uzh.ch/maven2/content/groups/public/"
-
 pomExtra := (
  <url>https://github.com/uzh/triplerush</url>
  <scm>
