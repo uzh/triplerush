@@ -19,47 +19,37 @@
 
 package com.signalcollect.triplerush.loading
 
-import java.io.FileInputStream
+import java.util.concurrent.Executors
 
-import org.semanticweb.yars.nx.parser.NxParser
+import org.apache.jena.riot.RDFDataMgr
+import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
 
+import com.hp.hpl.jena.graph.{ Triple => JenaTriple }
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.Dictionary
-import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.sparql.NodeConversion
 
 case class NtriplesLoader(ntriplesFilename: String, dictionary: Dictionary) extends Iterator[GraphEditor[Long, Any] => Unit] {
 
-  var is: FileInputStream = _
-  var nxp: NxParser = _
-
-  var isInitialized = false
-  var nextTriplePattern: TriplePattern = null
-
-  def initialize {
-    is = new FileInputStream(ntriplesFilename)
-    nxp = new NxParser(is)
-    isInitialized = true
+  val tripleIterator = new PipedRDFIterator[JenaTriple]
+  val inputStream = new PipedTriplesStream(tripleIterator)
+  val executor = Executors.newSingleThreadExecutor
+  val parser = new Runnable {
+    def run: Unit = {
+      RDFDataMgr.parse(inputStream, ntriplesFilename)
+    }
   }
+  executor.submit(parser)
 
   def hasNext = {
-    if (!isInitialized) {
-      initialize
-    }
-    val hasNext = nxp.hasNext
-    if (!hasNext) {
-      is.close
-    }
-    hasNext
+    tripleIterator.hasNext
   }
 
   def next: GraphEditor[Long, Any] => Unit = {
-    if (!isInitialized) {
-      initialize
-    }
-    val triple = nxp.next
-    val predicateString = triple(1).toString
-    val subjectString = triple(0).toString
-    val objectString = triple(2).toString
+    val triple = tripleIterator.next
+    val subjectString = NodeConversion.nodeToString(triple.getSubject)
+    val predicateString = NodeConversion.nodeToString(triple.getPredicate)
+    val objectString = NodeConversion.nodeToString(triple.getObject)
     val sId = dictionary(subjectString)
     val pId = dictionary(predicateString)
     val oId = dictionary(objectString)

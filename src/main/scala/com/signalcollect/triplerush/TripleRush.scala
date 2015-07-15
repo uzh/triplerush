@@ -62,11 +62,11 @@ object TrGlobal {
 }
 
 case class TripleRush(
-  graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
-  optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
-  val dictionary: Dictionary = new CompressedDictionary(),
-  tripleMapperFactory: Option[MapperFactory[Long]] = None,
-  console: Boolean = false) extends QueryEngine {
+    graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
+    optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
+    val dictionary: Dictionary = new CompressedDictionary(),
+    tripleMapperFactory: Option[MapperFactory[Long]] = None,
+    console: Boolean = false) extends QueryEngine {
 
   TrGlobal.dictionary = Some(dictionary)
 
@@ -127,15 +127,12 @@ case class TripleRush(
         "com.signalcollect.triplerush.util.TripleRushWorkerFactory",
         "com.signalcollect.interfaces.BulkSignalNoSourceIds$mcJ$sp",
         "com.signalcollect.interfaces.SignalMessageWithoutSourceId$mcJ$sp")).build
-  val system = ActorSystemRegistry.retrieve("SignalCollect").get
+  val system = graphBuilder.config.actorSystem.getOrElse(ActorSystemRegistry.retrieve("SignalCollect").get)
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
   var optimizer: Option[Optimizer] = None
 
-  var canExecute = false
-
-  // Automatically initialize query execution when there is no optimizer.
-  if (optimizerCreator == NoOptimizerCreator) prepareExecution
+  private[this] var canExecute = false
 
   def prepareExecution {
     graph.awaitIdle
@@ -157,6 +154,15 @@ case class TripleRush(
     graph.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
   }
 
+  /**
+   * Encoding:
+   * By default something is an IRI.
+   * If something starts with a hyphen or a digit, it's interpreted as an integer literal
+   * If something starts with '"' it is interpreted as a string literal.
+   * If something has an extra '<' prefix, then the remainder is interpreted as an XML literal.
+   * If something starts with '_', then the remainder is assumed to be a blank node ID where uniqueness is the
+   * responsibility of the caller.
+   */
   def addTriple(s: String, p: String, o: String) {
     val sId = dictionary(s)
     val pId = dictionary(p)
@@ -176,6 +182,10 @@ case class TripleRush(
     graph.addEdge(po, new PlaceholderEdge(sId))
     graph.addEdge(so, new PlaceholderEdge(pId))
     graph.addEdge(sp, new PlaceholderEdge(oId))
+    if (canExecute) { 
+      graph.awaitIdle
+      graph.log.warning("Added a triple when execution was already prepared. To safeguard against not seeing the change the addition is blocking, which is slow.")
+    }
   }
 
   def executeCountingQuery(

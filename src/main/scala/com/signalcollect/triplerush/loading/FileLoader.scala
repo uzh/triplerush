@@ -20,13 +20,8 @@
 
 package com.signalcollect.triplerush.loading
 
-import java.io.FileInputStream
-import org.semanticweb.yars.nx.parser.NxParser
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.Dictionary
-import com.signalcollect.triplerush.PlaceholderEdge
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.{ EfficientIndexPattern, PlaceholderEdge }
 
 case object FileLoader {
 

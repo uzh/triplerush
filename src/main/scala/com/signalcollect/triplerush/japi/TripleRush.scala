@@ -21,6 +21,8 @@ package com.signalcollect.triplerush.japi
 
 import com.signalcollect.triplerush.{ TripleRush => ScalaTripleRush }
 import com.signalcollect.triplerush.sparql.Sparql
+import com.signalcollect.triplerush.sparql.TripleRushGraph
+import com.hp.hpl.jena.query.ResultSet
 
 /**
  * Java wrapper for TripleRush.
@@ -28,6 +30,8 @@ import com.signalcollect.triplerush.sparql.Sparql
 class TripleRush {
 
   protected val wrappedScalaTripleRush = ScalaTripleRush()
+  protected val graph = new TripleRushGraph(wrappedScalaTripleRush)
+  protected implicit val model = graph.getModel
 
   /**
    * This function has to be called after loading and before executing queries.
@@ -59,9 +63,8 @@ class TripleRush {
    * Results for a given variable can be accessed by calling ResultSet.apply("x"),
    * to for example retrieve the binding for the variable 'x'.
    */
-  def sparql(query: String): Iterator[String => String] = {
-    val scalaSparql = Sparql(query)(wrappedScalaTripleRush)
-    scalaSparql.resultIterator
+  def sparql(query: String): ResultSet = {
+    Sparql(query)
   }
 
   /**

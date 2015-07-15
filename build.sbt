@@ -5,11 +5,11 @@ assemblySettings
 /** Project */
 name := "triplerush"
 
-version := "2.0.2-SNAPSHOT"
+version := "3.0.0-SNAPSHOT"
 
 organization := "com.signalcollect"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
@@ -42,13 +42,16 @@ excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
 /** Dependencies */
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-library" % scalaVersion.value % "compile",
-  "com.signalcollect" %% "signal-collect" % "3.0.2" % "compile",
+  "com.signalcollect" %% "signal-collect" % "3.0.3" % "compile",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4" % "compile",
+  "org.apache.jena" % "jena-arq" % "2.13.0" % "compile",
+  "org.apache.jena" % "jena-core" % "2.13.0" % "test" classifier "tests",
   "org.apache.jena" % "apache-jena-libs" % "2.13.0" % "test",
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",
   "org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
-  "org.easymock" % "easymock" % "3.3.1" % "test"
-  )
+  "org.easymock" % "easymock" % "3.3.1" % "test",
+  "junit" % "junit" % "4.12" % "test"
+)
 
 resolvers += "Ifi Public" at "https://maven.ifi.uzh.ch/maven2/content/groups/public/"
 

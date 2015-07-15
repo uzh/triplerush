@@ -45,3 +45,11 @@ binary-split/0.filtered-split
 lubm1*/
 
 *.filtered-split
+
+.cache-main
+
+.cache-tests
+
+.idea/*
+
+*.iml
