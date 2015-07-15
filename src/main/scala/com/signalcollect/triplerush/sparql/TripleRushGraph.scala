@@ -85,7 +85,6 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
   }
 
   def graphBaseFind(triplePattern: Triple): ExtendedIterator[Triple] = {
-    println(s"graphBaseFind($triplePattern)")
     val s = triplePattern.getSubject
     val p = triplePattern.getPredicate
     val o = triplePattern.getObject
@@ -99,11 +98,7 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
   }
 
   override def graphBaseContains(t: Triple): Boolean = {
-    val c = getStatistic(t.getSubject, t.getPredicate, t.getObject) >= 1
-    // problem for object = \"comment\"@en
-    val o = t.getObject
-    println(s"graphBaseContains($t, where o.isLiteral = ${o.isLiteral})=$c")
-    c
+    getStatistic(t.getSubject, t.getPredicate, t.getObject) >= 1
   }
 
   override def graphBaseSize: Int = {

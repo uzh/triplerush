@@ -42,7 +42,6 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
 
   // TODO: Catch when not in dictionary, return empty iterator.
   def executeOnTripleRush(tr: TripleRush, pattern: BasicPattern, input: QueryIterator, execCxt: ExecutionContext): QueryIterator = {
-    println(s"executeOnTripleRush($pattern)")
     val dictionary = tr.dictionary
     val originalQuery = pattern.getList.toSeq
     var variableNameToId = Map.empty[String, Int]
