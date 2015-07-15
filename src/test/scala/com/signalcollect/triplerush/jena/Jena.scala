@@ -18,8 +18,10 @@ import com.hp.hpl.jena.sparql.engine.binding.BindingProjectBase
 import com.hp.hpl.jena.sparql.engine.binding.BindingHashMap
 
 class Jena extends QueryEngine {
+
   val model = ModelFactory.createDefaultModel
-  def addEncodedTriple(s: Int, p: Int, o: Int) {
+
+  def addEncodedTriple(s: Int, p: Int, o: Int, blocking: Boolean) {
     val resource = model.createResource(intToInsertString(s))
     val prop = model.createProperty(intToInsertString(p))
     val obj = model.createResource(intToInsertString(o))
@@ -90,12 +92,12 @@ WHERE {
       // map to characters
       case i if i > 0 && i < 26 =>
         "ns:" + (a + i).toChar
-      case -1 => "?X"
-      case -2 => "?Y"
-      case -3 => "?Z"
-      case -4 => "?A"
-      case -5 => "?B"
-      case -6 => "?C"
+      case -1    => "?X"
+      case -2    => "?Y"
+      case -3    => "?Z"
+      case -4    => "?A"
+      case -5    => "?B"
+      case -6    => "?C"
       case other => throw new Exception("Unsupported variable.")
     }
   }

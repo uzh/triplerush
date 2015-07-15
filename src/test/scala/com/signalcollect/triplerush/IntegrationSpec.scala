@@ -212,7 +212,7 @@ object TestHelper {
   def prepareStore(qe: QueryEngine,
     triples: Set[TriplePattern]) {
     for (triple <- triples) {
-      qe.addEncodedTriple(triple.s, triple.p, triple.o)
+      qe.addEncodedTriple(triple.s, triple.p, triple.o, false)
     }
     qe.prepareExecution
   }

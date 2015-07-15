@@ -163,18 +163,18 @@ case class TripleRush(
    * If something starts with '_', then the remainder is assumed to be a blank node ID where uniqueness is the
    * responsibility of the caller.
    */
-  def addTriple(s: String, p: String, o: String) {
+  def addTriple(s: String, p: String, o: String, blocking: Boolean = true): Unit = {
     val sId = dictionary(s)
     val pId = dictionary(p)
     val oId = dictionary(o)
-    addEncodedTriple(sId, pId, oId)
+    addEncodedTriple(sId, pId, oId, blocking)
   }
 
-  def addTriplePattern(tp: TriplePattern) {
-    addEncodedTriple(tp.s, tp.p, tp.o)
+  def addTriplePattern(tp: TriplePattern, blocking: Boolean = true) {
+    addEncodedTriple(tp.s, tp.p, tp.o, blocking)
   }
 
-  def addEncodedTriple(sId: Int, pId: Int, oId: Int) {
+  def addEncodedTriple(sId: Int, pId: Int, oId: Int, blocking: Boolean = true) {
     assert(sId > 0 && pId > 0 && oId > 0)
     val po = EfficientIndexPattern(0, pId, oId)
     val so = EfficientIndexPattern(sId, 0, oId)
@@ -182,9 +182,8 @@ case class TripleRush(
     graph.addEdge(po, new PlaceholderEdge(sId))
     graph.addEdge(so, new PlaceholderEdge(pId))
     graph.addEdge(sp, new PlaceholderEdge(oId))
-    if (canExecute) { 
+    if (blocking && canExecute) {
       graph.awaitIdle
-      graph.log.warning("Added a triple when execution was already prepared. To safeguard against not seeing the change the addition is blocking, which is slow.")
     }
   }
 
