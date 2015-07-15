@@ -30,8 +30,10 @@ object NodeConversion {
     } else {
       throw new UnsupportedOperationException(s"TripleRush does not support node $n of type ${n.getClass.getSimpleName}.")
     }
-    val thereAnBack = stringToNode(nodeAsString)
-    assert(thereAnBack.equals(n), s"Node $n as a string is $nodeAsString, which gets converted to $thereAnBack")
+    // The code below can be enabled for debugging: it checks that a node is encoded such that decoding the string 
+    // results in a node that is equal to the original node.
+    //val thereAnBack = stringToNode(nodeAsString)
+    //assert(thereAnBack.equals(n), s"Node $n as a string is $nodeAsString, which gets converted to $thereAnBack")
     nodeAsString
   }
 
