@@ -157,6 +157,15 @@ case class TripleRush(
     graph.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
   }
 
+  /**
+   * Encoding:
+   * By default something is an IRI.
+   * If something starts with a hyphen or a digit, it's interpreted as an integer literal
+   * If something starts with '"' it is interpreted as a string literal.
+   * If something has an extra '<' prefix, then the remainder is interpreted as an XML literal.
+   * If something starts with '_', then the remainder is assumed to be a blank node ID where uniqueness is the
+   * responsibility of the caller.
+   */
   def addTriple(s: String, p: String, o: String) {
     val sId = dictionary(s)
     val pId = dictionary(p)
