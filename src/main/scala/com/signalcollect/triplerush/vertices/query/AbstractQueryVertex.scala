@@ -35,32 +35,34 @@ import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.QueryIds
 
 abstract class AbstractQueryVertex[StateType](
-  val query: Seq[TriplePattern],
-  val tickets: Long,
-  val numberOfSelectVariables: Int,
-  val optimizer: Option[Optimizer]) extends BaseVertex[StateType] {
+    val query: Seq[TriplePattern],
+    val tickets: Long,
+    val numberOfSelectVariables: Int,
+    val optimizer: Option[Optimizer]) extends BaseVertex[StateType] {
 
   val numberOfPatternsInOriginalQuery: Int = query.length
 
-  val expectedCardinalityReplies: Int = numberOfPatternsInOriginalQuery
-  var receivedCardinalityReplies: Int = 0
+  val queryTickets = Long.MaxValue
+
+  val queryTicketsReceived = new TicketSynchronization(s"queryTicketsReceived[${query.mkString}]", queryTickets)
+
+  // Both predicate and cardinality stats.
+  val statsReceived = new TicketSynchronization(s"statsReceived[${query.mkString}]", 2 * numberOfPatternsInOriginalQuery)
 
   var cardinalities = Map.empty[TriplePattern, Long]
-
-  var receivedTickets = 0l
-  var complete = true
-
   var dispatchedQuery: Option[Array[Int]] = None
 
   var optimizingStartTime = 0l
   var optimizingDuration = 0l
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
-
     optimizingStartTime = System.nanoTime
     //TODO: Should we run an optimizer even for one-pattern queries?
     if (optimizer.isDefined && numberOfPatternsInOriginalQuery > 1) {
       gatherStatistics(graphEditor)
+      statsReceived.onSuccess {
+        case _ => handleQueryDispatch(graphEditor)
+      }
     } else {
       // Dispatch the query directly.
       optimizingDuration = System.nanoTime - optimizingStartTime
@@ -75,7 +77,7 @@ abstract class AbstractQueryVertex[StateType](
       } else {
         dispatchedQuery = None
         // All stats processed, but no results, we can safely remove the query vertex now.
-        reportResultsAndRequestQueryVertexRemoval(graphEditor)
+        reportResultsAndRequestQueryVertexRemoval(true, graphEditor)
       }
     }
   }
@@ -108,7 +110,6 @@ abstract class AbstractQueryVertex[StateType](
       handleCardinalityReply(triplePattern, fromCache.get)
     } else if (cardinalityInCache && !requestedPredicateStats.contains(pIndexForPattern)) {
       // Need to gather predicate stats.
-      requestedPredicateStats += pIndexForPattern
       handleCardinalityReply(triplePattern, fromCache.get)
       graphEditor.sendSignal(CardinalityRequest(triplePattern, id), EfficientIndexPattern(0, pIndexForPattern, 0))
     } else if (predicateStatsInCache) {
@@ -123,6 +124,8 @@ abstract class AbstractQueryVertex[StateType](
       if (!requestedPredicateStats.contains(pIndexForPattern) && pIndex != responsibleIndexId) {
         requestedPredicateStats += pIndexForPattern
         graphEditor.sendSignal(CardinalityRequest(triplePattern, id), pIndex.routingAddress)
+      } else {
+        statsReceived.receivedTickets(1)
       }
     }
   }
@@ -137,18 +140,14 @@ abstract class AbstractQueryVertex[StateType](
         gatherZeroPredicateStatsForPattern(triplePattern, graphEditor)
       }
     }
-    if (areStatsGathered) {
-      handleQueryDispatch(graphEditor)
-    }
   }
 
   override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]): Boolean = {
+    println(s"got signal $signal")
     signal match {
       case deliveredTickets: Long =>
-        processTickets(deliveredTickets)
-        if (receivedTickets == tickets) {
-          reportResultsAndRequestQueryVertexRemoval(graphEditor)
-        }
+        println(s"GOT QUERY TICKETS! $deliveredTickets")
+        queryTicketsReceived.receivedTickets(deliveredTickets)
       case bindings: Array[_] =>
         handleBindings(bindings.asInstanceOf[Array[Array[Int]]])
       case resultCount: Int =>
@@ -158,45 +157,40 @@ abstract class AbstractQueryVertex[StateType](
         //received cardinality reply from: forPattern
         CardinalityCache.add(forPattern.withVariablesAsWildcards, cardinality)
         handleCardinalityReply(forPattern, cardinality)
-        if (areStatsGathered) {
-          handleQueryDispatch(graphEditor)
-        }
       case PredicateStatsReply(forPattern, cardinality, predicateStats) =>
         //received cardinalityandedgecount reply from: forPattern
         CardinalityCache.add(forPattern.withVariablesAsWildcards, cardinality)
         val pIndexForPattern = forPattern.p
         PredicateStatsCache.add(pIndexForPattern, predicateStats)
         handleCardinalityReply(forPattern, cardinality)
-        if (areStatsGathered) {
-          handleQueryDispatch(graphEditor)
-        }
     }
     true
-  }
-
-  def areStatsGathered: Boolean = {
-    val expectedReplies = expectedCardinalityReplies + requestedPredicateStats.size
-    //println(s"$id: q: ${querySpecification.unmatched}	$receivedCardinalityReplies/$expectedReplies")
-    expectedReplies == receivedCardinalityReplies
   }
 
   def handleQueryDispatch(graphEditor: GraphEditor[Long, Any]) {
     if (queryMightHaveResults) {
       dispatchedQuery = optimizeQuery
       if (dispatchedQuery.isDefined) {
+        println(s"Query dispatched: ${dispatchedQuery.get.mkString}")
+        queryTicketsReceived.onSuccess {
+          case _ => reportResultsAndRequestQueryVertexRemoval(true, graphEditor)
+        }
+        queryTicketsReceived.onFailure {
+          case _ => reportResultsAndRequestQueryVertexRemoval(false, graphEditor)
+        }
         graphEditor.sendSignal(
           dispatchedQuery.get,
           dispatchedQuery.get.routingAddress)
       } else {
-        reportResultsAndRequestQueryVertexRemoval(graphEditor)
+        reportResultsAndRequestQueryVertexRemoval(true, graphEditor)
       }
     } else {
-      reportResultsAndRequestQueryVertexRemoval(graphEditor)
+      reportResultsAndRequestQueryVertexRemoval(true, graphEditor)
     }
   }
 
-  def reportResultsAndRequestQueryVertexRemoval(graphEditor: GraphEditor[Long, Any]) {
-    reportResults
+  def reportResultsAndRequestQueryVertexRemoval(completeExecution: Boolean, graphEditor: GraphEditor[Long, Any]) {
+    reportResults(completeExecution)
     requestQueryVertexRemoval(graphEditor)
   }
 
@@ -210,11 +204,11 @@ abstract class AbstractQueryVertex[StateType](
     forPattern: TriplePattern,
     cardinality: Long) {
     cardinalities += forPattern -> cardinality
-    receivedCardinalityReplies += 1
+    statsReceived.receivedTickets(1)
     if (cardinality == 0) {
       // 0 cardinality => no results => we're done.
       queryMightHaveResults = false
-      reportResults
+      reportResults(true)
     }
   }
 
@@ -234,13 +228,6 @@ abstract class AbstractQueryVertex[StateType](
     }
   }
 
-  def processTickets(t: Long) {
-    receivedTickets += { if (t < 0) -t else t } // inlined math.abs
-    if (t < 0) {
-      complete = false
-    }
-  }
-
   var queryVertexRemovalRequested = false
 
   def requestQueryVertexRemoval(graphEditor: GraphEditor[Long, Any]) {
@@ -252,7 +239,7 @@ abstract class AbstractQueryVertex[StateType](
 
   var resultsReported = false
 
-  def reportResults {
+  def reportResults(completeExecution: Boolean): Unit = {
     resultsReported = true
   }
 

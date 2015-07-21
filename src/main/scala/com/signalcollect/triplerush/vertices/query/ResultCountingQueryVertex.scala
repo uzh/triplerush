@@ -34,7 +34,7 @@ final class ResultCountingQueryVertex(
   tickets: Long,
   resultPromise: Promise[Option[Long]],
   optimizer: Option[Optimizer])
-  extends AbstractQueryVertex[Long](query, tickets, numberOfSelectVariables = 0, optimizer) {
+    extends AbstractQueryVertex[Long](query, tickets, numberOfSelectVariables = 0, optimizer) {
 
   val id = QueryIds.embedQueryIdInLong(QueryIds.nextCountQueryId)
 
@@ -51,10 +51,10 @@ final class ResultCountingQueryVertex(
     state += resultCount
   }
 
-  override def reportResults {
+  override final def reportResults(completeExecution: Boolean): Unit = {
     if (!resultsReported) {
-      super.reportResults
-      if (complete) {
+      super.reportResults(completeExecution)
+      if (completeExecution) {
         resultPromise.success(Some(state))
       } else {
         resultPromise.success(None)

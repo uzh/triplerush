@@ -45,7 +45,7 @@ class QueryPlanningVertex(
   query: Seq[TriplePattern],
   plannerPromise: Promise[QueryPlanningResult],
   optimizer: Optimizer)
-  extends AbstractQueryVertex[ArrayOfArraysTraversable](query, 0l, 0, Some(optimizer)) {
+    extends AbstractQueryVertex[ArrayOfArraysTraversable](query, 0l, 0, Some(optimizer)) {
 
   final val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
 
@@ -65,7 +65,7 @@ class QueryPlanningVertex(
       statsGatheringTime = 0l
       actualOptimizerTime = 0l
       queryPlan = query
-      reportResultsAndRequestQueryVertexRemoval(graphEditor)
+      reportResultsAndRequestQueryVertexRemoval(true, graphEditor)
     }
   }
 
@@ -76,7 +76,7 @@ class QueryPlanningVertex(
       cardinalities, PredicateStatsCache.implementation)
     actualOptimizerTime = System.nanoTime - actualOptimizationStartingTime
     totalPlanningDuration = System.nanoTime - optimizingStartTime
-    reportResultsAndRequestQueryVertexRemoval(graphEditor)
+    reportResultsAndRequestQueryVertexRemoval(true, graphEditor)
   }
 
   def handleBindings(bindings: Array[Array[Int]]) {
@@ -87,7 +87,7 @@ class QueryPlanningVertex(
     throw new UnsupportedOperationException("Query planning vertex should never receive a result count.")
   }
 
-  override final def reportResults {
+  override final def reportResults(completeExecution: Boolean): Unit = {
     plannerPromise.success(QueryPlanningResult(queryPlan, totalPlanningDuration, statsGatheringTime, actualOptimizerTime))
   }
 

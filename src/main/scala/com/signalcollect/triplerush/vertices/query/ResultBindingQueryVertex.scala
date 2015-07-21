@@ -52,12 +52,12 @@ class ResultBindingQueryVertex(
     throw new UnsupportedOperationException("Result binding vertex should never receive a result count.")
   }
 
-  override final def reportResults {
+  override final def reportResults(completeExecution: Boolean): Unit = {
     if (!resultsReported) {
-      super.reportResults
+      super.reportResults(completeExecution)
       resultPromise.success(state)
       val stats = Map[Any, Any](
-        "isComplete" -> complete,
+        "isComplete" -> completeExecution,
         "optimizingDuration" -> optimizingDuration,
         "optimizedQuery" -> ("Pattern matching order: " + {
           if (dispatchedQuery.isDefined) {
