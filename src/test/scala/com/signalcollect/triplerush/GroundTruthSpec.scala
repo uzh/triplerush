@@ -45,7 +45,7 @@ object Lubm {
     println("Loading LUBM1 ... ")
     for (fileNumber <- 0 to 14) {
       val filename = s".${File.separator}lubm${File.separator}university0_$fileNumber.nt"
-      qe.loadNtriples(filename)
+      qe.load(filename)
     }
     qe.prepareExecution
     println("Finished loading LUBM1.")

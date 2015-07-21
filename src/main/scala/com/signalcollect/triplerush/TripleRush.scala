@@ -51,7 +51,7 @@ import com.signalcollect.interfaces.MapperFactory
 import com.signalcollect.triplerush.vertices.query.QueryPlanningResult
 import com.signalcollect.triplerush.vertices.query.QueryPlanningVertex
 import java.util.concurrent.atomic.AtomicReference
-import com.signalcollect.triplerush.loading.NtriplesLoader
+import com.signalcollect.triplerush.loading.FileLoader
 import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 
 /**
@@ -146,8 +146,8 @@ case class TripleRush(
    * The placement hint should ensure that this gets processed on node 0, because the dictionary resides on that node.
    * If you get a serialization error for the dictionary, it is probably due to a problematic placement hint.
    */
-  def loadNtriples(ntriplesFilename: String, placementHint: Option[Long] = Some(QueryIds.embedQueryIdInLong(1))) {
-    graph.loadGraph(new NtriplesLoader(ntriplesFilename, dictionary), placementHint)
+  def load(filename: String, placementHint: Option[Long] = Some(QueryIds.embedQueryIdInLong(1))) {
+    graph.loadGraph(new FileLoader(filename, dictionary), placementHint)
   }
 
   def loadBinary(binaryFilename: String, placementHint: Option[Long] = None) {
