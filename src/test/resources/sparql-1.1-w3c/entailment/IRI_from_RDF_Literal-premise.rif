@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE Document [
+  <!ENTITY rif  "http://www.w3.org/2007/rif#">
+  <!ENTITY xs   "http://www.w3.org/2001/XMLSchema#">
+  <!ENTITY rdf  "http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+]>
+
+<Document xmlns="&rif;">
+  <directive>
+    <Import>
+      <location>http://www.w3.org/2005/rules/test/repository/tc/IRI_from_RDF_Literal/IRI_from_RDF_Literal-import001</location>
+      <profile>http://www.w3.org/ns/entailment/Simple</profile>
+    </Import>
+  </directive>
+  <payload>
+    <Group>
+      <sentence>
+        <Forall>
+          <declare>
+            <Var>x</Var>
+          </declare>
+          <declare>
+            <Var>y</Var>
+          </declare>
+          <declare>
+            <Var>z</Var>
+          </declare>
+          <formula>
+            <Implies>
+              <if>
+                <And>
+                  <formula>
+                    <Frame>
+                      <object>
+                        <Var>y</Var>
+                      </object>
+                      <slot ordered="yes">
+                        <Const type="&rif;iri">http://example.org/example#hasWebSite</Const>
+                        <Var>x</Var>
+                      </slot>
+                    </Frame>
+                  </formula>
+                  <formula>
+                    <External>
+                     <content>
+                      <Atom>
+                          <op>
+                            <Const type="&rif;iri">http://www.w3.org/2007/rif-builtin-predicate#iri-string</Const>
+                          </op>
+                            <args ordered="yes">
+                              <Var>z</Var>
+                              <Var>x</Var>
+                            </args>
+                      </Atom>
+                     </content>
+                    </External>
+                  </formula>
+                </And>
+              </if>
+              <then>
+                <Frame>
+                  <object>
+                    <Var>y</Var>
+                  </object>
+                  <slot ordered="yes">
+                    <Const type="&rif;iri">http://xmlns.com/foaf/0.1/homepage</Const>
+                    <Var>z</Var>
+                  </slot>
+                </Frame>
+              </then>
+            </Implies>
+          </formula>
+        </Forall>
+      </sentence>
+    </Group>
+  </payload>
+</Document>
+<!--XML document generated on Sun Nov 07 10:36:03 EST 2010-->
