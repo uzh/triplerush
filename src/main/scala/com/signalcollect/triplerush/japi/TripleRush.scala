@@ -51,10 +51,10 @@ class TripleRush {
   }
 
   /**
-   * Loads the triples from the ntriples file at 'filePath'.
+   * Loads the triples from the file at 'filePath'.
    */
-  def loadNtriples(filePath: String) {
-    wrappedScalaTripleRush.loadNtriples(filePath)
+  def load(filePath: String) {
+    wrappedScalaTripleRush.load(filePath)
   }
 
   /**

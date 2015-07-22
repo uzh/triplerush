@@ -20,8 +20,46 @@
 
 package com.signalcollect.triplerush.loading
 
+import java.util.concurrent.Executors
+
+import org.apache.jena.riot.RDFDataMgr
+import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
+
+import com.hp.hpl.jena.graph.{ Triple => JenaTriple }
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.{ EfficientIndexPattern, PlaceholderEdge }
+import com.signalcollect.triplerush.{ Dictionary, EfficientIndexPattern, PlaceholderEdge }
+import com.signalcollect.triplerush.sparql.NodeConversion
+
+case class FileLoader(filePath: String, dictionary: Dictionary) extends Iterator[GraphEditor[Long, Any] => Unit] {
+
+  val tripleIterator = new PipedRDFIterator[JenaTriple]
+  val inputStream = new PipedTriplesStream(tripleIterator)
+  val executor = Executors.newSingleThreadExecutor
+  val parser = new Runnable {
+    def run: Unit = {
+      RDFDataMgr.parse(inputStream, filePath)
+    }
+  }
+  executor.submit(parser)
+
+  def hasNext = {
+    tripleIterator.hasNext
+  }
+
+  def next: GraphEditor[Long, Any] => Unit = {
+    val triple = tripleIterator.next
+    val subjectString = NodeConversion.nodeToString(triple.getSubject)
+    val predicateString = NodeConversion.nodeToString(triple.getPredicate)
+    val objectString = NodeConversion.nodeToString(triple.getObject)
+    val sId = dictionary(subjectString)
+    val pId = dictionary(predicateString)
+    val oId = dictionary(objectString)
+    val loader: GraphEditor[Long, Any] => Unit = FileLoader.addEncodedTriple(
+      sId, pId, oId, _)
+    loader
+  }
+
+}
 
 case object FileLoader {
 
