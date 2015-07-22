@@ -27,6 +27,7 @@ import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.PredicateStatsCache
+import com.signalcollect.triplerush.CardinalityCache
 
 /**
  * All times in nanoseconds.
@@ -59,7 +60,7 @@ class QueryPlanningVertex(
     optimizingStartTime = System.nanoTime
     if (numberOfPatternsInOriginalQuery > 1) {
       statsGatheringStartingTime = System.nanoTime
-      gatherStatistics(graphEditor)
+      query.foreach(gatherStatsForPattern(_, graphEditor))
     } else {
       totalPlanningDuration = System.nanoTime - optimizingStartTime
       statsGatheringTime = 0l
@@ -72,8 +73,10 @@ class QueryPlanningVertex(
   override def handleQueryDispatch(graphEditor: GraphEditor[Long, Any]) {
     statsGatheringTime = System.nanoTime - statsGatheringStartingTime
     val actualOptimizationStartingTime = System.nanoTime
-    queryPlan = optimizer.optimize(
-      cardinalities, PredicateStatsCache.implementation)
+    val cardinalities = query.zip(query.map { pattern =>
+      CardinalityCache.implementation(pattern.withVariablesAsWildcards)
+    }).toMap
+    queryPlan = optimizer.optimize(cardinalities, PredicateStatsCache.implementation)
     actualOptimizerTime = System.nanoTime - actualOptimizationStartingTime
     totalPlanningDuration = System.nanoTime - optimizingStartTime
     reportResultsAndRequestQueryVertexRemoval(true, graphEditor)

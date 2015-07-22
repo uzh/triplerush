@@ -49,7 +49,11 @@ class TicketSynchronization(
 
   def receivedTickets(t: Long): Unit = {
     receivedTickets += {
-      if (t < 0) -t else t
+      if (t < 0) {
+        -t
+      } else {
+        t
+      }
     }
     println(s"$name: $receivedTickets/$expectedTickets")
     if (t < 0) {
@@ -57,13 +61,29 @@ class TicketSynchronization(
     } else if (receivedTickets == expectedTickets) {
       if (ranOutOfTickets) {
         val e = new OutOfTicketsException(outOfTicketsCause)
-        onFailureHandlers.foreach(_(e))
+        reportFailure(e)
       } else {
-        onSuccessHandlers.foreach(_(()))
+        reportSuccess
       }
     } else if (receivedTickets > expectedTickets) {
-      throw new TooManyTicketsReceivedException
+      val e = new TooManyTicketsReceivedException
+      reportFailure(e)
     }
+  }
+
+  private[this] def reportSuccess(): Unit = {
+    onSuccessHandlers.foreach(_(()))
+    clearHandlers
+  }
+
+  private[this] def reportFailure(e: Exception): Unit = {
+    onFailureHandlers.foreach(_(e))
+    clearHandlers
+  }
+
+  private[this] def clearHandlers(): Unit = {
+    onSuccessHandlers = Nil
+    onFailureHandlers = Nil
   }
 
   def onSuccess(f: Unit => Unit): Unit = {

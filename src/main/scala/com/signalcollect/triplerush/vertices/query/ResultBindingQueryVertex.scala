@@ -35,10 +35,10 @@ class ResultBindingQueryVertex(
   resultPromise: Promise[Traversable[Array[Int]]],
   statsPromise: Promise[Map[Any, Any]],
   optimizer: Option[Optimizer])
-  extends AbstractQueryVertex[ArrayOfArraysTraversable](query, tickets, numberOfSelectVariables, optimizer) {
-   
+    extends AbstractQueryVertex[ArrayOfArraysTraversable](query, tickets, numberOfSelectVariables, optimizer) {
+
   final val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
-  
+
   override final def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     state = new ArrayOfArraysTraversable
     super.afterInitialization(graphEditor)
@@ -58,12 +58,7 @@ class ResultBindingQueryVertex(
       resultPromise.success(state)
       val stats = Map[Any, Any](
         "isComplete" -> completeExecution,
-        "optimizingDuration" -> optimizingDuration,
-        "optimizedQuery" -> ("Pattern matching order: " + {
-          if (dispatchedQuery.isDefined) {
-            new QueryParticle(dispatchedQuery.get).patterns.toList
-          } else { "Inferred that the query has no results before it was dispatched." }
-        })).withDefaultValue("")
+        "optimizingDuration" -> optimizingDuration)
       statsPromise.success(stats)
     }
   }
