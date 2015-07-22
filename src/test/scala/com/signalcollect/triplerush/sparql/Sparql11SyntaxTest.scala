@@ -15,6 +15,7 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   override def beforeAll:
   Unit = {
+    //TODO: Figure why below doesn't work i.e. after this query subsequent queries don't work.
     //    val manifestFile = "src/test/resources/sparql-1.1-w3c/manifest-all.ttl"
     //    tr.loadNtriples(manifestFile)
     //    tr.awaitIdle
@@ -65,6 +66,10 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       "src/test/resources/sparql-1.1-w3c/syntax-fed/manifest.ttl")
   }
 
+  /**
+   * Load all entries from manifests files which are the queries*
+   * @param subManifests
+   */
   def load(subManifests: List[String]):
   Unit = {
     subManifests.map {
@@ -95,6 +100,16 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       """.stripMargin
     val results = Sparql(query)
 
+    /**
+     * uri - uri of the test*
+     * name - name of the test*
+     * action - location of the test*
+     * positive - true - if the query has to pass syntactically*
+     * @param uri
+     * @param name
+     * @param action
+     * @param positive
+     */
     case class TestDetails(uri: String, name: String, action: String, positive: Boolean)
 
     val testsToRun = results.map(test => {
@@ -111,6 +126,7 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val expectedNumberOfPositiveTests = testsToRun.count(p => p.positive)
     val expectedNumberOfNegativeTests = testsToRun.count(p => !p.positive)
     
+    // Run through all test queries and collect metrics.
     var actualNumberOfPositivePassed = 0
     var actualNumberOfNegativePassed = 0
     testsToRun.map(test => {
