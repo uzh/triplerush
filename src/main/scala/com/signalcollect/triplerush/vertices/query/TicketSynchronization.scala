@@ -44,8 +44,9 @@ class TicketSynchronization(
 
   private[this] var receivedTickets: Long = 0L
   private[this] var ranOutOfTickets: Boolean = false
-  private[this] var onSuccessHandlers: List[Unit => Unit] = Nil
+  private[this] var onSuccessHandlers: List[Function0[Unit]] = Nil
   private[this] var onFailureHandlers: List[Exception => Unit] = Nil
+  private[this] var onCompleteHandlers: List[Function0[Unit]] = Nil
 
   def receivedTickets(t: Long): Unit = {
     receivedTickets += {
@@ -74,27 +75,40 @@ class TicketSynchronization(
 
   private[this] def reportSuccess(): Unit = {
     println(s"$name.reportSuccess")
-    onSuccessHandlers.foreach(_(()))
-    clearHandlers
+    onSuccessHandlers.foreach(_())
+    reportComplete
   }
 
   private[this] def reportFailure(e: Exception): Unit = {
-    println(s"$name.reportFailure($e)")
+    println(s"$name.reportFailure($e): number of handlers = ${onFailureHandlers.size}")
     onFailureHandlers.foreach(_(e))
+    reportComplete
+  }
+
+  private[this] def reportComplete(): Unit = {
+    onCompleteHandlers.foreach(_())
     clearHandlers
   }
 
   private[this] def clearHandlers(): Unit = {
     onSuccessHandlers = Nil
     onFailureHandlers = Nil
+    onCompleteHandlers = Nil
   }
 
-  def onSuccess(f: Unit => Unit): Unit = {
-    onSuccessHandlers = f :: onSuccessHandlers
+  def onSuccess(f: () => Unit): Unit = {
+    println(s"$name is adding an on on success handler")
+    onSuccessHandlers ::= f
   }
 
   def onFailure(f: Exception => Unit): Unit = {
-    onFailureHandlers = f :: onFailureHandlers
+    println(s"$name is adding an on failure handler")
+    onFailureHandlers ::= f
+  }
+
+  def onComplete(f: () => Unit): Unit = {
+    println(s"$name is adding an on on complete handler")
+    onCompleteHandlers ::= f
   }
 
 }
