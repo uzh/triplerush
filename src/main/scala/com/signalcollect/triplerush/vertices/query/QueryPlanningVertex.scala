@@ -33,10 +33,7 @@ import com.signalcollect.triplerush.CardinalityCache
  * All times in nanoseconds.
  */
 case class QueryPlanningResult(
-  queryPlan: Seq[TriplePattern],
-  totalPlanningDuration: Long,
-  statsGatheringTime: Long,
-  actualOptimizerTime: Long)
+  queryPlan: Seq[TriplePattern])
 
 /**
  * Query vertex that only does the query planning and returns the query plan.
@@ -46,39 +43,11 @@ class QueryPlanningVertex(
   query: Seq[TriplePattern],
   plannerPromise: Promise[QueryPlanningResult],
   optimizer: Optimizer)
-    extends AbstractQueryVertex[ArrayOfArraysTraversable](query, 0l, 0, Some(optimizer)) {
+    extends AbstractQueryVertex[Seq[TriplePattern]](query, 0l, 0, Some(optimizer)) {
 
   final val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
 
-  var queryPlan: Seq[TriplePattern] = _
-  var statsGatheringStartingTime = -1l
-  var totalPlanningDuration = -1l
-  var statsGatheringTime = -1l
-  var actualOptimizerTime = -1l
-
-  override final def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
-    optimizingStartTime = System.nanoTime
-    if (numberOfPatternsInOriginalQuery > 1) {
-      statsGatheringStartingTime = System.nanoTime
-      query.foreach(gatherStatsForPattern(_, graphEditor))
-    } else {
-      totalPlanningDuration = System.nanoTime - optimizingStartTime
-      statsGatheringTime = 0l
-      actualOptimizerTime = 0l
-      queryPlan = query
-      reportResultsAndRequestQueryVertexRemoval(true, graphEditor)
-    }
-  }
-
-  override def handleQueryDispatch(graphEditor: GraphEditor[Long, Any]) {
-    statsGatheringTime = System.nanoTime - statsGatheringStartingTime
-    val actualOptimizationStartingTime = System.nanoTime
-    val cardinalities = query.zip(query.map { pattern =>
-      CardinalityCache.implementation(pattern.withVariablesAsWildcards)
-    }).toMap
-    queryPlan = optimizer.optimize(cardinalities, PredicateStatsCache.implementation)
-    actualOptimizerTime = System.nanoTime - actualOptimizationStartingTime
-    totalPlanningDuration = System.nanoTime - optimizingStartTime
+  override def handleQueryDispatch(query: Option[QueryParticle], graphEditor: GraphEditor[Long, Any]) {
     reportResultsAndRequestQueryVertexRemoval(true, graphEditor)
   }
 
@@ -91,7 +60,7 @@ class QueryPlanningVertex(
   }
 
   override final def reportResults(completeExecution: Boolean): Unit = {
-    plannerPromise.success(QueryPlanningResult(queryPlan, totalPlanningDuration, statsGatheringTime, actualOptimizerTime))
+    plannerPromise.success(QueryPlanningResult(state))
   }
 
 }

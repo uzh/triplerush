@@ -43,27 +43,23 @@ abstract class AbstractQueryVertex[StateType](
 
   val numberOfPatternsInOriginalQuery: Int = query.length
 
-  val queryTickets = Long.MaxValue
+  val queryTicketsReceived = new TicketSynchronization(s"queryTicketsReceived[${query.mkString}]", tickets, onFailure = None)
 
-  val queryTicketsReceived = new TicketSynchronization(s"queryTicketsReceived[${query.mkString}]", queryTickets)
+  println(s"${this.getClass.getSimpleName}")
 
   // Both predicate and cardinality stats.
   val statsReceived = new TicketSynchronization(s"statsReceived[${query.mkString}]", 2 * numberOfPatternsInOriginalQuery)
 
-  var optimizingStartTime = 0l
-  var optimizingDuration = 0l
-
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
-    optimizingStartTime = System.nanoTime
     //TODO: Should we run an optimizer even for one-pattern queries?
     if (optimizer.isDefined && numberOfPatternsInOriginalQuery > 1) {
       query.foreach(gatherStatsForPattern(_, graphEditor))
-      statsReceived.onSuccess {
-        case _ => handleQueryDispatch(graphEditor)
+      statsReceived.onSuccess { case _ =>
+          val optimizedQuery = optimizeQuery(query) 
+          handleQueryDispatch(optimizedQuery, graphEditor)
       }
     } else {
       // Dispatch the query directly.
-      optimizingDuration = System.nanoTime - optimizingStartTime
       if (numberOfPatternsInOriginalQuery > 0) {
         val particle = QueryParticle(
           patterns = query,
@@ -140,8 +136,8 @@ abstract class AbstractQueryVertex[StateType](
     true
   }
 
-  def handleQueryDispatch(graphEditor: GraphEditor[Long, Any]) {
-    val queryOption = optimizeQuery
+  def handleQueryDispatch(queryOption: Option[QueryParticle], graphEditor: GraphEditor[Long, Any]) {
+    println("handleQueryDispatch")
     queryOption match {
       case Some(q) =>
         queryTicketsReceived.onSuccess {
@@ -157,6 +153,7 @@ abstract class AbstractQueryVertex[StateType](
   }
 
   def reportResultsAndRequestQueryVertexRemoval(completeExecution: Boolean, graphEditor: GraphEditor[Long, Any]) {
+    println("Reporting results")
     reportResults(completeExecution)
     requestQueryVertexRemoval(graphEditor)
   }
@@ -165,12 +162,11 @@ abstract class AbstractQueryVertex[StateType](
 
   def handleResultCount(resultCount: Long)
 
-  def optimizeQuery: Option[Array[Int]] = {
-    val cardinalities = query.zip(query.map { pattern =>
+  def optimizeQuery(patterns: Seq[TriplePattern]): Option[QueryParticle] = {
+    val cardinalities = patterns.zip(query.map { pattern =>
       CardinalityCache.implementation(pattern.withVariablesAsWildcards)
     }).toMap
     val optimizedPatterns = optimizer.get.optimize(cardinalities, PredicateStatsCache.implementation)
-    optimizingDuration = System.nanoTime - optimizingStartTime
     if (optimizedPatterns.length > 0) {
       val optimizedQuery = QueryParticle(
         patterns = optimizedPatterns,
@@ -195,6 +191,7 @@ abstract class AbstractQueryVertex[StateType](
   var resultsReported = false
 
   def reportResults(completeExecution: Boolean): Unit = {
+    println(s"${this.getClass.getSimpleName} reporting results")
     resultsReported = true
   }
 

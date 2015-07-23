@@ -53,12 +53,12 @@ class ResultBindingQueryVertex(
   }
 
   override final def reportResults(completeExecution: Boolean): Unit = {
+    println("ResultBindingQueryVertex.reportResults")
     if (!resultsReported) {
       super.reportResults(completeExecution)
       resultPromise.success(state)
       val stats = Map[Any, Any](
-        "isComplete" -> completeExecution,
-        "optimizingDuration" -> optimizingDuration)
+        "isComplete" -> completeExecution)
       statsPromise.success(stats)
     }
   }

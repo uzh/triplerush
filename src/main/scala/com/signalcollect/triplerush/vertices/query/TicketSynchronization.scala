@@ -63,9 +63,11 @@ class TicketSynchronization(
     }
     if (receivedTickets == expectedTickets) {
       if (ranOutOfTickets) {
+        println(s"$name is reporting failure!")
         val e = new OutOfTicketsException(outOfTicketsCause)
         reportFailure(e)
       } else {
+        println(s"$name is reporting success!")
         reportSuccess
       }
     } else if (receivedTickets > expectedTickets) {
