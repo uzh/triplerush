@@ -6,6 +6,9 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
 import scala.collection.JavaConversions.asScalaIterator
 
+/**
+ * Tests to ensure the Select Queries provided by w3c reading group passes*
+ */
 class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val tr = new TripleRush
@@ -80,7 +83,6 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   "TripleRush" should "pass syntax tests" in {
-    println(subManifests.size)
     load(subManifests)
     tr.prepareExecution
     val query =
@@ -95,7 +97,7 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         |		                 mf:name ?Name ;
         |		                 mf:action ?Action ;
         |		                 dawgt:approval dawgt:Approved .
-        |              FILTER(?Type IN (mf:PositiveSyntaxTest11, mf:NegativeSyntaxTest11, mf:PositiveUpdateSyntaxTest11, mf:NegativeUpdateSyntaxTest11))
+        |       FILTER(?Type IN (mf:PositiveSyntaxTest11, mf:NegativeSyntaxTest11, mf:PositiveUpdateSyntaxTest11, mf:NegativeUpdateSyntaxTest11))
         |		           }
       """.stripMargin
     val results = Sparql(query)
@@ -123,20 +125,26 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     }
     ).toList
 
-    val expectedNumberOfPositiveTests = testsToRun.count(p => p.positive)
+    //TODO: We will run all syntax tests later, for now only focusing on select queries.
+//    val expectedNumberOfPositiveTests = testsToRun.count(p => p.positive)
     val expectedNumberOfNegativeTests = testsToRun.count(p => !p.positive)
     
     // Run through all test queries and collect metrics.
+    var expectedNumberOfPositiveTests = 0
     var actualNumberOfPositivePassed = 0
     var actualNumberOfNegativePassed = 0
     testsToRun.map(test => {
       val query = scala.io.Source.fromFile(test.action.replace("file://", "")).mkString
       if (test.positive) {
         try {
-            Sparql(query)
-            actualNumberOfPositivePassed += 1
+            val queryFactoryQuery = QueryFactory.create(query)
+            if(queryFactoryQuery.isSelectType){
+              expectedNumberOfPositiveTests += 1
+              Sparql(query)
+              actualNumberOfPositivePassed += 1
+            }
         } catch {
-          case ex: Exception => println("failed to do anything with this query where as we should have: "+ query)
+          case ex: Exception => println("failed to do anything with this query where as we should have: "+ query + ex.toString)
         } 
       }
       else {
