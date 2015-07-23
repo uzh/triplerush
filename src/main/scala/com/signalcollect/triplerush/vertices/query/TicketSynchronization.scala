@@ -40,12 +40,13 @@ import scala.concurrent.duration.Duration
 class TicketSynchronization(
     name: String,
     expectedTickets: Long = Long.MaxValue,
-    outOfTicketsCause: String = "Ran out of tickets: branching factor too high or ticket count too low.") {
+    outOfTicketsCause: String = "Ran out of tickets: branching factor too high or ticket count too low.",
+    onFailure: Option[Exception => Unit] = Some(e => throw e)) {
 
   private[this] var receivedTickets: Long = 0L
   private[this] var ranOutOfTickets: Boolean = false
   private[this] var onSuccessHandlers: List[Function0[Unit]] = Nil
-  private[this] var onFailureHandlers: List[Exception => Unit] = Nil
+  private[this] var onFailureHandlers: List[Exception => Unit] = onFailure.toList
   private[this] var onCompleteHandlers: List[Function0[Unit]] = Nil
 
   def receivedTickets(t: Long): Unit = {
@@ -74,20 +75,19 @@ class TicketSynchronization(
   }
 
   private[this] def reportSuccess(): Unit = {
+    reportComplete
     println(s"$name.reportSuccess")
     onSuccessHandlers.foreach(_())
-    reportComplete
   }
 
   private[this] def reportFailure(e: Exception): Unit = {
     println(s"$name.reportFailure($e): number of handlers = ${onFailureHandlers.size}")
-    onFailureHandlers.foreach(_(e))
     reportComplete
+    onFailureHandlers.foreach(_(e))
   }
 
   private[this] def reportComplete(): Unit = {
     onCompleteHandlers.foreach(_())
-    clearHandlers
   }
 
   private[this] def clearHandlers(): Unit = {
