@@ -17,9 +17,10 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.dictionary
 
 import org.scalatest.FlatSpec
+
 import com.signalcollect.util.TestAnnouncements
 
 class DictonarySpec extends FlatSpec with TestAnnouncements {

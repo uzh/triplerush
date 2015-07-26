@@ -53,6 +53,8 @@ import com.signalcollect.triplerush.vertices.query.QueryPlanningVertex
 import java.util.concurrent.atomic.AtomicReference
 import com.signalcollect.triplerush.loading.FileLoader
 import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
+import com.signalcollect.triplerush.dictionary.CompressedDictionary
+import com.signalcollect.triplerush.dictionary.Dictionary
 
 /**
  * Global accessors for the console visualization.

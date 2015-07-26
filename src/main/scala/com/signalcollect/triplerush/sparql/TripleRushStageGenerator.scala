@@ -26,7 +26,8 @@ import com.hp.hpl.jena.sparql.engine.{ ExecutionContext, QueryIterator }
 import com.hp.hpl.jena.sparql.engine.binding.{ Binding, BindingHashMap }
 import com.hp.hpl.jena.sparql.engine.iterator.{ QueryIterConcat, QueryIterPlainWrapper }
 import com.hp.hpl.jena.sparql.engine.main.StageGenerator
-import com.signalcollect.triplerush.{ Dictionary, TriplePattern, TripleRush }
+import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
+import com.signalcollect.triplerush.dictionary.Dictionary
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIterSingleton
 import com.hp.hpl.jena.graph.Node_Blank
 

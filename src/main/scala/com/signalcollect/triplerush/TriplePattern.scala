@@ -23,6 +23,7 @@ import scala.Option.option2Iterable
 import scala.runtime.ScalaRunTime
 import scala.util.hashing.MurmurHash3._
 import scala.language.implicitConversions
+import com.signalcollect.triplerush.dictionary.Dictionary
 
 object EfficientIndexPattern {
 

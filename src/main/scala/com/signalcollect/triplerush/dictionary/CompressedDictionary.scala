@@ -17,10 +17,11 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.dictionary
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
+import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.util.CompositeLongIntHashMap
 import com.signalcollect.util.IntLongHashMap
 

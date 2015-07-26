@@ -5,7 +5,6 @@ import com.signalcollect.triplerush.TriplePattern
 import scala.annotation.tailrec
 import com.signalcollect.triplerush.PredicateStats
 import scala.collection.mutable.ArrayBuffer
-import com.signalcollect.triplerush.Dictionary
 import scala.collection.immutable.Map
 import com.signalcollect.triplerush.TriplePattern
 

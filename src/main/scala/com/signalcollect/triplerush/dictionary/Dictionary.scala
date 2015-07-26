@@ -18,7 +18,7 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.dictionary
 
 import com.signalcollect.util.IntHashMap
 import com.signalcollect.util.IntValueHashMap

@@ -27,7 +27,8 @@ import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
 
 import com.hp.hpl.jena.graph.{ Triple => JenaTriple }
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.{ Dictionary, EfficientIndexPattern, PlaceholderEdge }
+import com.signalcollect.triplerush.{ EfficientIndexPattern, PlaceholderEdge }
+import com.signalcollect.triplerush.dictionary.Dictionary
 import com.signalcollect.triplerush.sparql.NodeConversion
 
 case class FileLoader(filePath: String, dictionary: Dictionary) extends Iterator[GraphEditor[Long, Any] => Unit] {
