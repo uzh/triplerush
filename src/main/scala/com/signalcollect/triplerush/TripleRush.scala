@@ -44,7 +44,7 @@ import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush.vertices.query._
 
 /**
- * Global accessors for the console visualization.
+ * Global accessor for the console visualization.
  */
 object TrGlobal {
   var dictionary: Option[Dictionary] = None
