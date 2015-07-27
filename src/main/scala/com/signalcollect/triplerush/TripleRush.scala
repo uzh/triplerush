@@ -50,6 +50,8 @@ import com.signalcollect.triplerush.dictionary.CompressedDictionary
 import com.signalcollect.triplerush.dictionary.Dictionary
 import com.signalcollect.triplerush.mapper.DistributedTripleMapperFactory
 import com.signalcollect.triplerush.mapper.SingleNodeTripleMapperFactory
+import com.signalcollect.triplerush.handlers.TripleRushUndeliverableSignalHandlerFactory
+import com.signalcollect.triplerush.handlers.TripleRushEdgeAddedToNonExistentVertexHandlerFactory
 
 /**
  * Global accessors for the console visualization.

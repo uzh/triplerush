@@ -17,17 +17,13 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.handlers
 
-import com.signalcollect.GraphEditor
-import QueryParticle.arrayToParticle
-import com.signalcollect.Vertex
-import com.signalcollect.Edge
-import com.signalcollect.triplerush.vertices._
-import com.signalcollect.triplerush.vertices.RootIndex
+import com.signalcollect.{ Edge, Vertex }
+import com.signalcollect.interfaces.{ EdgeAddedToNonExistentVertexHandler, EdgeAddedToNonExistentVertexHandlerFactory }
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.interfaces.EdgeAddedToNonExistentVertexHandlerFactory
-import com.signalcollect.interfaces.EdgeAddedToNonExistentVertexHandler
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.vertices.{ OIndex, PIndex, POIndex, RootIndex, SIndex, SOIndex, SPIndex }
 
 case object TripleRushEdgeAddedToNonExistentVertexHandlerFactory extends EdgeAddedToNonExistentVertexHandlerFactory[Long, Any] {
   def createInstance: EdgeAddedToNonExistentVertexHandler[Long, Any] = TripleRushEdgeAddedToNonExistentVertexHandler
@@ -48,7 +44,7 @@ case object TripleRushEdgeAddedToNonExistentVertexHandler extends EdgeAddedToNon
       case TriplePattern(s, p, 0) => Some(new SPIndex(vertexId))
       case TriplePattern(s, 0, o) => Some(new SOIndex(vertexId))
       case TriplePattern(0, p, o) => Some(new POIndex(vertexId))
-      case other => throw new Exception(s"Could not add edge $edge to vertex $triplePattern, because that vertex does not exist.")
+      case other                  => throw new Exception(s"Could not add edge $edge to vertex $triplePattern, because that vertex does not exist.")
     }
   }
 }
