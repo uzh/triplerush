@@ -55,6 +55,8 @@ import com.signalcollect.triplerush.loading.FileLoader
 import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 import com.signalcollect.triplerush.dictionary.CompressedDictionary
 import com.signalcollect.triplerush.dictionary.Dictionary
+import com.signalcollect.triplerush.mapper.DistributedTripleMapperFactory
+import com.signalcollect.triplerush.mapper.SingleNodeTripleMapperFactory
 
 /**
  * Global accessors for the console visualization.
@@ -111,10 +113,10 @@ case class TripleRush(
         "Array[com.signalcollect.triplerush.TriplePattern]",
         "com.signalcollect.interfaces.AddEdge",
         "com.signalcollect.triplerush.CombiningMessageBusFactory",
-        "com.signalcollect.triplerush.SingleNodeTripleMapperFactory$",
-        "com.signalcollect.triplerush.DistributedTripleMapperFactory$",
-        "com.signalcollect.triplerush.LoadBalancingTripleMapperFactory$",
-        "com.signalcollect.triplerush.AlternativeTripleMapperFactory",
+        "com.signalcollect.triplerush.mapper.SingleNodeTripleMapperFactory$",
+        "com.signalcollect.triplerush.mapper.DistributedTripleMapperFactory$",
+        "com.signalcollect.triplerush.mapper.LoadBalancingTripleMapperFactory$",
+        "com.signalcollect.triplerush.mapper.AlternativeTripleMapperFactory",
         "com.signalcollect.triplerush.PredicateStats",
         "com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex", // Only for local serialization test.
         "com.signalcollect.triplerush.util.ResultIterator", // Only for local serialization test.

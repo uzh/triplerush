@@ -18,7 +18,7 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.mapper
 
 import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.interfaces.MapperFactory
