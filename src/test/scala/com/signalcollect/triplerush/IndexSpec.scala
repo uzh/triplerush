@@ -43,7 +43,7 @@ class IndexSpec extends FlatSpec with TestAnnouncements {
         assert(!resultIterator.hasNext, "Query should have no more than 1 result.")
         assert(query.isFullyBound || trResult.isDefined, s"query $query should lead to 1 set of bindings, but there are none.")
         if (!query.isFullyBound) {
-          val bindings = TestHelper.resultsToBindings(Seq(trResult.get)).head
+          val bindings = TestHelper.resultsToBindings(trResult.iterator).head
           assert(bindings.size == query.variables.size)
           if (bindings.size > 0) {
             if (query.s == -1) {

@@ -20,15 +20,14 @@
 package com.signalcollect.triplerush
 
 import org.scalatest.FlatSpec
+
 import com.signalcollect.GraphBuilder
-import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer
-import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 import com.signalcollect.util.TestAnnouncements
 
 class SerializationSpec extends FlatSpec with TestAnnouncements {
 
   "TripleRush" should "run when messages are serialized" in {
-    val tr = new TripleRush(new GraphBuilder[Long, Any]().withMessageSerialization(true), NoOptimizerCreator)
+    val tr = new TripleRush(new GraphBuilder[Long, Any]().withMessageSerialization(true))
     try {
       tr.addEncodedTriple(1, 2, 3)
       tr.prepareExecution

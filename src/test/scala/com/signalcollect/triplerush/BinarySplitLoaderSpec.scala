@@ -4,6 +4,7 @@ import java.io.File
 import org.scalatest.FlatSpec
 import com.signalcollect.util.TestAnnouncements
 import com.signalcollect.triplerush.mapper.AlternativeTripleMapperFactory
+import com.signalcollect.triplerush.mapper.LoadBalancingTripleMapperFactory
 
 class BinarySplitLoaderSpec extends FlatSpec with TestAnnouncements {
 

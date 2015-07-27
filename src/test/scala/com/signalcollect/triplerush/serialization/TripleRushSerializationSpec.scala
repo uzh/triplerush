@@ -19,16 +19,10 @@
 
 package com.signalcollect.triplerush.serialization
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import com.signalcollect.triplerush.TripleRush
-import scala.concurrent.duration._
-import collection.JavaConversions._
+import org.scalatest.{ FlatSpec, Matchers }
+
 import com.signalcollect.GraphBuilder
-import com.signalcollect.triplerush.sparql.Sparql
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
-import com.signalcollect.GraphBuilder
+import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
 import com.signalcollect.util.TestAnnouncements
 
 class TripleRushSerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
@@ -44,8 +38,7 @@ ORDER BY ?label
 LIMIT 3
 """
     implicit val tr = new TripleRush(
-      graphBuilder = new GraphBuilder[Long, Any].withMessageSerialization(true),
-      optimizerCreator = NoOptimizerCreator)
+      graphBuilder = new GraphBuilder[Long, Any].withMessageSerialization(true))
     try {
       tr.addTriplePattern(TriplePattern(1, 2, 3))
       tr.addTriplePattern(TriplePattern(3, 2, 5))

@@ -32,13 +32,9 @@ import com.signalcollect.triplerush.loading.BinarySplitLoader
 import com.signalcollect.triplerush.loading.CountVerticesByType
 import com.signalcollect.triplerush.loading.EdgesPerIndexType
 import com.signalcollect.triplerush.loading.FileLoader
-import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
-import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.vertices.RootIndex
 import com.signalcollect.triplerush.vertices.query.IndexQueryVertex
-import com.signalcollect.triplerush.vertices.query.ResultBindingQueryVertex
 import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
-import com.signalcollect.triplerush.optimizers.ExplorationOptimizerCreator
 import com.signalcollect.triplerush.util.ResultIterator
 import com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex
 import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
@@ -48,11 +44,8 @@ import com.signalcollect.GraphBuilder
 import com.signalcollect.triplerush.util.TripleRushWorkerFactory
 import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
 import com.signalcollect.interfaces.MapperFactory
-import com.signalcollect.triplerush.vertices.query.QueryPlanningResult
-import com.signalcollect.triplerush.vertices.query.QueryPlanningVertex
 import java.util.concurrent.atomic.AtomicReference
 import com.signalcollect.triplerush.loading.FileLoader
-import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
 import com.signalcollect.triplerush.dictionary.CompressedDictionary
 import com.signalcollect.triplerush.dictionary.Dictionary
 import com.signalcollect.triplerush.mapper.DistributedTripleMapperFactory
@@ -67,7 +60,6 @@ object TrGlobal {
 
 case class TripleRush(
     graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
-    optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
     val dictionary: Dictionary = new CompressedDictionary(),
     tripleMapperFactory: Option[MapperFactory[Long]] = None,
     console: Boolean = false) extends QueryEngine {
@@ -134,7 +126,6 @@ case class TripleRush(
   val system = graphBuilder.config.actorSystem.getOrElse(ActorSystemRegistry.retrieve("SignalCollect").get)
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
-  var optimizer: Option[Optimizer] = None
 
   private[this] var canExecute = false
 
@@ -143,7 +134,6 @@ case class TripleRush(
     graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
     graph.awaitIdle
     canExecute = true
-    optimizer = optimizerCreator(this)
   }
 
   /**
@@ -193,12 +183,11 @@ case class TripleRush(
 
   def executeCountingQuery(
     q: Seq[TriplePattern],
-    optimizer: Option[Optimizer] = Some(GreedyCardinalityOptimizer),
     tickets: Long = Long.MaxValue): Future[Option[Long]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     // Efficient counting query.
     val resultCountPromise = Promise[Option[Long]]()
-    graph.addVertex(new ResultCountingQueryVertex(q, tickets, resultCountPromise, optimizer))
+    graph.addVertex(new ResultCountingQueryVertex(q, tickets, resultCountPromise))
     resultCountPromise.future
   }
 
@@ -217,61 +206,23 @@ case class TripleRush(
     childIdPromise.future
   }
 
-  def executeQuery(q: Seq[TriplePattern]): Traversable[Array[Int]] = {
-    executeQuery(q, optimizer)
+  // Delegates, just to implement the interface.
+  def resultIteratorForQuery(query: Seq[TriplePattern]): Iterator[Array[Int]] = {
+    resultIteratorForQuery(query, None, Long.MaxValue)
   }
-
-  def executeQuery(q: Seq[TriplePattern], optimizer: Option[Optimizer] = None, tickets: Long = Long.MaxValue): Traversable[Array[Int]] = {
-    val (resultFuture, statsFuture) = executeAdvancedQuery(q, optimizer, tickets = tickets)
-    val result = Await.result(resultFuture, 7200.seconds)
-    result
-  }
-
-  def getQueryPlan(query: Seq[TriplePattern], optimizerOption: Option[Optimizer] = None): QueryPlanningResult = {
-    val resultPromise = Promise[QueryPlanningResult]()
-    val usedOptimizer = optimizerOption.getOrElse(optimizer.get)
-    val queryVertex = new QueryPlanningVertex(query, resultPromise, usedOptimizer)
-    graph.addVertex(queryVertex)
-    val result = Await.result(resultPromise.future, 7200.seconds)
-    result
-  }
-
-  /**
-   * If the optimizer is defined, uses that one, else uses the default.
-   */
-  def executeAdvancedQuery(
-    query: Seq[TriplePattern],
-    optimizerOption: Option[Optimizer] = None,
-    numberOfSelectVariables: Option[Int] = None,
-    tickets: Long = Long.MaxValue): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
-    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    val selectVariables = numberOfSelectVariables.getOrElse(
-      VariableEncoding.requiredVariableBindingsSlots(query))
-    val resultPromise = Promise[Traversable[Array[Int]]]()
-    val statsPromise = Promise[Map[Any, Any]]()
-    val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
-    val queryVertex = new ResultBindingQueryVertex(query, selectVariables, tickets, resultPromise, statsPromise, usedOptimizer)
-    graph.addVertex(queryVertex)
-    (resultPromise.future, statsPromise.future)
-  }
-
-  def resultIteratorForQuery(
-    query: Seq[TriplePattern]) = resultIteratorForQuery(query, None, None, Long.MaxValue)
 
   /**
    * If the optimizer is defined, uses that one, else uses the default.
    */
   def resultIteratorForQuery(
     query: Seq[TriplePattern],
-    optimizerOption: Option[Optimizer] = None,
     numberOfSelectVariables: Option[Int] = None,
     tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val selectVariables = numberOfSelectVariables.getOrElse(
       VariableEncoding.requiredVariableBindingsSlots(query))
     val resultIterator = new ResultIterator
-    val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
-    val queryVertex = new ResultIteratorQueryVertex(query, selectVariables, tickets, resultIterator, usedOptimizer)
+    val queryVertex = new ResultIteratorQueryVertex(query, selectVariables, tickets, resultIterator)
     graph.addVertex(queryVertex)
     resultIterator
   }
@@ -281,18 +232,10 @@ case class TripleRush(
   }
 
   def clear {
-    clearCaches
     clearDictionary
     graph.reset
     graph.awaitIdle
     graph.addVertex(new RootIndex)
-  }
-
-  def clearCaches {
-    graph.awaitIdle
-    CardinalityCache.clear
-    PredicateStatsCache.clear
-    QueryIds.reset
   }
 
   def clearDictionary {
@@ -300,7 +243,6 @@ case class TripleRush(
   }
 
   def shutdown = {
-    clearCaches
     clearDictionary
     graph.shutdown
   }

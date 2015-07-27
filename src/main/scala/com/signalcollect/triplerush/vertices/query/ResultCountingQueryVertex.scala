@@ -23,7 +23,6 @@ package com.signalcollect.triplerush.vertices.query
 import scala.concurrent.Promise
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.QueryIds
-import com.signalcollect.triplerush.optimizers.Optimizer
 import com.signalcollect.triplerush.TriplePattern
 
 /**
@@ -32,9 +31,8 @@ import com.signalcollect.triplerush.TriplePattern
 final class ResultCountingQueryVertex(
   query: Seq[TriplePattern],
   tickets: Long,
-  resultPromise: Promise[Option[Long]],
-  optimizer: Option[Optimizer])
-  extends AbstractQueryVertex[Long](query, tickets, numberOfSelectVariables = 0, optimizer) {
+  resultPromise: Promise[Option[Long]])
+  extends AbstractQueryVertex[Long](query, tickets, numberOfSelectVariables = 0) {
 
   val id = QueryIds.embedQueryIdInLong(QueryIds.nextCountQueryId)
 
