@@ -14,3 +14,7 @@ Go to the project folder and start SBT on the command line.
 To generate an Eclipse project, use the "eclipse" command on the SBT prompt.
 
 To generate a JAR file, use the "assembly" command on the SBT prompt.
+
+Thanks a lot to
+---------------
+* [University of Zurich](http://www.ifi.uzh.ch/ddis.html) and the [Hasler Foundation](http://www.haslerstiftung.ch/en/home) have funded the research on graph processing.
