@@ -119,9 +119,9 @@ case class TripleRush(
         "scala.reflect.ManifestFactory$$anon$10",
         "com.signalcollect.triplerush.util.TripleRushStorage$",
         "akka.actor.RepointableActorRef",
-        "com.signalcollect.triplerush.TripleRushEdgeAddedToNonExistentVertexHandlerFactory$",
+        "com.signalcollect.triplerush.handlers.TripleRushEdgeAddedToNonExistentVertexHandlerFactory$",
+        "com.signalcollect.triplerush.handlers.TripleRushUndeliverableSignalHandlerFactory$",
         "com.signalcollect.factory.scheduler.Throughput$mcJ$sp",
-        "com.signalcollect.triplerush.TripleRushUndeliverableSignalHandlerFactory$",
         "com.signalcollect.triplerush.util.TripleRushWorkerFactory",
         "com.signalcollect.interfaces.BulkSignalNoSourceIds$mcJ$sp",
         "com.signalcollect.interfaces.SignalMessageWithoutSourceId$mcJ$sp")).build
