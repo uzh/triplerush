@@ -29,12 +29,9 @@ project/plugins/project/
 
 .settings/org.scala-ide.sdt.core.prefs
 
-*.binary
-
 *.txt
 
 *.zip
-binary-split/0.filtered-split
 
 *.snapshot
 

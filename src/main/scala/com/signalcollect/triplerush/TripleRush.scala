@@ -141,10 +141,6 @@ case class TripleRush(
     graph.loadGraph(new FileLoader(filePath, dictionary), placementHint)
   }
 
-  def loadBinary(binaryFilename: String, placementHint: Option[Long] = None) {
-    graph.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
-  }
-
   /**
    * Encoding:
    * By default something is an IRI.
