@@ -57,7 +57,6 @@ abstract class AbstractQueryVertex[StateType](
       case bindings: Array[_] =>
         handleBindings(bindings.asInstanceOf[Array[Array[Int]]])
       case resultCount: Int =>
-        // TODO, Wrap the msg and also make this a long.
         handleResultCount(resultCount)
     }
     true
