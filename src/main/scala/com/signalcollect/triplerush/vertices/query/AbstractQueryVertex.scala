@@ -21,56 +21,39 @@
 package com.signalcollect.triplerush.vertices.query
 
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.CardinalityReply
-import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.PredicateStatsReply
-import com.signalcollect.triplerush.QueryParticle
-import com.signalcollect.triplerush.QueryParticle.arrayToParticle
-import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush._
 import com.signalcollect.triplerush.vertices.BaseVertex
-import com.signalcollect.triplerush.EfficientIndexPattern
-import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 
 abstract class AbstractQueryVertex[StateType](
     val query: Seq[TriplePattern],
     val tickets: Long,
     val numberOfSelectVariables: Int) extends BaseVertex[StateType] {
 
-  val numberOfPatternsInOriginalQuery: Int = query.length
-
-  val expectedCardinalityReplies: Int = numberOfPatternsInOriginalQuery
-  var receivedCardinalityReplies: Int = 0
-
-  var cardinalities = Map.empty[TriplePattern, Long]
-
-  var receivedTickets = 0l
-  var complete = true
-
-  var dispatchedQuery: Option[Array[Int]] = None
+  
+  lazy val queryTicketsReceived = new TicketSynchronization(s"queryTicketsReceived[${query.mkString}]", tickets, onFailure = None)
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
-    if (numberOfPatternsInOriginalQuery > 0) {
+    if (query.length > 0) {
+      queryTicketsReceived.onComplete { complete =>
+        reportResultsAndRequestQueryVertexRemoval(complete, graphEditor)
+      }
       val particle = QueryParticle(
         patterns = query,
         queryId = QueryIds.extractQueryIdFromLong(id),
         numberOfSelectVariables = numberOfSelectVariables,
         tickets = tickets)
-      dispatchedQuery = Some(particle)
       graphEditor.sendSignal(particle, particle.routingAddress)
     } else {
-      dispatchedQuery = None
-      // All stats processed, but no results, we can safely remove the query vertex now.
-      reportResultsAndRequestQueryVertexRemoval(graphEditor)
+      // No patterns, no results: we can return results and remove the query vertex immediately.
+      reportResultsAndRequestQueryVertexRemoval(complete = true, graphEditor)
     }
   }
 
   override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]): Boolean = {
     signal match {
       case deliveredTickets: Long =>
-        processTickets(deliveredTickets)
-        if (receivedTickets == tickets) {
-          reportResultsAndRequestQueryVertexRemoval(graphEditor)
-        }
+        queryTicketsReceived.receivedTickets(deliveredTickets)
       case bindings: Array[_] =>
         handleBindings(bindings.asInstanceOf[Array[Array[Int]]])
       case resultCount: Int =>
@@ -80,8 +63,8 @@ abstract class AbstractQueryVertex[StateType](
     true
   }
 
-  def reportResultsAndRequestQueryVertexRemoval(graphEditor: GraphEditor[Long, Any]) {
-    reportResults
+  def reportResultsAndRequestQueryVertexRemoval(complete: Boolean, graphEditor: GraphEditor[Long, Any]): Unit = {
+    reportResults(complete)
     requestQueryVertexRemoval(graphEditor)
   }
 
@@ -89,26 +72,10 @@ abstract class AbstractQueryVertex[StateType](
 
   def handleResultCount(resultCount: Long)
 
-  def processTickets(t: Long) {
-    receivedTickets += { if (t < 0) -t else t } // inlined math.abs
-    if (t < 0) {
-      complete = false
-    }
-  }
-
-  var queryVertexRemovalRequested = false
-
   def requestQueryVertexRemoval(graphEditor: GraphEditor[Long, Any]) {
-    if (!queryVertexRemovalRequested) {
-      graphEditor.removeVertex(id)
-    }
-    queryVertexRemovalRequested = true
+    graphEditor.removeVertex(id)
   }
 
-  var resultsReported = false
-
-  def reportResults {
-    resultsReported = true
-  }
+  def reportResults(complete: Boolean): Unit
 
 }

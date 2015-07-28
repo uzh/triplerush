@@ -28,7 +28,7 @@ class ResultIteratorQueryVertex(
   numberOfSelectVariables: Int,
   tickets: Long,
   resultIterator: ResultIterator)
-  extends AbstractQueryVertex[ResultIterator](query, tickets, numberOfSelectVariables) {
+    extends AbstractQueryVertex[ResultIterator](query, tickets, numberOfSelectVariables) {
 
   final val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
 
@@ -45,12 +45,9 @@ class ResultIteratorQueryVertex(
     throw new UnsupportedOperationException("Result binding vertex should never receive a result count.")
   }
 
-  override final def reportResults {
-    if (!resultsReported) {
-      super.reportResults
-      // Empty array implicitly signals that there are no more results.
-      state.add(Array[Array[Int]]())
-    }
+  override final def reportResults(complete: Boolean) = {
+    // Empty array implicitly signals that there are no more results.
+    state.add(Array[Array[Int]]())
   }
 
 }
