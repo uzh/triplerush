@@ -31,9 +31,9 @@ class CompressedDictionary extends Dictionary {
   val prefixedIdToId = new CompositeLongIntHashMap(initialSize = 128, rehashFraction = 0.4f)
   val impl = new HashMapDictionary
 
-  private val lock = new ReentrantReadWriteLock
-  private val read = lock.readLock
-  private val write = lock.writeLock
+  private[this] val lock = new ReentrantReadWriteLock
+  private[this] val read = lock.readLock
+  private[this] val write = lock.writeLock
 
   /**
    * Search for the last useful occurrence of a slash, then check if a hash still appears after that.

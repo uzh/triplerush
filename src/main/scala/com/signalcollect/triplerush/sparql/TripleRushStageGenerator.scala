@@ -86,7 +86,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
     bindingIterator
   }
 
-  private def decodeResult(
+  private[this] def decodeResult(
     dictionary: Dictionary,
     parentBinding: Binding,
     unbound: Vector[Var],
@@ -103,7 +103,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
     binding
   }
 
-  private def createBoundQuery(
+  private[this] def createBoundQuery(
     dictionary: Dictionary,
     originalQuery: Array[TriplePattern],
     binding: Binding,
@@ -144,7 +144,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
   }
 
   // TODO: Make more efficient.
-  private def arqNodesToPattern(
+  private[this] def arqNodesToPattern(
     dictionary: Dictionary,
     s: Node, p: Node, o: Node,
     varToId: Map[String, Int],

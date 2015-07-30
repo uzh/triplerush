@@ -113,7 +113,7 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
 
   // TODO: Make more efficient by unrolling everything.
   // TODO: Does not support using the same variable/blank node multiple times. Test if this case needs to be supported.
-  private def arqNodesToPattern(s: Node, p: Node, o: Node): TriplePattern = {
+  private[this] def arqNodesToPattern(s: Node, p: Node, o: Node): TriplePattern = {
     var nextVariableId = -1
     @inline def nodeToId(n: Node): Int = {
       n match {

@@ -42,13 +42,13 @@ trait Dictionary {
 class HashMapDictionary(
   initialSize: Int = 32768,
   rehashFraction: Float = 0.5f) extends Dictionary {
-  private val lock = new ReentrantReadWriteLock
-  private val read = lock.readLock
-  private val write = lock.writeLock
-  private var id2String = new ArrayBuffer[String](initialSize)
+  private[this] val lock = new ReentrantReadWriteLock
+  private[this] val read = lock.readLock
+  private[this] val write = lock.writeLock
+  private[this] var id2String = new ArrayBuffer[String](initialSize)
   id2String += "*" // Wildcard entry at 0
-  private var string2Id = new IntValueHashMap[String](initialSize, rehashFraction)
-  private var maxId = 0
+  private[this] var string2Id = new IntValueHashMap[String](initialSize, rehashFraction)
+  private[this] var maxId = 0
 
   def clear {
     write.lock

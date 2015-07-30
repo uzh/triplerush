@@ -112,7 +112,7 @@ class CompositeLongIntHashMap(
     remove(key, true)
   }
 
-  private final def remove(key: Long, optimize: Boolean) {
+  private[this] final def remove(key: Long, optimize: Boolean) {
     var position = keyToPosition(key)
     var keyAtPosition = keys(position)
     while (keyAtPosition != 0 && (key != keyAtPosition)) {

@@ -28,7 +28,7 @@ final class ResultIterator extends Iterator[Array[Int]] with ResultBindings {
     result
   }
 
-  private def replenishCurrentArray {
+  private[this] def replenishCurrentArray {
     currentResultArray = incomingResultsQueue.take
     nextResultArrayIndex = 0
   }

@@ -206,7 +206,7 @@ class TripleRushVertexMap(
     remove(vertexId, true)
   }
 
-  private final def remove(vertexId: Long, optimize: Boolean) {
+  private[this] final def remove(vertexId: Long, optimize: Boolean) {
     var position = keyToPosition(vertexId)
     var keyAtPosition = keys(position)
     while (keyAtPosition != 0 && vertexId != keyAtPosition) {
