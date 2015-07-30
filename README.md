@@ -1,6 +1,13 @@
 TripleRush: A Fast Distributed Triple Pattern Matcher [![Build Status](https://travis-ci.org/uzh/triplerush.svg?branch=master)](https://travis-ci.org/uzh/triplerush/branches)
 =====================================================
 
+Important
+---------
+Version 4.0.0 will be a step back in terms of features. Things such as the query optimizer have been removed.
+This can affect performance, so unless the patterns are arranged well, version 4.0.0 is not suitable for benchmarks.
+
+The last and recommended released version with more features is 3.1.0.
+
 How to Compile the Project
 --------------------------
 Ensure Java 8 is available on the system, verify with "java -version" on the command line.
