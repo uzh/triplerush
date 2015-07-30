@@ -1,8 +1,7 @@
 /*
  *  @author Philip Stutz
- *  @author Mihaela Verman
  *  
- *  Copyright 2013 University of Zurich
+ *  Copyright 2014 University of Zurich
  *      
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,43 +17,43 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.mapper
 
 import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.interfaces.MapperFactory
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import scala.util.hashing.MurmurHash3._
 
-class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
+class LoadBalancingTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
+
   val numberOfWorkers = numberOfNodes * workersPerNode
 
   def getWorkerIdForVertexId(vertexId: Long): Int = {
     val first = vertexId.extractFirst
     val second = vertexId.extractSecond
+    val loadBalanceId = finalizeHash(mixLast(first, second), 3) & Int.MaxValue
     if (first < 0) {
       if (second < 0) {
         // It's a query id, map to first node and load balance on the workers there.
-        ((first + second) & Int.MaxValue) % workersPerNode
+        loadBalanceId % workersPerNode
       } else {
         // First encodes a predicate, second encodes an object.
         if (second > 0) {
           // Object is not a wildcard and we use it for node assignment.
-          val loadBalanceId = (first + second) & Int.MaxValue
           workerIdOptimized(nodeAssignmentId = second, workerAssignmentId = loadBalanceId)
         } else {
           // Everything but the predicate is a wildcard. We use the predicate for both node assignment and load balancing. 
           val p = first & Int.MaxValue
-          workerIdOptimized(nodeAssignmentId = p, workerAssignmentId = p)
+          workerIdOptimized(nodeAssignmentId = p, workerAssignmentId = loadBalanceId)
         }
       }
     } else if (first > 0) {
-      // First represents the subject and we use it for node assignment..
-      val loadBalanceId = (first + second) & Int.MaxValue
+      // First represents the subject and we use it for node assignment.
       workerIdOptimized(nodeAssignmentId = first, workerAssignmentId = loadBalanceId)
     } else {
-      // Subject is a wildcard, we use whatever is in second for node assignment and load balancing.
+      // Subject is a wildcard, we use whatever is in second for node assignment.
       val predicateOrObject = second & Int.MaxValue
-      workerIdOptimized(nodeAssignmentId = predicateOrObject, workerAssignmentId = predicateOrObject)
+      workerIdOptimized(nodeAssignmentId = predicateOrObject, workerAssignmentId = loadBalanceId)
     }
   }
 
@@ -71,6 +70,6 @@ class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
   def getWorkerIdForVertexIdHash(vertexIdHash: Int): Int = throw new UnsupportedOperationException("This mapper does not support mapping by vertex hash.")
 }
 
-object DistributedTripleMapperFactory extends MapperFactory[Long] {
-  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new DistributedTripleMapper(numberOfNodes, workersPerNode)
+object LoadBalancingTripleMapperFactory extends MapperFactory[Long] {
+  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new LoadBalancingTripleMapper(numberOfNodes, workersPerNode)
 }

@@ -5,6 +5,7 @@ import org.scalacheck.Prop._
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import com.signalcollect.util.TestAnnouncements
+import com.signalcollect.triplerush.mapper.DistributedTripleMapper
 
 class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnnouncements {
 

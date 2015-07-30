@@ -34,10 +34,6 @@ import com.signalcollect.util.SplayNode
 abstract class OptimizedIndexVertex(
   id: Long) extends IndexVertex[Any](id) {
 
-  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
-    super.afterInitialization(graphEditor)
-  }
-
   def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
     val childIds: Array[Int] = {
       if (state == null) {

@@ -20,18 +20,15 @@
 package com.signalcollect.triplerush.vertices.query
 
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.QueryIds
-import com.signalcollect.triplerush.optimizers.Optimizer
+import com.signalcollect.triplerush.{ QueryIds, TriplePattern }
 import com.signalcollect.triplerush.util.ResultIterator
-import com.signalcollect.triplerush.TriplePattern
 
 class ResultIteratorQueryVertex(
   query: Seq[TriplePattern],
   numberOfSelectVariables: Int,
   tickets: Long,
-  resultIterator: ResultIterator,
-  optimizer: Option[Optimizer])
-  extends AbstractQueryVertex[ResultIterator](query, tickets, numberOfSelectVariables, optimizer) {
+  resultIterator: ResultIterator)
+    extends AbstractQueryVertex[ResultIterator](query, tickets, numberOfSelectVariables) {
 
   final val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
 
@@ -48,12 +45,9 @@ class ResultIteratorQueryVertex(
     throw new UnsupportedOperationException("Result binding vertex should never receive a result count.")
   }
 
-  override final def reportResults {
-    if (!resultsReported) {
-      super.reportResults
-      // Empty array implicitly signals that there are no more results.
-      state.add(Array[Array[Int]]())
-    }
+  override final def reportResults(complete: Boolean) = {
+    // Empty array implicitly signals that there are no more results.
+    state.add(Array[Array[Int]]())
   }
 
 }

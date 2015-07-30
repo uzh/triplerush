@@ -1,7 +1,8 @@
 /*
  *  @author Philip Stutz
+ *  @author Mihaela Verman
  *  
- *  Copyright 2014 University of Zurich
+ *  Copyright 2013 University of Zurich
  *      
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,44 +18,29 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.mapper
 
 import com.signalcollect.interfaces.VertexToWorkerMapper
 import com.signalcollect.interfaces.MapperFactory
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import scala.util.hashing.MurmurHash3._
 
-class AlternativeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int, predicateIndexVerticesOnNode0: Boolean) extends VertexToWorkerMapper[Long] {
+class SingleNodeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) extends VertexToWorkerMapper[Long] {
+  if (numberOfNodes != 1) {
+    throw new Exception("This triple mapper should only be used in single-instance TripleRush.")
+  }
 
   val numberOfWorkers = numberOfNodes * workersPerNode
 
-  val modForPredicates = if (predicateIndexVerticesOnNode0) {
-    workersPerNode
-  } else {
-    numberOfWorkers
-  }
-
   def getWorkerIdForVertexId(vertexId: Long): Int = {
     val first = vertexId.extractFirst
-    if (first > 0) {
-      first % numberOfWorkers
-    } else {
-      val second = vertexId.extractSecond
-      if (second > 0) {
-        second % numberOfWorkers
-      } else if (first < 0 && second < 0) {
-        // It's a query ID, we need to put it on node 0.
-        ((first + second) & Int.MaxValue) % workersPerNode
-      } else {
-        // Only a predicate is set, the other two are wildcards. This means that the predicate is stored in first.
-        (first & Int.MaxValue) % modForPredicates
-      }
-    }
+    val second = vertexId.extractSecond
+    ((first + second) & Int.MaxValue) % numberOfWorkers
   }
 
   def getWorkerIdForVertexIdHash(vertexIdHash: Int): Int = throw new UnsupportedOperationException("This mapper does not support mapping by vertex hash.")
 }
 
-class AlternativeTripleMapperFactory(predicateNodesOnNode0: Boolean) extends MapperFactory[Long] {
-  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new AlternativeTripleMapper(numberOfNodes, workersPerNode, predicateNodesOnNode0)
+object SingleNodeTripleMapperFactory extends MapperFactory[Long] {
+  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new SingleNodeTripleMapper(numberOfNodes, workersPerNode)
 }

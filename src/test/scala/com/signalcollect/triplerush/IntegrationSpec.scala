@@ -32,7 +32,6 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Prop
 import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
-import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
 import com.signalcollect.util.TestAnnouncements
 
 class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
@@ -195,7 +194,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
             val jenaResults = TestHelper.execute(jena, triples, query)
             TestHelper.prepareStore(tr, triples)
             val resultIterator = tr.resultIteratorForQuery(query)
-            val trResults = TestHelper.resultsToBindings(resultIterator.toList)
+            val trResults = TestHelper.resultsToBindings(resultIterator)
             assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
             jenaResults === trResults
           } finally {
@@ -221,12 +220,12 @@ object TestHelper {
     triples: Set[TriplePattern],
     query: List[TriplePattern]): Long = {
     prepareStore(tr, triples)
-    val resultFuture = tr.executeCountingQuery(query, Some(GreedyCardinalityOptimizer))
+    val resultFuture = tr.executeCountingQuery(query)
     val result = Await.result(resultFuture, 7200.seconds).get //we assume the query execution is complete
     result
   }
 
-  def resultsToBindings(results: Traversable[Array[Int]]): Set[Map[Int, Int]] = {
+  def resultsToBindings(results: Iterator[Array[Int]]): Set[Map[Int, Int]] = {
     results.map({ binding: Array[Int] =>
       // Only keep variable bindings that have an assigned value.
       val filtered: Map[Int, Int] = {
@@ -244,7 +243,7 @@ object TestHelper {
     triples: Set[TriplePattern],
     query: List[TriplePattern]): Set[Map[Int, Int]] = {
     prepareStore(qe, triples)
-    val results = qe.executeQuery(query)
+    val results = qe.resultIteratorForQuery(query)
     val bindings = resultsToBindings(results)
     bindings
   }

@@ -20,44 +20,31 @@
 
 package com.signalcollect.triplerush
 
-import scala.concurrent.Await
-import scala.concurrent.Future
-import scala.concurrent.Promise
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicBoolean
+
+import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration.DurationInt
-import com.signalcollect.ExecutionConfiguration
-import com.signalcollect.GraphBuilder
-import com.signalcollect.configuration.ActorSystemRegistry
-import com.signalcollect.configuration.ExecutionMode
-import com.signalcollect.triplerush.loading.BinarySplitLoader
-import com.signalcollect.triplerush.loading.CountVerticesByType
-import com.signalcollect.triplerush.loading.EdgesPerIndexType
-import com.signalcollect.triplerush.loading.FileLoader
-import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
-import com.signalcollect.triplerush.optimizers.Optimizer
-import com.signalcollect.triplerush.vertices.RootIndex
-import com.signalcollect.triplerush.vertices.query.IndexQueryVertex
-import com.signalcollect.triplerush.vertices.query.ResultBindingQueryVertex
-import com.signalcollect.triplerush.vertices.query.ResultCountingQueryVertex
-import com.signalcollect.triplerush.optimizers.ExplorationOptimizerCreator
-import com.signalcollect.triplerush.util.ResultIterator
-import com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex
-import com.signalcollect.triplerush.util.ArrayOfArraysTraversable
-import com.signalcollect.triplerush.sparql.VariableEncoding
-import com.signalcollect.triplerush.util.TripleRushStorage
-import com.signalcollect.GraphBuilder
-import com.signalcollect.triplerush.util.TripleRushWorkerFactory
+import scala.reflect.ManifestFactory
+import scala.reflect.runtime.universe
+
+import com.signalcollect.{ ExecutionConfiguration, GraphBuilder }
+import com.signalcollect.configuration.{ ActorSystemRegistry, ExecutionMode }
+import com.signalcollect.factory.scheduler.Throughput
+import com.signalcollect.interfaces.AddEdge
 import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
-import com.signalcollect.interfaces.MapperFactory
-import com.signalcollect.triplerush.vertices.query.QueryPlanningResult
-import com.signalcollect.triplerush.vertices.query.QueryPlanningVertex
-import java.util.concurrent.atomic.AtomicReference
-import com.signalcollect.triplerush.loading.FileLoader
-import com.signalcollect.triplerush.optimizers.NoOptimizerCreator
-import com.signalcollect.triplerush.dictionary.CompressedDictionary
-import com.signalcollect.triplerush.dictionary.Dictionary
+import com.signalcollect.interfaces._
+import com.signalcollect.triplerush.dictionary._
+import com.signalcollect.triplerush.handlers._
+import com.signalcollect.triplerush.loading._
+import com.signalcollect.triplerush.mapper._
+import com.signalcollect.triplerush.sparql._
+import com.signalcollect.triplerush.util._
+import com.signalcollect.triplerush.vertices._
+import com.signalcollect.triplerush.vertices.query._
 
 /**
- * Global accessors for the console visualization.
+ * Global accessor for the console visualization.
  */
 object TrGlobal {
   var dictionary: Option[Dictionary] = None
@@ -65,7 +52,6 @@ object TrGlobal {
 
 case class TripleRush(
     graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
-    optimizerCreator: Function1[TripleRush, Option[Optimizer]] = ExplorationOptimizerCreator,
     val dictionary: Dictionary = new CompressedDictionary(),
     tripleMapperFactory: Option[MapperFactory[Long]] = None,
     console: Boolean = false) extends QueryEngine {
@@ -92,47 +78,51 @@ case class TripleRush(
       withStatsReportingInterval(500).
       withEagerIdleDetection(false).
       withKryoRegistrations(List(
-        "com.signalcollect.triplerush.vertices.RootIndex",
-        "com.signalcollect.triplerush.vertices.SIndex",
-        "com.signalcollect.triplerush.vertices.PIndex",
-        "com.signalcollect.triplerush.vertices.OIndex",
-        "com.signalcollect.triplerush.vertices.SPIndex",
-        "com.signalcollect.triplerush.vertices.POIndex",
-        "com.signalcollect.triplerush.vertices.SOIndex",
-        "com.signalcollect.triplerush.TriplePattern",
-        "com.signalcollect.triplerush.PlaceholderEdge",
-        "com.signalcollect.triplerush.CardinalityRequest",
-        "com.signalcollect.triplerush.CardinalityReply",
-        "com.signalcollect.triplerush.PredicateStatsReply",
-        "com.signalcollect.triplerush.ChildIdRequest",
-        "com.signalcollect.triplerush.ChildIdReply",
-        "com.signalcollect.triplerush.SubjectCountSignal",
-        "com.signalcollect.triplerush.ObjectCountSignal",
-        "Array[com.signalcollect.triplerush.TriplePattern]",
-        "com.signalcollect.interfaces.AddEdge",
-        "com.signalcollect.triplerush.CombiningMessageBusFactory",
-        "com.signalcollect.triplerush.SingleNodeTripleMapperFactory$",
-        "com.signalcollect.triplerush.DistributedTripleMapperFactory$",
-        "com.signalcollect.triplerush.LoadBalancingTripleMapperFactory$",
-        "com.signalcollect.triplerush.AlternativeTripleMapperFactory",
-        "com.signalcollect.triplerush.PredicateStats",
-        "com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex", // Only for local serialization test.
-        "com.signalcollect.triplerush.util.ResultIterator", // Only for local serialization test.
-        "java.util.concurrent.atomic.AtomicBoolean", // Only for local serialization test.
-        "java.util.concurrent.LinkedBlockingQueue", // Only for local serialization test.
-        "scala.reflect.ManifestFactory$$anon$10",
-        "com.signalcollect.triplerush.util.TripleRushStorage$",
-        "akka.actor.RepointableActorRef",
-        "com.signalcollect.triplerush.TripleRushEdgeAddedToNonExistentVertexHandlerFactory$",
-        "com.signalcollect.factory.scheduler.Throughput$mcJ$sp",
-        "com.signalcollect.triplerush.TripleRushUndeliverableSignalHandlerFactory$",
-        "com.signalcollect.triplerush.util.TripleRushWorkerFactory",
-        "com.signalcollect.interfaces.BulkSignalNoSourceIds$mcJ$sp",
-        "com.signalcollect.interfaces.SignalMessageWithoutSourceId$mcJ$sp")).build
+        classOf[RootIndex].getName,
+        classOf[SIndex].getName,
+        classOf[PIndex].getName,
+        classOf[OIndex].getName,
+        classOf[SPIndex].getName,
+        classOf[POIndex].getName,
+        classOf[SOIndex].getName,
+        classOf[TriplePattern].getName,
+        classOf[PlaceholderEdge].getName,
+        classOf[CardinalityRequest].getName,
+        classOf[CardinalityReply].getName,
+        classOf[PredicateStatsReply].getName,
+        classOf[ChildIdRequest].getName,
+        classOf[ChildIdReply].getName,
+        classOf[SubjectCountSignal].getName,
+        classOf[ObjectCountSignal].getName,
+        classOf[TriplePattern].getName,
+        classOf[PredicateStats].getName,
+        classOf[ResultIteratorQueryVertex].getName,
+        classOf[ResultIterator].getName,
+        classOf[AtomicBoolean].getName,
+        classOf[LinkedBlockingQueue[Any]].getName,
+        classOf[TripleRushWorkerFactory[Any]].getName,
+        TripleRushEdgeAddedToNonExistentVertexHandlerFactory.getClass.getName,
+        TripleRushUndeliverableSignalHandlerFactory.getClass.getName,
+        TripleRushStorage.getClass.getName,
+        SingleNodeTripleMapperFactory.getClass.getName,
+        new AlternativeTripleMapperFactory(false).getClass.getName,
+        DistributedTripleMapperFactory.getClass.getName,
+        LoadBalancingTripleMapperFactory.getClass.getName,
+        ManifestFactory.Long.getClass.getName,
+        classOf[CombiningMessageBusFactory[_]].getName,
+        classOf[AddEdge[Any, Any]].getName,
+        classOf[AddEdge[Long, Long]].getName, // TODO: Can we force the use of the specialized version?
+        new Throughput[Long, Any].getClass.getName,
+        SignalMessageWithoutSourceId[Long, Any](
+          signal = null.asInstanceOf[Any],
+          targetId = null.asInstanceOf[Long]).getClass.getName,
+        BulkSignalNoSourceIds[Long, Any](
+          signals = null.asInstanceOf[Array[Any]],
+          targetIds = null.asInstanceOf[Array[Long]]).getClass.getName,
+        "akka.actor.RepointableActorRef")).build
   val system = graphBuilder.config.actorSystem.getOrElse(ActorSystemRegistry.retrieve("SignalCollect").get)
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
-  var optimizer: Option[Optimizer] = None
 
   private[this] var canExecute = false
 
@@ -141,7 +131,6 @@ case class TripleRush(
     graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
     graph.awaitIdle
     canExecute = true
-    optimizer = optimizerCreator(this)
   }
 
   /**
@@ -150,10 +139,6 @@ case class TripleRush(
    */
   def load(filePath: String, placementHint: Option[Long] = Some(QueryIds.embedQueryIdInLong(1))) {
     graph.loadGraph(new FileLoader(filePath, dictionary), placementHint)
-  }
-
-  def loadBinary(binaryFilename: String, placementHint: Option[Long] = None) {
-    graph.loadGraph(BinarySplitLoader(binaryFilename), placementHint)
   }
 
   /**
@@ -191,12 +176,11 @@ case class TripleRush(
 
   def executeCountingQuery(
     q: Seq[TriplePattern],
-    optimizer: Option[Optimizer] = Some(GreedyCardinalityOptimizer),
     tickets: Long = Long.MaxValue): Future[Option[Long]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     // Efficient counting query.
     val resultCountPromise = Promise[Option[Long]]()
-    graph.addVertex(new ResultCountingQueryVertex(q, tickets, resultCountPromise, optimizer))
+    graph.addVertex(new ResultCountingQueryVertex(q, tickets, resultCountPromise))
     resultCountPromise.future
   }
 
@@ -215,61 +199,23 @@ case class TripleRush(
     childIdPromise.future
   }
 
-  def executeQuery(q: Seq[TriplePattern]): Traversable[Array[Int]] = {
-    executeQuery(q, optimizer)
+  // Delegates, just to implement the interface.
+  def resultIteratorForQuery(query: Seq[TriplePattern]): Iterator[Array[Int]] = {
+    resultIteratorForQuery(query, None, Long.MaxValue)
   }
-
-  def executeQuery(q: Seq[TriplePattern], optimizer: Option[Optimizer] = None, tickets: Long = Long.MaxValue): Traversable[Array[Int]] = {
-    val (resultFuture, statsFuture) = executeAdvancedQuery(q, optimizer, tickets = tickets)
-    val result = Await.result(resultFuture, 7200.seconds)
-    result
-  }
-
-  def getQueryPlan(query: Seq[TriplePattern], optimizerOption: Option[Optimizer] = None): QueryPlanningResult = {
-    val resultPromise = Promise[QueryPlanningResult]()
-    val usedOptimizer = optimizerOption.getOrElse(optimizer.get)
-    val queryVertex = new QueryPlanningVertex(query, resultPromise, usedOptimizer)
-    graph.addVertex(queryVertex)
-    val result = Await.result(resultPromise.future, 7200.seconds)
-    result
-  }
-
-  /**
-   * If the optimizer is defined, uses that one, else uses the default.
-   */
-  def executeAdvancedQuery(
-    query: Seq[TriplePattern],
-    optimizerOption: Option[Optimizer] = None,
-    numberOfSelectVariables: Option[Int] = None,
-    tickets: Long = Long.MaxValue): (Future[Traversable[Array[Int]]], Future[Map[Any, Any]]) = {
-    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
-    val selectVariables = numberOfSelectVariables.getOrElse(
-      VariableEncoding.requiredVariableBindingsSlots(query))
-    val resultPromise = Promise[Traversable[Array[Int]]]()
-    val statsPromise = Promise[Map[Any, Any]]()
-    val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
-    val queryVertex = new ResultBindingQueryVertex(query, selectVariables, tickets, resultPromise, statsPromise, usedOptimizer)
-    graph.addVertex(queryVertex)
-    (resultPromise.future, statsPromise.future)
-  }
-
-  def resultIteratorForQuery(
-    query: Seq[TriplePattern]) = resultIteratorForQuery(query, None, None, Long.MaxValue)
 
   /**
    * If the optimizer is defined, uses that one, else uses the default.
    */
   def resultIteratorForQuery(
     query: Seq[TriplePattern],
-    optimizerOption: Option[Optimizer] = None,
     numberOfSelectVariables: Option[Int] = None,
     tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val selectVariables = numberOfSelectVariables.getOrElse(
       VariableEncoding.requiredVariableBindingsSlots(query))
     val resultIterator = new ResultIterator
-    val usedOptimizer = if (optimizerOption.isDefined) optimizerOption else optimizer
-    val queryVertex = new ResultIteratorQueryVertex(query, selectVariables, tickets, resultIterator, usedOptimizer)
+    val queryVertex = new ResultIteratorQueryVertex(query, selectVariables, tickets, resultIterator)
     graph.addVertex(queryVertex)
     resultIterator
   }
@@ -279,18 +225,10 @@ case class TripleRush(
   }
 
   def clear {
-    clearCaches
     clearDictionary
     graph.reset
     graph.awaitIdle
     graph.addVertex(new RootIndex)
-  }
-
-  def clearCaches {
-    graph.awaitIdle
-    CardinalityCache.clear
-    PredicateStatsCache.clear
-    QueryIds.reset
   }
 
   def clearDictionary {
@@ -298,7 +236,6 @@ case class TripleRush(
   }
 
   def shutdown = {
-    clearCaches
     clearDictionary
     graph.shutdown
   }

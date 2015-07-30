@@ -17,15 +17,16 @@
  *  
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.handlers
 
 import com.signalcollect.GraphEditor
-import com.signalcollect.interfaces.UndeliverableSignalHandler
-import com.signalcollect.interfaces.UndeliverableSignalHandlerFactory
+import com.signalcollect.interfaces.{ UndeliverableSignalHandler, UndeliverableSignalHandlerFactory }
+import com.signalcollect.triplerush.{ CardinalityReply, CardinalityRequest, ChildIdReply, ChildIdRequest }
+import com.signalcollect.triplerush.{ SubjectCountSignal, TriplePattern }
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.vertices.PIndex
-
-import QueryParticle.arrayToParticle
 
 case object TripleRushUndeliverableSignalHandlerFactory extends UndeliverableSignalHandlerFactory[Long, Any] {
   def createInstance: UndeliverableSignalHandler[Long, Any] = TripleRushUndeliverableSignalHandler

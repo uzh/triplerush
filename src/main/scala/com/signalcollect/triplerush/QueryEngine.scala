@@ -6,7 +6,6 @@ trait QueryEngine {
   def addEncodedTriple(s: Int, p: Int, o: Int, blocking: Boolean)
   def prepareExecution
   def resultIteratorForQuery(query: Seq[TriplePattern]): Iterator[Array[Int]]
-  def executeQuery(q: Seq[TriplePattern]): Traversable[Array[Int]]
   def awaitIdle
   def shutdown
 }

@@ -27,9 +27,6 @@ import scala.concurrent.duration.DurationInt
 import com.signalcollect.GraphBuilder
 import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.triplerush.QueryParticle._
-import com.signalcollect.triplerush.optimizers.CleverCardinalityOptimizer
-import com.signalcollect.triplerush.optimizers.PredicateSelectivityEdgeCountsOptimizer
-import com.signalcollect.triplerush.optimizers.ExplorationOptimizer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -57,8 +54,8 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
 WHERE {
+  ?X ub:takesCourse <http://www.Department0.University0.edu/GraduateCourse0> .
   ?X rdf:type ub:GraduateStudent .
-  ?X ub:takesCourse <http://www.Department0.University0.edu/GraduateCourse0>
 }
 """,
     """
@@ -66,12 +63,12 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X ?Y ?Z
 WHERE {
-  ?X rdf:type ub:GraduateStudent .
-  ?Y rdf:type ub:University .
   ?Z rdf:type ub:Department .
-  ?X ub:memberOf ?Z .
   ?Z ub:subOrganizationOf ?Y .
-  ?X ub:undergraduateDegreeFrom ?Y
+  ?Y rdf:type ub:University .
+  ?X ub:undergraduateDegreeFrom ?Y .
+  ?X ub:memberOf ?Z .
+  ?X rdf:type ub:GraduateStudent .
 }
 """,
     """
@@ -79,8 +76,8 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
 WHERE {
+  ?X ub:publicationAuthor <http://www.Department0.University0.edu/AssistantProfessor0> .
   ?X rdf:type ub:Publication .
-  ?X ub:publicationAuthor <http://www.Department0.University0.edu/AssistantProfessor0>
 }
 """,
     """
@@ -92,7 +89,7 @@ WHERE {
         ?X rdf:type ub:Professor .
   ?X ub:name ?Y1 .
   ?X ub:emailAddress ?Y2 .
-  ?X ub:telephone ?Y3
+  ?X ub:telephone ?Y3 .
 }
 """,
     """
@@ -100,8 +97,8 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
 WHERE {
+  ?X ub:memberOf <http://www.Department0.University0.edu> .
   ?X rdf:type ub:Person .
-  ?X ub:memberOf <http://www.Department0.University0.edu>
 }
 """,
     """
@@ -114,10 +111,10 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X ?Y
 WHERE {
-  ?X rdf:type ub:Student .
+  <http://www.Department0.University0.edu/AssociateProfessor0> ub:teacherOf ?Y .
   ?Y rdf:type ub:Course .
   ?X ub:takesCourse ?Y .
-  <http://www.Department0.University0.edu/AssociateProfessor0> ub:teacherOf ?Y
+  ?X rdf:type ub:Student .
 }
 """,
     """
@@ -125,11 +122,11 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X ?Y ?Z
 WHERE {
-  ?X rdf:type ub:Student .
+  ?Y ub:subOrganizationOf <http://www.University0.edu> .
   ?Y rdf:type ub:Department .
   ?X ub:memberOf ?Y .
-  ?Y ub:subOrganizationOf <http://www.University0.edu> .
-  ?X ub:emailAddress ?Z
+  ?X rdf:type ub:Student .
+  ?X ub:emailAddress ?Z .
 }
 """,
     """
@@ -137,22 +134,12 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X ?Y ?Z
 WHERE {
-  ?X rdf:type ub:Student .
   ?Y rdf:type ub:Faculty .
-  ?Z rdf:type ub:Course .
-  ?X ub:advisor ?Y .
   ?Y ub:teacherOf ?Z .
-  ?X ub:takesCourse ?Z
-}
-""",
-    """
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
-SELECT ?X
-WHERE {
+  ?X ub:advisor ?Y .
+  ?X ub:takesCourse ?Z .
+  ?Z rdf:type ub:Course .
   ?X rdf:type ub:Student .
-  ?X ub:takesCourse
-  <http://www.Department0.University0.edu/GraduateCourse0>
 }
 """,
     """
@@ -160,8 +147,17 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
 WHERE {
+  ?X ub:takesCourse <http://www.Department0.University0.edu/GraduateCourse0> .
+  ?X rdf:type ub:Student .
+}
+""",
+    """
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
+SELECT ?X
+WHERE {
+  ?X ub:subOrganizationOf <http://www.University0.edu> .
   ?X rdf:type ub:ResearchGroup .
-  ?X ub:subOrganizationOf <http://www.University0.edu>
 }
 """,
     """
@@ -169,18 +165,18 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X ?Y
 WHERE {
-  ?X rdf:type ub:Chair .
+  ?Y ub:subOrganizationOf <http://www.University0.edu> .
   ?Y rdf:type ub:Department .
   ?X ub:worksFor ?Y .
-  ?Y ub:subOrganizationOf <http://www.University0.edu>
+  ?X rdf:type ub:Chair .
 }
 """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X WHERE {
+  <http://www.University0.edu> ub:hasAlumnus ?X .
   ?X rdf:type ub:Person .
-  <http://www.University0.edu> ub:hasAlumnus ?X
 }
 """,
     """
@@ -188,7 +184,7 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X
 WHERE {
-  ?X rdf:type ub:UndergraduateStudent
+  ?X rdf:type ub:UndergraduateStudent .
 }
 """)
 
