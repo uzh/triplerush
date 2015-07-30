@@ -41,31 +41,31 @@ import com.signalcollect.interfaces.SignalMessageWithoutSourceId
 import com.signalcollect.triplerush.util.CompositeLongIntHashMap
 
 class SignalBulkerWithoutIds[@specialized(Long) Id: ClassTag, Signal: ClassTag](size: Int) {
-  private var itemCount = 0
+  private[this] var itemCount = 0
   def numberOfItems = itemCount
   def isFull: Boolean = itemCount == size
   final val targetIds = new Array[Id](size)
   final val signals = new Array[Signal](size)
-  def addSignal(signal: Signal, targetId: Id) {
+  def addSignal(signal: Signal, targetId: Id): Unit = {
     signals(itemCount) = signal
     targetIds(itemCount) = targetId
     itemCount += 1
   }
-  def clear {
+  def clear(): Unit = {
     itemCount = 0
   }
 }
 
 class ResultBulker(val size: Int) {
-  private var itemCount = 0
+  private[this] var itemCount = 0
   def numberOfItems = itemCount
   def isFull: Boolean = itemCount == size
-  private final val results = new Array[Array[Int]](size)
-  def addResult(result: Array[Int]) {
+  private[this] final val results = new Array[Array[Int]](size)
+  def addResult(result: Array[Int]): Unit = {
     results(itemCount) = result
     itemCount += 1
   }
-  def clear {
+  def clear(): Unit = {
     itemCount = 0
   }
   def getResultArray: Array[Array[Int]] = {
@@ -163,7 +163,7 @@ final class CombiningMessageBus[Signal: ClassTag](
 
   def bulkSend(
     signal: Signal,
-    targetId: Long) {
+    targetId: Long): Unit = {
     val workerId = mapper.getWorkerIdForVertexId(targetId)
     val bulker = outgoingMessages(workerId)
     bulker.addSignal(signal, targetId)
@@ -182,7 +182,7 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
-  private def handleTickets(tickets: Long, queryId: Int) {
+  private[this] def handleTickets(tickets: Long, queryId: Int): Unit = {
     val oldTickets = aggregatedTickets(queryId)
     if (oldTickets < 0) {
       if (tickets < 0) {
@@ -199,7 +199,7 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
-  override def flush {
+  override def flush(): Unit = {
     // It is important that the results arrive before the tickets, because
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
@@ -249,7 +249,7 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
-  override def reset {
+  override def reset(): Unit = {
     super.reset
     pendingSignals = 0
     var i = 0
