@@ -24,6 +24,9 @@ import com.signalcollect.interfaces.{ EdgeAddedToNonExistentVertexHandler, EdgeA
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.vertices.{ OIndex, PIndex, POIndex, RootIndex, SIndex, SOIndex, SPIndex }
+import com.signalcollect.GraphEditor
+import com.signalcollect.triplerush.IndexVertexEdge
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 
 case object TripleRushEdgeAddedToNonExistentVertexHandlerFactory extends EdgeAddedToNonExistentVertexHandlerFactory[Long, Any] {
   def createInstance: EdgeAddedToNonExistentVertexHandler[Long, Any] = TripleRushEdgeAddedToNonExistentVertexHandler
@@ -31,7 +34,11 @@ case object TripleRushEdgeAddedToNonExistentVertexHandlerFactory extends EdgeAdd
 }
 
 case object TripleRushEdgeAddedToNonExistentVertexHandler extends EdgeAddedToNonExistentVertexHandler[Long, Any] {
-  def handleImpossibleEdgeAddition(edge: Edge[Long], vertexId: Long): Option[Vertex[Long, _, Long, Any]] = {
+  def handleImpossibleEdgeAddition(edge: Edge[Long], vertexId: Long, graphEditor: GraphEditor[Long, Any]): Option[Vertex[Long, _, Long, Any]] = {
+    vertexId.parentIds foreach { parentId =>
+      val idDelta = vertexId.parentIdDelta(parentId)
+      graphEditor.addEdge(parentId, new IndexVertexEdge(idDelta))
+    }
     val s = vertexId.s
     val p = vertexId.p
     val o = vertexId.o

@@ -27,7 +27,7 @@ import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
 
 import com.hp.hpl.jena.graph.{ Triple => JenaTriple }
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.{ EfficientIndexPattern, PlaceholderEdge }
+import com.signalcollect.triplerush.{ EfficientIndexPattern, IndexVertexEdge }
 import com.signalcollect.triplerush.dictionary.Dictionary
 import com.signalcollect.triplerush.sparql.NodeConversion
 
@@ -69,9 +69,9 @@ case object FileLoader {
     val po = EfficientIndexPattern(0, pId, oId)
     val so = EfficientIndexPattern(sId, 0, oId)
     val sp = EfficientIndexPattern(sId, pId, 0)
-    graphEditor.addEdge(po, new PlaceholderEdge(sId))
-    graphEditor.addEdge(so, new PlaceholderEdge(pId))
-    graphEditor.addEdge(sp, new PlaceholderEdge(oId))
+    graphEditor.addEdge(po, new IndexVertexEdge(sId))
+    graphEditor.addEdge(so, new IndexVertexEdge(pId))
+    graphEditor.addEdge(sp, new IndexVertexEdge(oId))
   }
 
 }

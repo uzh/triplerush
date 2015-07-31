@@ -22,12 +22,10 @@ package com.signalcollect.triplerush
 
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
-
 import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration.DurationInt
 import scala.reflect.ManifestFactory
 import scala.reflect.runtime.universe
-
 import com.signalcollect.{ ExecutionConfiguration, GraphBuilder }
 import com.signalcollect.configuration.{ ActorSystemRegistry, ExecutionMode }
 import com.signalcollect.factory.scheduler.Throughput
@@ -42,6 +40,7 @@ import com.signalcollect.triplerush.sparql._
 import com.signalcollect.triplerush.util._
 import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush.vertices.query._
+import com.signalcollect.examples.PlaceholderEdge
 
 /**
  * Global accessor for the console visualization.
@@ -86,7 +85,7 @@ case class TripleRush(
         classOf[POIndex].getName,
         classOf[SOIndex].getName,
         classOf[TriplePattern].getName,
-        classOf[PlaceholderEdge].getName,
+        classOf[IndexVertexEdge].getName,
         classOf[CardinalityRequest].getName,
         classOf[CardinalityReply].getName,
         classOf[PredicateStatsReply].getName,
@@ -166,9 +165,9 @@ case class TripleRush(
     val po = EfficientIndexPattern(0, pId, oId)
     val so = EfficientIndexPattern(sId, 0, oId)
     val sp = EfficientIndexPattern(sId, pId, 0)
-    graph.addEdge(po, new PlaceholderEdge(sId))
-    graph.addEdge(so, new PlaceholderEdge(pId))
-    graph.addEdge(sp, new PlaceholderEdge(oId))
+    graph.addEdge(po, new IndexVertexEdge(sId))
+    graph.addEdge(so, new IndexVertexEdge(pId))
+    graph.addEdge(sp, new IndexVertexEdge(oId))
     if (blocking && canExecute) {
       graph.awaitIdle
     }

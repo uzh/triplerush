@@ -20,23 +20,14 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.Edge
-import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.CardinalityReply
-import com.signalcollect.triplerush.CardinalityRequest
-import com.signalcollect.triplerush.ChildIdRequest
-import com.signalcollect.triplerush.ObjectCountSignal
-import com.signalcollect.triplerush.PlaceholderEdge
-import com.signalcollect.triplerush.SubjectCountSignal
-import com.signalcollect.triplerush.TrGlobal
-import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.{ Edge, GraphEditor }
+import com.signalcollect.triplerush._
 
 /**
  * This vertex represents part of the TripleRush index.
  */
 abstract class IndexVertex[State](val id: Long)
-  extends BaseVertex[State]
-  with ParentBuilding[State] {
+    extends BaseVertex[State] {
 
   override def expose: Map[String, Any] = {
     val indexType = getClass.getSimpleName
@@ -72,7 +63,7 @@ abstract class IndexVertex[State](val id: Long)
   }
 
   override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {
-    val placeholderEdge = e.asInstanceOf[PlaceholderEdge]
+    val placeholderEdge = e.asInstanceOf[IndexVertexEdge]
     val wasAdded = addChildDelta(placeholderEdge.childDelta)
     wasAdded
   }

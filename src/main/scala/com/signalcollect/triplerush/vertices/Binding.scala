@@ -20,15 +20,12 @@
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.Edge
-import com.signalcollect.GraphEditor
+import com.signalcollect.{ Edge, GraphEditor }
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 
-trait Binding
-  extends IndexVertex[Any]
-  with ParentBuilding[Any] {
+trait Binding extends IndexVertex[Any] {
 
   def onEdgeAdded(ge: GraphEditor[Long, Any])
 
@@ -70,7 +67,7 @@ trait Binding
     } else {
       val edges = edgeCount
       val totalTickets = query.tickets
-      val absoluteValueOfTotalTickets = if (totalTickets < 0) -totalTickets else totalTickets  // inlined math.abs
+      val absoluteValueOfTotalTickets = if (totalTickets < 0) -totalTickets else totalTickets // inlined math.abs
       val avg = absoluteValueOfTotalTickets / edges
       val complete = avg > 0 && totalTickets > 0
       var extras = absoluteValueOfTotalTickets % edges
