@@ -193,13 +193,13 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
 
   def contains(expression: Int): Boolean = {
     if (s == expression) {
-      return true
+      true
     } else if (p == expression) {
-      return true
+      true
     } else if (o == expression) {
-      return true
+      true
     } else {
-      return false
+      false
     }
   }
 

@@ -81,7 +81,7 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
 
   def getInputStream(n: Int, n2: Int, suffix: String): InputStream = {
     val urlStr = s"regression/testModelEquals/$n-$n2.$suffix"
-    return classOf[AbstractTestGraph].getClassLoader.getResourceAsStream(urlStr)
+    classOf[AbstractTestGraph].getClassLoader.getResourceAsStream(urlStr)
   }
 
   override def testRemove() {}

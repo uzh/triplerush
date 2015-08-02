@@ -35,8 +35,6 @@ class ResultBindingWrapper(val bindings: Array[Int]) extends AnyVal {
         }
         i += 1
       }
-    } else {
-      false
     }
     true
   }

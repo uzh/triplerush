@@ -457,7 +457,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
       }
       return bindPredicate(patternP, patternO, toBindP, toBindO, true)
     }
-    return bindSubject(patternS, patternP, patternO, toBindS, toBindP, toBindO, true)
+    bindSubject(patternS, patternP, patternO, toBindS, toBindP, toBindO, true)
   }
 }
   
