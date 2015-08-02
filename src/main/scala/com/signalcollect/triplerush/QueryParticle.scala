@@ -291,7 +291,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   def writeQueryId(id: Int) = r(0) = id
 
   def tickets: Long = {
-    ((r(1) | 0l) << 32) | (r(2) & 0x00000000FFFFFFFFL)
+    ((r(1) | 0L) << 32) | (r(2) & 0x00000000FFFFFFFFL)
   }
 
   def writeTickets(t: Long) = {

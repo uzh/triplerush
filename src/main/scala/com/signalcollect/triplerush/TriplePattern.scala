@@ -30,7 +30,7 @@ object EfficientIndexPattern {
   implicit def longToIndexPattern(l: Long): EfficientIndexPattern = new EfficientIndexPattern(l)
 
   @inline def embed2IntsInALong(i1: Int, i2: Int): Long = {
-    ((i2 | 0l) << 32) | (i1 & 0x00000000FFFFFFFFL)
+    ((i2 | 0L) << 32) | (i1 & 0x00000000FFFFFFFFL)
   }
 
   @inline def apply(pattern: TriplePattern): Long = {

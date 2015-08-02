@@ -101,7 +101,7 @@ class CompositeLongIntHashMap(
         val value = values(i)
         f(key, value)
         elementsProcessed += 1
-        keys(i) = 0l
+        keys(i) = 0L
       }
       i += 1
     }
