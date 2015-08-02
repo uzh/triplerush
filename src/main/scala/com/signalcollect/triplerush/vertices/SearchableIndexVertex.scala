@@ -36,10 +36,8 @@ abstract class SearchableIndexVertex[SignalType, State](
 
   @inline final def childIdsContain(n: Int): Boolean = {
     state match {
-      case i: Int =>
-        if (i != n) false else true
-      case a: Array[Int] =>
-        new SearchableIntSet(a).contains(n)
+      case i: Int => i == n
+      case a: Array[Int] => new SearchableIntSet(a).contains(n)
     }
   }
 
