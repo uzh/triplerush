@@ -50,9 +50,11 @@ case object TripleRushUndeliverableSignalHandler extends UndeliverableSignalHand
         graphEditor.sendSignal(signal, inexistentTargetId)
       case other =>
         if (inexistentTargetId.isQueryId) {
-          println(s"Failed signal delivery of $other of type ${other.getClass} to the query vertex with query id ${QueryIds.extractQueryIdFromLong(inexistentTargetId)} and sender id $senderId.")
+          println(s"Failed signal delivery of $other of type ${other.getClass} to " +
+            s"the query vertex with query id ${QueryIds.extractQueryIdFromLong(inexistentTargetId)} and sender id $senderId.")
         } else {
-          println(s"Failed signal delivery of $other of type ${other.getClass} to the index vertex ${inexistentTargetId.toTriplePattern} and sender id $senderId.")
+          println(s"Failed signal delivery of $other of type ${other.getClass} to the " +
+            s"index vertex ${inexistentTargetId.toTriplePattern} and sender id $senderId.")
         }
     }
   }

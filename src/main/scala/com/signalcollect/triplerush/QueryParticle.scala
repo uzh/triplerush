@@ -272,7 +272,8 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   // If the variable appears multiple times in the same pattern, then all the bindings have to be compatible.  
-  @inline private[this] def isBindingIncompatible(otherAttribute: Int, tpAttribute: Int, variable: Int, boundValue: Int) = (otherAttribute == variable && tpAttribute != boundValue)
+  @inline private[this] def isBindingIncompatible(otherAttribute: Int, tpAttribute: Int, variable: Int, boundValue: Int) = 
+    (otherAttribute == variable && tpAttribute != boundValue)
 
   // Updates an attribute with a new binding.
   @inline private[this] def updatedAttribute(attribute: Int, variable: Int, boundValue: Int) = if (attribute == variable) boundValue else attribute
