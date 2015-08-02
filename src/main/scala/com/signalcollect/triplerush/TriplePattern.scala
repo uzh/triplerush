@@ -20,11 +20,11 @@
 
 package com.signalcollect.triplerush
 
-import scala.Option.option2Iterable
-import scala.runtime.ScalaRunTime
-import scala.util.hashing.MurmurHash3._
-import scala.language.implicitConversions
 import com.signalcollect.triplerush.dictionary.Dictionary
+
+import scala.Option.option2Iterable
+import scala.language.implicitConversions
+import scala.util.hashing.MurmurHash3._
 
 object EfficientIndexPattern {
 
@@ -94,7 +94,7 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
   }
 
   @inline def parentIdDelta(parentPattern: Long): Int = {
-    import EfficientIndexPattern._
+    import com.signalcollect.triplerush.EfficientIndexPattern._
     if (parentPattern.s == 0 && s != 0) {
       s
     } else if (parentPattern.p == 0 && p != 0) {

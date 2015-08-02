@@ -19,24 +19,18 @@
 
 package com.signalcollect.triplerush
 
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
-import org.scalatest.FlatSpec
-import org.scalatest.prop.Checkers
-import com.signalcollect.triplerush.QueryParticle._
-import scala.util.Random
-import scala.annotation.tailrec
-import org.scalacheck.Gen
-import org.scalacheck.Gen._
-import org.scalacheck.Arbitrary
-import org.scalacheck.Prop
-import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
 import com.signalcollect.util.TestAnnouncements
+import org.scalacheck.Gen._
+import org.scalacheck.{Arbitrary, Gen, Prop}
+import org.scalatest.FlatSpec
+import org.scalatest.prop.Checkers
+import com.signalcollect.triplerush.TripleGenerators._
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 
 class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
 
-  import TripleGenerators._
 
   implicit lazy val arbTriples = Arbitrary(tripleSet)
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
