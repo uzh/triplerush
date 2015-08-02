@@ -1,33 +1,33 @@
 /*
  *  @author Philip Stutz
  *  @author Mihaela Verman
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush
 
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.concurrent.{ Await, Future, Promise }
+import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration.DurationInt
 import scala.reflect.ManifestFactory
 import scala.reflect.runtime.universe
-import com.signalcollect.{ ExecutionConfiguration, GraphBuilder }
-import com.signalcollect.configuration.{ ActorSystemRegistry, ExecutionMode }
+import com.signalcollect.{ExecutionConfiguration, GraphBuilder}
+import com.signalcollect.configuration.{ActorSystemRegistry, ExecutionMode}
 import com.signalcollect.factory.scheduler.Throughput
 import com.signalcollect.interfaces.AddEdge
 import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
@@ -50,10 +50,10 @@ object TrGlobal {
 }
 
 case class TripleRush(
-    graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
-    val dictionary: Dictionary = new CompressedDictionary(),
-    tripleMapperFactory: Option[MapperFactory[Long]] = None,
-    console: Boolean = false) extends QueryEngine {
+                       graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
+                       val dictionary: Dictionary = new CompressedDictionary(),
+                       tripleMapperFactory: Option[MapperFactory[Long]] = None,
+                       console: Boolean = false) extends QueryEngine {
 
   TrGlobal.dictionary = Some(dictionary)
 
@@ -69,56 +69,56 @@ case class TripleRush(
         } else {
           DistributedTripleMapperFactory
         })).
-      withStorageFactory(TripleRushStorage).
-      withThrottlingEnabled(false).
-      withThrottlingDuringLoadingEnabled(true).
-      withWorkerFactory(new TripleRushWorkerFactory[Any]).
-      withBlockingGraphModificationsSupport(false).
-      withStatsReportingInterval(500).
-      withEagerIdleDetection(false).
-      withKryoRegistrations(List(
-        classOf[RootIndex].getName,
-        classOf[SIndex].getName,
-        classOf[PIndex].getName,
-        classOf[OIndex].getName,
-        classOf[SPIndex].getName,
-        classOf[POIndex].getName,
-        classOf[SOIndex].getName,
-        classOf[TriplePattern].getName,
-        classOf[IndexVertexEdge].getName,
-        classOf[CardinalityRequest].getName,
-        classOf[CardinalityReply].getName,
-        classOf[PredicateStatsReply].getName,
-        classOf[ChildIdRequest].getName,
-        classOf[ChildIdReply].getName,
-        classOf[SubjectCountSignal].getName,
-        classOf[ObjectCountSignal].getName,
-        classOf[TriplePattern].getName,
-        classOf[PredicateStats].getName,
-        classOf[ResultIteratorQueryVertex].getName,
-        classOf[ResultIterator].getName,
-        classOf[AtomicBoolean].getName,
-        classOf[LinkedBlockingQueue[Any]].getName,
-        classOf[TripleRushWorkerFactory[Any]].getName,
-        TripleRushEdgeAddedToNonExistentVertexHandlerFactory.getClass.getName,
-        TripleRushUndeliverableSignalHandlerFactory.getClass.getName,
-        TripleRushStorage.getClass.getName,
-        SingleNodeTripleMapperFactory.getClass.getName,
-        new AlternativeTripleMapperFactory(false).getClass.getName,
-        DistributedTripleMapperFactory.getClass.getName,
-        LoadBalancingTripleMapperFactory.getClass.getName,
-        ManifestFactory.Long.getClass.getName,
-        classOf[CombiningMessageBusFactory[_]].getName,
-        classOf[AddEdge[Any, Any]].getName,
-        classOf[AddEdge[Long, Long]].getName, // TODO: Can we force the use of the specialized version?
-        new Throughput[Long, Any].getClass.getName,
-        SignalMessageWithoutSourceId[Long, Any](
-          signal = null.asInstanceOf[Any],
-          targetId = null.asInstanceOf[Long]).getClass.getName,
-        BulkSignalNoSourceIds[Long, Any](
-          signals = null.asInstanceOf[Array[Any]],
-          targetIds = null.asInstanceOf[Array[Long]]).getClass.getName,
-        "akka.actor.RepointableActorRef")).build
+    withStorageFactory(TripleRushStorage).
+    withThrottlingEnabled(false).
+    withThrottlingDuringLoadingEnabled(true).
+    withWorkerFactory(new TripleRushWorkerFactory[Any]).
+    withBlockingGraphModificationsSupport(false).
+    withStatsReportingInterval(500).
+    withEagerIdleDetection(false).
+    withKryoRegistrations(List(
+    classOf[RootIndex].getName,
+    classOf[SIndex].getName,
+    classOf[PIndex].getName,
+    classOf[OIndex].getName,
+    classOf[SPIndex].getName,
+    classOf[POIndex].getName,
+    classOf[SOIndex].getName,
+    classOf[TriplePattern].getName,
+    classOf[IndexVertexEdge].getName,
+    classOf[CardinalityRequest].getName,
+    classOf[CardinalityReply].getName,
+    classOf[PredicateStatsReply].getName,
+    classOf[ChildIdRequest].getName,
+    classOf[ChildIdReply].getName,
+    classOf[SubjectCountSignal].getName,
+    classOf[ObjectCountSignal].getName,
+    classOf[TriplePattern].getName,
+    classOf[PredicateStats].getName,
+    classOf[ResultIteratorQueryVertex].getName,
+    classOf[ResultIterator].getName,
+    classOf[AtomicBoolean].getName,
+    classOf[LinkedBlockingQueue[Any]].getName,
+    classOf[TripleRushWorkerFactory[Any]].getName,
+    TripleRushEdgeAddedToNonExistentVertexHandlerFactory.getClass.getName,
+    TripleRushUndeliverableSignalHandlerFactory.getClass.getName,
+    TripleRushStorage.getClass.getName,
+    SingleNodeTripleMapperFactory.getClass.getName,
+    new AlternativeTripleMapperFactory(false).getClass.getName,
+    DistributedTripleMapperFactory.getClass.getName,
+    LoadBalancingTripleMapperFactory.getClass.getName,
+    ManifestFactory.Long.getClass.getName,
+    classOf[CombiningMessageBusFactory[_]].getName,
+    classOf[AddEdge[Any, Any]].getName,
+    classOf[AddEdge[Long, Long]].getName, // TODO: Can we force the use of the specialized version?
+    new Throughput[Long, Any].getClass.getName,
+    SignalMessageWithoutSourceId[Long, Any](
+      signal = null.asInstanceOf[Any],
+      targetId = null.asInstanceOf[Long]).getClass.getName,
+    BulkSignalNoSourceIds[Long, Any](
+      signals = null.asInstanceOf[Array[Any]],
+      targetIds = null.asInstanceOf[Array[Long]]).getClass.getName,
+    "akka.actor.RepointableActorRef")).build
   val system = graphBuilder.config.actorSystem.getOrElse(ActorSystemRegistry.retrieve("SignalCollect").get)
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
@@ -174,8 +174,8 @@ case class TripleRush(
   }
 
   def executeCountingQuery(
-    q: Seq[TriplePattern],
-    tickets: Long = Long.MaxValue): Future[Option[Long]] = {
+                            q: Seq[TriplePattern],
+                            tickets: Long = Long.MaxValue): Future[Option[Long]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     // Efficient counting query.
     val resultCountPromise = Promise[Option[Long]]()
@@ -207,9 +207,9 @@ case class TripleRush(
    * If the optimizer is defined, uses that one, else uses the default.
    */
   def resultIteratorForQuery(
-    query: Seq[TriplePattern],
-    numberOfSelectVariables: Option[Int] = None,
-    tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
+                              query: Seq[TriplePattern],
+                              numberOfSelectVariables: Option[Int] = None,
+                              tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val selectVariables = numberOfSelectVariables.getOrElse(
       VariableEncoding.requiredVariableBindingsSlots(query))

@@ -1,32 +1,32 @@
 /*
  *  @author Philip Stutz
- *  
+ *
  *  Copyright 2015 iHealth Technologies
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush.sparql
 
-import scala.collection.JavaConversions.{ asJavaIterator, asScalaBuffer, asScalaIterator, iterableAsScalaIterable }
-import com.hp.hpl.jena.graph.{ Node, NodeFactory, Node_Literal, Node_URI, Node_Variable }
-import com.hp.hpl.jena.sparql.core.{ BasicPattern, Var }
-import com.hp.hpl.jena.sparql.engine.{ ExecutionContext, QueryIterator }
-import com.hp.hpl.jena.sparql.engine.binding.{ Binding, BindingHashMap }
-import com.hp.hpl.jena.sparql.engine.iterator.{ QueryIterConcat, QueryIterPlainWrapper }
+import scala.collection.JavaConversions.{asJavaIterator, asScalaBuffer, asScalaIterator, iterableAsScalaIterable}
+import com.hp.hpl.jena.graph.{Node, NodeFactory, Node_Literal, Node_URI, Node_Variable}
+import com.hp.hpl.jena.sparql.core.{BasicPattern, Var}
+import com.hp.hpl.jena.sparql.engine.{ExecutionContext, QueryIterator}
+import com.hp.hpl.jena.sparql.engine.binding.{Binding, BindingHashMap}
+import com.hp.hpl.jena.sparql.engine.iterator.{QueryIterConcat, QueryIterPlainWrapper}
 import com.hp.hpl.jena.sparql.engine.main.StageGenerator
-import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
+import com.signalcollect.triplerush.{TriplePattern, TripleRush}
 import com.signalcollect.triplerush.dictionary.Dictionary
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIterSingleton
 import com.hp.hpl.jena.graph.Node_Blank
@@ -37,7 +37,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
   def execute(pattern: BasicPattern, input: QueryIterator, execCxt: ExecutionContext): QueryIterator = {
     execCxt.getActiveGraph match {
       case graph: TripleRushGraph => executeOnTripleRush(graph.tr, pattern, input, execCxt)
-      case _                      => other.execute(pattern, input, execCxt)
+      case _ => other.execute(pattern, input, execCxt)
     }
   }
 
@@ -50,7 +50,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
     val tripleRushQuery = {
       val numberOfPatterns = originalQuery.length
       val patterns = new Array[TriplePattern](numberOfPatterns)
-      for { i <- 0 until numberOfPatterns } {
+      for {i <- 0 until numberOfPatterns} {
         val triple = originalQuery(i)
         val (pattern, updatedVariableNameToId, updatedIdToVariableName) = arqNodesToPattern(
           dictionary,
@@ -80,20 +80,20 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
       }
     } yield decodedResults
     val bindingIterator = new QueryIterConcat(execCxt)
-    for { i <- bindingIterators } {
+    for {i <- bindingIterators} {
       bindingIterator.add(i)
     }
     bindingIterator
   }
 
   private[this] def decodeResult(
-    dictionary: Dictionary,
-    parentBinding: Binding,
-    unbound: Vector[Var],
-    result: Array[Int],
-    varToId: Map[String, Int]): Binding = {
+                                  dictionary: Dictionary,
+                                  parentBinding: Binding,
+                                  unbound: Vector[Var],
+                                  result: Array[Int],
+                                  varToId: Map[String, Int]): Binding = {
     val binding = new BindingHashMap(parentBinding)
-    for { variable <- unbound } {
+    for {variable <- unbound} {
       val variableId = varToId(variable.getVarName)
       val encoded = result(VariableEncoding.variableIdToDecodingIndex(variableId))
       val decoded = dictionary.unsafeDecode(encoded)
@@ -104,11 +104,11 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
   }
 
   private[this] def createBoundQuery(
-    dictionary: Dictionary,
-    originalQuery: Array[TriplePattern],
-    binding: Binding,
-    varToId: Map[String, Int],
-    idToVar: Vector[Var]): (Array[TriplePattern], Vector[Var]) = {
+                                      dictionary: Dictionary,
+                                      originalQuery: Array[TriplePattern],
+                                      binding: Binding,
+                                      varToId: Map[String, Int],
+                                      idToVar: Vector[Var]): (Array[TriplePattern], Vector[Var]) = {
     val query = originalQuery.clone
     val boundVariables = binding.vars
     val variablesInQuery = varToId.keySet
@@ -124,7 +124,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
         encodedValueId = dictionary(value)
       } yield (variableId, encodedValueId)
     }.toMap
-    for { i <- 0 until query.length } {
+    for {i <- 0 until query.length} {
       val triple = query(i)
       @inline def substituteVariable(v: Int): Int = {
         if (v < 0 && bindingMap.contains(v)) {
@@ -145,10 +145,10 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
 
   // TODO: Make more efficient.
   private[this] def arqNodesToPattern(
-    dictionary: Dictionary,
-    s: Node, p: Node, o: Node,
-    varToId: Map[String, Int],
-    idToVar: Vector[Var]): (TriplePattern, Map[String, Int], Vector[Var]) = {
+                                       dictionary: Dictionary,
+                                       s: Node, p: Node, o: Node,
+                                       varToId: Map[String, Int],
+                                       idToVar: Vector[Var]): (TriplePattern, Map[String, Int], Vector[Var]) = {
     var nameToId = varToId
     var idToName = idToVar
     var nextId = {

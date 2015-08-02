@@ -1,26 +1,26 @@
 /*
  *  @author Philip Stutz
  *  @author Mihaela Verman
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush.vertices
 
-import com.signalcollect.{ Edge, GraphEditor }
+import com.signalcollect.{Edge, GraphEditor}
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
@@ -86,9 +86,9 @@ trait Binding extends IndexVertex[Any] {
   }
 
   def handleQueryBinding(
-    childDelta: Int,
-    query: Array[Int],
-    graphEditor: GraphEditor[Long, Any]) {
+                          childDelta: Int,
+                          query: Array[Int],
+                          graphEditor: GraphEditor[Long, Any]) {
     val boundParticle = bindIndividualQuery(childDelta, query)
     if (boundParticle != null) {
       routeSuccessfullyBound(boundParticle, graphEditor)
@@ -100,8 +100,8 @@ trait Binding extends IndexVertex[Any] {
   }
 
   def routeSuccessfullyBound(
-    boundParticle: Array[Int],
-    graphEditor: GraphEditor[Long, Any]) {
+                              boundParticle: Array[Int],
+                              graphEditor: GraphEditor[Long, Any]) {
 
     if (boundParticle.isResult) {
       // Query successful, send to query vertex.

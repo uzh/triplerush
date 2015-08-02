@@ -33,21 +33,21 @@ import com.signalcollect.worker.AkkaWorker
 
 class TripleRushWorkerFactory[Signal: ClassTag] extends WorkerFactory[Long, Signal] {
   def createInstance(
-    workerId: Int,
-    numberOfWorkers: Int,
-    numberOfNodes: Int,
-    messageBusFactory: MessageBusFactory[Long, Signal],
-    mapperFactory: MapperFactory[Long],
-    storageFactory: StorageFactory[Long, Signal],
-    schedulerFactory: SchedulerFactory[Long, Signal],
-    existingVertexHandlerFactory: ExistingVertexHandlerFactory[Long, Signal],
-    undeliverableSignalHandlerFactory: UndeliverableSignalHandlerFactory[Long, Signal],
-    edgeAddedToNonExistentVertexHandlerFactory: EdgeAddedToNonExistentVertexHandlerFactory[Long, Signal],
-    heartbeatIntervalInMilliseconds: Int,
-    eagerIdleDetection: Boolean,
-    throttlingEnabled: Boolean,
-    throttlingDuringLoadingEnabled: Boolean,
-    supportBlockingGraphModificationsInVertex: Boolean): AkkaWorker[Long, Signal] = {
+                      workerId: Int,
+                      numberOfWorkers: Int,
+                      numberOfNodes: Int,
+                      messageBusFactory: MessageBusFactory[Long, Signal],
+                      mapperFactory: MapperFactory[Long],
+                      storageFactory: StorageFactory[Long, Signal],
+                      schedulerFactory: SchedulerFactory[Long, Signal],
+                      existingVertexHandlerFactory: ExistingVertexHandlerFactory[Long, Signal],
+                      undeliverableSignalHandlerFactory: UndeliverableSignalHandlerFactory[Long, Signal],
+                      edgeAddedToNonExistentVertexHandlerFactory: EdgeAddedToNonExistentVertexHandlerFactory[Long, Signal],
+                      heartbeatIntervalInMilliseconds: Int,
+                      eagerIdleDetection: Boolean,
+                      throttlingEnabled: Boolean,
+                      throttlingDuringLoadingEnabled: Boolean,
+                      supportBlockingGraphModificationsInVertex: Boolean): AkkaWorker[Long, Signal] = {
     new TripleRushWorker[Signal](
       workerId,
       numberOfWorkers,
@@ -65,5 +65,6 @@ class TripleRushWorkerFactory[Signal: ClassTag] extends WorkerFactory[Long, Sign
       throttlingDuringLoadingEnabled,
       supportBlockingGraphModificationsInVertex)
   }
+
   override def toString: String = "TripleRushWorkerFactory"
 }

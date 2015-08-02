@@ -22,16 +22,22 @@ import com.signalcollect.interfaces.Storage
 import com.signalcollect.interfaces.VertexStore
 
 /**
- *  Storage backed by a custom-tailored open hash map implementation for vertices.
+ * Storage backed by a custom-tailored open hash map implementation for vertices.
  */
 class TripleRushVertexMapStorage extends Storage[Long, Any] {
 
   val vertices = vertexStoreFactory
+
   protected def vertexStoreFactory: VertexStore[Long, Any] = new TripleRushVertexMap(initialSize = 32768, rehashFraction = .4f)
 
-  val toCollect = vertexSignalFactory //holds all signals that are not collected yet
+  val toCollect = vertexSignalFactory
+
+  //holds all signals that are not collected yet
   protected def vertexSignalFactory = new TripleRushVertexMap(initialSize = 2, rehashFraction = .9f)
-  val toSignal = vertexSetFactory //holds all vertex ids that need to signal
+
+  val toSignal = vertexSetFactory
+
+  //holds all vertex ids that need to signal
   protected def vertexSetFactory = new TripleRushVertexMap(initialSize = 2, rehashFraction = .9f)
 
 }

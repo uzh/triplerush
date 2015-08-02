@@ -1,20 +1,20 @@
 /*
  *  @author Philip Stutz
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush
@@ -209,7 +209,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
 object TestHelper {
 
   def prepareStore(qe: QueryEngine,
-    triples: Set[TriplePattern]) {
+                   triples: Set[TriplePattern]) {
     for (triple <- triples) {
       qe.addEncodedTriple(triple.s, triple.p, triple.o, false)
     }
@@ -217,8 +217,8 @@ object TestHelper {
   }
 
   def count(tr: TripleRush,
-    triples: Set[TriplePattern],
-    query: List[TriplePattern]): Long = {
+            triples: Set[TriplePattern],
+            query: List[TriplePattern]): Long = {
     prepareStore(tr, triples)
     val resultFuture = tr.executeCountingQuery(query)
     val result = Await.result(resultFuture, 7200.seconds).get //we assume the query execution is complete
@@ -239,9 +239,9 @@ object TestHelper {
   }
 
   def execute(
-    qe: QueryEngine,
-    triples: Set[TriplePattern],
-    query: List[TriplePattern]): Set[Map[Int, Int]] = {
+               qe: QueryEngine,
+               triples: Set[TriplePattern],
+               query: List[TriplePattern]): Set[Map[Int, Int]] = {
     prepareStore(qe, triples)
     val results = qe.resultIteratorForQuery(query)
     val bindings = resultsToBindings(results)
@@ -269,7 +269,7 @@ object TripleGenerators {
 
   // Takes a list of (frequency, value) tuples and turns the values into generators.
   def frequenciesToGenerator[G](f: List[(Int, G)]): List[(Int, Gen[G])] = {
-    f.map { t: (Int, G) => ((t._1, const(t._2))) }
+    f.map { t: (Int, G) => ((t._1, const(t._2)))}
   }
 
   // Different frequencies for different variables.
@@ -302,7 +302,7 @@ object TripleGenerators {
       // Only seldomly add variables in predicate position, expecially if the subject is a variable.
       p <- if (s < 0) {
         // Only seldomly have the same variable multiple times in a pattern.
-        frequency((5, variableWithout(s)), (100, predicates)) //(1, variable), 
+        frequency((5, variableWithout(s)), (100, predicates)) //(1, variable),
       } else {
         frequency((1, variable), (5, predicates))
       }

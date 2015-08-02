@@ -1,4 +1,5 @@
 package com.signalcollect.triplerush.jena
+
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import scala.collection.mutable.UnrolledBuffer
 import com.hp.hpl.jena.query.QueryFactory
@@ -86,21 +87,24 @@ WHERE {
   }
 
   val a: Char = 'a'
+
   def patternToString(tp: TriplePattern): String = s"${intToQueryString(tp.s)} ${intToQueryString(tp.p)} ${intToQueryString(tp.o)} ."
+
   def intToQueryString(v: Int): String = {
     v match {
       // map to characters
       case i if i > 0 && i < 26 =>
         "ns:" + (a + i).toChar
-      case -1    => "?X"
-      case -2    => "?Y"
-      case -3    => "?Z"
-      case -4    => "?A"
-      case -5    => "?B"
-      case -6    => "?C"
+      case -1 => "?X"
+      case -2 => "?Y"
+      case -3 => "?Z"
+      case -4 => "?A"
+      case -5 => "?B"
+      case -6 => "?C"
       case other => throw new Exception("Unsupported variable.")
     }
   }
+
   def intToInsertString(v: Int): String = {
     if (v > 0) {
       "http://example.com#" + (a + v).toChar
@@ -108,9 +112,12 @@ WHERE {
       throw new Exception(s"Unsupported value $v.")
     }
   }
+
   def awaitIdle {}
+
   def shutdown {
     model.close
   }
+
   def prepareExecution {}
 }

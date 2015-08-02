@@ -26,19 +26,22 @@ import scala.util.hashing.MurmurHash3._
  * HashMap Long keys and Int values.
  */
 class CompositeLongIntHashMap(
-  initialSize: Int = 32768,
-  rehashFraction: Float = 0.75f) {
+                               initialSize: Int = 32768,
+                               rehashFraction: Float = 0.75f) {
   assert(initialSize > 0)
   final var maxSize = nextPowerOfTwo(initialSize)
   assert(1.0f >= rehashFraction && rehashFraction > 0.1f, "Unreasonable rehash fraction.")
   assert(maxSize > 0 && maxSize >= initialSize, "Initial size is too large.")
   private[this] final var maxElements: Int = (rehashFraction * maxSize).floor.toInt
   private[this] final var values = new Array[Int](maxSize)
-  private[this] final var keys = new Array[Long](maxSize) // 0 means empty
+  private[this] final var keys = new Array[Long](maxSize)
+  // 0 means empty
   private[this] final var mask = maxSize - 1
 
   final def size: Int = numberOfElements
+
   final def isEmpty: Boolean = numberOfElements == 0
+
   private[this] final var numberOfElements = 0
 
   final def clear {
@@ -107,7 +110,7 @@ class CompositeLongIntHashMap(
     }
     numberOfElements = 0
   }
-  
+
   final def remove(key: Long) {
     remove(key, true)
   }

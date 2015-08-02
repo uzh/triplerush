@@ -26,21 +26,21 @@ import scala.reflect.ClassTag
 import com.signalcollect._
 
 class TripleRushWorker[Signal: ClassTag](
-  workerId: Int,
-  numberOfWorkers: Int,
-  numberOfNodes: Int,
-  messageBusFactory: MessageBusFactory[Long, Signal],
-  mapperFactory: MapperFactory[Long],
-  storageFactory: StorageFactory[Long, Signal],
-  schedulerFactory: SchedulerFactory[Long, Signal],
-  existingVertexHandlerFactory: ExistingVertexHandlerFactory[Long, Signal],
-  undeliverableSignalHandlerFactory: UndeliverableSignalHandlerFactory[Long, Signal],
-  edgeAddedToNonExistentVertexHandlerFactory: EdgeAddedToNonExistentVertexHandlerFactory[Long, Signal],
-  heartbeatIntervalInMilliseconds: Int,
-  eagerIdleDetection: Boolean,
-  throttlingEnabled: Boolean,
-  throttlingDuringLoadingEnabled: Boolean,
-  supportBlockingGraphModificationsInVertex: Boolean) extends AkkaWorker[Long, Signal](
+                                          workerId: Int,
+                                          numberOfWorkers: Int,
+                                          numberOfNodes: Int,
+                                          messageBusFactory: MessageBusFactory[Long, Signal],
+                                          mapperFactory: MapperFactory[Long],
+                                          storageFactory: StorageFactory[Long, Signal],
+                                          schedulerFactory: SchedulerFactory[Long, Signal],
+                                          existingVertexHandlerFactory: ExistingVertexHandlerFactory[Long, Signal],
+                                          undeliverableSignalHandlerFactory: UndeliverableSignalHandlerFactory[Long, Signal],
+                                          edgeAddedToNonExistentVertexHandlerFactory: EdgeAddedToNonExistentVertexHandlerFactory[Long, Signal],
+                                          heartbeatIntervalInMilliseconds: Int,
+                                          eagerIdleDetection: Boolean,
+                                          throttlingEnabled: Boolean,
+                                          throttlingDuringLoadingEnabled: Boolean,
+                                          supportBlockingGraphModificationsInVertex: Boolean) extends AkkaWorker[Long, Signal](
   workerId,
   numberOfWorkers,
   numberOfNodes,
@@ -75,4 +75,3 @@ class TripleRushWorker[Signal: ClassTag](
     collectThreshold = 0.0)
 
 }
-  

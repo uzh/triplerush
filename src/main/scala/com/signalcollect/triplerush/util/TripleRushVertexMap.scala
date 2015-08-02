@@ -81,20 +81,23 @@ object Hashing {
 // we have to do an additional check to verify that the vertex id
 // matches indeed (and not just the hash of the vertex id).
 class TripleRushVertexMap(
-  initialSize: Int = 32768,
-  rehashFraction: Float = 0.75f) extends VertexStore[Long, Any] {
+                           initialSize: Int = 32768,
+                           rehashFraction: Float = 0.75f) extends VertexStore[Long, Any] {
   assert(initialSize > 0)
   final var maxSize = nextPowerOfTwo(initialSize)
   assert(1.0f >= rehashFraction && rehashFraction > 0.1f, "Unreasonable rehash fraction.")
   assert(maxSize > 0 && maxSize >= initialSize, "Initial size is too large.")
   private[this] final var maxElements: Int = (rehashFraction * maxSize).floor.toInt
   private[this] final var values = new Array[Vertex[Long, _, Long, Any]](maxSize)
-  private[this] final var keys = new Array[Long](maxSize) // 0 means empty
+  private[this] final var keys = new Array[Long](maxSize)
+  // 0 means empty
   private[this] final var mask = maxSize - 1
   private[this] final var nextPositionToProcess = 0
 
   final override def size: Long = numberOfElements
+
   final def isEmpty: Boolean = numberOfElements == 0
+
   private[this] final var numberOfElements = 0
 
   def stream: Stream[Vertex[Long, _, Long, Any]] = {

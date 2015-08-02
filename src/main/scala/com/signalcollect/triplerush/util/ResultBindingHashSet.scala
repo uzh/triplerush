@@ -54,19 +54,22 @@ class ResultBindingWrapper(val bindings: Array[Int]) extends AnyVal {
 }
 
 class ResultBindingsHashSet(
-  initialSize: Int = 32768,
-  rehashFraction: Float = 0.75f) {
+                             initialSize: Int = 32768,
+                             rehashFraction: Float = 0.75f) {
   assert(initialSize > 0)
   final var maxSize = nextPowerOfTwo(initialSize)
   assert(1.0f >= rehashFraction && rehashFraction > 0.1f, "Unreasonable rehash fraction.")
   assert(maxSize > 0 && maxSize >= initialSize, "Initial size is too large.")
   private[this] final var maxElements: Int = (rehashFraction * maxSize).floor.toInt
-  private[this] final var keys = new Array[Array[Int]](maxSize) // 0 means empty
+  private[this] final var keys = new Array[Array[Int]](maxSize)
+  // 0 means empty
   private[this] final var mask = maxSize - 1
   private[this] final var nextPositionToProcess = 0
 
   final def size: Int = numberOfElements
+
   final def isEmpty: Boolean = numberOfElements == 0
+
   private[this] final var numberOfElements = 0
 
   final def clear {
