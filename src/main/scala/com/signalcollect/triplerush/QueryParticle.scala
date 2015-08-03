@@ -1,21 +1,21 @@
 /*
  *  @author Philip Stutz
  *  @author Mihaela Verman
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush
@@ -30,12 +30,15 @@ import com.signalcollect.triplerush.sparql.VariableEncoding
 object QueryIds {
   private[this] val maxFullQueryId = new AtomicInteger(0)
   private[this] val minFullQueryId = new AtomicInteger(0)
+
   def nextQueryId: Int = {
     maxFullQueryId.incrementAndGet
   }
+
   def nextCountQueryId: Int = {
     minFullQueryId.decrementAndGet
   }
+
   def reset {
     maxFullQueryId.set(0)
     minFullQueryId.set(0)
@@ -128,7 +131,7 @@ object QueryParticle {
  * 3 int:    numberOfBindings
  * 4-? ints:   bindings
  * ? ?*3 ints: triple patterns in reverse matching order (last one
- *           gets matched first).
+ * gets matched first).
  */
 class QueryParticle(val r: Array[Int]) extends AnyVal {
 
@@ -157,7 +160,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
       return QueryParticle.failed
     }
 
-    // Subject is a variable that needs to be bound to the constant in the triple pattern. 
+    // Subject is a variable that needs to be bound to the constant in the triple pattern.
     // Bind value to variable.
     val variable = toMatchS
     val boundValue = toBindS
@@ -192,7 +195,8 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     toBindP: Int,
     toBindO: Int,
     copyBeforeWrite: Boolean): Array[Int] = {
-    if (toMatchP == toBindP) { // Predicate is compatible constant. No binding necessary. 
+    if (toMatchP == toBindP) {
+      // Predicate is compatible constant. No binding necessary.
       return bindObject(toMatchO, toBindO, copyBeforeWrite)
     }
 
@@ -201,7 +205,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
       return QueryParticle.failed
     }
 
-    // Predicate is a variable that needs to be bound to the constant in the triple pattern. 
+    // Predicate is a variable that needs to be bound to the constant in the triple pattern.
     // Bind value to variable.
     val variable = toMatchP
     val boundValue = toBindP
@@ -231,7 +235,8 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     toMatchO: Int,
     toBindO: Int,
     copyBeforeWrite: Boolean): Array[Int] = {
-    if (toMatchO == toBindO) { // Object is compatible constant. No binding necessary. 
+    if (toMatchO == toBindO) {
+      // Object is compatible constant. No binding necessary.
       //      val result = {
       //        if (copyBeforeWrite) {
       //          // We need to cut off the last pattern, even if we never write.
@@ -250,7 +255,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
       return QueryParticle.failed
     }
 
-    // Object is a variable that needs to be bound to the constant in the triple pattern. 
+    // Object is a variable that needs to be bound to the constant in the triple pattern.
     // Bind value to variable.
     val variable = toMatchO
     val boundValue = toBindO
@@ -271,8 +276,9 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     currentParticle
   }
 
-  // If the variable appears multiple times in the same pattern, then all the bindings have to be compatible.  
-  @inline private[this] def isBindingIncompatible(otherAttribute: Int, tpAttribute: Int, variable: Int, boundValue: Int) = (otherAttribute == variable && tpAttribute != boundValue)
+  // If the variable appears multiple times in the same pattern, then all the bindings have to be compatible.
+  @inline private[this] def isBindingIncompatible(otherAttribute: Int, tpAttribute: Int, variable: Int, boundValue: Int) =
+    (otherAttribute == variable && tpAttribute != boundValue)
 
   // Updates an attribute with a new binding.
   @inline private[this] def updatedAttribute(attribute: Int, variable: Int, boundValue: Int) = if (attribute == variable) boundValue else attribute
@@ -291,7 +297,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   def writeQueryId(id: Int) = r(0) = id
 
   def tickets: Long = {
-    ((r(1) | 0l) << 32) | (r(2) & 0x00000000FFFFFFFFL)
+    ((r(1) | 0L) << 32) | (r(2) & 0x00000000FFFFFFFFL)
   }
 
   def writeTickets(t: Long) = {
@@ -406,7 +412,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   /**
-   *  Routing address for this query.
+   * Routing address for this query.
    */
   def routingAddress: Long = {
     if (isResult) {
@@ -438,7 +444,9 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   @inline def lastPatternS = r(r.length - 3)
+
   @inline def lastPatternP = r(r.length - 2)
+
   @inline def lastPatternO = r(r.length - 1)
 
   /**
@@ -448,16 +456,19 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     val patternS = lastPatternS
     val patternP = lastPatternP
     val patternO = lastPatternO
-    if (toBindS == patternS) { // Subject is compatible constant. No binding necessary. 
-      if (toBindP == patternP) { // Predicate is compatible constant. No binding necessary. 
-        if (toBindO == patternO) { // Object is compatible constant. No binding necessary. 
+    if (toBindS == patternS) {
+      // Subject is compatible constant. No binding necessary.
+      if (toBindP == patternP) {
+        // Predicate is compatible constant. No binding necessary.
+        if (toBindO == patternO) {
+          // Object is compatible constant. No binding necessary.
           return copyWithoutLastPattern
         }
         return bindObject(patternO, toBindO, true)
       }
       return bindPredicate(patternP, patternO, toBindP, toBindO, true)
     }
-    return bindSubject(patternS, patternP, patternO, toBindS, toBindP, toBindO, true)
+    bindSubject(patternS, patternP, patternO, toBindS, toBindP, toBindO, true)
   }
 }
-  
+

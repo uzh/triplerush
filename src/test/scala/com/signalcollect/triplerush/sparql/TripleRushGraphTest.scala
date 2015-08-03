@@ -81,24 +81,44 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
 
   def getInputStream(n: Int, n2: Int, suffix: String): InputStream = {
     val urlStr = s"regression/testModelEquals/$n-$n2.$suffix"
-    return classOf[AbstractTestGraph].getClassLoader.getResourceAsStream(urlStr)
+    classOf[AbstractTestGraph].getClassLoader.getResourceAsStream(urlStr)
   }
 
   override def testRemove() {}
+
   override def testBulkDeleteList() {}
+
   override def testBulkDeleteArray() {}
+
   override def testBulkDeleteGraph() {}
+
   override def testEventDeleteByFind() {}
+
   override def testBulkUpdate() {}
+
   override def testBulkDeleteIterator() {}
+
   override def testDeleteTriple() {}
+
   override def testRemoveAll() {}
+
   override def testRemoveSPO() {}
-  override def testListSubjects() {} // Uses GraphBase::delete.
-  override def testListPredicates() {} // Uses GraphBase::delete.
-  override def testListObjects() {} // Uses GraphBase::delete.
-  override def testUnregisterOnce() {} // Uses GraphBase::delete.
-  override def testIsEmpty() {} // Uses GraphBase::delete.
+
+  override def testListSubjects() {}
+
+  // Uses GraphBase::delete.
+  override def testListPredicates() {}
+
+  // Uses GraphBase::delete.
+  override def testListObjects() {}
+
+  // Uses GraphBase::delete.
+  override def testUnregisterOnce() {}
+
+  // Uses GraphBase::delete.
+  override def testIsEmpty() {}
+
+  // Uses GraphBase::delete.
   override def testAGraph() {} // Uses GraphBase::delete.
 
 }

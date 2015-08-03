@@ -42,15 +42,20 @@ import com.signalcollect.triplerush.util.CompositeLongIntHashMap
 
 class SignalBulkerWithoutIds[@specialized(Long) Id: ClassTag, Signal: ClassTag](size: Int) {
   private[this] var itemCount = 0
+
   def numberOfItems = itemCount
+
   def isFull: Boolean = itemCount == size
+
   final val targetIds = new Array[Id](size)
   final val signals = new Array[Signal](size)
+
   def addSignal(signal: Signal, targetId: Id): Unit = {
     signals(itemCount) = signal
     targetIds(itemCount) = targetId
     itemCount += 1
   }
+
   def clear(): Unit = {
     itemCount = 0
   }
@@ -58,16 +63,22 @@ class SignalBulkerWithoutIds[@specialized(Long) Id: ClassTag, Signal: ClassTag](
 
 class ResultBulker(val size: Int) {
   private[this] var itemCount = 0
+
   def numberOfItems = itemCount
+
   def isFull: Boolean = itemCount == size
+
   private[this] final val results = new Array[Array[Int]](size)
+
   def addResult(result: Array[Int]): Unit = {
     results(itemCount) = result
     itemCount += 1
   }
+
   def clear(): Unit = {
     itemCount = 0
   }
+
   def getResultArray: Array[Array[Int]] = {
     val resultsCopy = new Array[Array[Int]](itemCount)
     System.arraycopy(results, 0, resultsCopy, 0, itemCount)
@@ -76,7 +87,7 @@ class ResultBulker(val size: Int) {
 }
 
 class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, resultBulkerSize: Int)
-  extends MessageBusFactory[Long, Signal] {
+    extends MessageBusFactory[Long, Signal] {
   def createInstance(
     system: ActorSystem,
     numberOfWorkers: Int,
@@ -94,6 +105,7 @@ class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, resultBu
       sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
       workerApiFactory)
   }
+
   override def toString = "CombiningMessageBusFactory"
 }
 
@@ -109,7 +121,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   val resultBulkerSize: Int,
   val sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
   val workerApiFactory: WorkerApiFactory[Long, Signal])
-  extends AbstractMessageBus[Long, Signal] {
+    extends AbstractMessageBus[Long, Signal] {
 
   lazy val workerApi = workerApiFactory.createInstance(workerProxies, mapper)
 
@@ -119,7 +131,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
   override def sendSignal(signal: Signal, targetId: Long) {
-    // If message is sent to a Query Vertex 
+    // If message is sent to a Query Vertex
     if (targetId.isQueryId) {
       val extractedQueryId = QueryIds.extractQueryIdFromLong(targetId)
       signal match {

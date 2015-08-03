@@ -1,20 +1,20 @@
 /*
  *  @author Philip Stutz
- *  
+ *
  *  Copyright 2015 iHealth Technologies
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush.sparql
@@ -22,13 +22,13 @@ package com.signalcollect.triplerush.sparql
 import scala.collection.JavaConversions.asJavaIterator
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import com.hp.hpl.jena.graph.{ GraphEvents, GraphStatisticsHandler, Node, Node_ANY, Node_Literal, Node_URI, Triple }
+import com.hp.hpl.jena.graph.{GraphEvents, GraphStatisticsHandler, Node, Node_ANY, Node_Literal, Node_URI, Triple}
 import com.hp.hpl.jena.graph.impl.GraphBase
 import com.hp.hpl.jena.query.ARQ
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.sparql.engine.main.StageGenerator
-import com.hp.hpl.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
-import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
+import com.hp.hpl.jena.util.iterator.{ExtendedIterator, WrappedIterator}
+import com.signalcollect.triplerush.{TriplePattern, TripleRush}
 import com.hp.hpl.jena.graph.Node_Blank
 import com.hp.hpl.jena.graph.Node_Variable
 import com.hp.hpl.jena.graph.Capabilities
@@ -138,9 +138,13 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
   override val getCapabilities = new Capabilities {
     val sizeAccurate = true
     val addAllowed = true
+
     def addAllowed(everyTriple: Boolean) = true
+
     val deleteAllowed = false
+
     def deleteAllowed(everyTriple: Boolean) = false
+
     val iteratorRemoveAllowed = false
     val canBeEmpty = true
     val findContractSafe = true

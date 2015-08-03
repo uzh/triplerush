@@ -35,8 +35,6 @@ class ResultBindingWrapper(val bindings: Array[Int]) extends AnyVal {
         }
         i += 1
       }
-    } else {
-      false
     }
     true
   }
@@ -47,28 +45,31 @@ class ResultBindingWrapper(val bindings: Array[Int]) extends AnyVal {
   def hashCodeLike: Int = {
     val length = bindings.length
     (length: @switch) match {
-      case 0 => 0
-      case 1 => bindings(0)
-      case 2 => finalizeHash(mixLast(bindings(0), bindings(1)), 3)
+      case 0     => 0
+      case 1     => bindings(0)
+      case 2     => finalizeHash(mixLast(bindings(0), bindings(1)), 3)
       case other => finalizeHash(mixLast(mix(bindings(0), bindings(1)), bindings(2)), 3)
     }
   }
 }
 
 class ResultBindingsHashSet(
-  initialSize: Int = 32768,
-  rehashFraction: Float = 0.75f) {
+    initialSize: Int = 32768,
+    rehashFraction: Float = 0.75f) {
   assert(initialSize > 0)
   final var maxSize = nextPowerOfTwo(initialSize)
   assert(1.0f >= rehashFraction && rehashFraction > 0.1f, "Unreasonable rehash fraction.")
   assert(maxSize > 0 && maxSize >= initialSize, "Initial size is too large.")
   private[this] final var maxElements: Int = (rehashFraction * maxSize).floor.toInt
-  private[this] final var keys = new Array[Array[Int]](maxSize) // 0 means empty
+  private[this] final var keys = new Array[Array[Int]](maxSize)
+  // 0 means empty
   private[this] final var mask = maxSize - 1
   private[this] final var nextPositionToProcess = 0
 
   final def size: Int = numberOfElements
+
   final def isEmpty: Boolean = numberOfElements == 0
+
   private[this] final var numberOfElements = 0
 
   final def clear {

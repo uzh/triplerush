@@ -1,21 +1,21 @@
 /*
  *  @author Philip Stutz
  *  @author Mihaela Verman
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush
@@ -57,7 +57,7 @@ WHERE {
   ?X ub:takesCourse <http://www.Department0.University0.edu/GraduateCourse0> .
   ?X rdf:type ub:GraduateStudent .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -70,7 +70,7 @@ WHERE {
   ?X ub:memberOf ?Z .
   ?X rdf:type ub:GraduateStudent .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -79,7 +79,7 @@ WHERE {
   ?X ub:publicationAuthor <http://www.Department0.University0.edu/AssistantProfessor0> .
   ?X rdf:type ub:Publication .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -91,7 +91,7 @@ WHERE {
   ?X ub:emailAddress ?Y2 .
   ?X ub:telephone ?Y3 .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -100,12 +100,12 @@ WHERE {
   ?X ub:memberOf <http://www.Department0.University0.edu> .
   ?X rdf:type ub:Person .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
 SELECT ?X WHERE {?X rdf:type ub:Student}
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -116,7 +116,7 @@ WHERE {
   ?X ub:takesCourse ?Y .
   ?X rdf:type ub:Student .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -128,7 +128,7 @@ WHERE {
   ?X rdf:type ub:Student .
   ?X ub:emailAddress ?Z .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -141,7 +141,7 @@ WHERE {
   ?Z rdf:type ub:Course .
   ?X rdf:type ub:Student .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -150,7 +150,7 @@ WHERE {
   ?X ub:takesCourse <http://www.Department0.University0.edu/GraduateCourse0> .
   ?X rdf:type ub:Student .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -159,7 +159,7 @@ WHERE {
   ?X ub:subOrganizationOf <http://www.University0.edu> .
   ?X rdf:type ub:ResearchGroup .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -170,7 +170,7 @@ WHERE {
   ?X ub:worksFor ?Y .
   ?X rdf:type ub:Chair .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -178,7 +178,7 @@ SELECT ?X WHERE {
   <http://www.University0.edu> ub:hasAlumnus ?X .
   ?X rdf:type ub:Person .
 }
-""",
+    """,
     """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#>
@@ -186,7 +186,7 @@ SELECT ?X
 WHERE {
   ?X rdf:type ub:UndergraduateStudent .
 }
-""")
+    """)
 
 }
 

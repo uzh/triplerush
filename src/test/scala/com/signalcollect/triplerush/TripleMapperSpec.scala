@@ -16,6 +16,7 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
   val m = new DistributedTripleMapper(numberOfNodes = numberOfNodes, workersPerNode = workersPerNode)
 
   def nodeId(workerId: Int) = (((workerId & Int.MaxValue) % step) / workersPerNode).floor.toInt
+
   def workerId(workerId: Int) = (workerId & Int.MaxValue) % workersPerNode
 
   assert(nodeId(0) == 0)

@@ -34,7 +34,7 @@ object IndexType {
       case TriplePattern(_, _, 0) => Sp
       case TriplePattern(_, 0, _) => So
       case TriplePattern(0, _, _) => Po
-      case other: Any => throw new Exception(s"${indexId.toTriplePattern} is not a valid index ID.")
+      case other: Any             => throw new Exception(s"${indexId.toTriplePattern} is not a valid index ID.")
     }
   }
 
@@ -79,9 +79,9 @@ object IndexStructure {
      * Based on the diagram of the index structure @ http://www.zora.uzh.ch/111243/1/TR_WWW.pdf
      */
     IndexType(id) match {
-      case P     => Array(rootId)
-      case Po    => Array(oIndexId)
-      case Sp    => Array(sIndexId, pIndexId)
+      case P          => Array(rootId)
+      case Po         => Array(oIndexId)
+      case Sp         => Array(sIndexId, pIndexId)
       case other: Any => Array()
     }
   }

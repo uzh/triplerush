@@ -65,5 +65,6 @@ class TripleRushWorkerFactory[Signal: ClassTag] extends WorkerFactory[Long, Sign
       throttlingDuringLoadingEnabled,
       supportBlockingGraphModificationsInVertex)
   }
+
   override def toString: String = "TripleRushWorkerFactory"
 }

@@ -1,28 +1,30 @@
 /*
  *  @author Philip Stutz
  *  @author Mihaela Verman
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush
+
 import scala.Option.option2Iterable
-import scala.runtime.ScalaRunTime
-import scala.util.hashing.MurmurHash3._
 import scala.language.implicitConversions
+import scala.util.hashing.MurmurHash3.{ finalizeHash, mix, mixLast }
+
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.dictionary.Dictionary
 
 object EfficientIndexPattern {
@@ -30,7 +32,7 @@ object EfficientIndexPattern {
   implicit def longToIndexPattern(l: Long): EfficientIndexPattern = new EfficientIndexPattern(l)
 
   @inline def embed2IntsInALong(i1: Int, i2: Int): Long = {
-    ((i2 | 0l) << 32) | (i1 & 0x00000000FFFFFFFFL)
+    ((i2 | 0L) << 32) | (i1 & 0x00000000FFFFFFFFL)
   }
 
   @inline def apply(pattern: TriplePattern): Long = {
@@ -78,7 +80,8 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
     val p = if (first < 0) {
       first & Int.MaxValue
     } else {
-      if (second < 0) { // second < 0
+      if (second < 0) {
+        // second < 0
         second & Int.MaxValue
       } else {
         0
@@ -88,7 +91,7 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
   }
 
   @inline def parentIdDelta(parentPattern: Long): Int = {
-    import EfficientIndexPattern._
+    import com.signalcollect.triplerush.EfficientIndexPattern._
     if (parentPattern.s == 0 && s != 0) {
       s
     } else if (parentPattern.p == 0 && p != 0) {
@@ -113,7 +116,8 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
     if (first < 0) {
       first & Int.MaxValue
     } else {
-      if (id < 0) { // second < 0
+      if (id < 0) {
+        // second < 0
         extractSecond & Int.MaxValue
       } else {
         0
@@ -138,7 +142,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
   @inline override def equals(other: Any): Boolean = {
     other match {
       case TriplePattern(this.s, this.p, this.o) => true
-      case _ => false
+      case _                                     => false
     }
   }
 
@@ -189,13 +193,13 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
 
   def contains(expression: Int): Boolean = {
     if (s == expression) {
-      return true
+      true
     } else if (p == expression) {
-      return true
+      true
     } else if (o == expression) {
-      return true
+      true
     } else {
-      return false
+      false
     }
   }
 

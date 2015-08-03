@@ -27,6 +27,7 @@ import com.signalcollect.triplerush._
 
 case object TripleRushEdgeAddedToNonExistentVertexHandlerFactory extends EdgeAddedToNonExistentVertexHandlerFactory[Long, Any] {
   def createInstance: EdgeAddedToNonExistentVertexHandler[Long, Any] = TripleRushEdgeAddedToNonExistentVertexHandler
+
   override def toString = "TripleRushEdgeAddedToNonExistentVertexHandlerFactory"
 }
 
