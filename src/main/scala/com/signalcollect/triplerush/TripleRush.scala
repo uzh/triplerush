@@ -204,9 +204,6 @@ case class TripleRush(
     resultIteratorForQuery(query, None, Long.MaxValue)
   }
 
-  /**
-   * If the optimizer is defined, uses that one, else uses the default.
-   */
   def resultIteratorForQuery(
     query: Seq[TriplePattern],
     numberOfSelectVariables: Option[Int] = None,
