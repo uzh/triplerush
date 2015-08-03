@@ -26,7 +26,7 @@ import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.util.SearchableIntSet
-import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.OperationIds
 
 final class SOIndex(id: Long) extends SearchableIndexVertex(id)
     with Binding {
@@ -68,7 +68,7 @@ final class SOIndex(id: Long) extends SearchableIndexVertex(id)
         routeSuccessfullyBound(query.copyWithoutLastPattern, graphEditor)
       } else {
         // Failed query
-        val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
+        val queryVertexId = OperationIds.embedInLong(query.queryId)
         graphEditor.sendSignal(query.tickets, queryVertexId)
       }
     } else {

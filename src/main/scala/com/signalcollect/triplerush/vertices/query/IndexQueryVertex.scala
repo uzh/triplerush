@@ -22,7 +22,7 @@ package com.signalcollect.triplerush.vertices.query
 import scala.concurrent.Promise
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.OperationIds
 import com.signalcollect.triplerush.ChildIdRequest
 import com.signalcollect.triplerush.ChildIdReply
 import com.signalcollect.triplerush.vertices.BaseVertex
@@ -31,7 +31,7 @@ final class IndexQueryVertex(
     val indexId: Long,
     val resultPromise: Promise[Array[Int]]) extends BaseVertex[Nothing] {
 
-  val id = QueryIds.embedQueryIdInLong(QueryIds.nextQueryId)
+  val id = OperationIds.embedInLong(OperationIds.nextId)
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
     graphEditor.sendSignal(ChildIdRequest(id), indexId)

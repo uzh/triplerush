@@ -22,7 +22,7 @@ package com.signalcollect.triplerush.vertices
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.EfficientIndexPattern
-import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.OperationIds
 
 trait Forwarding[State] extends IndexVertex[State] {
 
@@ -46,7 +46,7 @@ trait Forwarding[State] extends IndexVertex[State] {
       ) {
       // Take a shortcut and don't actually do the forwarding, just send the cardinality.
       // The isSimpleToBind check excludes complicated cases, where a binding might fail.
-      val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
+      val queryVertexId = OperationIds.embedInLong(query.queryId)
       graphEditor.sendSignal(cardinality, queryVertexId)
       graphEditor.sendSignal(query.tickets, queryVertexId)
     } else {

@@ -132,29 +132,29 @@ final class CombiningMessageBus[Signal: ClassTag](
 
   override def sendSignal(signal: Signal, targetId: Long) {
     // If message is sent to a Query Vertex
-    if (targetId.isQueryId) {
-      val extractedQueryId = QueryIds.extractQueryIdFromLong(targetId)
+    if (targetId.isOperationId) {
+      val extractedOperationId = OperationIds.extractFromLong(targetId)
       signal match {
         case resultCount: Int =>
-          val oldResultCount = aggregatedResultCounts(extractedQueryId)
-          aggregatedResultCounts(extractedQueryId) = oldResultCount + resultCount
+          val oldResultCount = aggregatedResultCounts(extractedOperationId)
+          aggregatedResultCounts(extractedOperationId) = oldResultCount + resultCount
         case tickets: Long =>
-          handleTickets(tickets, extractedQueryId)
+          handleTickets(tickets, extractedOperationId)
         case result: Array[Int] =>
-          handleTickets(result.tickets, extractedQueryId)
+          handleTickets(result.tickets, extractedOperationId)
           val bindings = result.bindings
-          val oldResults = aggregatedResults.activateKeyAndGetValue(extractedQueryId)
+          val oldResults = aggregatedResults.activateKeyAndGetValue(extractedOperationId)
           if (oldResults != null) {
             oldResults.addResult(bindings)
             if (oldResults.isFull) {
-              val targetId = QueryIds.embedQueryIdInLong(extractedQueryId)
+              val targetId = OperationIds.embedInLong(extractedOperationId)
               sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, oldResults.getResultArray), targetId)
               oldResults.clear
             }
           } else {
             val newBulker = new ResultBulker(resultBulkerSize)
             newBulker.addResult(bindings)
-            aggregatedResults(extractedQueryId) = newBulker
+            aggregatedResults(extractedOperationId) = newBulker
           }
         case other =>
           bulkSend(signal, targetId)
@@ -194,19 +194,19 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
-  private[this] def handleTickets(tickets: Long, queryId: Int): Unit = {
-    val oldTickets = aggregatedTickets(queryId)
+  private[this] def handleTickets(tickets: Long, operationId: Int): Unit = {
+    val oldTickets = aggregatedTickets(operationId)
     if (oldTickets < 0) {
       if (tickets < 0) {
-        aggregatedTickets(queryId) = oldTickets + tickets
+        aggregatedTickets(operationId) = oldTickets + tickets
       } else {
-        aggregatedTickets(queryId) = oldTickets - tickets
+        aggregatedTickets(operationId) = oldTickets - tickets
       }
     } else {
       if (tickets < 0) {
-        aggregatedTickets(queryId) = tickets - oldTickets
+        aggregatedTickets(operationId) = tickets - oldTickets
       } else {
-        aggregatedTickets(queryId) = tickets + oldTickets
+        aggregatedTickets(operationId) = tickets + oldTickets
       }
     }
   }
@@ -217,7 +217,7 @@ final class CombiningMessageBus[Signal: ClassTag](
     if (!aggregatedResults.isEmpty) {
       aggregatedResults.process { (queryVertexId, results) =>
         if (results.numberOfItems > 0) {
-          val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
+          val targetId = OperationIds.embedInLong(queryVertexId)
           sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, results.getResultArray), targetId)
           results.clear
         }
@@ -225,13 +225,13 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
     if (!aggregatedResultCounts.isEmpty) {
       aggregatedResultCounts.process { (queryVertexId, resultCount) =>
-        val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
+        val targetId = OperationIds.embedInLong(queryVertexId)
         sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, resultCount), targetId)
       }
     }
     if (!aggregatedTickets.isEmpty) {
       aggregatedTickets.process { (queryVertexId, tickets) =>
-        val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
+        val targetId = OperationIds.embedInLong(queryVertexId)
         sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, tickets), targetId)
       }
     }

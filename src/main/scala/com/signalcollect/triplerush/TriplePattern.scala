@@ -68,7 +68,7 @@ object EfficientIndexPattern {
 
 class EfficientIndexPattern(val id: Long) extends AnyVal {
 
-  @inline def isQueryId: Boolean = {
+  @inline def isOperationId: Boolean = {
     id < 0 && id.toInt < 0
   }
 

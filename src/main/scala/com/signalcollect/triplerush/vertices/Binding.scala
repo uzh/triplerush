@@ -21,7 +21,7 @@
 package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.{ Edge, GraphEditor }
-import com.signalcollect.triplerush.{ IndexStructure, QueryIds }
+import com.signalcollect.triplerush.{ IndexStructure, OperationIds }
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 
 trait Binding extends IndexVertex[Any] {
@@ -60,7 +60,7 @@ trait Binding extends IndexVertex[Any] {
       query.isSimpleToBind) {
       // Take a shortcut and don't actually do the binding, just send the result count.
       // The isSimpleToBind check excludes complicated cases, where a binding might fail.
-      val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
+      val queryVertexId = OperationIds.embedInLong(query.queryId)
       graphEditor.sendSignal(edgeCount, queryVertexId)
       graphEditor.sendSignal(query.tickets, queryVertexId)
     } else {
@@ -93,7 +93,7 @@ trait Binding extends IndexVertex[Any] {
       routeSuccessfullyBound(boundParticle, graphEditor)
     } else {
       // Failed to bind, send to query vertex.
-      val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
+      val queryVertexId = OperationIds.embedInLong(query.queryId)
       graphEditor.sendSignal(query.tickets, queryVertexId)
     }
   }
@@ -104,7 +104,7 @@ trait Binding extends IndexVertex[Any] {
 
     if (boundParticle.isResult) {
       // Query successful, send to query vertex.
-      val queryVertexId = QueryIds.embedQueryIdInLong(boundParticle.queryId)
+      val queryVertexId = OperationIds.embedInLong(boundParticle.queryId)
       if (boundParticle.isBindingQuery) {
         graphEditor.sendSignal(boundParticle, queryVertexId)
       } else {

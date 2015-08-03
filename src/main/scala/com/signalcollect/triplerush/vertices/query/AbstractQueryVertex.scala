@@ -39,7 +39,7 @@ abstract class AbstractQueryVertex[StateType](
       }
       val particle = QueryParticle(
         patterns = query,
-        queryId = QueryIds.extractQueryIdFromLong(id),
+        queryId = OperationIds.extractFromLong(id),
         numberOfSelectVariables = numberOfSelectVariables,
         tickets = tickets)
       graphEditor.sendSignal(particle, particle.routingAddress)

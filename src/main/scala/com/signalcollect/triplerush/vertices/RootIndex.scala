@@ -23,7 +23,7 @@ import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.util.SplayIntSet
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
-import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.OperationIds
 
 final class RootIndex extends OptimizedIndexVertex(EfficientIndexPattern(0, 0, 0))
     with Forwarding[Any] {
@@ -32,7 +32,7 @@ final class RootIndex extends OptimizedIndexVertex(EfficientIndexPattern(0, 0, 0
     // Root index is the only one that might have no outgoing edges.
     if (edgeCount == 0) {
       // No outgoing edges: Fail query immediately.
-      val queryVertexId = QueryIds.embedQueryIdInLong(query.queryId)
+      val queryVertexId = OperationIds.embedInLong(query.queryId)
       graphEditor.sendSignal(query.tickets, queryVertexId)
     } else {
       super.processQuery(query, graphEditor)

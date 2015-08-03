@@ -30,9 +30,9 @@ class QueryIdEmbeddingSpec extends FlatSpec with Checkers with TestAnnouncements
   "QueryIds" should "correctly embed and recover query IDs" in {
     check((queryId: Int) => {
       if (queryId != Int.MinValue) {
-        val embedded = QueryIds.embedQueryIdInLong(queryId)
-        assert(embedded.isQueryId)
-        val extracted = QueryIds.extractQueryIdFromLong(embedded)
+        val embedded = OperationIds.embedInLong(queryId)
+        assert(embedded.isOperationId)
+        val extracted = OperationIds.extractFromLong(embedded)
         assert(extracted === queryId)
         true
       } else {

@@ -24,9 +24,9 @@ import com.signalcollect.interfaces.{ UndeliverableSignalHandler, UndeliverableS
 import com.signalcollect.triplerush.{ CardinalityReply, CardinalityRequest, ChildIdReply, ChildIdRequest }
 import com.signalcollect.triplerush.{ SubjectCountSignal, TriplePattern }
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.QueryIds
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.vertices.PIndex
+import com.signalcollect.triplerush.OperationIds
 
 case object TripleRushUndeliverableSignalHandlerFactory extends UndeliverableSignalHandlerFactory[Long, Any] {
   def createInstance: UndeliverableSignalHandler[Long, Any] = TripleRushUndeliverableSignalHandler
@@ -38,7 +38,7 @@ case object TripleRushUndeliverableSignalHandler extends UndeliverableSignalHand
   def vertexForSignalNotFound(signal: Any, inexistentTargetId: Long, senderId: Option[Long], graphEditor: GraphEditor[Long, Any]) {
     signal match {
       case queryParticle: Array[Int] =>
-        val queryVertexId = QueryIds.embedQueryIdInLong(queryParticle.queryId)
+        val queryVertexId = OperationIds.embedInLong(queryParticle.queryId)
         graphEditor.sendSignal(queryParticle.tickets, queryVertexId)
       case CardinalityRequest(forPattern: TriplePattern, requestor: Long) =>
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor)
@@ -50,9 +50,9 @@ case object TripleRushUndeliverableSignalHandler extends UndeliverableSignalHand
         graphEditor.addVertex(predicateIndex)
         graphEditor.sendSignal(signal, inexistentTargetId)
       case other =>
-        if (inexistentTargetId.isQueryId) {
+        if (inexistentTargetId.isOperationId) {
           println(s"Failed signal delivery of $other of type ${other.getClass} to " +
-            s"the query vertex with query id ${QueryIds.extractQueryIdFromLong(inexistentTargetId)} and sender id $senderId.")
+            s"the query vertex with query id ${OperationIds.extractFromLong(inexistentTargetId)} and sender id $senderId.")
         } else {
           println(s"Failed signal delivery of $other of type ${other.getClass} to the " +
             s"index vertex ${inexistentTargetId.toTriplePattern} and sender id $senderId.")
