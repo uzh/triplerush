@@ -26,11 +26,7 @@ object IndexType {
   val list: List[IndexType] = List(Root, S, P, O, Sp, So, Po)
 
   def apply(indexId: Long): IndexType = {
-    val s = indexId.s
-    val p = indexId.p
-    val o = indexId.o
-    val tp = TriplePattern(s, p, o)
-    tp match {
+    indexId.toTriplePattern match {
       case TriplePattern(0, 0, 0) => Root
       case TriplePattern(_, 0, 0) => S
       case TriplePattern(0, _, 0) => P
@@ -38,7 +34,7 @@ object IndexType {
       case TriplePattern(_, _, 0) => Sp
       case TriplePattern(_, 0, _) => So
       case TriplePattern(0, _, _) => Po
-      case TriplePattern(_, _, _) => throw new Exception(s"$tp is not a valid index ID.")
+      case TriplePattern(_, _, _) => throw new Exception(s"${indexId.toTriplePattern} is not a valid index ID.")
     }
   }
 
