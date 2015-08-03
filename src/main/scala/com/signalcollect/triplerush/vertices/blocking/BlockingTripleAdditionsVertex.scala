@@ -42,7 +42,7 @@ class BlockingTripleAdditionsVertex(
         state match {
           case None =>
             throw new Exception(
-              s"Blocking triple addition vertex received tickets when there was no ongoing synchrinization.")
+              s"Blocking triple addition vertex received tickets when there was no ongoing synchronization.")
           case Some(s) =>
             s.receivedTickets(deliveredTickets)
         }
