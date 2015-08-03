@@ -63,9 +63,20 @@ abstract class IndexVertex[State](val id: Long)
   }
 
   override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {
-    val placeholderEdge = e.asInstanceOf[IndexVertexEdge]
-    val wasAdded = addChildDelta(placeholderEdge.childDelta)
-    wasAdded
+    e match {
+      case b: BlockingIndexVertexEdge =>
+        val wasAdded = addChildDelta(b.childDelta)
+        graphEditor.sendSignal(b.tickets, b.blockingAdditionVertexId)
+        wasAdded
+      case i: IndexVertexEdge =>
+        val wasAdded = addChildDelta(i.childDelta)
+        wasAdded
+      case other: Any =>
+        val msg = s"IndexVertex does not support adding edge $e of type ${e.getClass.getSimpleName}."
+        val error = new UnsupportedOperationException(msg)
+        graphEditor.log.error(error, msg)
+        throw error
+    }
   }
 
   def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any])
