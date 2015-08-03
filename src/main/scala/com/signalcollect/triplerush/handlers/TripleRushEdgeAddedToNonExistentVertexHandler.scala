@@ -19,14 +19,13 @@
 
 package com.signalcollect.triplerush.handlers
 
-import com.signalcollect.{ Edge, Vertex }
+import com.signalcollect.{ Edge, GraphEditor, Vertex }
 import com.signalcollect.interfaces.{ EdgeAddedToNonExistentVertexHandler, EdgeAddedToNonExistentVertexHandlerFactory }
+import com.signalcollect.triplerush.{ IndexVertexEdge, TriplePattern }
+import com.signalcollect.triplerush.BlockingIndexVertexEdge
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.vertices.{ OIndex, PIndex, POIndex, RootIndex, SIndex, SOIndex, SPIndex }
-import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.IndexVertexEdge
-import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.IndexStructure
 
 case object TripleRushEdgeAddedToNonExistentVertexHandlerFactory extends EdgeAddedToNonExistentVertexHandlerFactory[Long, Any] {
   def createInstance: EdgeAddedToNonExistentVertexHandler[Long, Any] = TripleRushEdgeAddedToNonExistentVertexHandler
@@ -34,15 +33,27 @@ case object TripleRushEdgeAddedToNonExistentVertexHandlerFactory extends EdgeAdd
 }
 
 case object TripleRushEdgeAddedToNonExistentVertexHandler extends EdgeAddedToNonExistentVertexHandler[Long, Any] {
+
   def handleImpossibleEdgeAddition(edge: Edge[Long], vertexId: Long, graphEditor: GraphEditor[Long, Any]): Option[Vertex[Long, _, Long, Any]] = {
-    vertexId.parentIds foreach { parentId =>
-      val idDelta = vertexId.parentIdDelta(parentId)
-      graphEditor.addEdge(parentId, new IndexVertexEdge(idDelta))
-    }
     val s = vertexId.s
     val p = vertexId.p
     val o = vertexId.o
     val triplePattern = TriplePattern(s, p, o)
+    edge match {
+      case b: BlockingIndexVertexEdge =>
+        ???
+//        triplePattern.parentPatterns foreach { parentPattern =>
+//          val parentId = parentPattern.toEfficientIndexPattern
+//          val idDelta = vertexId.parentIdDelta(parentId)
+//          val tickets = ticketsForIndexOperation(parentPattern)
+//          graphEditor.addEdge(parentId, new BlockingIndexVertexEdge(idDelta, tickets, b.blockingAdditionVertexId))
+//        }
+      case other =>
+        IndexStructure.parentIds(vertexId) foreach { parentId =>
+          val idDelta = vertexId.parentIdDelta(parentId)
+          graphEditor.addEdge(parentId, new IndexVertexEdge(idDelta))
+        }
+    }
     triplePattern match {
       case TriplePattern(0, 0, 0) => Some(new RootIndex)
       case TriplePattern(0, 0, o) => Some(new OIndex(vertexId))

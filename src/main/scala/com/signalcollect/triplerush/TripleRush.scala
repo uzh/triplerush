@@ -86,6 +86,7 @@ case class TripleRush(
         classOf[SOIndex].getName,
         classOf[TriplePattern].getName,
         classOf[IndexVertexEdge].getName,
+        classOf[BlockingIndexVertexEdge].getName,
         classOf[CardinalityRequest].getName,
         classOf[CardinalityReply].getName,
         classOf[PredicateStatsReply].getName,

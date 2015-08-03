@@ -21,8 +21,7 @@
 package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.{ Edge, GraphEditor }
-import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.QueryIds
+import com.signalcollect.triplerush.{ IndexStructure, QueryIds }
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 
 trait Binding extends IndexVertex[Any] {
@@ -30,14 +29,14 @@ trait Binding extends IndexVertex[Any] {
   def onEdgeAdded(ge: GraphEditor[Long, Any])
 
   def incrementParentIndexCardinalities(ge: GraphEditor[Long, Any]) {
-    for (parent <- id.parentIds) {
-      ge.sendSignal(1, parent)
+    IndexStructure.parentIds(id).foreach { parentId =>
+      ge.sendSignal(1, parentId)
     }
   }
 
   def decrementParentIndexCardinalities(ge: GraphEditor[Long, Any]) {
-    for (parent <- id.parentIds) {
-      ge.sendSignal(-1, parent)
+    IndexStructure.parentIds(id).foreach { parentId =>
+      ge.sendSignal(-1, parentId)
     }
   }
 

@@ -87,10 +87,6 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
     TriplePattern(s, p, o)
   }
 
-  def parentIds: List[Long] = {
-    toTriplePattern.parentPatterns.map(_.toEfficientIndexPattern)
-  }
-
   @inline def parentIdDelta(parentPattern: Long): Int = {
     import EfficientIndexPattern._
     if (parentPattern.s == 0 && s != 0) {
@@ -212,27 +208,6 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
       o
     } else {
       throw new Exception(s"$parentPattern is not a parent pattern of $this")
-    }
-  }
-
-  def parentPatterns: List[TriplePattern] = {
-    this match {
-      case TriplePattern(0, 0, 0) =>
-        List()
-      case TriplePattern(s, 0, 0) =>
-        List()
-      case TriplePattern(0, p, 0) =>
-        List(TriplePattern(0, 0, 0))
-      case TriplePattern(0, 0, o) =>
-        List()
-      case TriplePattern(0, p, o) =>
-        List(TriplePattern(0, 0, o))
-      case TriplePattern(s, 0, o) =>
-        List()
-      case TriplePattern(s, p, 0) =>
-        List(TriplePattern(s, 0, 0), TriplePattern(0, p, 0))
-      case TriplePattern(s, p, o) =>
-        List(TriplePattern(0, p, o), TriplePattern(s, 0, o), TriplePattern(s, p, 0))
     }
   }
 
