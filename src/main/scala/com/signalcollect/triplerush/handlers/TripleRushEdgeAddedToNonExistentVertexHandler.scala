@@ -40,7 +40,7 @@ case object TripleRushEdgeAddedToNonExistentVertexHandler extends EdgeAddedToNon
           val idDelta = vertexId.parentIdDelta(parentId)
           val tickets = IndexStructure.ticketsForIndexOperation(IndexType(parentId))
           b.tickets -= tickets
-          graphEditor.addEdge(parentId, new BlockingIndexVertexEdge(idDelta, tickets, b.blockingAdditionVertexId))
+          graphEditor.addEdge(parentId, new BlockingIndexVertexEdge(idDelta, tickets, b.blockingOperationId))
         }
       case other =>
         IndexStructure.parentIds(vertexId) foreach { parentId =>

@@ -25,7 +25,10 @@ import com.signalcollect.interfaces.EdgeId
 import com.signalcollect.GraphEditor
 import com.signalcollect.Vertex
 
-class BlockingIndexVertexEdge(childDelta: Int, var tickets: Long, val blockingAdditionVertexId: Long) extends IndexVertexEdge(childDelta)
+class BlockingIndexVertexEdge(
+  childDelta: Int,
+  var tickets: Long,
+  val blockingOperationId: Int) extends IndexVertexEdge(childDelta)
 
 /**
  * Trickery! It's actually the child delta (an Int), but we just pretend it's a Long.

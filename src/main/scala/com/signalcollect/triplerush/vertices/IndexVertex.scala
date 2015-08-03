@@ -66,7 +66,8 @@ abstract class IndexVertex[State](val id: Long)
     e match {
       case b: BlockingIndexVertexEdge =>
         val wasAdded = addChildDelta(b.childDelta)
-        graphEditor.sendSignal(b.tickets, b.blockingAdditionVertexId)
+        val operationVertexId = OperationIds.embedInLong(b.blockingOperationId)
+        graphEditor.sendSignal(b.tickets, operationVertexId)
         wasAdded
       case i: IndexVertexEdge =>
         val wasAdded = addChildDelta(i.childDelta)
