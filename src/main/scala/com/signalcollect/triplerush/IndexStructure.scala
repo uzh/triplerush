@@ -64,6 +64,11 @@ object IndexStructure {
     Map(Root -> 1, S -> 1, P -> 2, O -> 1, Sp -> 4, So -> 1, Po -> 2)
   }
 
+  def ticketsForIndexOperation(id: Long): Long = {
+    val indexType = IndexType(id)
+    ticketsForIndexOperation(indexType)
+  }
+  
   val ticketsForTripleOperation: Long = {
     ticketsForIndexOperation(Sp) + ticketsForIndexOperation(Po) + ticketsForIndexOperation(So)
   }

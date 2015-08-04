@@ -22,18 +22,45 @@ package com.signalcollect.triplerush.vertices.query
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush._
 import com.signalcollect.triplerush.vertices.BaseVertex
+import scala.concurrent.Promise
 
 class BlockingTripleAdditionsVertex(
     val triples: Iterator[TriplePattern],
+    val operationCompletedPromise: Promise[Unit],
     val batchSize: Int = 10000) extends BaseVertex[Option[TicketSynchronization]] {
 
-  setState(None)
+  val operationId = OperationIds.nextId
+  val id = OperationIds.embedInLong(operationId)
 
-  val id = OperationIds.embedInLong(OperationIds.nextId)
+  def dispatchTripleAdditionBatch(graphEditor: GraphEditor[Long, Any]): Unit = {
+    var dispatchedTriples = 0L
+    while (triples.hasNext && dispatchedTriples <= batchSize) {
+      dispatchedTriples += 1
+      val t = triples.next
+      val s = t.s
+      val p = t.p
+      val o = t.o
+      val po = EfficientIndexPattern(0, p, o)
+      val so = EfficientIndexPattern(s, 0, o)
+      val sp = EfficientIndexPattern(s, p, 0)
+      graphEditor.addEdge(po, new BlockingIndexVertexEdge(s, IndexStructure.ticketsForIndexOperation(po), operationId))
+      graphEditor.addEdge(so, new BlockingIndexVertexEdge(p, IndexStructure.ticketsForIndexOperation(so), operationId))
+      graphEditor.addEdge(sp, new BlockingIndexVertexEdge(o, IndexStructure.ticketsForIndexOperation(sp), operationId))
+    }
+    val expectedTickets = dispatchedTriples * IndexStructure.ticketsForTripleOperation
+    val synchronization = new TicketSynchronization("BlockingTripleAdditionsVertex", expectedTickets)
+    synchronization.onSuccess { () =>
+      if (triples.hasNext) {
+        dispatchTripleAdditionBatch(graphEditor)
+      } else {
+        operationCompletedPromise.success(())
+      }
+    }
+    setState(Some(synchronization))
+  }
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
-    // TODO: Dispatch a batch of triple additions and setup synchronization.
-    ???
+    dispatchTripleAdditionBatch(graphEditor)
   }
 
   override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]): Boolean = {
