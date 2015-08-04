@@ -19,11 +19,12 @@
 
 package com.signalcollect.triplerush.sparql
 
-import com.hp.hpl.jena.graph.Node
-import com.hp.hpl.jena.graph.impl.LiteralLabelFactory
-import com.hp.hpl.jena.graph.NodeFactory
-import com.hp.hpl.jena.rdf.model.AnonId
-import com.hp.hpl.jena.datatypes.TypeMapper
+import org.apache.jena.graph.Node
+import org.apache.jena.graph.impl.LiteralLabelFactory
+import org.apache.jena.graph.NodeFactory
+import org.apache.jena.rdf.model.AnonId
+import org.apache.jena.datatypes.TypeMapper
+import org.apache.jena.graph.BlankNodeId
 
 object NodeConversion {
 
@@ -90,7 +91,7 @@ object NodeConversion {
       case '<' =>
         NodeFactory.createLiteral(s.tail, null, true)
       case '_' =>
-        NodeFactory.createAnon(AnonId.create(s.tail))
+        NodeFactory.createBlankNode(BlankNodeId.create(s.tail))
       case other =>
         throw new UnsupportedOperationException(s"Encoded string $s could not be decoded.")
     }

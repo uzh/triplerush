@@ -25,7 +25,7 @@ import java.util.concurrent.Executors
 import org.apache.jena.riot.RDFDataMgr
 import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
 
-import com.hp.hpl.jena.graph.{ Triple => JenaTriple }
+import org.apache.jena.graph.{ Triple => JenaTriple }
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.{ EfficientIndexPattern, IndexVertexEdge }
 import com.signalcollect.triplerush.dictionary.Dictionary

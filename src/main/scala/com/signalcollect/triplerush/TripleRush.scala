@@ -41,7 +41,7 @@ import com.signalcollect.triplerush.util._
 import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush.vertices.query._
 import com.signalcollect.examples.PlaceholderEdge
-import com.hp.hpl.jena.graph.Triple
+import org.apache.jena.graph.Triple
 
 /**
  * Global accessor for the console visualization.

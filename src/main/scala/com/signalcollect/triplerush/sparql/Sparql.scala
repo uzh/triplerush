@@ -19,11 +19,11 @@
 
 package com.signalcollect.triplerush.sparql
 
-import com.hp.hpl.jena.sparql.engine.QueryIterator
+import org.apache.jena.sparql.engine.QueryIterator
 import com.signalcollect.triplerush.TripleRush
-import com.hp.hpl.jena.query._
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.rdf.model.Model
+import org.apache.jena.query._
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.rdf.model.Model
 
 object Sparql {
 

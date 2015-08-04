@@ -19,9 +19,9 @@
 
 package com.signalcollect.triplerush.sparql
 
-import com.hp.hpl.jena.graph.{ NodeFactory, Triple }
-import com.hp.hpl.jena.graph.impl.LiteralLabelFactory
-import com.hp.hpl.jena.datatypes.TypeMapper
+import org.apache.jena.graph.{ NodeFactory, Triple }
+import org.apache.jena.graph.impl.LiteralLabelFactory
+import org.apache.jena.datatypes.TypeMapper
 import com.signalcollect.triplerush.dictionary.Dictionary
 
 object TripleRushIterator {

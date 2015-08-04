@@ -1,16 +1,16 @@
 package com.signalcollect.triplerush.sparql
 
-import com.hp.hpl.jena.graph.Graph
-import com.hp.hpl.jena.graph.test.AbstractTestGraph
+import org.apache.jena.graph.Graph
+import org.apache.jena.graph.test.AbstractTestGraph
 import com.signalcollect.triplerush.TripleRush
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 import com.signalcollect.GraphBuilder
 import akka.actor.ActorSystem
 import java.util.UUID
-import com.hp.hpl.jena.graph.test.GraphTestBase
-import com.hp.hpl.jena.test.JenaTestBase
-import com.hp.hpl.jena.rdf.model.ModelFactory
+import org.apache.jena.graph.test.GraphTestBase
+import org.apache.jena.test.JenaTestBase
+import org.apache.jena.rdf.model.ModelFactory
 import java.io.InputStream
 
 @RunWith(classOf[Suite])
