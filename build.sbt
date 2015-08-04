@@ -47,8 +47,8 @@ libraryDependencies ++= Seq(
   "org.apache.jena" % "jena-core" % "3.0.0" % "compile",
   "org.apache.jena" % "jena-core" % "3.0.0" % "test" classifier "tests",
   "org.apache.jena" % "apache-jena-libs" % "3.0.0" % "test",
-  "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.12.3" % "test",
+  "org.scalatest" %% "scalatest" % "2.2.4" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
   "org.easymock" % "easymock" % "3.3.1" % "test",
   "junit" % "junit" % "4.12" % "test"
 )
