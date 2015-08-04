@@ -157,7 +157,7 @@ case class TripleRush(
     val oId = dictionary(o)
     addEncodedTriple(sId, pId, oId, blocking)
   }
-
+  
   def addTriple(triple: Triple, blocking: Boolean = false): Unit = {
     val sString = NodeConversion.nodeToString(triple.getSubject)
     val pString = NodeConversion.nodeToString(triple.getPredicate)
