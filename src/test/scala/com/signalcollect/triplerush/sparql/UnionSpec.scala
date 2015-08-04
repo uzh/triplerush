@@ -43,9 +43,9 @@ SELECT ?name WHERE {
     val graph = new TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
-      tr.addTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
-      tr.addTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
-      tr.addTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "\"Arthur\"")
+      tr.addStringTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+      tr.addStringTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+      tr.addStringTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "\"Arthur\"")
       tr.prepareExecution
       val results = Sparql(sparql)
       val resultBindings = results.map(_.get("name").asLiteral.getString).toSet

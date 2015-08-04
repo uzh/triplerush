@@ -28,8 +28,9 @@ import org.scalatest.prop.Checkers
 import com.signalcollect.triplerush.TripleGenerators._
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import org.scalatest.concurrent.ScalaFutures
 
-class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
+class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with ScalaFutures {
 
   implicit lazy val arbTriples = Arbitrary(tripleSet)
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
@@ -127,6 +128,25 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
           TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
         List(TriplePattern(1, 2, 3), TriplePattern(-2, -1, 3)))
       assert(Set[Map[Int, Int]]() === trResults)
+    } finally {
+      tr.shutdown
+    }
+  }
+
+  it should "correctly answer queries after blocking triple additions" in {
+    val tr = new TripleRush
+    try {
+      tr.prepareExecution
+      for (i <- 1 to 100) {
+        tr.addEncodedTriple(1, 2, i, blocking = true)
+        val countOptionFuture = tr.executeCountingQuery(Seq(TriplePattern(1, 2, -1)))
+        whenReady(countOptionFuture) { countOption =>
+          countOption match {
+            case Some(count) => assert(count.toInt == i)
+            case None        => throw new Exception("TripleRush failed to return a count.")
+          }
+        }
+      }
     } finally {
       tr.shutdown
     }

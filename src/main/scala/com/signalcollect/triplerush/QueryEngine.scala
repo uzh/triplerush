@@ -12,4 +12,5 @@ trait QueryEngine {
   def awaitIdle
 
   def shutdown
+
 }

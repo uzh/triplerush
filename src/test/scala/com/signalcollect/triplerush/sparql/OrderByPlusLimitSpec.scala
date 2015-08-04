@@ -47,11 +47,11 @@ LIMIT 3
     val graph = new TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
-      tr.addTriple("http://SomeProduct2", "http://www.w3.org/2000/01/rdf-schema#label", "http://B")
-      tr.addTriple("http://SomeProduct3", "http://www.w3.org/2000/01/rdf-schema#label", "http://C")
-      tr.addTriple("http://SomeProduct4", "http://www.w3.org/2000/01/rdf-schema#label", "http://D")
-      tr.addTriple("http://SomeProduct5", "http://www.w3.org/2000/01/rdf-schema#label", "http://E")
-      tr.addTriple("http://SomeProduct1", "http://www.w3.org/2000/01/rdf-schema#label", "http://A")
+      tr.addStringTriple("http://SomeProduct2", "http://www.w3.org/2000/01/rdf-schema#label", "http://B")
+      tr.addStringTriple("http://SomeProduct3", "http://www.w3.org/2000/01/rdf-schema#label", "http://C")
+      tr.addStringTriple("http://SomeProduct4", "http://www.w3.org/2000/01/rdf-schema#label", "http://D")
+      tr.addStringTriple("http://SomeProduct5", "http://www.w3.org/2000/01/rdf-schema#label", "http://E")
+      tr.addStringTriple("http://SomeProduct1", "http://www.w3.org/2000/01/rdf-schema#label", "http://A")
       tr.prepareExecution
       val results = Sparql(sparql)
       val bindingsList = results.toList.map(bindings =>

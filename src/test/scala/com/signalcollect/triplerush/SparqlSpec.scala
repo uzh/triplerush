@@ -33,8 +33,8 @@ class SparqlSpec extends FlatSpec with TestAnnouncements {
     val graph = new TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
-      tr.addTriple("http://a", "http://b", "http://c")
-      tr.addTriple("http://a", "http://d", "http://e")
+      tr.addStringTriple("http://a", "http://b", "http://c")
+      tr.addStringTriple("http://a", "http://d", "http://e")
       tr.prepareExecution
       val query = """
 SELECT ?X
@@ -61,8 +61,8 @@ WHERE {
     val graph = new TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
-      tr.addTriple("http://a", "http://b", "http://c")
-      tr.addTriple("http://f", "http://d", "http://e")
+      tr.addStringTriple("http://a", "http://b", "http://c")
+      tr.addStringTriple("http://f", "http://d", "http://e")
       tr.prepareExecution
       val query = """
 SELECT ?X
@@ -89,8 +89,8 @@ WHERE {
     val graph = new TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
-      tr.addTriple("http://a", "http://b", "http://c")
-      tr.addTriple("http://f", "http://d", "http://e")
+      tr.addStringTriple("http://a", "http://b", "http://c")
+      tr.addStringTriple("http://f", "http://d", "http://e")
       tr.prepareExecution
       val query = """
 SELECT ?X

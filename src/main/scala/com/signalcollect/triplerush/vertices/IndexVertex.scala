@@ -65,9 +65,10 @@ abstract class IndexVertex[State](val id: Long)
   override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {
     e match {
       case b: BlockingIndexVertexEdge =>
+        val ticketsToReturn = b.tickets
         val wasAdded = addChildDelta(b.childDelta)
         val operationVertexId = OperationIds.embedInLong(b.blockingOperationId)
-        graphEditor.sendSignal(b.tickets, operationVertexId)
+        graphEditor.sendSignal(ticketsToReturn, operationVertexId)
         wasAdded
       case i: IndexVertexEdge =>
         val wasAdded = addChildDelta(i.childDelta)

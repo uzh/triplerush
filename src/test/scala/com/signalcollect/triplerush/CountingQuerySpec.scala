@@ -236,8 +236,8 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   it should "also work with encoded triples" in {
     val tr = new TripleRush
     try {
-      tr.addTriple("Elvis", "inspired", "Dylan")
-      tr.addTriple("Dylan", "inspired", "Jobs")
+      tr.addStringTriple("Elvis", "inspired", "Dylan")
+      tr.addStringTriple("Dylan", "inspired", "Jobs")
       tr.prepareExecution
       val encodedInspired = tr.dictionary("inspired")
       val query = Seq(TriplePattern(-1, encodedInspired, -2))

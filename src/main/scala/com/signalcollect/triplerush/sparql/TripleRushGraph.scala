@@ -68,10 +68,7 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
    * - If a string starts with `"` or "<", then it is interpreted as a general literal.
    */
   override def performAdd(triple: Triple): Unit = {
-    val sString = NodeConversion.nodeToString(triple.getSubject)
-    val pString = NodeConversion.nodeToString(triple.getPredicate)
-    val oString = NodeConversion.nodeToString(triple.getObject)
-    tr.addTriple(sString, pString, oString)
+    tr.addTriple(triple, blocking = true)
   }
 
   override def clear: Unit = {

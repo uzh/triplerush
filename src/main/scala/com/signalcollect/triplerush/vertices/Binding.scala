@@ -26,6 +26,7 @@ import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 
 trait Binding extends IndexVertex[Any] {
 
+  // TODO: Ensure this happens before a blocking edge addition is finished.
   def onEdgeAdded(ge: GraphEditor[Long, Any])
 
   def incrementParentIndexCardinalities(ge: GraphEditor[Long, Any]) {
@@ -101,7 +102,6 @@ trait Binding extends IndexVertex[Any] {
   def routeSuccessfullyBound(
     boundParticle: Array[Int],
     graphEditor: GraphEditor[Long, Any]) {
-
     if (boundParticle.isResult) {
       // Query successful, send to query vertex.
       val queryVertexId = OperationIds.embedInLong(boundParticle.queryId)

@@ -41,6 +41,7 @@ import com.signalcollect.triplerush.util._
 import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush.vertices.query._
 import com.signalcollect.examples.PlaceholderEdge
+import com.hp.hpl.jena.graph.Triple
 
 /**
  * Global accessor for the console visualization.
@@ -150,27 +151,63 @@ case class TripleRush(
    * If something starts with '_', then the remainder is assumed to be a blank node ID where uniqueness is the
    * responsibility of the caller.
    */
-  def addTriple(s: String, p: String, o: String, blocking: Boolean = true): Unit = {
+  private[triplerush] def addStringTriple(s: String, p: String, o: String, blocking: Boolean = false): Unit = {
     val sId = dictionary(s)
     val pId = dictionary(p)
     val oId = dictionary(o)
     addEncodedTriple(sId, pId, oId, blocking)
   }
 
-  def addTriplePattern(tp: TriplePattern, blocking: Boolean = true) {
+  def addTriple(triple: Triple, blocking: Boolean = false): Unit = {
+    val sString = NodeConversion.nodeToString(triple.getSubject)
+    val pString = NodeConversion.nodeToString(triple.getPredicate)
+    val oString = NodeConversion.nodeToString(triple.getObject)
+    addStringTriple(sString, pString, oString, blocking)
+  }
+
+  def addTriples(i: Iterator[Triple], blocking: Boolean = false): Unit = {
+    val mappedIterator = i.map { t =>
+      val s = dictionary(NodeConversion.nodeToString(t.getSubject))
+      val p = dictionary(NodeConversion.nodeToString(t.getPredicate))
+      val o = dictionary(NodeConversion.nodeToString(t.getObject))
+      TriplePattern(s, p, o)
+    }
+    addTriplePatterns(mappedIterator, blocking)
+  }
+
+  def addTriplePattern(tp: TriplePattern, blocking: Boolean = false): Unit = {
     addEncodedTriple(tp.s, tp.p, tp.o, blocking)
   }
 
-  def addEncodedTriple(sId: Int, pId: Int, oId: Int, blocking: Boolean = true) {
+  def addTriplePatterns(i: Iterator[TriplePattern], blocking: Boolean = false): Unit = {
+    if (blocking) {
+      val promise = Promise[Unit]()
+      val vertex = new BlockingTripleAdditionsVertex(i, promise)
+      graph.addVertex(vertex)
+      Await.result(promise.future, 7200.seconds)
+    } else {
+      Future {
+        while (i.hasNext) {
+          addTriplePattern(i.next, blocking = false)
+        }
+      }
+    }
+  }
+
+  def addEncodedTriple(sId: Int, pId: Int, oId: Int, blocking: Boolean = false) {
     assert(sId > 0 && pId > 0 && oId > 0)
-    val po = EfficientIndexPattern(0, pId, oId)
-    val so = EfficientIndexPattern(sId, 0, oId)
-    val sp = EfficientIndexPattern(sId, pId, 0)
-    graph.addEdge(po, new IndexVertexEdge(sId))
-    graph.addEdge(so, new IndexVertexEdge(pId))
-    graph.addEdge(sp, new IndexVertexEdge(oId))
-    if (blocking && canExecute) {
-      graph.awaitIdle
+    if (blocking) {
+      val promise = Promise[Unit]()
+      val vertex = new BlockingTripleAdditionsVertex(Some(TriplePattern(sId, pId, oId)).iterator, promise)
+      graph.addVertex(vertex)
+      Await.result(promise.future, 7200.seconds)
+    } else {
+      val po = EfficientIndexPattern(0, pId, oId)
+      val so = EfficientIndexPattern(sId, 0, oId)
+      val sp = EfficientIndexPattern(sId, pId, 0)
+      graph.addEdge(po, new IndexVertexEdge(sId))
+      graph.addEdge(so, new IndexVertexEdge(pId))
+      graph.addEdge(sp, new IndexVertexEdge(oId))
     }
   }
 
