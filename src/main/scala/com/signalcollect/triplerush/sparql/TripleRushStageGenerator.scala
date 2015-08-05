@@ -30,6 +30,9 @@ import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
 import com.signalcollect.triplerush.dictionary.Dictionary
 import org.apache.jena.sparql.engine.iterator.QueryIterSingleton
 import org.apache.jena.graph.Node_Blank
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.Await
+import org.apache.jena.sparql.engine.iterator.QueryIterNullIterator
 
 // TODO: Make all of this more elegant and more efficient.
 class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator {
@@ -70,7 +73,14 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
       (query, unbound) = createBoundQuery(
         dictionary, tripleRushQuery, parentBinding, variableNameToId, idToVariableName)
       decodedResults = if (unbound.isEmpty) {
-        QueryIterSingleton.create(parentBinding, execCxt)
+        val countOptionFuture = tr.executeCountingQuery(query)
+        val countOption = Await.result(countOptionFuture, 300.seconds)
+        val count = countOption.getOrElse(throw new Exception(s"Incomplete counting query execution for $query."))
+        if (count > 0) {
+          QueryIterSingleton.create(parentBinding, execCxt)
+        } else {
+          QueryIterNullIterator.create(execCxt)
+        }
       } else {
         val results = tr.resultIteratorForQuery(query)
         val iterator = results.map { result =>
