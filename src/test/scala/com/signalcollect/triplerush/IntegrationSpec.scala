@@ -134,9 +134,8 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   }
 
   it should "correctly answer queries after blocking triple additions" in {
-    val tr = new TripleRush
+    val tr = new TripleRush(fastStart = true)
     try {
-      tr.prepareExecution
       for (i <- 1 to 100) {
         tr.addEncodedTriple(1, 2, i, blocking = true)
         val countOptionFuture = tr.executeCountingQuery(Seq(TriplePattern(1, 2, -1)))

@@ -50,10 +50,15 @@ object TrGlobal {
   var dictionary: Option[Dictionary] = None
 }
 
+/**
+ * `fastStart`: Faster startup time, might delay first query execution times and
+ *  allows to skip calling `prepareExecution`.
+ */
 case class TripleRush(
     graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
     val dictionary: Dictionary = new CompressedDictionary(),
     tripleMapperFactory: Option[MapperFactory[Long]] = None,
+    fastStart: Boolean = false,
     console: Boolean = false) extends QueryEngine {
 
   TrGlobal.dictionary = Some(dictionary)
@@ -127,7 +132,12 @@ case class TripleRush(
 
   private[this] var canExecute = false
 
-  def prepareExecution {
+  if (fastStart) {
+    graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+    canExecute = true
+  }
+
+  def prepareExecution(): Unit = {
     graph.awaitIdle
     graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
     graph.awaitIdle
@@ -138,7 +148,7 @@ case class TripleRush(
    * The placement hint should ensure that this gets processed on node 0, because the dictionary resides on that node.
    * If you get a serialization error for the dictionary, it is probably due to a problematic placement hint.
    */
-  def load(filePath: String, placementHint: Option[Long] = Some(OperationIds.embedInLong(1))) {
+  def load(filePath: String, placementHint: Option[Long] = Some(OperationIds.embedInLong(1))): Unit = {
     graph.loadGraph(new FileLoader(filePath, dictionary), placementHint)
   }
 
@@ -157,7 +167,7 @@ case class TripleRush(
     val oId = dictionary(o)
     addEncodedTriple(sId, pId, oId, blocking)
   }
-  
+
   def addTriple(triple: Triple, blocking: Boolean = false): Unit = {
     val sString = NodeConversion.nodeToString(triple.getSubject)
     val pString = NodeConversion.nodeToString(triple.getPredicate)
@@ -194,7 +204,7 @@ case class TripleRush(
     }
   }
 
-  def addEncodedTriple(sId: Int, pId: Int, oId: Int, blocking: Boolean = false) {
+  def addEncodedTriple(sId: Int, pId: Int, oId: Int, blocking: Boolean = false): Unit = {
     assert(sId > 0 && pId > 0 && oId > 0)
     if (blocking) {
       val promise = Promise[Unit]()
@@ -254,22 +264,22 @@ case class TripleRush(
     resultIterator
   }
 
-  def awaitIdle {
+  def awaitIdle(): Unit = {
     graph.awaitIdle
   }
 
-  def clear {
+  def clear(): Unit = {
     clearDictionary
     graph.reset
     graph.awaitIdle
     graph.addVertex(new RootIndex)
   }
 
-  def clearDictionary {
+  def clearDictionary(): Unit = {
     dictionary.clear
   }
 
-  def shutdown = {
+  def shutdown(): Unit = {
     clearDictionary
     graph.shutdown
   }
