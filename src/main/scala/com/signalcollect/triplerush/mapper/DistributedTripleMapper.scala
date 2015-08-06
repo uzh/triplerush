@@ -42,7 +42,7 @@ class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
           val loadBalanceId = (first + second) & Int.MaxValue
           workerIdOptimized(nodeAssignmentId = second, workerAssignmentId = loadBalanceId)
         } else {
-          // Everything but the predicate is a wildcard. We use the predicate for both node assignment and load balancing. 
+          // Everything but the predicate is a wildcard. We use the predicate for both node assignment and load balancing.
           val p = first & Int.MaxValue
           workerIdOptimized(nodeAssignmentId = p, workerAssignmentId = p)
         }

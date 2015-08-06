@@ -34,7 +34,7 @@ object IndexType {
       case TriplePattern(_, _, 0) => Sp
       case TriplePattern(_, 0, _) => So
       case TriplePattern(0, _, _) => Po
-      case other: Any             => throw new Exception(s"${indexId.toTriplePattern} is not a valid index ID.")
+      case other: Any => throw new Exception(s"${indexId.toTriplePattern} is not a valid index ID.")
     }
   }
 
@@ -43,11 +43,17 @@ object IndexType {
 sealed trait IndexType
 
 object Root extends IndexType
+
 object S extends IndexType
+
 object P extends IndexType
+
 object O extends IndexType
+
 object Sp extends IndexType
+
 object So extends IndexType
+
 object Po extends IndexType
 
 object IndexStructure {
@@ -68,7 +74,7 @@ object IndexStructure {
     val indexType = IndexType(id)
     ticketsForIndexOperation(indexType)
   }
-  
+
   val ticketsForTripleOperation: Long = {
     ticketsForIndexOperation(Sp) + ticketsForIndexOperation(Po) + ticketsForIndexOperation(So)
   }
@@ -80,13 +86,14 @@ object IndexStructure {
     val sIndexId = EfficientIndexPattern(s, 0, 0)
     val pIndexId = EfficientIndexPattern(0, p, 0)
     val oIndexId = EfficientIndexPattern(0, 0, o)
+
     /**
      * Based on the diagram of the index structure @ http://www.zora.uzh.ch/111243/1/TR_WWW.pdf
      */
     IndexType(id) match {
-      case P          => Array(rootId)
-      case Po         => Array(oIndexId)
-      case Sp         => Array(sIndexId, pIndexId)
+      case P => Array(rootId)
+      case Po => Array(oIndexId)
+      case Sp => Array(sIndexId, pIndexId)
       case other: Any => Array()
     }
   }
