@@ -39,7 +39,7 @@ object ParticleDebug {
       particle.r.length - 4)
   }
 
-  def validate(p: Array[Int], msg: String) {
+  def validate(p: Array[Int], msg: String): Unit = {
     if (p != null) {
       import QueryParticle._
       val validTotalLength = (p.length - 4 - p.numberOfBindings) % 3 == 0
@@ -67,7 +67,8 @@ case class ParticleDebug(
   intsForBindingsAndUnmatched: Int)
 
 object QueryParticle {
-  implicit def arrayToParticle(a: Array[Int]) = new QueryParticle(a)
+
+  implicit def arrayToParticle(a: Array[Int]): QueryParticle = new QueryParticle(a)
 
   def apply(
     patterns: Seq[TriplePattern],
@@ -83,7 +84,7 @@ object QueryParticle {
     r
   }
 
-  val failed = null.asInstanceOf[Array[Int]]
+  val failed: Array[Int] = null.asInstanceOf[Array[Int]]
 
 }
 
@@ -100,9 +101,9 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
 
   import QueryParticle._
 
-  def validate(msg: String) = ParticleDebug.validate(r, msg)
+  def validate(msg: String): Unit = ParticleDebug.validate(r, msg)
 
-  def isBindingQuery = queryId > 0
+  def isBindingQuery: Boolean = queryId > 0
 
   def copy: Array[Int] = {
     val c = new Array[Int](r.length)
@@ -240,11 +241,14 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   // If the variable appears multiple times in the same pattern, then all the bindings have to be compatible.
-  @inline private[this] def isBindingIncompatible(otherAttribute: Int, tpAttribute: Int, variable: Int, boundValue: Int) =
+  @inline private[this] def isBindingIncompatible(otherAttribute: Int, tpAttribute: Int, variable: Int, boundValue: Int): Boolean = {
     (otherAttribute == variable && tpAttribute != boundValue)
+  }
 
   // Updates an attribute with a new binding.
-  @inline private[this] def updatedAttribute(attribute: Int, variable: Int, boundValue: Int) = if (attribute == variable) boundValue else attribute
+  @inline private[this] def updatedAttribute(attribute: Int, variable: Int, boundValue: Int): Int = {
+    if (attribute == variable) boundValue else attribute
+  }
 
   def bindings: Array[Int] = {
     val numBindings = numberOfBindings
@@ -253,11 +257,11 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     b
   }
 
-  def isResult = r.length == 4 + numberOfBindings
+  def isResult: Boolean = r.length == 4 + numberOfBindings
 
   def queryId: Int = r(0)
 
-  def writeQueryId(id: Int) = r(0) = id
+  def writeQueryId(id: Int): Unit = r(0) = id
 
   def tickets: Long = {
     ((r(1) | 0L) << 32) | (r(2) & 0x00000000FFFFFFFFL)
@@ -270,11 +274,11 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
 
   def numberOfBindings: Int = r(3)
 
-  def writeNumberOfBindings(numberOfBindings: Int) {
+  def writeNumberOfBindings(numberOfBindings: Int): Unit = {
     r(3) = numberOfBindings
   }
 
-  def writeBindings(bindings: Seq[Int]) {
+  def writeBindings(bindings: Seq[Int]): Unit = {
     r(3) = bindings.length
     var i = 0
     while (i < bindings.length) {
@@ -283,7 +287,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     }
   }
 
-  def writeBinding(bindingIndex: Int, boundValue: Int) {
+  def writeBinding(bindingIndex: Int, boundValue: Int): Unit = {
     val numBindings = numberOfBindings
     if (bindingIndex < numBindings) {
       val baseBindingIndex = 4
@@ -296,7 +300,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     r(contentIntIndex)
   }
 
-  def writePatterns(unmatched: Seq[TriplePattern]) {
+  def writePatterns(unmatched: Seq[TriplePattern]): Unit = {
     var i = 0
     var tpByteIndex = r.length - 3 // index of subject of last pattern
     while (i < unmatched.length) {
@@ -310,7 +314,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
    * Requires the index where the subject will be written.
    * Pattern is written in spo order.
    */
-  def writePattern(subjectIndex: Int, p: TriplePattern) {
+  def writePattern(subjectIndex: Int, p: TriplePattern): Unit = {
     r(subjectIndex) = p.s
     r(subjectIndex + 1) = p.p
     r(subjectIndex + 2) = p.o
@@ -330,13 +334,13 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     newR
   }
 
-  def patterns = {
+  def patterns: IndexedSeq[TriplePattern] = {
     for (i <- numberOfPatterns - 1 to 0 by -1) yield pattern(i)
   }
 
   def numberOfPatterns: Int = (r.length - 4 - numberOfBindings) / 3
 
-  def pattern(index: Int) = {
+  def pattern(index: Int): TriplePattern = {
     val sIndex = 3 * index + 4 + numberOfBindings
     val pIndex = sIndex + 1
     val oIndex = sIndex + 2
@@ -363,7 +367,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   // Update all patterns with this new binding.
   def bindVariablesInPatterns(
     variable: Int,
-    boundValue: Int) {
+    boundValue: Int): Unit = {
     // Index of first subject of first TP.
     var i = numberOfBindings + 4
     while (i < r.length) {
@@ -397,7 +401,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
    * Checks that the last pattern is not fully bound and that no variable appears multiple times in the last pattern.
    * The same variable appearing multiple times might cause a binding to fail.
    */
-  def isSimpleToBind = {
+  def isSimpleToBind: Boolean = {
     val s = lastPatternS
     val p = lastPatternP
     val o = lastPatternO
@@ -406,11 +410,11 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
       (o > 0 || (o != p))
   }
 
-  @inline def lastPatternS = r(r.length - 3)
+  @inline def lastPatternS: Int = r(r.length - 3)
 
-  @inline def lastPatternP = r(r.length - 2)
+  @inline def lastPatternP: Int = r(r.length - 2)
 
-  @inline def lastPatternO = r(r.length - 1)
+  @inline def lastPatternO: Int = r(r.length - 1)
 
   /**
    * Assumption: TP has all constants.

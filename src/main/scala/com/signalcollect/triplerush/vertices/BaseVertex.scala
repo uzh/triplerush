@@ -30,7 +30,7 @@ abstract class BaseVertex[State]
 
   @transient var state: State = _
 
-  def setState(s: State) {
+  def setState(s: State): Unit = {
     state = s
   }
 
@@ -39,21 +39,21 @@ abstract class BaseVertex[State]
   override def deliverSignalWithSourceId(signal: Any, sourceId: Long, graphEditor: GraphEditor[Long, Any]): Boolean =
     throw new Exception("TripleRush only uses messages without the source ID.")
 
-  override def scoreCollect = 0
+  override def scoreCollect: Double = 0
 
-  override def scoreSignal = 0
+  override def scoreSignal: Double = 0
 
-  override def toString = s"${this.getClass.getName}(id=$id)"
+  override def toString: String = s"${this.getClass.getName}(id=$id)"
 
-  override def executeSignalOperation(graphEditor: GraphEditor[Long, Any]) = throw new Exception("Should not be called, signals on delivery.")
+  override def executeSignalOperation(graphEditor: GraphEditor[Long, Any]): Unit = throw new Exception("Should not be called, signals on delivery.")
 
-  override def executeCollectOperation(graphEditor: GraphEditor[Long, Any]) = throw new Exception("Should not be called, collects and signals on delivery.")
+  override def executeCollectOperation(graphEditor: GraphEditor[Long, Any]): Unit = throw new Exception("Should not be called, collects and signals on delivery.")
 
-  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {}
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {}
 
-  override def beforeRemoval(graphEditor: GraphEditor[Long, Any]) = {}
+  override def beforeRemoval(graphEditor: GraphEditor[Long, Any]): Unit = {}
 
-  override def edgeCount = 0
+  override def edgeCount: Int = 0
 
   override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = throw new UnsupportedOperationException
 

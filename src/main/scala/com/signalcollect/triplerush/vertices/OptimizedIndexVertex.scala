@@ -34,7 +34,7 @@ import com.signalcollect.util.SplayNode
 abstract class OptimizedIndexVertex(
     id: Long) extends IndexVertex[Any](id) {
 
-  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
+  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]): Unit = {
     val childIds: Array[Int] = {
       if (state == null) {
         Array[Int]() // Root vertex in an empty store.

@@ -36,16 +36,16 @@ final class ResultCountingQueryVertex(
 
   val id = OperationIds.embedInLong(OperationIds.nextCountQueryId)
 
-  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     state = 0
     super.afterInitialization(graphEditor)
   }
 
-  def handleBindings(bindings: Array[Array[Int]]) {
+  def handleBindings(bindings: Array[Array[Int]]): Unit = {
     throw new UnsupportedOperationException("Result counting vertex should never receive bindings.")
   }
 
-  def handleResultCount(resultCount: Long) {
+  def handleResultCount(resultCount: Long): Unit = {
     state += resultCount
   }
 

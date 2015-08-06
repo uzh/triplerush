@@ -34,12 +34,12 @@ final class SPIndex(id: Long) extends OptimizedIndexVertex(id)
     query.bind(id.s, id.p, childDelta)
   }
 
-  override def onEdgeAdded(ge: GraphEditor[Long, Any]) {
+  override def onEdgeAdded(ge: GraphEditor[Long, Any]): Unit = {
     incrementParentIndexCardinalities(ge)
     updatePredicateObjectCount(ge)
   }
 
-  def updatePredicateObjectCount(ge: GraphEditor[Long, Any]) {
+  def updatePredicateObjectCount(ge: GraphEditor[Long, Any]): Unit = {
     ge.sendSignal(ObjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0))
   }
 

@@ -35,7 +35,7 @@ case object TripleRushUndeliverableSignalHandlerFactory extends UndeliverableSig
 }
 
 case object TripleRushUndeliverableSignalHandler extends UndeliverableSignalHandler[Long, Any] {
-  def vertexForSignalNotFound(signal: Any, inexistentTargetId: Long, senderId: Option[Long], graphEditor: GraphEditor[Long, Any]) {
+  def vertexForSignalNotFound(signal: Any, inexistentTargetId: Long, senderId: Option[Long], graphEditor: GraphEditor[Long, Any]): Unit = {
     signal match {
       case queryParticle: Array[Int] =>
         val queryVertexId = OperationIds.embedInLong(queryParticle.queryId)

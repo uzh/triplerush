@@ -130,7 +130,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   val aggregatedCardinalities = new CompositeLongIntHashMap(initialSize = 8)
   val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
-  override def sendSignal(signal: Signal, targetId: Long) {
+  override def sendSignal(signal: Signal, targetId: Long): Unit = {
     // If message is sent to a Query Vertex
     if (targetId.isOperationId) {
       val extractedOperationId = OperationIds.extractFromLong(targetId)
@@ -169,7 +169,7 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
-  override def sendSignal(signal: Signal, targetId: Long, sourceId: Option[Long], blocking: Boolean = false) {
+  override def sendSignal(signal: Signal, targetId: Long, sourceId: Option[Long], blocking: Boolean = false): Unit = {
     throw new Exception(s"Non-optimized messaging for TripleRush, this should never be called: signal=$signal targetId=$targetId")
   }
 

@@ -28,7 +28,7 @@ object Hashing {
    * Inlined Murmur3, equivalent to:
    * finalizeHash(mixLast(a, b), 7)
    */
-  @inline final def hash(a: Int, b: Int) = {
+  @inline final def hash(a: Int, b: Int): Int = {
     var k = b
     k *= 0xcc9e2d51
     k = (k << 15) | (k >>> -15)
@@ -88,17 +88,17 @@ class TripleRushVertexMap(
   assert(1.0f >= rehashFraction && rehashFraction > 0.1f, "Unreasonable rehash fraction.")
   assert(maxSize > 0 && maxSize >= initialSize, "Initial size is too large.")
   private[this] final var maxElements: Int = (rehashFraction * maxSize).floor.toInt
-  private[this] final var values = new Array[Vertex[Long, _, Long, Any]](maxSize)
-  private[this] final var keys = new Array[Long](maxSize)
+  private[this] final var values: Array[Vertex[Long, _, Long, Any]] = new Array[Vertex[Long, _, Long, Any]](maxSize)
+  private[this] final var keys: Array[Long] = new Array[Long](maxSize)
   // 0 means empty
-  private[this] final var mask = maxSize - 1
-  private[this] final var nextPositionToProcess = 0
+  private[this] final var mask: Int = maxSize - 1
+  private[this] final var nextPositionToProcess: Int = 0
 
   final override def size: Long = numberOfElements
 
   final def isEmpty: Boolean = numberOfElements == 0
 
-  private[this] final var numberOfElements = 0
+  private[this] final var numberOfElements: Int = 0
 
   def stream: Stream[Vertex[Long, _, Long, Any]] = {
     def remainder(i: Int, elementsProcessed: Int): Stream[Vertex[Long, _, Long, Any]] = {
@@ -118,14 +118,14 @@ class TripleRushVertexMap(
     remainder(0, 0)
   }
 
-  final def clear {
+  final def clear: Unit = {
     values = new Array[Vertex[Long, _, Long, Any]](maxSize)
     keys = new Array[Long](maxSize)
     numberOfElements = 0
     nextPositionToProcess = 0
   }
 
-  final def foreach(f: Vertex[Long, _, Long, Any] => Unit) {
+  final def foreach(f: Vertex[Long, _, Long, Any] => Unit): Unit = {
     var i = 0
     var elementsProcessed = 0
     while (elementsProcessed < numberOfElements) {
@@ -180,7 +180,7 @@ class TripleRushVertexMap(
     elementsProcessed
   }
 
-  private[this] final def tryDouble {
+  private[this] final def tryDouble: Unit = {
     // 1073741824 is the largest size and cannot be doubled anymore.
     if (maxSize != 1073741824) {
       val oldSize = maxSize
@@ -205,11 +205,11 @@ class TripleRushVertexMap(
     }
   }
 
-  final def remove(vertexId: Long) {
+  final def remove(vertexId: Long): Unit = {
     remove(vertexId, true)
   }
 
-  private[this] final def remove(vertexId: Long, optimize: Boolean) {
+  private[this] final def remove(vertexId: Long, optimize: Boolean): Unit = {
     var position = keyToPosition(vertexId)
     var keyAtPosition = keys(position)
     while (keyAtPosition != 0 && vertexId != keyAtPosition) {
@@ -229,7 +229,7 @@ class TripleRushVertexMap(
 
   // Try to reinsert all elements that are not optimally placed until an empty position is found.
   // See http://stackoverflow.com/questions/279539/best-way-to-remove-an-entry-from-a-hash-table
-  private[this] final def optimizeFromPosition(startingPosition: Int) {
+  private[this] final def optimizeFromPosition(startingPosition: Int): Unit = {
     var currentPosition = startingPosition
     var keyAtPosition = keys(currentPosition)
     while (isCurrentPositionOccupied) {

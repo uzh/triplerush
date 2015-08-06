@@ -30,7 +30,7 @@ import com.signalcollect.util.SearchableIntSet
 abstract class SearchableIndexVertex[SignalType, State](
     id: Long) extends IndexVertex[Any](id) {
 
-  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     super.afterInitialization(graphEditor)
   }
 
@@ -41,7 +41,7 @@ abstract class SearchableIndexVertex[SignalType, State](
     }
   }
 
-  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
+  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]): Unit = {
     state match {
       case i: Int =>
         graphEditor.sendSignal(ChildIdReply(Array(i)), requestor)

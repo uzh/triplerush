@@ -29,22 +29,22 @@ class CompositeLongIntHashMap(
     initialSize: Int = 32768,
     rehashFraction: Float = 0.75f) {
   assert(initialSize > 0)
-  final var maxSize = nextPowerOfTwo(initialSize)
+  final var maxSize: Int = nextPowerOfTwo(initialSize)
   assert(1.0f >= rehashFraction && rehashFraction > 0.1f, "Unreasonable rehash fraction.")
   assert(maxSize > 0 && maxSize >= initialSize, "Initial size is too large.")
   private[this] final var maxElements: Int = (rehashFraction * maxSize).floor.toInt
-  private[this] final var values = new Array[Int](maxSize)
-  private[this] final var keys = new Array[Long](maxSize)
+  private[this] final var values: Array[Int] = new Array[Int](maxSize)
+  private[this] final var keys: Array[Long] = new Array[Long](maxSize)
   // 0 means empty
-  private[this] final var mask = maxSize - 1
+  private[this] final var mask: Int = maxSize - 1
 
   final def size: Int = numberOfElements
 
   final def isEmpty: Boolean = numberOfElements == 0
 
-  private[this] final var numberOfElements = 0
+  private[this] final var numberOfElements: Int = 0
 
-  final def clear {
+  final def clear: Unit = {
     keys = new Array[Long](maxSize)
     numberOfElements = 0
   }
@@ -53,7 +53,7 @@ class CompositeLongIntHashMap(
     keys.zip(values).filter(_._1 != 0).toMap
   }
 
-  private[this] final def tryDouble {
+  private[this] final def tryDouble: Unit = {
     // 1073741824 is the largest size and cannot be doubled anymore.
     if (maxSize != 1073741824) {
       val oldValues = values
@@ -78,7 +78,7 @@ class CompositeLongIntHashMap(
     }
   }
 
-  @inline final def foreach(f: (Long, Int) => Unit) {
+  @inline final def foreach(f: (Long, Int) => Unit): Unit = {
     var i = 0
     var elementsProcessed = 0
     while (elementsProcessed < numberOfElements) {
@@ -95,7 +95,7 @@ class CompositeLongIntHashMap(
   /**
    * Like foreach, but removes the entry after applying the function.
    */
-  @inline final def process(f: (Long, Int) => Unit) {
+  @inline final def process(f: (Long, Int) => Unit): Unit = {
     var i = 0
     var elementsProcessed = 0
     while (elementsProcessed < numberOfElements) {
@@ -115,7 +115,7 @@ class CompositeLongIntHashMap(
     remove(key, true)
   }
 
-  private[this] final def remove(key: Long, optimize: Boolean) {
+  private[this] final def remove(key: Long, optimize: Boolean): Unit = {
     var position = keyToPosition(key)
     var keyAtPosition = keys(position)
     while (keyAtPosition != 0 && (key != keyAtPosition)) {
@@ -134,7 +134,7 @@ class CompositeLongIntHashMap(
 
   // Try to reinsert all elements that are not optimally placed until an empty position is found.
   // See http://stackoverflow.com/questions/279539/best-way-to-remove-an-entry-from-a-hash-table
-  private[this] final def optimizeFromPosition(startingPosition: Int) {
+  private[this] final def optimizeFromPosition(startingPosition: Int): Unit = {
     var currentPosition = startingPosition
     var keyAtPosition = keys(currentPosition)
     while (isCurrentPositionOccupied) {
@@ -160,7 +160,7 @@ class CompositeLongIntHashMap(
     }
   }
 
-  final def apply(key: Long) = get(key)
+  final def apply(key: Long): Int = get(key)
 
   @inline final def get(key: Long): Int = {
     var position = keyToPosition(key)
@@ -176,7 +176,7 @@ class CompositeLongIntHashMap(
     }
   }
 
-  final def update(key: Long, value: Int) {
+  final def update(key: Long, value: Int): Unit = {
     put(key, value)
   }
 

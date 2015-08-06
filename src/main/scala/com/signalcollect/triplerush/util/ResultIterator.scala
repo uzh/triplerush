@@ -34,7 +34,7 @@ final class ResultIterator extends Iterator[Array[Int]] with ResultBindings {
 
   var incomingResultsQueue = new LinkedBlockingQueue[Array[Array[Int]]]()
 
-  def add(a: Array[Array[Int]]) {
+  def add(a: Array[Array[Int]]): Unit = {
     incomingResultsQueue.put(a)
   }
 
