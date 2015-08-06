@@ -57,7 +57,7 @@ abstract class IndexVertex[State](val id: Long)
   /**
    * Default reply, is only overridden by SOIndex.
    */
-  def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]) {
+  def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]): Unit = {
     graphEditor.sendSignal(CardinalityReply(
       c.forPattern, cardinality), c.requestor)
   }

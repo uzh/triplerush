@@ -39,7 +39,7 @@ final class PIndex(id: Long) extends CardinalityCountingIndex(id)
   var maxObjectCount = 1
   var maxSubjectCount = 1
 
-  override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]) {
+  override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]): Unit = {
     graphEditor.sendSignal(PredicateStatsReply(
       c.forPattern, cardinality,
       PredicateStats(edgeCount = edgeCount, objectCount = maxObjectCount, subjectCount = maxSubjectCount)), c.requestor)

@@ -34,16 +34,16 @@ final class POIndex(id: Long) extends OptimizedIndexVertex(id)
     query.bind(childDelta, id.p, id.o)
   }
 
-  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     super.afterInitialization(graphEditor)
   }
 
-  override def onEdgeAdded(ge: GraphEditor[Long, Any]) {
+  override def onEdgeAdded(ge: GraphEditor[Long, Any]): Unit = {
     incrementParentIndexCardinalities(ge)
     updatePredicateSubjectCount(ge)
   }
 
-  def updatePredicateSubjectCount(ge: GraphEditor[Long, Any]) {
+  def updatePredicateSubjectCount(ge: GraphEditor[Long, Any]): Unit = {
     ge.sendSignal(SubjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0))
   }
 

@@ -28,7 +28,7 @@ trait Forwarding[State] extends IndexVertex[State] {
 
   override def targetIds: Traversable[Long] = {
     new Traversable[Long] {
-      def foreach[U](f: Long => U) {
+      def foreach[U](f: Long => U): Unit = {
         foreachChildDelta { delta =>
           f(nextRoutingAddress(delta))
         }
@@ -38,7 +38,7 @@ trait Forwarding[State] extends IndexVertex[State] {
 
   def nextRoutingAddress(childDelta: Int): Long
 
-  override def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]) {
+  override def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]): Unit = {
     if (!query.isBindingQuery &&
       query.numberOfPatterns == 1 &&
       query.isSimpleToBind &&
@@ -58,7 +58,7 @@ trait Forwarding[State] extends IndexVertex[State] {
       var extras = absoluteValueOfTotalTickets % edges
       val averageTicketQuery = query.copyWithTickets(avg, complete)
       val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
-      def sendTo(childDelta: Int) {
+      def sendTo(childDelta: Int): Unit = {
         val routingAddress = nextRoutingAddress(childDelta)
         if (extras > 0) {
           extras -= 1

@@ -160,7 +160,7 @@ class HashMapDictionary(
    *
    * Warning: this has to be done before any other dictionary entries are added.
    */
-  def loadFromFile(fileName: String) {
+  def loadFromFile(fileName: String): Unit = {
     assert(string2Id.isEmpty)
     assert(id2String.isEmpty)
     println(s"Parsing dictionary from $fileName.")

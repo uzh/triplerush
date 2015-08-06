@@ -33,7 +33,7 @@ final class IndexQueryVertex(
 
   val id = OperationIds.embedInLong(OperationIds.nextId)
 
-  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     graphEditor.sendSignal(ChildIdRequest(id), indexId)
   }
 

@@ -64,7 +64,7 @@ case class FileLoader(filePath: String, dictionary: Dictionary) extends Iterator
 
 case object FileLoader {
 
-  def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Long, Any]) {
+  def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Long, Any]): Unit = {
     assert(sId > 0 && pId > 0 && oId > 0)
     val po = EfficientIndexPattern(0, pId, oId)
     val so = EfficientIndexPattern(sId, 0, oId)

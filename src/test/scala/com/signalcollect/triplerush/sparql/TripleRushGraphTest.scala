@@ -38,7 +38,7 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
     g
   }
 
-  override def testIsomorphismFile() {
+  override def testIsomorphismFile(): Unit = {
     testIsomorphismXMLFile(1, true)
     testIsomorphismXMLFile(2, true)
     testIsomorphismXMLFile(3, true)
@@ -49,11 +49,11 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
     testIsomorphismNTripleFile(8, false)
   }
 
-  def testIsomorphismNTripleFile(i: Int, result: Boolean) {
+  def testIsomorphismNTripleFile(i: Int, result: Boolean): Unit = {
     testIsomorphismFile(i, "N-TRIPLE", "nt", result)
   }
 
-  def testIsomorphismXMLFile(i: Int, result: Boolean) {
+  def testIsomorphismXMLFile(i: Int, result: Boolean): Unit = {
     testIsomorphismFile(i, "RDF/XML", "rdf", result)
   }
 
@@ -84,41 +84,41 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
     classOf[AbstractTestGraph].getClassLoader.getResourceAsStream(urlStr)
   }
 
-  override def testRemove() {}
+  override def testRemove(): Unit = {}
 
-  override def testBulkDeleteList() {}
+  override def testBulkDeleteList(): Unit = {}
 
-  override def testBulkDeleteArray() {}
+  override def testBulkDeleteArray(): Unit = {}
 
-  override def testBulkDeleteGraph() {}
+  override def testBulkDeleteGraph(): Unit = {}
 
-  override def testEventDeleteByFind() {}
+  override def testEventDeleteByFind(): Unit = {}
 
-  override def testBulkUpdate() {}
+  override def testBulkUpdate(): Unit = {}
 
-  override def testBulkDeleteIterator() {}
+  override def testBulkDeleteIterator(): Unit = {}
 
-  override def testDeleteTriple() {}
+  override def testDeleteTriple(): Unit = {}
 
-  override def testRemoveAll() {}
+  override def testRemoveAll(): Unit = {}
 
-  override def testRemoveSPO() {}
+  override def testRemoveSPO(): Unit = {}
 
-  override def testListSubjects() {}
-
-  // Uses GraphBase::delete.
-  override def testListPredicates() {}
+  override def testListSubjects(): Unit = {}
 
   // Uses GraphBase::delete.
-  override def testListObjects() {}
+  override def testListPredicates(): Unit = {}
 
   // Uses GraphBase::delete.
-  override def testUnregisterOnce() {}
+  override def testListObjects(): Unit = {}
 
   // Uses GraphBase::delete.
-  override def testIsEmpty() {}
+  override def testUnregisterOnce(): Unit = {}
 
   // Uses GraphBase::delete.
-  override def testAGraph() {} // Uses GraphBase::delete.
+  override def testIsEmpty(): Unit = {}
+
+  // Uses GraphBase::delete.
+  override def testAGraph(): Unit = {} // Uses GraphBase::delete.
 
 }

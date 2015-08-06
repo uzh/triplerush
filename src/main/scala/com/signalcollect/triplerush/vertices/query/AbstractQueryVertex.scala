@@ -32,7 +32,7 @@ abstract class AbstractQueryVertex[StateType](
 
   lazy val queryTicketsReceived = new TicketSynchronization(s"queryTicketsReceived[${query.mkString}]", tickets, onFailure = None)
 
-  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     if (query.length > 0) {
       queryTicketsReceived.onComplete { complete =>
         reportResultsAndRequestQueryVertexRemoval(complete, graphEditor)
@@ -70,7 +70,7 @@ abstract class AbstractQueryVertex[StateType](
 
   def handleResultCount(resultCount: Long)
 
-  def requestQueryVertexRemoval(graphEditor: GraphEditor[Long, Any]) {
+  def requestQueryVertexRemoval(graphEditor: GraphEditor[Long, Any]): Unit = {
     graphEditor.removeVertex(id)
   }
 

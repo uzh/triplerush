@@ -27,15 +27,15 @@ import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 trait Binding extends IndexVertex[Any] {
 
   // TODO: Ensure this happens before a blocking edge addition is finished.
-  def onEdgeAdded(ge: GraphEditor[Long, Any])
+  def onEdgeAdded(ge: GraphEditor[Long, Any]): Unit
 
-  def incrementParentIndexCardinalities(ge: GraphEditor[Long, Any]) {
+  def incrementParentIndexCardinalities(ge: GraphEditor[Long, Any]): Unit = {
     IndexStructure.parentIds(id).foreach { parentId =>
       ge.sendSignal(1, parentId)
     }
   }
 
-  def decrementParentIndexCardinalities(ge: GraphEditor[Long, Any]) {
+  def decrementParentIndexCardinalities(ge: GraphEditor[Long, Any]): Unit = {
     IndexStructure.parentIds(id).foreach { parentId =>
       ge.sendSignal(-1, parentId)
     }
@@ -51,11 +51,11 @@ trait Binding extends IndexVertex[Any] {
 
   def bindIndividualQuery(childDelta: Int, queryParticle: Array[Int]): Array[Int]
 
-  def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]) {
+  def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]): Unit = {
     bindQueryToAllTriples(query, graphEditor)
   }
 
-  def bindQueryToAllTriples(query: Array[Int], graphEditor: GraphEditor[Long, Any]) {
+  def bindQueryToAllTriples(query: Array[Int], graphEditor: GraphEditor[Long, Any]): Unit = {
     if (!query.isBindingQuery &&
       query.numberOfPatterns == 1 &&
       query.isSimpleToBind) {
@@ -73,7 +73,7 @@ trait Binding extends IndexVertex[Any] {
       var extras = absoluteValueOfTotalTickets % edges
       val averageTicketQuery = query.copyWithTickets(avg, complete)
       val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
-      def bind(childDelta: Int) {
+      def bind(childDelta: Int): Unit = {
         if (extras > 0) {
           extras -= 1
           handleQueryBinding(childDelta, aboveAverageTicketQuery, graphEditor)
@@ -88,7 +88,7 @@ trait Binding extends IndexVertex[Any] {
   def handleQueryBinding(
     childDelta: Int,
     query: Array[Int],
-    graphEditor: GraphEditor[Long, Any]) {
+    graphEditor: GraphEditor[Long, Any]): Unit = {
     val boundParticle = bindIndividualQuery(childDelta, query)
     if (boundParticle != null) {
       routeSuccessfullyBound(boundParticle, graphEditor)
@@ -101,7 +101,7 @@ trait Binding extends IndexVertex[Any] {
 
   def routeSuccessfullyBound(
     boundParticle: Array[Int],
-    graphEditor: GraphEditor[Long, Any]) {
+    graphEditor: GraphEditor[Long, Any]): Unit = {
     if (boundParticle.isResult) {
       // Query successful, send to query vertex.
       val queryVertexId = OperationIds.embedInLong(boundParticle.queryId)

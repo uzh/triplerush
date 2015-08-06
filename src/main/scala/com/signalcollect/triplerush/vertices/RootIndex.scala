@@ -28,7 +28,7 @@ import com.signalcollect.triplerush.OperationIds
 final class RootIndex extends OptimizedIndexVertex(EfficientIndexPattern(0, 0, 0))
     with Forwarding[Any] {
 
-  override def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]) {
+  override def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]): Unit = {
     // Root index is the only one that might have no outgoing edges.
     if (edgeCount == 0) {
       // No outgoing edges: Fail query immediately.

@@ -32,20 +32,20 @@ class ResultIteratorQueryVertex(
 
   final val id = OperationIds.embedInLong(OperationIds.nextId)
 
-  override final def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
+  override final def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     state = resultIterator
     super.afterInitialization(graphEditor)
   }
 
-  def handleBindings(bindings: Array[Array[Int]]) {
+  def handleBindings(bindings: Array[Array[Int]]): Unit = {
     state.add(bindings)
   }
 
-  def handleResultCount(resultCount: Long) {
+  def handleResultCount(resultCount: Long): Unit = {
     throw new UnsupportedOperationException("Result binding vertex should never receive a result count.")
   }
 
-  override final def reportResults(complete: Boolean) = {
+  override final def reportResults(complete: Boolean): Unit = {
     // Empty array implicitly signals that there are no more results.
     state.add(Array[Array[Int]]())
   }

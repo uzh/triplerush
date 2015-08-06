@@ -23,7 +23,7 @@ class ArrayOfArraysTraversable extends Traversable[Array[Int]] with ResultBindin
 
   var listOfArraysOfArrays = List[Array[Array[Int]]]()
 
-  def add(a: Array[Array[Int]]) {
+  def add(a: Array[Array[Int]]): Unit = {
     listOfArraysOfArrays = a :: listOfArraysOfArrays
   }
 
