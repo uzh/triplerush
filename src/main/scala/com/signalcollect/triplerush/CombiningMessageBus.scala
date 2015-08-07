@@ -156,7 +156,7 @@ final class CombiningMessageBus[Signal: ClassTag](
             newBulker.addResult(bindings)
             aggregatedResults(extractedOperationId) = newBulker
           }
-        case other =>
+        case other: Signal =>
           bulkSend(signal, targetId)
       }
     } // If message is sent to an Index Vertex

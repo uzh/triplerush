@@ -100,7 +100,7 @@ abstract class IndexVertex[State](val id: Long)
         handleObjectCount(count)
       case count: SubjectCountSignal =>
         handleSubjectCount(count)
-      case other => throw new Exception(s"Unexpected signal @ $id: $other")
+      case other: Any => throw new Exception(s"Unexpected signal @ $id: $other")
     }
     true
   }

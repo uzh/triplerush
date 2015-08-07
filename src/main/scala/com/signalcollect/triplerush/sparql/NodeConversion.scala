@@ -42,7 +42,7 @@ object NodeConversion {
           } else {
             n.toString
           }
-        case other =>
+        case other: Node =>
           throw new UnsupportedOperationException(s"Literal $n not supported.")
       }
     } else if (n.isBlank) {
@@ -92,7 +92,7 @@ object NodeConversion {
         NodeFactory.createLiteral(s.tail, null, true)
       case '_' =>
         NodeFactory.createBlankNode(BlankNodeId.create(s.tail))
-      case other =>
+      case other: Char =>
         throw new UnsupportedOperationException(s"Encoded string $s could not be decoded.")
     }
   }
