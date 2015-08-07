@@ -40,11 +40,11 @@ abstract class IndexVertex[State](val id: Long)
       "TriplePattern" -> s"(SID=${p.s}, PID=${p.p}, OID=${p.o})")
   }
 
-  def foreachChildDelta(f: Int => Unit)
+  def foreachChildDelta(f: Int => Unit): Unit
 
   def addChildDelta(delta: Int): Boolean
 
-  def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any])
+  def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]): Unit
 
   def handleCardinalityIncrement(i: Int) = {}
 
@@ -81,7 +81,8 @@ abstract class IndexVertex[State](val id: Long)
     }
   }
 
-  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any])
+  def handleChildIdRequest(
+    requestor: Long, graphEditor: GraphEditor[Long, Any]): Unit
 
   override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]) = {
     signal match {
