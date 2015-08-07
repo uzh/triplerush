@@ -36,7 +36,9 @@ abstract class BaseVertex[State]
 
   def targetIds: Traversable[Long] = None
 
-  override def deliverSignalWithSourceId(signal: Any, sourceId: Long, graphEditor: GraphEditor[Long, Any]): Boolean =
+  override def deliverSignalWithSourceId(
+    signal: Any, sourceId: Long,
+    graphEditor: GraphEditor[Long, Any]): Boolean =
     throw new Exception("TripleRush only uses messages without the source ID.")
 
   override def scoreCollect: Double = 0
@@ -45,10 +47,13 @@ abstract class BaseVertex[State]
 
   override def toString: String = s"${this.getClass.getName}(id=$id)"
 
-  override def executeSignalOperation(graphEditor: GraphEditor[Long, Any]): Unit = throw new Exception("Should not be called, signals on delivery.")
+  override def executeSignalOperation(graphEditor: GraphEditor[Long, Any]): Unit = {
+    throw new Exception("Should not be called, signals on delivery.")
+  }
 
-  override def executeCollectOperation(graphEditor: GraphEditor[Long, Any]): Unit = throw new Exception("Should not be called, collects and signals " +
-    "on delivery.")
+  override def executeCollectOperation(graphEditor: GraphEditor[Long, Any]): Unit = {
+    throw new Exception("Should not be called, collects and signals on delivery.")
+  }
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {}
 
@@ -56,9 +61,13 @@ abstract class BaseVertex[State]
 
   override def edgeCount: Int = 0
 
-  override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = throw new UnsupportedOperationException
+  override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {
+    throw new UnsupportedOperationException
+  }
 
-  override def removeEdge(targetId: Long, graphEditor: GraphEditor[Long, Any]): Boolean = throw new UnsupportedOperationException
+  override def removeEdge(targetId: Long, graphEditor: GraphEditor[Long, Any]): Boolean = {
+    throw new UnsupportedOperationException
+  }
 
   override def removeAllEdges(graphEditor: GraphEditor[Long, Any]): Int = 0
 }
