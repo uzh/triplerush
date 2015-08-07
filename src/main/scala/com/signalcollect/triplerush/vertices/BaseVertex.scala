@@ -25,12 +25,12 @@ import com.signalcollect._
 /**
  * Base implementation for all TripleRush vertices.
  */
-abstract class BaseVertex[State]
-    extends Vertex[Long, State, Long, Any] {
+abstract class BaseVertex[StateType]
+    extends Vertex[Long, StateType, Long, Any] {
 
-  @transient var state: State = _
+  @transient var state: StateType = _
 
-  def setState(s: State): Unit = {
+  def setState(s: StateType): Unit = {
     state = s
   }
 

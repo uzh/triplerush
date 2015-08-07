@@ -26,8 +26,8 @@ import com.signalcollect.triplerush._
 /**
  * This vertex represents part of the TripleRush index.
  */
-abstract class IndexVertex[State](val id: Long)
-    extends BaseVertex[State] {
+abstract class IndexVertex[StateType](val id: Long)
+    extends BaseVertex[StateType] {
 
   override def expose: Map[String, Any] = {
     val indexType = getClass.getSimpleName
