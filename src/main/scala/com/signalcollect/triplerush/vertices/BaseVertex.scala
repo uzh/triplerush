@@ -47,7 +47,8 @@ abstract class BaseVertex[State]
 
   override def executeSignalOperation(graphEditor: GraphEditor[Long, Any]): Unit = throw new Exception("Should not be called, signals on delivery.")
 
-  override def executeCollectOperation(graphEditor: GraphEditor[Long, Any]): Unit = throw new Exception("Should not be called, collects and signals on delivery.")
+  override def executeCollectOperation(graphEditor: GraphEditor[Long, Any]): Unit = throw new Exception("Should not be called, collects and signals " +
+    "on delivery.")
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {}
 

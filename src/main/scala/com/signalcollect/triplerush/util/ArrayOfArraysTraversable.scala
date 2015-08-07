@@ -32,8 +32,8 @@ class ArrayOfArraysTraversable extends Traversable[Array[Int]] with ResultBindin
   }
 
   def foreach[U](f: Array[Int] => U): Unit = {
-    for (arrayOfArrays <- listOfArraysOfArrays) {
-      for (array <- arrayOfArrays) {
+    for {arrayOfArrays <- listOfArraysOfArrays} {
+      for {array <- arrayOfArrays} {
         f(array)
       }
     }

@@ -176,7 +176,7 @@ class HashMapDictionary(
     write.lock
     var entriesAdded = 0
     try {
-      for (entry <- entries) {
+      for {entry <- entries} {
         val (id, string) = parseEntry(entry)
         maxId = math.max(id, maxId)
         string2Id.put(string, id)

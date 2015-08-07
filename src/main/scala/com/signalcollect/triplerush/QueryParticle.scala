@@ -333,7 +333,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   def patterns: IndexedSeq[TriplePattern] = {
-    for (i <- numberOfPatterns - 1 to 0 by -1) yield pattern(i)
+    for {i <- numberOfPatterns - 1 to 0 by -1} yield pattern(i)
   }
 
   def numberOfPatterns: Int = (r.length - 4 - numberOfBindings) / 3

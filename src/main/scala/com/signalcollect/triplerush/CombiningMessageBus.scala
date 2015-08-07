@@ -275,7 +275,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   protected var pendingSignals = 0
 
   val outgoingMessages: Array[SignalBulkerWithoutIds[Long, Signal]] = new Array[SignalBulkerWithoutIds[Long, Signal]](numberOfWorkers)
-  for (i <- 0 until numberOfWorkers) {
+  for {i <- 0 until numberOfWorkers} {
     outgoingMessages(i) = new SignalBulkerWithoutIds[Long, Signal](flushThreshold)
   }
 
