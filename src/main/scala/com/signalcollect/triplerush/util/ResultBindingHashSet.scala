@@ -72,7 +72,7 @@ class ResultBindingsHashSet(
 
   private[this] final var numberOfElements = 0
 
-  final def clear {
+  final def clear(): Unit = {
     keys = new Array[Array[Int]](maxSize)
     numberOfElements = 0
     nextPositionToProcess = 0
@@ -82,7 +82,7 @@ class ResultBindingsHashSet(
     keys.filter(_ != null).toSet
   }
 
-  private[this] final def tryDouble {
+  private[this] final def tryDouble(): Unit = {
     // 1073741824 is the largest size and cannot be doubled anymore.
     if (maxSize != 1073741824) {
       val oldKeys = keys

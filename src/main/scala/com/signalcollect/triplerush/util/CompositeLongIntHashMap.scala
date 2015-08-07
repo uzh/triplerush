@@ -111,7 +111,7 @@ class CompositeLongIntHashMap(
     numberOfElements = 0
   }
 
-  final def remove(key: Long) {
+  final def remove(key: Long): Unit = {
     remove(key, true)
   }
 
@@ -147,14 +147,14 @@ class CompositeLongIntHashMap(
       }
       advance
     }
-    @inline def advance {
+    @inline def advance: Unit = {
       currentPosition = ((currentPosition + 1) & mask)
       keyAtPosition = keys(currentPosition)
     }
-    @inline def isCurrentPositionOccupied = {
+    @inline def isCurrentPositionOccupied: Boolean = {
       keyAtPosition != 0
     }
-    @inline def removeCurrentEntry {
+    @inline def removeCurrentEntry: Unit = {
       keys(currentPosition) = 0
       numberOfElements -= 1
     }

@@ -84,7 +84,9 @@ abstract class IndexVertex[State](val id: Long)
   def handleChildIdRequest(
     requestor: Long, graphEditor: GraphEditor[Long, Any]): Unit
 
-  override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]) = {
+  override def deliverSignalWithoutSourceId(
+    signal: Any,
+    graphEditor: GraphEditor[Long, Any]): Boolean = {
     signal match {
       case query: Array[Int] =>
         processQuery(query, graphEditor)

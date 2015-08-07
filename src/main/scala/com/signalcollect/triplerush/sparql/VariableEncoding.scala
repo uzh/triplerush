@@ -19,7 +19,6 @@
 
 package com.signalcollect.triplerush.sparql
 
-import com.signalcollect.triplerush.util.ResultBindingsHashSet
 import com.signalcollect.triplerush.TriplePattern
 
 object VariableEncoding {
