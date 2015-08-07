@@ -22,16 +22,15 @@ package com.signalcollect.triplerush.sparql
 import scala.collection.JavaConversions.asJavaIterator
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import org.apache.jena.graph.{GraphEvents, GraphStatisticsHandler, Node, Node_ANY, Node_Literal, Node_URI, Triple}
+
+import org.apache.jena.graph.{ Capabilities, GraphEvents, GraphStatisticsHandler, Node, Node_ANY, Node_Blank, Node_Variable, Triple }
 import org.apache.jena.graph.impl.GraphBase
 import org.apache.jena.query.ARQ
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.sparql.engine.main.StageGenerator
-import org.apache.jena.util.iterator.{ExtendedIterator, WrappedIterator}
-import com.signalcollect.triplerush.{TriplePattern, TripleRush}
-import org.apache.jena.graph.Node_Blank
-import org.apache.jena.graph.Node_Variable
-import org.apache.jena.graph.Capabilities
+import org.apache.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
+
+import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
 
 /**
  * A TripleRush implementation of the Jena Graph interface.
@@ -133,7 +132,9 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
   }
 
   override val getCapabilities = new Capabilities {
+
     val sizeAccurate = true
+
     val addAllowed = true
 
     def addAllowed(everyTriple: Boolean) = true
@@ -143,9 +144,13 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
     def deleteAllowed(everyTriple: Boolean) = false
 
     val iteratorRemoveAllowed = false
+
     val canBeEmpty = true
+
     val findContractSafe = true
+
     val handlesLiteralTyping = false
+
   }
 
 }
