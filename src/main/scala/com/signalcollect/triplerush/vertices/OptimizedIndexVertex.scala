@@ -36,9 +36,6 @@ abstract class OptimizedIndexVertex(
 
   def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]): Unit = {
     val childIds: Array[Int] = {
-      if (state == null) {
-        Array[Int]() // Root vertex in an empty store.
-      } else {
         state match {
           case i: Int =>
             Array(i)
@@ -46,7 +43,7 @@ abstract class OptimizedIndexVertex(
             new FastInsertIntSet(a).toBuffer.toArray
           case s: SplayIntSet =>
             s.toBuffer.toArray
-        }
+          case _ => Array[Int]() // Root vertex in an empty store.
       }
     }
     graphEditor.sendSignal(ChildIdReply(childIds), requestor)
@@ -66,6 +63,7 @@ abstract class OptimizedIndexVertex(
         new FastInsertIntSet(a).size
       case s: SplayIntSet =>
         s.size
+      case _ => 0
     }
   }
 
@@ -77,6 +75,7 @@ abstract class OptimizedIndexVertex(
         new FastInsertIntSet(a).foreach(f)
       case s: SplayIntSet =>
         s.foreach(f)
+      case _ =>
     }
   }
 
@@ -112,6 +111,7 @@ abstract class OptimizedIndexVertex(
         case s: SplayIntSet =>
           val wasInserted = s.insert(delta)
           wasInserted
+        case _ => false
       }
     }
   }

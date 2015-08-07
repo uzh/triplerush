@@ -38,6 +38,7 @@ abstract class SearchableIndexVertex[SignalType, State](
     state match {
       case i: Int        => i == n
       case a: Array[Int] => new SearchableIntSet(a).contains(n)
+      case _ => false
     }
   }
 
@@ -47,6 +48,7 @@ abstract class SearchableIndexVertex[SignalType, State](
         graphEditor.sendSignal(ChildIdReply(Array(i)), requestor)
       case a: Array[Int] =>
         graphEditor.sendSignal(ChildIdReply(a.toArray), requestor)
+      case _ =>
     }
   }
 
@@ -62,20 +64,18 @@ abstract class SearchableIndexVertex[SignalType, State](
           f(a(i))
           i += 1
         }
+      case _ =>
     }
   }
 
   override def edgeCount = {
-    if (state != null) {
       state match {
         case i: Int =>
           1
         case a: Array[Int] =>
           a.length
+        case _ => 0
       }
-    } else {
-      0
-    }
   }
 
   def cardinality = edgeCount
@@ -102,6 +102,7 @@ abstract class SearchableIndexVertex[SignalType, State](
           state = new SearchableIntSet(a).insert(delta)
           val wasInserted = deltasBeforeInsert != state // Reference comparison, if a new array was allocated, then an insert happened.
           wasInserted
+        case _ => false
       }
     }
   }

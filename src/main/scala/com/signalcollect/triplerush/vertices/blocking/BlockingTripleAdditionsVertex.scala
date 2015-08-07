@@ -73,7 +73,7 @@ class BlockingTripleAdditionsVertex(
           case Some(s) =>
             s.receivedTickets(deliveredTickets)
         }
-      case other: Any =>
+      case other@_ =>
         throw new UnsupportedOperationException(
           s"Blocking triple addition vertex received an unsupported message $signal of type ${signal.getClass.getSimpleName}.")
     }

@@ -121,7 +121,7 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
           throw new UnsupportedOperationException("Variables not supported.")
         case blank: Node_Blank =>
           tr.dictionary(NodeConversion.nodeToString(blank))
-        case other: Node =>
+        case other@_ =>
           tr.dictionary(NodeConversion.nodeToString(other))
       }
     }

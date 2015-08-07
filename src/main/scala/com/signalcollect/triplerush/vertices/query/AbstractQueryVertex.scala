@@ -57,6 +57,7 @@ abstract class AbstractQueryVertex[StateType](
         handleBindings(bindings.asInstanceOf[Array[Array[Int]]])
       case resultCount: Int =>
         handleResultCount(resultCount)
+      case _ => false
     }
     true
   }

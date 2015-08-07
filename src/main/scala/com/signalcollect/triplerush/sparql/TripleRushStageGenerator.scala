@@ -192,7 +192,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
             nextId -= 1
             id
           }
-        case other: Node =>
+        case other@_ =>
           dictionary(NodeConversion.nodeToString(other))
       }
     }

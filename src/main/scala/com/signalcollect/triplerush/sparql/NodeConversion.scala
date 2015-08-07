@@ -42,7 +42,7 @@ object NodeConversion {
           } else {
             n.toString
           }
-        case other: Node =>
+        case other@_ =>
           throw new UnsupportedOperationException(s"Literal $n not supported.")
       }
     } else if (n.isBlank) {

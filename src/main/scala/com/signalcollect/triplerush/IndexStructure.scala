@@ -34,7 +34,7 @@ object IndexType {
       case TriplePattern(_, _, 0) => Sp
       case TriplePattern(_, 0, _) => So
       case TriplePattern(0, _, _) => Po
-      case other: Any => throw new Exception(s"${indexId.toTriplePattern} is not a valid index ID.")
+      case other@_ => throw new Exception(s"${indexId.toTriplePattern} is not a valid index ID.")
     }
   }
 
@@ -94,7 +94,7 @@ object IndexStructure {
       case P => Array(rootId)
       case Po => Array(oIndexId)
       case Sp => Array(sIndexId, pIndexId)
-      case other: Any => Array()
+      case other@_ => Array()
     }
   }
 
