@@ -20,5 +20,5 @@
 package com.signalcollect.triplerush.util
 
 trait ResultBindings {
-  def add(a: Array[Array[Int]])
+  def add(a: Array[Array[Int]]): Unit
 }

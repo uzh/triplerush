@@ -61,19 +61,19 @@ abstract class AbstractQueryVertex[StateType](
     true
   }
 
+  def handleBindings(bindings: Array[Array[Int]]): Unit
+
+  def handleResultCount(resultCount: Long): Unit
+
+  def reportResults(complete: Boolean): Unit
+
   def reportResultsAndRequestQueryVertexRemoval(complete: Boolean, graphEditor: GraphEditor[Long, Any]): Unit = {
     reportResults(complete)
     requestQueryVertexRemoval(graphEditor)
   }
 
-  def handleBindings(bindings: Array[Array[Int]])
-
-  def handleResultCount(resultCount: Long)
-
   def requestQueryVertexRemoval(graphEditor: GraphEditor[Long, Any]): Unit = {
     graphEditor.removeVertex(id)
   }
-
-  def reportResults(complete: Boolean): Unit
 
 }

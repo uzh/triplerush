@@ -42,7 +42,7 @@ trait Dictionary {
 
   def decode(id: Int): Option[String]
 
-  def clear
+  def clear(): Unit
 }
 
 class HashMapDictionary(
@@ -57,7 +57,7 @@ class HashMapDictionary(
   private[this] var string2Id = new IntValueHashMap[String](initialSize, rehashFraction)
   private[this] var maxId = 0
 
-  def clear {
+  def clear(): Unit = {
     write.lock
     try {
       maxId = 0

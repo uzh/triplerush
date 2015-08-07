@@ -31,15 +31,15 @@ object OperationIds {
   private[this] val maxOperationId = new AtomicInteger(0)
   private[this] val minOperationId = new AtomicInteger(0)
 
-  def nextId: Int = {
+  def nextId(): Int = {
     maxOperationId.incrementAndGet
   }
 
-  def nextCountQueryId: Int = {
+  def nextCountQueryId(): Int = {
     minOperationId.decrementAndGet
   }
 
-  def reset {
+  def reset(): Unit = {
     maxOperationId.set(0)
     minOperationId.set(0)
   }
