@@ -26,6 +26,7 @@ import scala.language.implicitConversions
 
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import com.signalcollect.triplerush.sparql.VariableEncoding
+import QueryParticle._
 
 object ParticleDebug {
   def apply(p: Array[Int]): ParticleDebug = {
@@ -41,7 +42,6 @@ object ParticleDebug {
 
   def validate(p: Array[Int], msg: String): Unit = {
     if (p != null) {
-      import QueryParticle._
       val validTotalLength = (p.length - 4 - p.numberOfBindings) % 3 == 0
       val validNumberOfBindingsLength = (p.length - 4 - p.numberOfBindings) >= 0
       if (!validTotalLength) {
@@ -98,8 +98,6 @@ object QueryParticle {
  * gets matched first).
  */
 class QueryParticle(val r: Array[Int]) extends AnyVal {
-
-  import QueryParticle._
 
   def validate(msg: String): Unit = ParticleDebug.validate(r, msg)
 

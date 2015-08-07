@@ -26,6 +26,7 @@ import scala.util.hashing.MurmurHash3.{ finalizeHash, mix, mixLast }
 
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.dictionary.Dictionary
+import com.signalcollect.triplerush.EfficientIndexPattern._
 
 object EfficientIndexPattern {
 
@@ -91,7 +92,6 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
   }
 
   @inline def parentIdDelta(parentPattern: Long): Int = {
-    import com.signalcollect.triplerush.EfficientIndexPattern._
     if (parentPattern.s == 0 && s != 0) {
       s
     } else if (parentPattern.p == 0 && p != 0) {
