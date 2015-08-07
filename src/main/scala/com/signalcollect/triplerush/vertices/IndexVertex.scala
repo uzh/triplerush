@@ -34,10 +34,11 @@ abstract class IndexVertex[State](val id: Long)
     val d = TrGlobal.dictionary
     val p = new EfficientIndexPattern(id)
     Map[String, Any](
+      "Outgoing edges" -> targetIds.size,
       "Subject" -> d.get(p.s),
       "Predicate" -> d.get(p.p),
       "Object" -> d.get(p.o),
-      "TriplePattern" -> s"(SID=${p.s}, PID=${p.p}, OID=${p.o})")
+      "TriplePattern" -> s"(sId=${p.s}, pId=${p.p}, oId=${p.o})")
   }
 
   def foreachChildDelta(f: Int => Unit): Unit

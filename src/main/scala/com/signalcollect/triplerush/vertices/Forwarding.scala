@@ -24,8 +24,10 @@ import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.OperationIds
 
-trait Forwarding[State] extends IndexVertex[State] {
+trait Forwarding[State] {
 
+  this: IndexVertex[State] =>
+  
   override def targetIds: Traversable[Long] = {
     new Traversable[Long] {
       def foreach[U](f: Long => U): Unit = {
