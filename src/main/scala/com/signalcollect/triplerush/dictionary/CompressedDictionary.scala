@@ -125,7 +125,8 @@ class CompressedDictionary extends Dictionary {
       if (prefixedId != 0) {
         val prefixId = new EfficientIndexPattern(prefixedId).extractFirst
         val remainderId = new EfficientIndexPattern(prefixedId).extractSecond
-        impl.apply(prefixId) + impl.apply(remainderId)
+        // https://issues.scala-lang.org/browse/SI-9315 and https://groups.google.com/forum/#!topic/scala-language/AN2Ymk1J1ik
+        new java.lang.StringBuilder().append(apply(prefixId)).append(apply(remainderId)).toString
       } else {
         impl.apply(id)
       }
@@ -140,7 +141,8 @@ class CompressedDictionary extends Dictionary {
     if (prefixedId != 0) {
       val prefixId = new EfficientIndexPattern(prefixedId).extractFirst
       val remainderId = new EfficientIndexPattern(prefixedId).extractSecond
-      impl.apply(prefixId) + impl.apply(remainderId)
+      // https://issues.scala-lang.org/browse/SI-9315 and https://groups.google.com/forum/#!topic/scala-language/AN2Ymk1J1ik
+      new java.lang.StringBuilder().append(apply(prefixId)).append(apply(remainderId)).toString
     } else {
       impl.apply(id)
     }
@@ -153,7 +155,9 @@ class CompressedDictionary extends Dictionary {
       if (prefixedId != 0) {
         val prefixId = new EfficientIndexPattern(prefixedId).extractFirst
         val remainderId = new EfficientIndexPattern(prefixedId).extractSecond
-        Some(impl.apply(prefixId) + impl.apply(remainderId))
+        // https://issues.scala-lang.org/browse/SI-9315 and https://groups.google.com/forum/#!topic/scala-language/AN2Ymk1J1ik
+        val decoded = new java.lang.StringBuilder().append(apply(prefixId)).append(apply(remainderId)).toString
+        Some(decoded)
       } else {
         val decoded = impl.apply(id)
         if (decoded != null) {
