@@ -23,12 +23,12 @@ import com.signalcollect.interfaces.VertexStore
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import scala.util.hashing.MurmurHash3._
 
-object Hashing {
+final object Hashing {
   /**
    * Inlined Murmur3, equivalent to:
    * finalizeHash(mixLast(a, b), 7)
    */
-  @inline final def hash(a: Int, b: Int): Int = {
+  @inline def hash(a: Int, b: Int): Int = {
     var k = b
     k *= 0xcc9e2d51
     k = (k << 15) | (k >>> -15)
@@ -43,7 +43,7 @@ object Hashing {
     h
   }
 
-  @inline final def avalanche(hash: Int): Int = {
+  @inline def avalanche(hash: Int): Int = {
     var h = hash
     h ^= h >>> 16
     h *= 0x85ebca6b
@@ -53,13 +53,13 @@ object Hashing {
     h
   }
 
-  @inline final def finalizeHash(h: Int, length: Int): Int = avalanche(h ^ length)
+  @inline def finalizeHash(h: Int, length: Int): Int = avalanche(h ^ length)
 
-  @inline final def rotateLeft(i: Int, distance: Int): Int = {
+  @inline def rotateLeft(i: Int, distance: Int): Int = {
     (i << distance) | (i >>> -distance)
   }
 
-  @inline final def mixLast(a: Int, b: Int): Int = {
+  @inline def mixLast(a: Int, b: Int): Int = {
     var k = b
 
     k *= 0xcc9e2d51
@@ -80,25 +80,25 @@ object Hashing {
 // the key in this map. In order to handle (rare) collisions,
 // we have to do an additional check to verify that the vertex id
 // matches indeed (and not just the hash of the vertex id).
-class TripleRushVertexMap(
+final class TripleRushVertexMap(
     initialSize: Int = 32768,
     rehashFraction: Float = 0.75f) extends VertexStore[Long, Any] {
   assert(initialSize > 0)
-  final var maxSize = nextPowerOfTwo(initialSize)
+  var maxSize = nextPowerOfTwo(initialSize)
   assert(1.0f >= rehashFraction && rehashFraction > 0.1f, "Unreasonable rehash fraction.")
   assert(maxSize > 0 && maxSize >= initialSize, "Initial size is too large.")
-  private[this] final var maxElements: Int = (rehashFraction * maxSize).floor.toInt
-  private[this] final var values: Array[Vertex[Long, _, Long, Any]] = new Array[Vertex[Long, _, Long, Any]](maxSize)
-  private[this] final var keys: Array[Long] = new Array[Long](maxSize)
+  private[this] var maxElements: Int = (rehashFraction * maxSize).floor.toInt
+  private[this] var values: Array[Vertex[Long, _, Long, Any]] = new Array[Vertex[Long, _, Long, Any]](maxSize)
+  private[this] var keys: Array[Long] = new Array[Long](maxSize)
   // 0 means empty
-  private[this] final var mask: Int = maxSize - 1
-  private[this] final var nextPositionToProcess: Int = 0
+  private[this] var mask: Int = maxSize - 1
+  private[this] var nextPositionToProcess: Int = 0
 
-  final override def size: Long = numberOfElements
+  @inline override def size: Long = numberOfElements
 
-  final def isEmpty: Boolean = numberOfElements == 0
+  @inline def isEmpty: Boolean = numberOfElements == 0
 
-  private[this] final var numberOfElements: Int = 0
+  private[this] var numberOfElements: Int = 0
 
   def stream: Stream[Vertex[Long, _, Long, Any]] = {
     def remainder(i: Int, elementsProcessed: Int): Stream[Vertex[Long, _, Long, Any]] = {
@@ -118,14 +118,14 @@ class TripleRushVertexMap(
     remainder(0, 0)
   }
 
-  final def clear: Unit = {
+  def clear: Unit = {
     values = new Array[Vertex[Long, _, Long, Any]](maxSize)
     keys = new Array[Long](maxSize)
     numberOfElements = 0
     nextPositionToProcess = 0
   }
 
-  final def foreach(f: Vertex[Long, _, Long, Any] => Unit): Unit = {
+  def foreach(f: Vertex[Long, _, Long, Any] => Unit): Unit = {
     var i = 0
     var elementsProcessed = 0
     while (elementsProcessed < numberOfElements) {
@@ -139,7 +139,7 @@ class TripleRushVertexMap(
   }
 
   // Removes the vertices after they have been processed.
-  final def process(p: Vertex[Long, _, Long, Any] => Unit, numberOfVertices: Option[Int] = None): Int = {
+  def process(p: Vertex[Long, _, Long, Any] => Unit, numberOfVertices: Option[Int] = None): Int = {
     val limit = math.min(numberOfElements, numberOfVertices.getOrElse(numberOfElements))
     var elementsProcessed = 0
     while (elementsProcessed < limit) {
@@ -160,7 +160,7 @@ class TripleRushVertexMap(
   }
 
   // Removes the vertices after they have been processed.
-  final def processWithCondition(p: Vertex[Long, _, Long, Any] => Unit, breakCondition: () => Boolean): Int = {
+  def processWithCondition(p: Vertex[Long, _, Long, Any] => Unit, breakCondition: () => Boolean): Int = {
     val limit = numberOfElements
     var elementsProcessed = 0
     while (elementsProcessed < limit && !breakCondition()) {
@@ -180,7 +180,7 @@ class TripleRushVertexMap(
     elementsProcessed
   }
 
-  private[this] final def tryDouble: Unit = {
+  private[this] def tryDouble(): Unit = {
     // 1073741824 is the largest size and cannot be doubled anymore.
     if (maxSize != 1073741824) {
       val oldSize = maxSize
@@ -205,11 +205,11 @@ class TripleRushVertexMap(
     }
   }
 
-  final def remove(vertexId: Long): Unit = {
+  def remove(vertexId: Long): Unit = {
     remove(vertexId, true)
   }
 
-  private[this] final def remove(vertexId: Long, optimize: Boolean): Unit = {
+  private[this] def remove(vertexId: Long, optimize: Boolean): Unit = {
     var position = keyToPosition(vertexId)
     var keyAtPosition = keys(position)
     while (keyAtPosition != 0 && vertexId != keyAtPosition) {
@@ -229,7 +229,7 @@ class TripleRushVertexMap(
 
   // Try to reinsert all elements that are not optimally placed until an empty position is found.
   // See http://stackoverflow.com/questions/279539/best-way-to-remove-an-entry-from-a-hash-table
-  private[this] final def optimizeFromPosition(startingPosition: Int): Unit = {
+  @inline private[this] def optimizeFromPosition(startingPosition: Int): Unit = {
     var currentPosition = startingPosition
     var keyAtPosition = keys(currentPosition)
     while (isCurrentPositionOccupied) {
@@ -242,21 +242,21 @@ class TripleRushVertexMap(
       }
       advance
     }
-    def advance {
+    @inline def advance: Unit = {
       currentPosition = ((currentPosition + 1) & mask)
       keyAtPosition = keys(currentPosition)
     }
-    def isCurrentPositionOccupied = {
+    @inline def isCurrentPositionOccupied: Boolean = {
       keyAtPosition != 0
     }
-    def removeCurrentEntry {
+    @inline def removeCurrentEntry: Unit = {
       keys(currentPosition) = 0
       values(currentPosition) = null
       numberOfElements -= 1
     }
   }
 
-  final def get(vertexId: Long): Vertex[Long, _, Long, Any] = {
+  @inline def get(vertexId: Long): Vertex[Long, _, Long, Any] = {
     var position = keyToPosition(vertexId)
     var keyAtPosition = keys(position)
     while (keyAtPosition != 0 && vertexId != keyAtPosition) {
@@ -271,12 +271,12 @@ class TripleRushVertexMap(
   }
 
   // Only put if no vertex with the same id is present. If a vertex was put, return true.
-  final def put(vertex: Vertex[Long, _, Long, Any]): Boolean = {
+  def put(vertex: Vertex[Long, _, Long, Any]): Boolean = {
     val success = putWithKey(vertex.id, vertex)
     success
   }
 
-  private[this] final def putWithKey(key: Long, vertex: Vertex[Long, _, Long, Any]): Boolean = {
+  private[this] def putWithKey(key: Long, vertex: Vertex[Long, _, Long, Any]): Boolean = {
     var position = keyToPosition(key)
     var keyAtPosition = keys(position)
     while (keyAtPosition != 0 && key != keyAtPosition) {
@@ -299,11 +299,11 @@ class TripleRushVertexMap(
     doPut
   }
 
-  private[this] final def keyToPosition(efficientIndexPattern: Long): Int = {
+  @inline private[this] def keyToPosition(efficientIndexPattern: Long): Int = {
     Hashing.hash(efficientIndexPattern.extractFirst, efficientIndexPattern.extractSecond) & mask
   }
 
-  private[this] final def nextPowerOfTwo(x: Int): Int = {
+  private[this] def nextPowerOfTwo(x: Int): Int = {
     var r = x - 1
     r |= r >> 1
     r |= r >> 2

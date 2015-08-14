@@ -24,7 +24,7 @@ import com.signalcollect.interfaces.VertexStore
 /**
  * Storage backed by a custom-tailored open hash map implementation for vertices.
  */
-class TripleRushVertexMapStorage extends Storage[Long, Any] {
+final class TripleRushVertexMapStorage extends Storage[Long, Any] {
 
   val vertices = vertexStoreFactory
 
