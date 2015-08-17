@@ -1,7 +1,8 @@
 language: scala
+jdk:
+  - oraclejdk8
 scala:
    - 2.11.7
-before_install:
-  - git clone git://github.com/uzh/signal-collect.git ../signal-collect
 before_script:
   - "export JAVA_OPTS=-Xmx2048m"
+sudo: false

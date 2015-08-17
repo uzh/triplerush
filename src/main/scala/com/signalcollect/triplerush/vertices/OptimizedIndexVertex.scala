@@ -1,21 +1,21 @@
 /*
  *  @author Philip Stutz
  *  @author Mihaela Verman
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush.vertices
@@ -32,17 +32,10 @@ import com.signalcollect.util.SplayNode
  * Stores the SplayIntSet with the optimized child deltas in the state.
  */
 abstract class OptimizedIndexVertex(
-  id: Long) extends IndexVertex[Any](id) {
+    id: Long) extends IndexVertex[Any](id) {
 
-  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
-    super.afterInitialization(graphEditor)
-  }
-
-  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
+  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]): Unit = {
     val childIds: Array[Int] = {
-      if (state == null) {
-        Array[Int]() // Root vertex in an empty store.
-      } else {
         state match {
           case i: Int =>
             Array(i)
@@ -50,7 +43,7 @@ abstract class OptimizedIndexVertex(
             new FastInsertIntSet(a).toBuffer.toArray
           case s: SplayIntSet =>
             s.toBuffer.toArray
-        }
+          case _ => Array[Int]() // Root vertex in an empty store.
       }
     }
     graphEditor.sendSignal(ChildIdReply(childIds), requestor)
@@ -70,6 +63,7 @@ abstract class OptimizedIndexVertex(
         new FastInsertIntSet(a).size
       case s: SplayIntSet =>
         s.size
+      case _ => 0
     }
   }
 
@@ -81,6 +75,7 @@ abstract class OptimizedIndexVertex(
         new FastInsertIntSet(a).foreach(f)
       case s: SplayIntSet =>
         s.foreach(f)
+      case _ =>
     }
   }
 
@@ -116,6 +111,7 @@ abstract class OptimizedIndexVertex(
         case s: SplayIntSet =>
           val wasInserted = s.insert(delta)
           wasInserted
+        case _ => false
       }
     }
   }

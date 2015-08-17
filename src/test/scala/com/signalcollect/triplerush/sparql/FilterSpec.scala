@@ -19,18 +19,31 @@
 
 package com.signalcollect.triplerush.sparql
 
-import org.apache.jena.sparql.engine.QueryIterator
+import org.scalatest.{ Finders, FlatSpec, Matchers }
+
 import com.signalcollect.triplerush.TripleRush
-import org.apache.jena.query._
-import org.apache.jena.rdf.model.ModelFactory
-import org.apache.jena.rdf.model.Model
+import com.signalcollect.util.TestAnnouncements
 
-object Sparql {
+class FilterSpec extends FlatSpec with Matchers with TestAnnouncements {
 
-  def apply(queryString: String)(implicit trModel: Model): ResultSet = {
-    val query = QueryFactory.create(queryString)
-    val execution = QueryExecutionFactory.create(query, trModel)
-    execution.execSelect
+  "ARQ FILTER" should "return the correct result even when all variables are bound during an existence check" in {
+    val sparql = """
+SELECT ?r {
+  ?r <http://p> <http://r2>
+  FILTER EXISTS { ?r <http://p> <http://r3> }
+}
+"""
+    val tr = new TripleRush
+    val graph = new TripleRushGraph(tr)
+    implicit val model = graph.getModel
+    try {
+      tr.addStringTriple("http://r1", "http://p", "r2")
+      tr.prepareExecution
+      val results = Sparql(sparql)
+      assert(!results.hasNext)
+    } finally {
+      tr.shutdown
+    }
   }
 
 }

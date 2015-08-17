@@ -41,14 +41,14 @@ class QueryParticleBindingSpec extends FlatSpec with ShouldMatchers with Checker
     }
   }
 
-  def testBinding(toBind: TriplePattern, queryPattern: TriplePattern) {
+  def testBinding(toBind: TriplePattern, queryPattern: TriplePattern): Unit = {
     val qp = QueryParticle(Seq(queryPattern), queryId = 1, numberOfSelectVariables = 3)
     val boundParticle = qp.bind(toBind.s, toBind.p, toBind.o)
     if (!isBindingPossible(queryPattern, toBind)) {
       assert(boundParticle == null, s"tr found a binding for binding: $toBind to query: $queryPattern")
     } else {
       assert(qp != boundParticle)
-      assert(boundParticle.isResult == true)
+      assert(boundParticle.isResult)
       assert(boundParticle.queryId == 1)
       assert(boundParticle.patterns == Seq())
       assert(boundParticle.tickets == Long.MaxValue)
@@ -70,8 +70,8 @@ class QueryParticleBindingSpec extends FlatSpec with ShouldMatchers with Checker
       combination =>
         combination match {
           case List(b1, b2) => if (b1._1 == b2._1) b1._2 == b2._2 else true
-          case List(b1) => true
-          case List() => true
+          case List(b1)     => true
+          case List()       => true
         }
     }
   }

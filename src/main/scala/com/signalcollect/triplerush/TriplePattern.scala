@@ -1,35 +1,39 @@
 /*
  *  @author Philip Stutz
  *  @author Mihaela Verman
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush
+
 import scala.Option.option2Iterable
-import scala.runtime.ScalaRunTime
-import scala.util.hashing.MurmurHash3._
 import scala.language.implicitConversions
+import scala.util.hashing.MurmurHash3.{ finalizeHash, mix, mixLast }
+
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.dictionary.Dictionary
+import com.signalcollect.triplerush.EfficientIndexPattern._
 
 object EfficientIndexPattern {
 
   implicit def longToIndexPattern(l: Long): EfficientIndexPattern = new EfficientIndexPattern(l)
 
   @inline def embed2IntsInALong(i1: Int, i2: Int): Long = {
-    ((i2 | 0l) << 32) | (i1 & 0x00000000FFFFFFFFL)
+    ((i2 | 0L) << 32) | (i1 & 0x00000000FFFFFFFFL)
   }
 
   @inline def apply(pattern: TriplePattern): Long = {
@@ -65,7 +69,7 @@ object EfficientIndexPattern {
 
 class EfficientIndexPattern(val id: Long) extends AnyVal {
 
-  @inline def isQueryId: Boolean = {
+  @inline def isOperationId: Boolean = {
     id < 0 && id.toInt < 0
   }
 
@@ -77,7 +81,8 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
     val p = if (first < 0) {
       first & Int.MaxValue
     } else {
-      if (second < 0) { // second < 0
+      if (second < 0) {
+        // second < 0
         second & Int.MaxValue
       } else {
         0
@@ -86,12 +91,7 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
     TriplePattern(s, p, o)
   }
 
-  def parentIds: List[Long] = {
-    toTriplePattern.parentPatterns.map(_.toEfficientIndexPattern)
-  }
-
   @inline def parentIdDelta(parentPattern: Long): Int = {
-    import EfficientIndexPattern._
     if (parentPattern.s == 0 && s != 0) {
       s
     } else if (parentPattern.p == 0 && p != 0) {
@@ -116,7 +116,8 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
     if (first < 0) {
       first & Int.MaxValue
     } else {
-      if (id < 0) { // second < 0
+      if (id < 0) {
+        // second < 0
         extractSecond & Int.MaxValue
       } else {
         0
@@ -141,7 +142,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
   @inline override def equals(other: Any): Boolean = {
     other match {
       case TriplePattern(this.s, this.p, this.o) => true
-      case _ => false
+      case _                                     => false
     }
   }
 
@@ -192,13 +193,13 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
 
   def contains(expression: Int): Boolean = {
     if (s == expression) {
-      return true
+      true
     } else if (p == expression) {
-      return true
+      true
     } else if (o == expression) {
-      return true
+      true
     } else {
-      return false
+      false
     }
   }
 
@@ -211,27 +212,6 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
       o
     } else {
       throw new Exception(s"$parentPattern is not a parent pattern of $this")
-    }
-  }
-
-  def parentPatterns: List[TriplePattern] = {
-    this match {
-      case TriplePattern(0, 0, 0) =>
-        List()
-      case TriplePattern(s, 0, 0) =>
-        List()
-      case TriplePattern(0, p, 0) =>
-        List(TriplePattern(0, 0, 0))
-      case TriplePattern(0, 0, o) =>
-        List()
-      case TriplePattern(0, p, o) =>
-        List(TriplePattern(0, 0, o))
-      case TriplePattern(s, 0, o) =>
-        List()
-      case TriplePattern(s, p, 0) =>
-        List(TriplePattern(s, 0, 0), TriplePattern(0, p, 0))
-      case TriplePattern(s, p, o) =>
-        List(TriplePattern(0, p, o), TriplePattern(s, 0, o), TriplePattern(s, p, 0))
     }
   }
 

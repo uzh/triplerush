@@ -1,43 +1,36 @@
 /*
  *  @author Philip Stutz
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush
 
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
+import com.signalcollect.triplerush.jena.Jena
+import com.signalcollect.util.TestAnnouncements
+import org.scalacheck.Gen._
+import org.scalacheck.{ Arbitrary, Gen, Prop }
 import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
-import com.signalcollect.triplerush.QueryParticle._
-import scala.util.Random
-import scala.annotation.tailrec
-import org.scalacheck.Gen
-import org.scalacheck.Gen._
-import org.scalacheck.Arbitrary
-import org.scalacheck.Prop
-import org.scalacheck.Prop.BooleanOperators
-import com.signalcollect.triplerush.jena.Jena
-import com.signalcollect.triplerush.optimizers.GreedyCardinalityOptimizer
-import com.signalcollect.util.TestAnnouncements
+import com.signalcollect.triplerush.TripleGenerators._
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
+import org.scalatest.concurrent.ScalaFutures
 
-class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
-
-  import TripleGenerators._
+class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with ScalaFutures {
 
   implicit lazy val arbTriples = Arbitrary(tripleSet)
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
@@ -140,6 +133,24 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
     }
   }
 
+  it should "correctly answer queries after blocking triple additions" in {
+    val tr = new TripleRush(fastStart = true)
+    try {
+      for (i <- 1 to 100) {
+        tr.addEncodedTriple(1, 2, i, blocking = true)
+        val countOptionFuture = tr.executeCountingQuery(Seq(TriplePattern(1, 2, -1)))
+        whenReady(countOptionFuture) { countOption =>
+          countOption match {
+            case Some(count) => assert(count.toInt == i)
+            case None        => throw new Exception("TripleRush failed to return a count.")
+          }
+        }
+      }
+    } finally {
+      tr.shutdown
+    }
+  }
+
   it should "correctly answer a simple query over a reasonable amount of data" in {
     val tr = new TripleRush
     val jena = new Jena
@@ -195,7 +206,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
             val jenaResults = TestHelper.execute(jena, triples, query)
             TestHelper.prepareStore(tr, triples)
             val resultIterator = tr.resultIteratorForQuery(query)
-            val trResults = TestHelper.resultsToBindings(resultIterator.toList)
+            val trResults = TestHelper.resultsToBindings(resultIterator)
             assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
             jenaResults === trResults
           } finally {
@@ -210,7 +221,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements {
 object TestHelper {
 
   def prepareStore(qe: QueryEngine,
-    triples: Set[TriplePattern]) {
+                   triples: Set[TriplePattern]) {
     for (triple <- triples) {
       qe.addEncodedTriple(triple.s, triple.p, triple.o, false)
     }
@@ -218,15 +229,15 @@ object TestHelper {
   }
 
   def count(tr: TripleRush,
-    triples: Set[TriplePattern],
-    query: List[TriplePattern]): Long = {
+            triples: Set[TriplePattern],
+            query: List[TriplePattern]): Long = {
     prepareStore(tr, triples)
-    val resultFuture = tr.executeCountingQuery(query, Some(GreedyCardinalityOptimizer))
+    val resultFuture = tr.executeCountingQuery(query)
     val result = Await.result(resultFuture, 7200.seconds).get //we assume the query execution is complete
     result
   }
 
-  def resultsToBindings(results: Traversable[Array[Int]]): Set[Map[Int, Int]] = {
+  def resultsToBindings(results: Iterator[Array[Int]]): Set[Map[Int, Int]] = {
     results.map({ binding: Array[Int] =>
       // Only keep variable bindings that have an assigned value.
       val filtered: Map[Int, Int] = {
@@ -244,7 +255,7 @@ object TestHelper {
     triples: Set[TriplePattern],
     query: List[TriplePattern]): Set[Map[Int, Int]] = {
     prepareStore(qe, triples)
-    val results = qe.executeQuery(query)
+    val results = qe.resultIteratorForQuery(query)
     val bindings = resultsToBindings(results)
     bindings
   }
@@ -303,7 +314,7 @@ object TripleGenerators {
       // Only seldomly add variables in predicate position, expecially if the subject is a variable.
       p <- if (s < 0) {
         // Only seldomly have the same variable multiple times in a pattern.
-        frequency((5, variableWithout(s)), (100, predicates)) //(1, variable), 
+        frequency((5, variableWithout(s)), (100, predicates)) //(1, variable),
       } else {
         frequency((1, variable), (5, predicates))
       }

@@ -41,33 +41,44 @@ import com.signalcollect.interfaces.SignalMessageWithoutSourceId
 import com.signalcollect.triplerush.util.CompositeLongIntHashMap
 
 class SignalBulkerWithoutIds[@specialized(Long) Id: ClassTag, Signal: ClassTag](size: Int) {
-  private var itemCount = 0
+  private[this] var itemCount = 0
+
   def numberOfItems = itemCount
+
   def isFull: Boolean = itemCount == size
+
   final val targetIds = new Array[Id](size)
   final val signals = new Array[Signal](size)
-  def addSignal(signal: Signal, targetId: Id) {
+
+  def addSignal(signal: Signal, targetId: Id): Unit = {
     signals(itemCount) = signal
     targetIds(itemCount) = targetId
     itemCount += 1
   }
-  def clear {
+
+  def clear(): Unit = {
     itemCount = 0
   }
 }
 
 class ResultBulker(val size: Int) {
-  private var itemCount = 0
+  private[this] var itemCount = 0
+
   def numberOfItems = itemCount
+
   def isFull: Boolean = itemCount == size
-  private final val results = new Array[Array[Int]](size)
-  def addResult(result: Array[Int]) {
+
+  private[this] final val results = new Array[Array[Int]](size)
+
+  def addResult(result: Array[Int]): Unit = {
     results(itemCount) = result
     itemCount += 1
   }
-  def clear {
+
+  def clear(): Unit = {
     itemCount = 0
   }
+
   def getResultArray: Array[Array[Int]] = {
     val resultsCopy = new Array[Array[Int]](itemCount)
     System.arraycopy(results, 0, resultsCopy, 0, itemCount)
@@ -76,7 +87,7 @@ class ResultBulker(val size: Int) {
 }
 
 class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, resultBulkerSize: Int)
-  extends MessageBusFactory[Long, Signal] {
+    extends MessageBusFactory[Long, Signal] {
   def createInstance(
     system: ActorSystem,
     numberOfWorkers: Int,
@@ -94,6 +105,7 @@ class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, resultBu
       sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
       workerApiFactory)
   }
+
   override def toString = "CombiningMessageBusFactory"
 }
 
@@ -109,7 +121,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   val resultBulkerSize: Int,
   val sendCountIncrementorForRequests: MessageBus[_, _] => Unit,
   val workerApiFactory: WorkerApiFactory[Long, Signal])
-  extends AbstractMessageBus[Long, Signal] {
+    extends AbstractMessageBus[Long, Signal] {
 
   lazy val workerApi = workerApiFactory.createInstance(workerProxies, mapper)
 
@@ -118,33 +130,33 @@ final class CombiningMessageBus[Signal: ClassTag](
   val aggregatedCardinalities = new CompositeLongIntHashMap(initialSize = 8)
   val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
-  override def sendSignal(signal: Signal, targetId: Long) {
-    // If message is sent to a Query Vertex 
-    if (targetId.isQueryId) {
-      val extractedQueryId = QueryIds.extractQueryIdFromLong(targetId)
+  override def sendSignal(signal: Signal, targetId: Long): Unit = {
+    // If message is sent to a Query Vertex
+    if (targetId.isOperationId) {
+      val extractedOperationId = OperationIds.extractFromLong(targetId)
       signal match {
         case resultCount: Int =>
-          val oldResultCount = aggregatedResultCounts(extractedQueryId)
-          aggregatedResultCounts(extractedQueryId) = oldResultCount + resultCount
+          val oldResultCount = aggregatedResultCounts(extractedOperationId)
+          aggregatedResultCounts(extractedOperationId) = oldResultCount + resultCount
         case tickets: Long =>
-          handleTickets(tickets, extractedQueryId)
+          handleTickets(tickets, extractedOperationId)
         case result: Array[Int] =>
-          handleTickets(result.tickets, extractedQueryId)
+          handleTickets(result.tickets, extractedOperationId)
           val bindings = result.bindings
-          val oldResults = aggregatedResults.activateKeyAndGetValue(extractedQueryId)
+          val oldResults = aggregatedResults.activateKeyAndGetValue(extractedOperationId)
           if (oldResults != null) {
             oldResults.addResult(bindings)
             if (oldResults.isFull) {
-              val targetId = QueryIds.embedQueryIdInLong(extractedQueryId)
+              val targetId = OperationIds.embedInLong(extractedOperationId)
               sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, oldResults.getResultArray), targetId)
               oldResults.clear
             }
           } else {
             val newBulker = new ResultBulker(resultBulkerSize)
             newBulker.addResult(bindings)
-            aggregatedResults(extractedQueryId) = newBulker
+            aggregatedResults(extractedOperationId) = newBulker
           }
-        case other =>
+        case other@_ =>
           bulkSend(signal, targetId)
       }
     } // If message is sent to an Index Vertex
@@ -157,13 +169,13 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
-  override def sendSignal(signal: Signal, targetId: Long, sourceId: Option[Long], blocking: Boolean = false) {
+  override def sendSignal(signal: Signal, targetId: Long, sourceId: Option[Long], blocking: Boolean = false): Unit = {
     throw new Exception(s"Non-optimized messaging for TripleRush, this should never be called: signal=$signal targetId=$targetId")
   }
 
   def bulkSend(
     signal: Signal,
-    targetId: Long) {
+    targetId: Long): Unit = {
     val workerId = mapper.getWorkerIdForVertexId(targetId)
     val bulker = outgoingMessages(workerId)
     bulker.addSignal(signal, targetId)
@@ -182,30 +194,30 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
-  private def handleTickets(tickets: Long, queryId: Int) {
-    val oldTickets = aggregatedTickets(queryId)
+  private[this] def handleTickets(tickets: Long, operationId: Int): Unit = {
+    val oldTickets = aggregatedTickets(operationId)
     if (oldTickets < 0) {
       if (tickets < 0) {
-        aggregatedTickets(queryId) = oldTickets + tickets
+        aggregatedTickets(operationId) = oldTickets + tickets
       } else {
-        aggregatedTickets(queryId) = oldTickets - tickets
+        aggregatedTickets(operationId) = oldTickets - tickets
       }
     } else {
       if (tickets < 0) {
-        aggregatedTickets(queryId) = tickets - oldTickets
+        aggregatedTickets(operationId) = tickets - oldTickets
       } else {
-        aggregatedTickets(queryId) = tickets + oldTickets
+        aggregatedTickets(operationId) = tickets + oldTickets
       }
     }
   }
 
-  override def flush {
+  override def flush(): Unit = {
     // It is important that the results arrive before the tickets, because
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
       aggregatedResults.process { (queryVertexId, results) =>
         if (results.numberOfItems > 0) {
-          val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
+          val targetId = OperationIds.embedInLong(queryVertexId)
           sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, results.getResultArray), targetId)
           results.clear
         }
@@ -213,13 +225,13 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
     if (!aggregatedResultCounts.isEmpty) {
       aggregatedResultCounts.process { (queryVertexId, resultCount) =>
-        val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
+        val targetId = OperationIds.embedInLong(queryVertexId)
         sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, resultCount), targetId)
       }
     }
     if (!aggregatedTickets.isEmpty) {
       aggregatedTickets.process { (queryVertexId, tickets) =>
-        val targetId = QueryIds.embedQueryIdInLong(queryVertexId)
+        val targetId = OperationIds.embedInLong(queryVertexId)
         sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, tickets), targetId)
       }
     }
@@ -249,7 +261,7 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
-  override def reset {
+  override def reset(): Unit = {
     super.reset
     pendingSignals = 0
     var i = 0
@@ -263,7 +275,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   protected var pendingSignals = 0
 
   val outgoingMessages: Array[SignalBulkerWithoutIds[Long, Signal]] = new Array[SignalBulkerWithoutIds[Long, Signal]](numberOfWorkers)
-  for (i <- 0 until numberOfWorkers) {
+  for {i <- 0 until numberOfWorkers} {
     outgoingMessages(i) = new SignalBulkerWithoutIds[Long, Signal](flushThreshold)
   }
 

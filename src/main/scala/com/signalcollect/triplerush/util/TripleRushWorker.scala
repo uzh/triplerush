@@ -75,4 +75,3 @@ class TripleRushWorker[Signal: ClassTag](
     collectThreshold = 0.0)
 
 }
-  

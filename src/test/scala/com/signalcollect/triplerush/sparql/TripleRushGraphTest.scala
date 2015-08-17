@@ -1,16 +1,16 @@
 package com.signalcollect.triplerush.sparql
 
-import com.hp.hpl.jena.graph.Graph
-import com.hp.hpl.jena.graph.test.AbstractTestGraph
+import org.apache.jena.graph.Graph
+import org.apache.jena.graph.test.AbstractTestGraph
 import com.signalcollect.triplerush.TripleRush
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 import com.signalcollect.GraphBuilder
 import akka.actor.ActorSystem
 import java.util.UUID
-import com.hp.hpl.jena.graph.test.GraphTestBase
-import com.hp.hpl.jena.test.JenaTestBase
-import com.hp.hpl.jena.rdf.model.ModelFactory
+import org.apache.jena.graph.test.GraphTestBase
+import org.apache.jena.test.JenaTestBase
+import org.apache.jena.rdf.model.ModelFactory
 import java.io.InputStream
 
 @RunWith(classOf[Suite])
@@ -38,7 +38,7 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
     g
   }
 
-  override def testIsomorphismFile() {
+  override def testIsomorphismFile(): Unit = {
     testIsomorphismXMLFile(1, true)
     testIsomorphismXMLFile(2, true)
     testIsomorphismXMLFile(3, true)
@@ -49,11 +49,11 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
     testIsomorphismNTripleFile(8, false)
   }
 
-  def testIsomorphismNTripleFile(i: Int, result: Boolean) {
+  def testIsomorphismNTripleFile(i: Int, result: Boolean): Unit = {
     testIsomorphismFile(i, "N-TRIPLE", "nt", result)
   }
 
-  def testIsomorphismXMLFile(i: Int, result: Boolean) {
+  def testIsomorphismXMLFile(i: Int, result: Boolean): Unit = {
     testIsomorphismFile(i, "RDF/XML", "rdf", result)
   }
 
@@ -81,24 +81,44 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
 
   def getInputStream(n: Int, n2: Int, suffix: String): InputStream = {
     val urlStr = s"regression/testModelEquals/$n-$n2.$suffix"
-    return classOf[AbstractTestGraph].getClassLoader.getResourceAsStream(urlStr)
+    classOf[AbstractTestGraph].getClassLoader.getResourceAsStream(urlStr)
   }
 
-  override def testRemove() {}
-  override def testBulkDeleteList() {}
-  override def testBulkDeleteArray() {}
-  override def testBulkDeleteGraph() {}
-  override def testEventDeleteByFind() {}
-  override def testBulkUpdate() {}
-  override def testBulkDeleteIterator() {}
-  override def testDeleteTriple() {}
-  override def testRemoveAll() {}
-  override def testRemoveSPO() {}
-  override def testListSubjects() {} // Uses GraphBase::delete.
-  override def testListPredicates() {} // Uses GraphBase::delete.
-  override def testListObjects() {} // Uses GraphBase::delete.
-  override def testUnregisterOnce() {} // Uses GraphBase::delete.
-  override def testIsEmpty() {} // Uses GraphBase::delete.
-  override def testAGraph() {} // Uses GraphBase::delete.
+  override def testRemove(): Unit = {}
+
+  override def testBulkDeleteList(): Unit = {}
+
+  override def testBulkDeleteArray(): Unit = {}
+
+  override def testBulkDeleteGraph(): Unit = {}
+
+  override def testEventDeleteByFind(): Unit = {}
+
+  override def testBulkUpdate(): Unit = {}
+
+  override def testBulkDeleteIterator(): Unit = {}
+
+  override def testDeleteTriple(): Unit = {}
+
+  override def testRemoveAll(): Unit = {}
+
+  override def testRemoveSPO(): Unit = {}
+
+  override def testListSubjects(): Unit = {}
+
+  // Uses GraphBase::delete.
+  override def testListPredicates(): Unit = {}
+
+  // Uses GraphBase::delete.
+  override def testListObjects(): Unit = {}
+
+  // Uses GraphBase::delete.
+  override def testUnregisterOnce(): Unit = {}
+
+  // Uses GraphBase::delete.
+  override def testIsEmpty(): Unit = {}
+
+  // Uses GraphBase::delete.
+  override def testAGraph(): Unit = {} // Uses GraphBase::delete.
 
 }

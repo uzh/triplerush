@@ -1,20 +1,20 @@
 /*
  *  @author Philip Stutz
- *  
+ *
  *  Copyright 2015 iHealth Technologies
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush.sparql
@@ -22,16 +22,15 @@ package com.signalcollect.triplerush.sparql
 import scala.collection.JavaConversions.asJavaIterator
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import com.hp.hpl.jena.graph.{ GraphEvents, GraphStatisticsHandler, Node, Node_ANY, Node_Literal, Node_URI, Triple }
-import com.hp.hpl.jena.graph.impl.GraphBase
-import com.hp.hpl.jena.query.ARQ
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.sparql.engine.main.StageGenerator
-import com.hp.hpl.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
+
+import org.apache.jena.graph.{ Capabilities, GraphEvents, GraphStatisticsHandler, Node, Node_ANY, Node_Blank, Node_Variable, Triple }
+import org.apache.jena.graph.impl.GraphBase
+import org.apache.jena.query.ARQ
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.sparql.engine.main.StageGenerator
+import org.apache.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
+
 import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
-import com.hp.hpl.jena.graph.Node_Blank
-import com.hp.hpl.jena.graph.Node_Variable
-import com.hp.hpl.jena.graph.Capabilities
 
 /**
  * A TripleRush implementation of the Jena Graph interface.
@@ -68,10 +67,7 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
    * - If a string starts with `"` or "<", then it is interpreted as a general literal.
    */
   override def performAdd(triple: Triple): Unit = {
-    val sString = NodeConversion.nodeToString(triple.getSubject)
-    val pString = NodeConversion.nodeToString(triple.getPredicate)
-    val oString = NodeConversion.nodeToString(triple.getObject)
-    tr.addTriple(sString, pString, oString)
+    tr.addTriple(triple, blocking = true)
   }
 
   override def clear: Unit = {
@@ -113,7 +109,7 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
 
   // TODO: Make more efficient by unrolling everything.
   // TODO: Does not support using the same variable/blank node multiple times. Test if this case needs to be supported.
-  private def arqNodesToPattern(s: Node, p: Node, o: Node): TriplePattern = {
+  private[this] def arqNodesToPattern(s: Node, p: Node, o: Node): TriplePattern = {
     var nextVariableId = -1
     @inline def nodeToId(n: Node): Int = {
       n match {
@@ -125,7 +121,7 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
           throw new UnsupportedOperationException("Variables not supported.")
         case blank: Node_Blank =>
           tr.dictionary(NodeConversion.nodeToString(blank))
-        case other =>
+        case other@_ =>
           tr.dictionary(NodeConversion.nodeToString(other))
       }
     }
@@ -136,15 +132,25 @@ class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase wit
   }
 
   override val getCapabilities = new Capabilities {
+
     val sizeAccurate = true
+
     val addAllowed = true
+
     def addAllowed(everyTriple: Boolean) = true
+
     val deleteAllowed = false
+
     def deleteAllowed(everyTriple: Boolean) = false
+
     val iteratorRemoveAllowed = false
+
     val canBeEmpty = true
+
     val findContractSafe = true
+
     val handlesLiteralTyping = false
+
   }
 
 }

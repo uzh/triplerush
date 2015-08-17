@@ -1,23 +1,23 @@
 /*
  *  @author Philip Stutz
- *  
+ *
  *  Copyright 2014 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.dictionary
 
 import org.scalatest.FlatSpec
 
@@ -63,7 +63,7 @@ class CompressedDictionarySpec extends FlatSpec with TestAnnouncements {
     val decoded = d(id)
     assert(decoded == "simple#")
   }
-  
+
   it should "correctly encode and decode a string with a hash at the beginning" in {
     val d = new CompressedDictionary
     val id = d("#simple")
@@ -73,7 +73,7 @@ class CompressedDictionarySpec extends FlatSpec with TestAnnouncements {
     val decoded = d(id)
     assert(decoded == "#simple")
   }
-  
+
   it should "support adding entries in parallel" in {
     val d = new CompressedDictionary
     val stringEntries = (1 to 1000).map(s => s + "#" + s)
@@ -99,5 +99,5 @@ class CompressedDictionarySpec extends FlatSpec with TestAnnouncements {
     assert(reverseMapped.map(_.toInt).min == 1001)
     assert(highStringEntries.toSet == reverseMapped.toSet)
   }
-  
+
 }

@@ -1,21 +1,22 @@
 package com.signalcollect.triplerush.jena
-import com.hp.hpl.jena.rdf.model.ModelFactory
+
+import org.apache.jena.rdf.model.ModelFactory
 import scala.collection.mutable.UnrolledBuffer
-import com.hp.hpl.jena.query.QueryFactory
-import com.hp.hpl.jena.query.QueryExecutionFactory
+import org.apache.jena.query.QueryFactory
+import org.apache.jena.query.QueryExecutionFactory
 import com.signalcollect.triplerush.QueryParticle._
 import collection.JavaConversions._
-import com.hp.hpl.jena.query.QuerySolution
-import com.hp.hpl.jena.rdf.model.RDFNode
+import org.apache.jena.query.QuerySolution
+import org.apache.jena.rdf.model.RDFNode
 import com.signalcollect.triplerush.QueryEngine
 import com.signalcollect.triplerush.TriplePattern
 import scala.Option.option2Iterable
-import com.hp.hpl.jena.sparql.engine.ResultSetStream
-import com.hp.hpl.jena.sparql.core.ResultBinding
-import com.hp.hpl.jena.sparql.engine.binding.BindingProject
-import com.hp.hpl.jena.sparql.engine.binding.Binding
-import com.hp.hpl.jena.sparql.engine.binding.BindingProjectBase
-import com.hp.hpl.jena.sparql.engine.binding.BindingHashMap
+import org.apache.jena.sparql.engine.ResultSetStream
+import org.apache.jena.sparql.core.ResultBinding
+import org.apache.jena.sparql.engine.binding.BindingProject
+import org.apache.jena.sparql.engine.binding.Binding
+import org.apache.jena.sparql.engine.binding.BindingProjectBase
+import org.apache.jena.sparql.engine.binding.BindingHashMap
 
 class Jena extends QueryEngine {
 
@@ -86,7 +87,9 @@ WHERE {
   }
 
   val a: Char = 'a'
+
   def patternToString(tp: TriplePattern): String = s"${intToQueryString(tp.s)} ${intToQueryString(tp.p)} ${intToQueryString(tp.o)} ."
+
   def intToQueryString(v: Int): String = {
     v match {
       // map to characters
@@ -101,6 +104,7 @@ WHERE {
       case other => throw new Exception("Unsupported variable.")
     }
   }
+
   def intToInsertString(v: Int): String = {
     if (v > 0) {
       "http://example.com#" + (a + v).toChar
@@ -108,9 +112,12 @@ WHERE {
       throw new Exception(s"Unsupported value $v.")
     }
   }
+
   def awaitIdle {}
+
   def shutdown {
     model.close
   }
+
   def prepareExecution {}
 }

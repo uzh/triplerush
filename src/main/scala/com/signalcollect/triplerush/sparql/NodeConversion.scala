@@ -1,10 +1,30 @@
+/*
+ *  @author Philip Stutz
+ *
+ *  Copyright 2015 iHealth Technologies
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.signalcollect.triplerush.sparql
 
-import com.hp.hpl.jena.graph.Node
-import com.hp.hpl.jena.graph.impl.LiteralLabelFactory
-import com.hp.hpl.jena.graph.NodeFactory
-import com.hp.hpl.jena.rdf.model.AnonId
-import com.hp.hpl.jena.datatypes.TypeMapper
+import org.apache.jena.graph.Node
+import org.apache.jena.graph.impl.LiteralLabelFactory
+import org.apache.jena.graph.NodeFactory
+import org.apache.jena.rdf.model.AnonId
+import org.apache.jena.datatypes.TypeMapper
+import org.apache.jena.graph.BlankNodeId
 
 object NodeConversion {
 
@@ -22,7 +42,7 @@ object NodeConversion {
           } else {
             n.toString
           }
-        case other =>
+        case other@_ =>
           throw new UnsupportedOperationException(s"Literal $n not supported.")
       }
     } else if (n.isBlank) {
@@ -30,7 +50,7 @@ object NodeConversion {
     } else {
       throw new UnsupportedOperationException(s"TripleRush does not support node $n of type ${n.getClass.getSimpleName}.")
     }
-    // The code below can be enabled for debugging: it checks that a node is encoded such that decoding the string 
+    // The code below can be enabled for debugging: it checks that a node is encoded such that decoding the string.
     // results in a node that is equal to the original node.
     //val thereAnBack = stringToNode(nodeAsString)
     //assert(thereAnBack.equals(n), s"Node $n as a string is $nodeAsString, which gets converted to $thereAnBack")
@@ -71,8 +91,8 @@ object NodeConversion {
       case '<' =>
         NodeFactory.createLiteral(s.tail, null, true)
       case '_' =>
-        NodeFactory.createAnon(AnonId.create(s.tail))
-      case other =>
+        NodeFactory.createBlankNode(BlankNodeId.create(s.tail))
+      case other: Char =>
         throw new UnsupportedOperationException(s"Encoded string $s could not be decoded.")
     }
   }

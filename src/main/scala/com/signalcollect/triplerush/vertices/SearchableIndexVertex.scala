@@ -1,21 +1,21 @@
 /*
  *  @author Philip Stutz
  *  @author Mihaela Verman
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
 package com.signalcollect.triplerush.vertices
@@ -28,27 +28,27 @@ import com.signalcollect.util.SearchableIntSet
  * Stores the child delta array in the state.
  */
 abstract class SearchableIndexVertex[SignalType, State](
-  id: Long) extends IndexVertex[Any](id) {
+    id: Long) extends IndexVertex[Any](id) {
 
-  override def afterInitialization(graphEditor: GraphEditor[Long, Any]) {
+  override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     super.afterInitialization(graphEditor)
   }
 
   @inline final def childIdsContain(n: Int): Boolean = {
     state match {
-      case i: Int =>
-        if (i != n) false else true
-      case a: Array[Int] =>
-        new SearchableIntSet(a).contains(n)
+      case i: Int        => i == n
+      case a: Array[Int] => new SearchableIntSet(a).contains(n)
+      case _ => false
     }
   }
 
-  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]) {
+  def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]): Unit = {
     state match {
       case i: Int =>
         graphEditor.sendSignal(ChildIdReply(Array(i)), requestor)
       case a: Array[Int] =>
         graphEditor.sendSignal(ChildIdReply(a.toArray), requestor)
+      case _ =>
     }
   }
 
@@ -64,20 +64,18 @@ abstract class SearchableIndexVertex[SignalType, State](
           f(a(i))
           i += 1
         }
+      case _ =>
     }
   }
 
   override def edgeCount = {
-    if (state != null) {
       state match {
         case i: Int =>
           1
         case a: Array[Int] =>
           a.length
+        case _ => 0
       }
-    } else {
-      0
-    }
   }
 
   def cardinality = edgeCount
@@ -104,6 +102,7 @@ abstract class SearchableIndexVertex[SignalType, State](
           state = new SearchableIntSet(a).insert(delta)
           val wasInserted = deltasBeforeInsert != state // Reference comparison, if a new array was allocated, then an insert happened.
           wasInserted
+        case _ => false
       }
     }
   }

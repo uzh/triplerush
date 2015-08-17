@@ -1,24 +1,24 @@
 /*
  *  @author Philip Stutz
  *  @author Mihaela Verman
- *  
+ *
  *  Copyright 2013 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.dictionary
 
 import com.signalcollect.util.IntHashMap
 import com.signalcollect.util.IntValueHashMap
@@ -30,27 +30,34 @@ import scala.collection.mutable.ArrayBuffer
 
 trait Dictionary {
   def contains(s: String): Boolean
+
   def apply(s: String): Int
+
   def apply(id: Int): String
+
   // Can only be called, when there are no concurrent writes.
   def unsafeDecode(id: Int): String
+
   def unsafeGetEncoded(s: String): Int
+
   def decode(id: Int): Option[String]
-  def clear
+
+  def clear(): Unit
 }
 
 class HashMapDictionary(
-  initialSize: Int = 32768,
-  rehashFraction: Float = 0.5f) extends Dictionary {
-  private val lock = new ReentrantReadWriteLock
-  private val read = lock.readLock
-  private val write = lock.writeLock
-  private var id2String = new ArrayBuffer[String](initialSize)
-  id2String += "*" // Wildcard entry at 0
-  private var string2Id = new IntValueHashMap[String](initialSize, rehashFraction)
-  private var maxId = 0
+    initialSize: Int = 32768,
+    rehashFraction: Float = 0.5f) extends Dictionary {
+  private[this] val lock = new ReentrantReadWriteLock
+  private[this] val read = lock.readLock
+  private[this] val write = lock.writeLock
+  private[this] var id2String = new ArrayBuffer[String](initialSize)
+  id2String += "*"
+  // Wildcard entry at 0
+  private[this] var string2Id = new IntValueHashMap[String](initialSize, rehashFraction)
+  private[this] var maxId = 0
 
-  def clear {
+  def clear(): Unit = {
     write.lock
     try {
       maxId = 0
@@ -75,7 +82,7 @@ class HashMapDictionary(
   @inline final def unsafeGetEncoded(s: String): Int = {
     string2Id.get(s)
   }
-  
+
   def reserveId: Int = {
     write.lock
     var reserved = 0
@@ -88,7 +95,7 @@ class HashMapDictionary(
     }
     reserved
   }
-  
+
   def apply(s: String): Int = {
     read.lock
     val existingEncoding: Int = try {
@@ -124,9 +131,9 @@ class HashMapDictionary(
   }
 
   /**
-   *  Returns null if no entry with the given id is found.
+   * Returns null if no entry with the given id is found.
    *
-   *  Only call if there are no concurrent modifications of the dictionary.
+   * Only call if there are no concurrent modifications of the dictionary.
    */
   @inline final def unsafeDecode(id: Int): String = {
     id2String(id)
@@ -153,7 +160,7 @@ class HashMapDictionary(
    *
    * Warning: this has to be done before any other dictionary entries are added.
    */
-  def loadFromFile(fileName: String) {
+  def loadFromFile(fileName: String): Unit = {
     assert(string2Id.isEmpty)
     assert(id2String.isEmpty)
     println(s"Parsing dictionary from $fileName.")
@@ -169,7 +176,7 @@ class HashMapDictionary(
     write.lock
     var entriesAdded = 0
     try {
-      for (entry <- entries) {
+      for {entry <- entries} {
         val (id, string) = parseEntry(entry)
         maxId = math.max(id, maxId)
         string2Id.put(string, id)

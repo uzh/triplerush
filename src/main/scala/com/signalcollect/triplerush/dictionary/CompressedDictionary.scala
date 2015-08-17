@@ -1,26 +1,27 @@
 /*
  *  @author Philip Stutz
- *  
+ *
  *  Copyright 2014 University of Zurich
- *      
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *         http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *  
+ *
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.dictionary
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
+import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.util.CompositeLongIntHashMap
 import com.signalcollect.util.IntLongHashMap
 
@@ -30,9 +31,9 @@ class CompressedDictionary extends Dictionary {
   val prefixedIdToId = new CompositeLongIntHashMap(initialSize = 128, rehashFraction = 0.4f)
   val impl = new HashMapDictionary
 
-  private val lock = new ReentrantReadWriteLock
-  private val read = lock.readLock
-  private val write = lock.writeLock
+  private[this] val lock = new ReentrantReadWriteLock
+  private[this] val read = lock.readLock
+  private[this] val write = lock.writeLock
 
   /**
    * Search for the last useful occurrence of a slash, then check if a hash still appears after that.
@@ -124,7 +125,8 @@ class CompressedDictionary extends Dictionary {
       if (prefixedId != 0) {
         val prefixId = new EfficientIndexPattern(prefixedId).extractFirst
         val remainderId = new EfficientIndexPattern(prefixedId).extractSecond
-        impl.apply(prefixId) + impl.apply(remainderId)
+        // https://issues.scala-lang.org/browse/SI-9315 and https://groups.google.com/forum/#!topic/scala-language/AN2Ymk1J1ik
+        new java.lang.StringBuilder().append(apply(prefixId)).append(apply(remainderId)).toString
       } else {
         impl.apply(id)
       }
@@ -139,7 +141,8 @@ class CompressedDictionary extends Dictionary {
     if (prefixedId != 0) {
       val prefixId = new EfficientIndexPattern(prefixedId).extractFirst
       val remainderId = new EfficientIndexPattern(prefixedId).extractSecond
-      impl.apply(prefixId) + impl.apply(remainderId)
+      // https://issues.scala-lang.org/browse/SI-9315 and https://groups.google.com/forum/#!topic/scala-language/AN2Ymk1J1ik
+      new java.lang.StringBuilder().append(apply(prefixId)).append(apply(remainderId)).toString
     } else {
       impl.apply(id)
     }
@@ -152,7 +155,9 @@ class CompressedDictionary extends Dictionary {
       if (prefixedId != 0) {
         val prefixId = new EfficientIndexPattern(prefixedId).extractFirst
         val remainderId = new EfficientIndexPattern(prefixedId).extractSecond
-        Some(impl.apply(prefixId) + impl.apply(remainderId))
+        // https://issues.scala-lang.org/browse/SI-9315 and https://groups.google.com/forum/#!topic/scala-language/AN2Ymk1J1ik
+        val decoded = new java.lang.StringBuilder().append(apply(prefixId)).append(apply(remainderId)).toString
+        Some(decoded)
       } else {
         val decoded = impl.apply(id)
         if (decoded != null) {

@@ -5,6 +5,7 @@ import org.scalacheck.Prop._
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import com.signalcollect.util.TestAnnouncements
+import com.signalcollect.triplerush.mapper.DistributedTripleMapper
 
 class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnnouncements {
 
@@ -15,6 +16,7 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
   val m = new DistributedTripleMapper(numberOfNodes = numberOfNodes, workersPerNode = workersPerNode)
 
   def nodeId(workerId: Int) = (((workerId & Int.MaxValue) % step) / workersPerNode).floor.toInt
+
   def workerId(workerId: Int) = (workerId & Int.MaxValue) % workersPerNode
 
   assert(nodeId(0) == 0)
@@ -73,7 +75,7 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnn
   it should "always assign queries to node 0" in {
     check((queryVertexId: Int) => {
       if (queryVertexId != 0 && queryVertexId != Int.MinValue) {
-        val queryWorkerId = m.getWorkerIdForVertexId(QueryIds.embedQueryIdInLong(queryVertexId))
+        val queryWorkerId = m.getWorkerIdForVertexId(OperationIds.embedInLong(queryVertexId))
         val node = nodeId(queryWorkerId)
         node == 0
       } else {
