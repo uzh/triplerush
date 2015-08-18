@@ -29,9 +29,9 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with TestAnnouncem
          |PREFIX mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#>
          |PREFIX qt:     <http://www.w3.org/2001/sw/DataAccess/tests/test-query#>
          |SELECT DISTINCT ?item
-         | WHERE {
+         |WHERE {
          |  [] rdf:first ?item
-         | }
+         |}
          | """.stripMargin
     val subManifestsResultSet = Sparql(subManifestQuery)
     val subManifests = subManifestsResultSet.map(f => f.get("item").toString).toList.filter(f => f.endsWith(".ttl"))
