@@ -50,8 +50,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",
   "org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
   "org.easymock" % "easymock" % "3.3.1" % "test",
-  "junit" % "junit" % "4.12" % "test",
-  "org.openrdf.sesame" % "sesame-sparql-testsuite" % "4.0.0-M1" notTransitive
+  "junit" % "junit" % "4.12" % "test"
 )
 
 pomExtra := (
