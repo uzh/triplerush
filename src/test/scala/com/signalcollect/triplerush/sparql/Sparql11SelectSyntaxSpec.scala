@@ -51,10 +51,10 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with TestAnnouncem
         |PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         |SELECT ?queryToRun ?type
         |WHERE { [] rdf:first ?testURI.
-        |?testURI a ?type ;
-        |mf:action ?queryToRun ;
-        |dawgt:approval dawgt:Approved .
-        |FILTER(?type IN (mf:PositiveSyntaxTest11, mf:NegativeSyntaxTest11, mf:PositiveUpdateSyntaxTest11, mf:NegativeUpdateSyntaxTest11))
+        |        ?testURI a ?type ;
+        |        mf:action ?queryToRun ;
+        |        dawgt:approval dawgt:Approved .
+        |        FILTER(?type IN (mf:PositiveSyntaxTest11, mf:NegativeSyntaxTest11, mf:PositiveUpdateSyntaxTest11, mf:NegativeUpdateSyntaxTest11))
         |}
       """.stripMargin
     val results = Sparql(query)
