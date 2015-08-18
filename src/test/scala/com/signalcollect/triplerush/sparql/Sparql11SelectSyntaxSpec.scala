@@ -85,7 +85,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with TestAnnouncem
           }
         } catch {
           case parseException: org.apache.jena.query.QueryParseException => // This is expected because QueryFactory.create works only
-            // on QUERY and not on UPDATE, LOAD.
+            // on QUERY and not on UPDATE, LOAD, INSERT etc.
           case illegalStateException: java.lang.IllegalStateException => //This one is expected as "SERVICE" isn't working or
           //even Jena probably doesn't work for this query.
         }
