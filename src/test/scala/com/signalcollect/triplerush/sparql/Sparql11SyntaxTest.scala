@@ -1,9 +1,8 @@
 package com.signalcollect.triplerush.sparql
 
-import com.hp.hpl.jena.query.{QueryFactory, QueryParseException}
 import com.signalcollect.triplerush.TripleRush
+import org.apache.jena.query.QueryFactory
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-
 import scala.collection.JavaConversions.asScalaIterator
 
 /**
@@ -77,7 +76,7 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   Unit = {
     subManifests.map {
       f =>
-        tr.loadNtriples(f)
+        tr.load(f)
         tr.awaitIdle
     }
   }
@@ -119,7 +118,7 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       val nameOfTest = test.get("Name").toString
       val action = test.get("Action").toString
       val typeOfTest = test.get("Type").toString
-      val positiveTest = typeOfTest.equals("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#PositiveSyntaxTest11") ||  
+      val positiveTest = typeOfTest.equals("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#PositiveSyntaxTest11") ||
         typeOfTest.equals("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#PositiveUpdateSyntaxTest11")
       TestDetails(uriOfTest, nameOfTest, action, positiveTest)
     }
@@ -128,7 +127,7 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     //TODO: We will run all syntax tests later, for now only focusing on select queries.
 //    val expectedNumberOfPositiveTests = testsToRun.count(p => p.positive)
     val expectedNumberOfNegativeTests = testsToRun.count(p => !p.positive)
-    
+
     // Run through all test queries and collect metrics.
     var expectedNumberOfPositiveTests = 0
     var actualNumberOfPositivePassed = 0
@@ -145,7 +144,7 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
             }
         } catch {
           case ex: Exception => println("failed to do anything with this query where as we should have: "+ query + ex.toString)
-        } 
+        }
       }
       else {
         intercept[Exception] {
@@ -154,7 +153,7 @@ class Sparql11SyntaxTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       }
     })
-    
+
     println("Expected number of positives: " +expectedNumberOfPositiveTests)
     println("Expected number of negatives: " +expectedNumberOfNegativeTests)
     println("Actual number of positives: " +actualNumberOfPositivePassed)
