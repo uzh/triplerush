@@ -1,5 +1,5 @@
 import AssemblyKeys._
- 
+
 assemblySettings
 
 /** Project */
@@ -13,7 +13,7 @@ scalaVersion := "2.11.7"
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
-/** 
+/**
  * See https://github.com/sbt/sbt-assembly/issues/123
  */
 mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
@@ -35,7 +35,7 @@ EclipseKeys.withSource := true
 
 jarName in assembly := "triplerush.jar"
 
-excludedJars in assembly <<= (fullClasspath in assembly) map { cp => 
+excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
   cp filter {_.data.getName == "minlog-1.2.jar"}
 }
 
@@ -50,7 +50,8 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",
   "org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
   "org.easymock" % "easymock" % "3.3.1" % "test",
-  "junit" % "junit" % "4.12" % "test"
+  "junit" % "junit" % "4.12" % "test",
+  "org.openrdf.sesame" % "sesame-sparql-testsuite" % "4.0.0-M1" notTransitive
 )
 
 pomExtra := (
