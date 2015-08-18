@@ -5,7 +5,7 @@ assemblySettings
 /** Project */
 name := "triplerush"
 
-version := "4.1.1"
+version := "4.1.2-SNAPSHOT"
 
 organization := "com.signalcollect"
 
