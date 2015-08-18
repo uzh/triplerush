@@ -11,7 +11,7 @@ import scala.collection.JavaConversions.asScalaIterator
  * Uses w3c test files to run SELECT syntax tests against Sparql 1.1 spec*
  */
 //TODO: Work with "sesame-sparql-testsuite" to remove test files from resources directory.
-class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfterAll with Checkers with TestAnnouncements {
+class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with TestAnnouncements {
 
   val tr = new TripleRush
   val graph = new TripleRushGraph(tr)
