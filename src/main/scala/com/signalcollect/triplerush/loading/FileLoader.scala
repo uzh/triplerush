@@ -20,9 +20,10 @@
 
 package com.signalcollect.triplerush.loading
 
+import java.io.InputStream
 import java.util.concurrent.Executors
 
-import org.apache.jena.riot.RDFDataMgr
+import org.apache.jena.riot.{Lang, RDFDataMgr}
 import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
 
 import org.apache.jena.graph.{ Triple => JenaTriple }
@@ -31,14 +32,17 @@ import com.signalcollect.triplerush.{ EfficientIndexPattern, IndexVertexEdge }
 import com.signalcollect.triplerush.dictionary.Dictionary
 import com.signalcollect.triplerush.sparql.NodeConversion
 
-case class FileLoader(filePath: String, dictionary: Dictionary) extends Iterator[GraphEditor[Long, Any] => Unit] {
+case class FileLoader(filePathOrInputStream: Either[String, InputStream], dictionary: Dictionary, lang: Lang = Lang.TURTLE) extends Iterator[GraphEditor[Long, Any] => Unit] {
 
   val tripleIterator = new PipedRDFIterator[JenaTriple]
-  val inputStream = new PipedTriplesStream(tripleIterator)
+  val sink = new PipedTriplesStream(tripleIterator)
   val executor = Executors.newSingleThreadExecutor
   val parser = new Runnable {
     def run: Unit = {
-      RDFDataMgr.parse(inputStream, filePath)
+      filePathOrInputStream match {
+        case Left(filePath) => RDFDataMgr.parse(sink, filePath, lang)
+        case Right(inputStream) => RDFDataMgr.parse(sink, inputStream, lang)
+      }
     }
   }
   executor.submit(parser)
