@@ -32,7 +32,7 @@ import com.signalcollect.triplerush.{ EfficientIndexPattern, IndexVertexEdge }
 import com.signalcollect.triplerush.dictionary.Dictionary
 import com.signalcollect.triplerush.sparql.NodeConversion
 
-case class FileLoader(filePathOrInputStream: Either[String, InputStream], dictionary: Dictionary, lang: Lang = Lang.TURTLE) extends Iterator[GraphEditor[Long, Any] => Unit] {
+case class DataLoader(filePathOrInputStream: Either[String, InputStream], dictionary: Dictionary, lang: Lang = Lang.TURTLE) extends Iterator[GraphEditor[Long, Any] => Unit] {
 
   val tripleIterator = new PipedRDFIterator[JenaTriple]
   val sink = new PipedTriplesStream(tripleIterator)
@@ -59,14 +59,14 @@ case class FileLoader(filePathOrInputStream: Either[String, InputStream], dictio
     val sId = dictionary(subjectString)
     val pId = dictionary(predicateString)
     val oId = dictionary(objectString)
-    val loader: GraphEditor[Long, Any] => Unit = FileLoader.addEncodedTriple(
+    val loader: GraphEditor[Long, Any] => Unit = DataLoader.addEncodedTriple(
       sId, pId, oId, _)
     loader
   }
 
 }
 
-case object FileLoader {
+case object DataLoader {
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Long, Any]): Unit = {
     assert(sId > 0 && pId > 0 && oId > 0)

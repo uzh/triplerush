@@ -149,7 +149,7 @@ case class TripleRush(
    * If you get a serialization error for the dictionary, it is probably due to a problematic placement hint.
    */
   def load(filePath: String, placementHint: Option[Long] = Some(OperationIds.embedInLong(1))): Unit = {
-    graph.loadGraph(new FileLoader(Left(filePath), dictionary), placementHint)
+    graph.loadGraph(new DataLoader(Left(filePath), dictionary), placementHint)
   }
 
   /**
