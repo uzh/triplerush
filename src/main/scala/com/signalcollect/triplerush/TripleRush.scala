@@ -155,6 +155,9 @@ case class TripleRush(
     graph.loadGraph(new DataLoader(Left(filePath), dictionary, lang), placementHint)
   }
 
+  def loadStream(inputStream: InputStream, placementHint: Option[Long] = Some(OperationIds.embedInLong(1)), lang: Option[Lang] = None): Unit = {
+    graph.loadGraph(new DataLoader(Right(inputStream), dictionary, lang), placementHint)
+  }
   /**
    * String encoding:
    * By default something is interpreted as an IRI.
