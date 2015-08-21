@@ -44,7 +44,7 @@ object Lubm {
     println("Loading LUBM1 ... ")
     for (fileNumber <- 0 to 14) {
       val filename = s".${File.separator}lubm${File.separator}university0_$fileNumber.nt"
-      qe.loadStream(new FileInputStream(filename), lang = Some(Lang.TURTLE))
+      qe.loadStream(new FileInputStream(filename), lang = Lang.TURTLE)
     }
     qe.prepareExecution
     println("Finished loading LUBM1.")
