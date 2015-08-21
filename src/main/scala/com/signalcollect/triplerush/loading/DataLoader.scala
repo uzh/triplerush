@@ -20,9 +20,10 @@
 
 package com.signalcollect.triplerush.loading
 
+import java.io.InputStream
 import java.util.concurrent.Executors
 
-import org.apache.jena.riot.RDFDataMgr
+import org.apache.jena.riot.{Lang, RDFDataMgr}
 import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
 
 import org.apache.jena.graph.{ Triple => JenaTriple }
@@ -31,14 +32,17 @@ import com.signalcollect.triplerush.{ EfficientIndexPattern, IndexVertexEdge }
 import com.signalcollect.triplerush.dictionary.Dictionary
 import com.signalcollect.triplerush.sparql.NodeConversion
 
-case class FileLoader(filePath: String, dictionary: Dictionary) extends Iterator[GraphEditor[Long, Any] => Unit] {
+case class DataLoader(filePathOrInputStream: Either[String, InputStream], dictionary: Dictionary, lang: Option[Lang] = None) extends Iterator[GraphEditor[Long, Any] => Unit] {
 
   val tripleIterator = new PipedRDFIterator[JenaTriple]
-  val inputStream = new PipedTriplesStream(tripleIterator)
+  val sink = new PipedTriplesStream(tripleIterator)
   val executor = Executors.newSingleThreadExecutor
   val parser = new Runnable {
     def run: Unit = {
-      RDFDataMgr.parse(inputStream, filePath)
+      filePathOrInputStream match {
+        case Left(filePath) => RDFDataMgr.parse(sink, filePath, lang.getOrElse(null))
+        case Right(inputStream) => RDFDataMgr.parse(sink, inputStream, lang.getOrElse(null))
+      }
     }
   }
   executor.submit(parser)
@@ -55,14 +59,14 @@ case class FileLoader(filePath: String, dictionary: Dictionary) extends Iterator
     val sId = dictionary(subjectString)
     val pId = dictionary(predicateString)
     val oId = dictionary(objectString)
-    val loader: GraphEditor[Long, Any] => Unit = FileLoader.addEncodedTriple(
+    val loader: GraphEditor[Long, Any] => Unit = DataLoader.addEncodedTriple(
       sId, pId, oId, _)
     loader
   }
 
 }
 
-case object FileLoader {
+case object DataLoader {
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Long, Any]): Unit = {
     assert(sId > 0 && pId > 0 && oId > 0)

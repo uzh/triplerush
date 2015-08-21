@@ -20,8 +20,11 @@
 
 package com.signalcollect.triplerush
 
+import java.io.InputStream
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import org.apache.jena.riot.Lang
+
 import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration.DurationInt
 import scala.reflect.ManifestFactory
@@ -148,10 +151,13 @@ case class TripleRush(
    * The placement hint should ensure that this gets processed on node 0, because the dictionary resides on that node.
    * If you get a serialization error for the dictionary, it is probably due to a problematic placement hint.
    */
-  def load(filePath: String, placementHint: Option[Long] = Some(OperationIds.embedInLong(1))): Unit = {
-    graph.loadGraph(new FileLoader(filePath, dictionary), placementHint)
+  def load(filePath: String, placementHint: Option[Long] = Some(OperationIds.embedInLong(1)), lang: Option[Lang] = None): Unit = {
+    graph.loadGraph(new DataLoader(Left(filePath), dictionary, lang), placementHint)
   }
 
+  def loadStream(inputStream: InputStream, placementHint: Option[Long] = Some(OperationIds.embedInLong(1)), lang: Lang): Unit = {
+    graph.loadGraph(new DataLoader(Right(inputStream), dictionary, Some(lang)), placementHint)
+  }
   /**
    * String encoding:
    * By default something is interpreted as an IRI.
