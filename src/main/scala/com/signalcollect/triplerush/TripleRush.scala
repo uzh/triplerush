@@ -116,6 +116,7 @@ case class TripleRush(
         SingleNodeTripleMapperFactory.getClass.getName,
         new AlternativeTripleMapperFactory(false).getClass.getName,
         DistributedTripleMapperFactory.getClass.getName,
+        RelievedNodeZeroTripleMapperFactory.getClass.getName,
         LoadBalancingTripleMapperFactory.getClass.getName,
         ManifestFactory.Long.getClass.getName,
         classOf[CombiningMessageBusFactory[_]].getName,
