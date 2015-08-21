@@ -27,7 +27,7 @@ import com.signalcollect.interfaces.MapperFactory
 final class RelievedNodeZeroTripleMapper(numberOfNodes: Int, workersPerNode: Int)
     extends DistributedTripleMapper(numberOfNodes, workersPerNode) {
   assert(numberOfNodes >= 2, "RelievedNodeZeroTripleMapper can only be used on a cluster with more than one node.")
-  val numberOfIndexNodes = numberOfNodes - 1 // No index vertices on node 0. 
+  val numberOfIndexNodes = numberOfNodes - 1 // No index vertices on node 0.
 
   /**
    * Asserts that both nodeAssignmentId and nodeBalanceId
