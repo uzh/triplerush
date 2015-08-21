@@ -62,7 +62,8 @@ case class TripleRush(
     val dictionary: Dictionary = new CompressedDictionary(),
     tripleMapperFactory: Option[MapperFactory[Long]] = None,
     fastStart: Boolean = false,
-    console: Boolean = false) extends QueryEngine {
+    console: Boolean = false,
+    kryoRegistrations: List[String] = Kryo.defaultRegistrations) extends QueryEngine {
 
   TrGlobal.dictionary = Some(dictionary)
 
@@ -85,51 +86,7 @@ case class TripleRush(
       withBlockingGraphModificationsSupport(false).
       withStatsReportingInterval(500).
       withEagerIdleDetection(false).
-      withKryoRegistrations(List(
-        classOf[RootIndex].getName,
-        classOf[SIndex].getName,
-        classOf[PIndex].getName,
-        classOf[OIndex].getName,
-        classOf[SPIndex].getName,
-        classOf[POIndex].getName,
-        classOf[SOIndex].getName,
-        classOf[TriplePattern].getName,
-        classOf[IndexVertexEdge].getName,
-        classOf[BlockingIndexVertexEdge].getName,
-        classOf[CardinalityRequest].getName,
-        classOf[CardinalityReply].getName,
-        classOf[PredicateStatsReply].getName,
-        classOf[ChildIdRequest].getName,
-        classOf[ChildIdReply].getName,
-        classOf[SubjectCountSignal].getName,
-        classOf[ObjectCountSignal].getName,
-        classOf[TriplePattern].getName,
-        classOf[PredicateStats].getName,
-        classOf[ResultIteratorQueryVertex].getName,
-        classOf[ResultIterator].getName,
-        classOf[AtomicBoolean].getName,
-        classOf[LinkedBlockingQueue[Any]].getName,
-        classOf[TripleRushWorkerFactory[Any]].getName,
-        TripleRushEdgeAddedToNonExistentVertexHandlerFactory.getClass.getName,
-        TripleRushUndeliverableSignalHandlerFactory.getClass.getName,
-        TripleRushStorage.getClass.getName,
-        SingleNodeTripleMapperFactory.getClass.getName,
-        new AlternativeTripleMapperFactory(false).getClass.getName,
-        DistributedTripleMapperFactory.getClass.getName,
-        RelievedNodeZeroTripleMapperFactory.getClass.getName,
-        LoadBalancingTripleMapperFactory.getClass.getName,
-        ManifestFactory.Long.getClass.getName,
-        classOf[CombiningMessageBusFactory[_]].getName,
-        classOf[AddEdge[Any, Any]].getName,
-        classOf[AddEdge[Long, Long]].getName, // TODO: Can we force the use of the specialized version?
-        new Throughput[Long, Any].getClass.getName,
-        SignalMessageWithoutSourceId[Long, Any](
-          signal = null.asInstanceOf[Any],
-          targetId = null.asInstanceOf[Long]).getClass.getName,
-        BulkSignalNoSourceIds[Long, Any](
-          signals = null.asInstanceOf[Array[Any]],
-          targetIds = null.asInstanceOf[Array[Long]]).getClass.getName,
-        "akka.actor.RepointableActorRef")).build
+      withKryoRegistrations(kryoRegistrations).build
   val system = graphBuilder.config.actorSystem.getOrElse(ActorSystemRegistry.retrieve("SignalCollect").get)
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
@@ -297,6 +254,58 @@ case class TripleRush(
 
   def countVerticesByType: Map[String, Int] = {
     graph.aggregate(new CountVerticesByType)
+  }
+
+}
+
+object Kryo {
+
+  val defaultRegistrations: List[String] = {
+    List(
+      classOf[RootIndex].getName,
+      classOf[SIndex].getName,
+      classOf[PIndex].getName,
+      classOf[OIndex].getName,
+      classOf[SPIndex].getName,
+      classOf[POIndex].getName,
+      classOf[SOIndex].getName,
+      classOf[TriplePattern].getName,
+      classOf[IndexVertexEdge].getName,
+      classOf[BlockingIndexVertexEdge].getName,
+      classOf[CardinalityRequest].getName,
+      classOf[CardinalityReply].getName,
+      classOf[PredicateStatsReply].getName,
+      classOf[ChildIdRequest].getName,
+      classOf[ChildIdReply].getName,
+      classOf[SubjectCountSignal].getName,
+      classOf[ObjectCountSignal].getName,
+      classOf[TriplePattern].getName,
+      classOf[PredicateStats].getName,
+      classOf[ResultIteratorQueryVertex].getName,
+      classOf[ResultIterator].getName,
+      classOf[AtomicBoolean].getName,
+      classOf[LinkedBlockingQueue[Any]].getName,
+      classOf[TripleRushWorkerFactory[Any]].getName,
+      TripleRushEdgeAddedToNonExistentVertexHandlerFactory.getClass.getName,
+      TripleRushUndeliverableSignalHandlerFactory.getClass.getName,
+      TripleRushStorage.getClass.getName,
+      SingleNodeTripleMapperFactory.getClass.getName,
+      new AlternativeTripleMapperFactory(false).getClass.getName,
+      DistributedTripleMapperFactory.getClass.getName,
+      RelievedNodeZeroTripleMapperFactory.getClass.getName,
+      LoadBalancingTripleMapperFactory.getClass.getName,
+      ManifestFactory.Long.getClass.getName,
+      classOf[CombiningMessageBusFactory[_]].getName,
+      classOf[AddEdge[Any, Any]].getName,
+      classOf[AddEdge[Long, Long]].getName, // TODO: Can we force the use of the specialized version?
+      new Throughput[Long, Any].getClass.getName,
+      SignalMessageWithoutSourceId[Long, Any](
+        signal = null.asInstanceOf[Any],
+        targetId = null.asInstanceOf[Long]).getClass.getName,
+      BulkSignalNoSourceIds[Long, Any](
+        signals = null.asInstanceOf[Array[Any]],
+        targetIds = null.asInstanceOf[Array[Long]]).getClass.getName,
+      "akka.actor.RepointableActorRef")
   }
 
 }
