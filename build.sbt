@@ -75,4 +75,9 @@ pomExtra := (
      <name>Mihaela Verman</name>
      <url>https://github.com/elaverman</url>
    </developer>
+   <developer>
+     <id>jahangirmohammed</id>
+     <name>Jahangir Mohammed</name>
+     <url>https://github.com/jahangirmohammed</url>
+   </developer>
  </developers>)
