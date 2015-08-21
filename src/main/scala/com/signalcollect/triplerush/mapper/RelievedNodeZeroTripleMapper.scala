@@ -39,7 +39,6 @@ final class RelievedNodeZeroTripleMapper(numberOfNodes: Int, workersPerNode: Int
     nodeId * workersPerNode + workerOnNode
   }
 
-  @inline override def getWorkerIdForVertexIdHash(vertexIdHash: Int): Int = throw new UnsupportedOperationException("This mapper does not support mapping by vertex hash.")
 }
 
 object RelievedNodeZeroTripleMapperFactory extends MapperFactory[Long] {
