@@ -20,6 +20,8 @@
 
 package com.signalcollect.triplerush
 
+import org.apache.jena.riot.Lang
+
 import scala.collection.immutable.TreeMap
 import scala.concurrent.Await
 import scala.io.Source
@@ -30,7 +32,7 @@ import com.signalcollect.triplerush.QueryParticle._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import java.io.File
+import java.io.{FileInputStream, File}
 import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.util.TestAnnouncements
 import com.signalcollect.triplerush.sparql.TripleRushGraph
@@ -42,7 +44,7 @@ object Lubm {
     println("Loading LUBM1 ... ")
     for (fileNumber <- 0 to 14) {
       val filename = s".${File.separator}lubm${File.separator}university0_$fileNumber.nt"
-      qe.load(filename)
+      qe.loadStream(new FileInputStream(filename), lang = Lang.TURTLE)
     }
     qe.prepareExecution
     println("Finished loading LUBM1.")

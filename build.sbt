@@ -5,7 +5,7 @@ assemblySettings
 /** Project */
 name := "triplerush"
 
-version := "4.1.1-SNAPSHOT"
+version := "4.1.3-SNAPSHOT"
 
 organization := "com.signalcollect"
 
@@ -42,7 +42,7 @@ excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
 /** Dependencies */
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-library" % scalaVersion.value % "compile",
-  "com.signalcollect" %% "signal-collect" % "4.0.0" % "compile",
+  "com.signalcollect" %% "signal-collect" % "5.0.0" % "compile",
   "org.apache.jena" % "jena-arq" % "3.0.0" % "compile",
   "org.apache.jena" % "jena-core" % "3.0.0" % "compile",
   "org.apache.jena" % "jena-core" % "3.0.0" % "test" classifier "tests",
@@ -74,5 +74,10 @@ pomExtra := (
      <id>elaverman</id>
      <name>Mihaela Verman</name>
      <url>https://github.com/elaverman</url>
+   </developer>
+   <developer>
+     <id>jahangirmohammed</id>
+     <name>Jahangir Mohammed</name>
+     <url>https://github.com/jahangirmohammed</url>
    </developer>
  </developers>)

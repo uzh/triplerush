@@ -62,7 +62,7 @@ class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
    * Asserts that both nodeAssignmentId and nodeBalanceId
    * are larger than or equal to zero.
    */
-  @inline final def workerIdOptimized(nodeAssignmentId: Int, workerAssignmentId: Int): Int = {
+  def workerIdOptimized(nodeAssignmentId: Int, workerAssignmentId: Int): Int = {
     val nodeId = nodeAssignmentId % numberOfNodes
     val workerOnNode = workerAssignmentId % workersPerNode
     nodeId * workersPerNode + workerOnNode
