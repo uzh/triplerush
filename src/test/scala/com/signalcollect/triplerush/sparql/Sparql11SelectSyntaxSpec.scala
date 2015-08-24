@@ -3,13 +3,16 @@ package com.signalcollect.triplerush.sparql
 import java.io.{ File, FileOutputStream }
 import java.net.JarURLConnection
 import java.nio.file.Files
-import com.signalcollect.triplerush.TripleRush
-import com.signalcollect.util.TestAnnouncements
+
+import scala.collection.JavaConversions.asScalaIterator
+
 import org.apache.commons.io.FileUtils
 import org.apache.jena.query.QueryFactory
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll, FlatSpec, Matchers }
-import scala.collection.JavaConversions.asScalaIterator
+import org.scalatest.{ BeforeAndAfter, Finders, FlatSpec, Matchers }
 import org.scalatest.exceptions.TestFailedException
+
+import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.util.TestAnnouncements
 
 /**
  * Uses w3c test files to run SELECT syntax tests against Sparql 1.1 spec*
@@ -141,7 +144,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
     }
 
     val expectedNumOfPositiveTests = testsToRun.filter(_.positive).size
-    val expectedNumOfNegativeTests = testsToRun.count(p => !p.positive)
+    val expectedNumOfNegativeTests = testsToRun.count(p => p.negative)
     val actualNumOfPositivePassed = testsToRun.filter(_.positive).map(runTest(_)).count(_ == true)
     val actualNumOfNegativePassed = testsToRun.filter(_.negative).map(runTest(_)).count(_ == true)
 
