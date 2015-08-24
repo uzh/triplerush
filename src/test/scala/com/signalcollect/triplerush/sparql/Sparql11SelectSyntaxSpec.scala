@@ -1,24 +1,25 @@
 package com.signalcollect.triplerush.sparql
 
-import java.io.{File, FileOutputStream}
+import java.io.{ File, FileOutputStream }
 import java.net.JarURLConnection
 import java.nio.file.Files
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.util.TestAnnouncements
 import org.apache.commons.io.FileUtils
 import org.apache.jena.query.QueryFactory
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll, FlatSpec, Matchers }
 import scala.collection.JavaConversions.asScalaIterator
+import org.scalatest.exceptions.TestFailedException
 
 /**
  * Uses w3c test files to run SELECT syntax tests against Sparql 1.1 spec*
  */
-  class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfter with TestAnnouncements {
+class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfter with TestAnnouncements {
 
   val tr = new TripleRush
   val graph = new TripleRushGraph(tr)
   implicit val model = graph.getModel
- // Unzip test jar into a temporary directory and delete after the tests are run.
+  // Unzip test jar into a temporary directory and delete after the tests are run.
   val tmpDir = Files.createTempDirectory("sparql-syntax")
 
   before {
@@ -43,7 +44,7 @@ import scala.collection.JavaConversions.asScalaIterator
     }
   }
 
- after {
+  after {
     FileUtils.deleteDirectory(new File(tmpDir.toString))
     tr.shutdown()
   }
@@ -94,7 +95,9 @@ import scala.collection.JavaConversions.asScalaIterator
 
     val results = Sparql(query)
 
-    case class Test(queryToRun: String, positive: Boolean)
+    case class Test(queryToRun: String, positive: Boolean) {
+      def negative: Boolean = !positive
+    }
 
     val testsToRun = results.map(test => {
       val queryToRun = test.get("queryToRun").toString
@@ -104,34 +107,44 @@ import scala.collection.JavaConversions.asScalaIterator
       Test(queryToRun, positiveTest)
     }).toList
 
-    var expectedNumOfPositiveTests = 0
-    val expectedNumOfNegativeTests = testsToRun.count(p => !p.positive)
-    var actualNumOfPositivePassed = 0
-    var actualNumOfNegativePassed = 0
-    testsToRun.map(test => {
+    /**
+     * Returns true iff the test passes.
+     */
+    def runTest(test: Test): Boolean = {
       val query = scala.io.Source.fromFile(test.queryToRun.replace("file://", "")).mkString
       if (test.positive) {
         try {
           val queryFactoryQuery = QueryFactory.create(query)
           if (queryFactoryQuery.isSelectType && !query.contains("SERVICE")) {
-            expectedNumOfPositiveTests += 1
             Sparql(query)
-            actualNumOfPositivePassed += 1
+          }
+          true
+        } catch {
+          case parseException: org.apache.jena.query.QueryParseException => true
+          // This is expected because QueryFactory.create works only
+          // on QUERY and not on UPDATE, LOAD, INSERT etc.
+          case illegalStateException: java.lang.IllegalStateException => true
+          // This one is expected as "SERVICE" isn't working or
+          // even Jena probably doesn't work for this query.
+          case other: Exception => false
+        }
+      } else {
+        try {
+          intercept[Exception] {
+            Sparql(query)
           }
         } catch {
-          case parseException: org.apache.jena.query.QueryParseException => // This is expected because QueryFactory.create works only
-          // on QUERY and not on UPDATE, LOAD, INSERT etc.
-          case illegalStateException: java.lang.IllegalStateException => //This one is expected as "SERVICE" isn't working or
-          //even Jena probably doesn't work for this query.
+          case e: TestFailedException => false
         }
+        true
       }
-      else {
-        intercept[Exception] {
-          actualNumOfNegativePassed += 1
-          Sparql(query)
-        }
-      }
-    })
+    }
+
+    val expectedNumOfPositiveTests = testsToRun.filter(_.positive).size
+    val expectedNumOfNegativeTests = testsToRun.count(p => !p.positive)
+    val actualNumOfPositivePassed = testsToRun.filter(_.positive).map(runTest(_)).count(_ == true)
+    val actualNumOfNegativePassed = testsToRun.filter(_.negative).map(runTest(_)).count(_ == true)
+
     actualNumOfPositivePassed should be(expectedNumOfPositiveTests)
     actualNumOfNegativePassed should be(expectedNumOfNegativeTests)
   }
