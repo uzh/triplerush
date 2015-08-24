@@ -7,13 +7,13 @@ import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.util.TestAnnouncements
 import org.apache.commons.io.FileUtils
 import org.apache.jena.query.QueryFactory
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FlatSpec, Matchers}
 import scala.collection.JavaConversions.asScalaIterator
 
 /**
  * Uses w3c test files to run SELECT syntax tests against Sparql 1.1 spec*
  */
-class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfterAll with TestAnnouncements {
+  class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfter with TestAnnouncements {
 
   val tr = new TripleRush
   val graph = new TripleRushGraph(tr)
@@ -21,8 +21,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
  // Unzip test jar into a temporary directory and delete after the tests are run.
   val tmpDir = Files.createTempDirectory("sparql-syntax")
 
-  override def beforeAll:
-  Unit = {
+  before {
     val url = getClass.getClassLoader.getResource("testcases-sparql-1.1-w3c/")
     val con = url.openConnection().asInstanceOf[JarURLConnection]
     val jarFile = con.getJarFile
@@ -44,8 +43,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
     }
   }
 
-  override def afterAll:
-  Unit = {
+ after {
     FileUtils.deleteDirectory(new File(tmpDir.toString))
     tr.shutdown()
   }
