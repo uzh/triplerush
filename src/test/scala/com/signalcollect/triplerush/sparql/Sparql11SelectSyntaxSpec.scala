@@ -1,44 +1,80 @@
 package com.signalcollect.triplerush.sparql
 
+import java.io.{File, FileOutputStream}
+import java.net.JarURLConnection
+import java.nio.file.Files
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.util.TestAnnouncements
+import org.apache.commons.io.FileUtils
 import org.apache.jena.query.QueryFactory
-import org.scalatest.prop.Checkers
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import scala.collection.JavaConversions.asScalaIterator
 
 /**
  * Uses w3c test files to run SELECT syntax tests against Sparql 1.1 spec*
  */
-//TODO: Work with "sesame-sparql-testsuite" to remove test files from resources directory.
-class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with TestAnnouncements {
+class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfterAll with TestAnnouncements {
 
   val tr = new TripleRush
   val graph = new TripleRushGraph(tr)
   implicit val model = graph.getModel
+ // Unzip test jar into a temporary directory and delete after the tests are run.
+  val tmpDir = Files.createTempDirectory("sparql-syntax")
+
+  override def beforeAll:
+  Unit = {
+    val url = getClass.getClassLoader.getResource("testcases-sparql-1.1-w3c/")
+    val con = url.openConnection().asInstanceOf[JarURLConnection]
+    val jarFile = con.getJarFile
+    val entries = jarFile.entries()
+    while (entries.hasMoreElements) {
+      val entry = entries.nextElement()
+      val f = new File(tmpDir + File.separator + entry.getName)
+      if (entry.isDirectory) {
+        f.mkdir()
+      } else {
+        val is = jarFile.getInputStream(entry)
+        val fOutputStream = new FileOutputStream(f)
+        while (is.available() > 0) {
+          fOutputStream.write(is.read())
+        }
+        fOutputStream.close()
+        is.close()
+      }
+    }
+  }
+
+  override def afterAll:
+  Unit = {
+    FileUtils.deleteDirectory(new File(tmpDir.toString))
+    tr.shutdown()
+  }
 
   "TripleRush" should "pass SELECT Sparql-1.1 syntax tests" in {
-    val manifestFile = "src/test/resources/sparql-1.1-w3c/manifest-all.ttl"
+    val manifestFile = "testcases-sparql-1.1-w3c/manifest-all.ttl"
     //Load main manifest.
-    tr.load(manifestFile)
+    tr.load(tmpDir.toString + File.separator + manifestFile)
     tr.awaitIdle
     tr.prepareExecution
     //Retrieve sub-manifests
     val subManifestQuery =
       """|PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-         |PREFIX mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#>
-         |PREFIX qt:     <http://www.w3.org/2001/sw/DataAccess/tests/test-query#>
-         |SELECT DISTINCT ?item
-         |WHERE {
-         |  [] rdf:first ?item
-         |}
-         | """.stripMargin
+        |PREFIX list:   <http://jena.hpl.hp.com/ARQ/list#>
+        |PREFIX mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#>
+        |PREFIX qt:     <http://www.w3.org/2001/sw/DataAccess/tests/test-query#>
+        |SELECT DISTINCT ?subManifest
+        |WHERE {
+        |  <http://www.w3.org/TR/sparql11-query/> mf:conformanceRequirement ?list .
+        |  ?list list:member ?subManifest .
+        |}
+        | """.stripMargin
     val subManifestsResultSet = Sparql(subManifestQuery)
-    val subManifests = subManifestsResultSet.map(f => f.get("item").toString).toList.filter(f => f.endsWith(".ttl"))
+    val subManifests = subManifestsResultSet.map(f => f.get("subManifest").toString).toList
     //Load sub-manifests.
     subManifests.map {
       subManifest =>
-        tr.load(subManifest)
+        val subManifestFile = subManifest.replace("file://", "")
+        tr.load(subManifestFile)
         tr.awaitIdle
     }
     tr.prepareExecution
@@ -57,6 +93,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with TestAnnouncem
         |        FILTER(?type IN (mf:PositiveSyntaxTest11, mf:NegativeSyntaxTest11, mf:PositiveUpdateSyntaxTest11, mf:NegativeUpdateSyntaxTest11))
         |}
       """.stripMargin
+
     val results = Sparql(query)
 
     case class Test(queryToRun: String, positive: Boolean)
@@ -85,7 +122,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with TestAnnouncem
           }
         } catch {
           case parseException: org.apache.jena.query.QueryParseException => // This is expected because QueryFactory.create works only
-            // on QUERY and not on UPDATE, LOAD, INSERT etc.
+          // on QUERY and not on UPDATE, LOAD, INSERT etc.
           case illegalStateException: java.lang.IllegalStateException => //This one is expected as "SERVICE" isn't working or
           //even Jena probably doesn't work for this query.
         }
@@ -97,7 +134,6 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with TestAnnouncem
         }
       }
     })
-    tr.shutdown()
     actualNumOfPositivePassed should be(expectedNumOfPositiveTests)
     actualNumOfNegativePassed should be(expectedNumOfNegativeTests)
   }
