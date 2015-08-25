@@ -36,7 +36,7 @@ class DictonarySpec extends FlatSpec with TestAnnouncements {
     assert(stringEntries.toSet == reverseMapped.toSet)
   }
 
-  "Dictionary" should "support clear" in {
+  it should "support clear" in {
     val d = new HashMapDictionary(1, 0.2f)
     val lowStringEntries = (1 to 1000).map(_.toString)
     for (entry <- lowStringEntries.par) {
