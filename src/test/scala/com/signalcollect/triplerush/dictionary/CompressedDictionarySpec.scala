@@ -35,6 +35,16 @@ class CompressedDictionarySpec extends FlatSpec with TestAnnouncements {
     assert(decoded == "simple")
   }
 
+  it should "correctly encode and decode an encoded string literal" in {
+    val d = new CompressedDictionary
+    val id = d("\"Bob\"")
+    assert(id == 1)
+    val contained = d.contains("\"Bob\"")
+    assert(contained == true)
+    val decoded = d(id)
+    assert(decoded == "\"Bob\"")
+  }
+
   it should "correctly encode a compressable string" in {
     val d = new CompressedDictionary
     val id = d("prefix#remainder")

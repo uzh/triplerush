@@ -27,8 +27,8 @@ import com.signalcollect.util.IntLongHashMap
 
 class CompressedDictionary extends Dictionary {
 
-  val idToPrefixedId = new IntLongHashMap(initialSize = 128, rehashFraction = 0.4f)
-  val prefixedIdToId = new CompositeLongIntHashMap(initialSize = 128, rehashFraction = 0.4f)
+  val idToPrefixedId = new IntLongHashMap(initialSize = 128, rehashFraction = 0.9f)
+  val prefixedIdToId = new CompositeLongIntHashMap(initialSize = 128, rehashFraction = 0.9f)
   val impl = new HashMapDictionary
 
   private[this] val lock = new ReentrantReadWriteLock

@@ -106,7 +106,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
     for { variable <- unbound } {
       val variableId = varToId(variable.getVarName)
       val encoded = result(VariableEncoding.variableIdToDecodingIndex(variableId))
-      val decoded = dictionary.unsafeDecode(encoded)
+      val decoded = dictionary(encoded)
       val node = NodeConversion.stringToNode(decoded)
       binding.add(variable, node)
     }

@@ -23,17 +23,27 @@ import org.scalatest.FlatSpec
 
 import com.signalcollect.util.TestAnnouncements
 
-class DictonarySpec extends FlatSpec with TestAnnouncements {
+class HashMapDictonarySpec extends FlatSpec with TestAnnouncements {
 
-  "Dictionary" should "support adding entries in parallel" in {
+  "HashMapDictionary" should "support adding entries in parallel" in {
     val d = new HashMapDictionary(1, 0.2f)
     val stringEntries = (1 to 1000).map(_.toString)
-    for (entry <- stringEntries.par) {
+    for (entry <- stringEntries) {
       d(entry)
     }
     val reverseMapped = (1 to 1000).map(d(_)).toSet
     assert(reverseMapped.size == 1000)
     assert(stringEntries.toSet == reverseMapped.toSet)
+  }
+
+  it should "correctly encode and decode a simple string" in {
+    val d = new HashMapDictionary(1, 0.2f)
+    val id = d("simple")
+    assert(id == 1)
+    val contained = d.contains("simple")
+    assert(contained == true)
+    val decoded = d(id)
+    assert(decoded == "simple")
   }
 
   it should "support clear" in {

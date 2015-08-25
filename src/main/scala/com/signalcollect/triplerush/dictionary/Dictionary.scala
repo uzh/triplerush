@@ -27,6 +27,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.io.Source
 import scala.collection.mutable.ResizableArray
 import scala.collection.mutable.ArrayBuffer
+import java.nio.charset.Charset
 
 trait Dictionary {
   def contains(s: String): Boolean
@@ -47,32 +48,35 @@ trait Dictionary {
 
 class HashMapDictionary(
     initialSize: Int = 32768,
-    rehashFraction: Float = 0.5f) extends Dictionary {
+    rehashFraction: Float = 0.9f) extends Dictionary {
   private[this] val lock = new ReentrantReadWriteLock
   private[this] val read = lock.readLock
   private[this] val write = lock.writeLock
-  private[this] var id2String = new ArrayBuffer[String](initialSize)
-  id2String += "*"
+  private[this] val utf8 = Charset.forName("UTF-8")
+
+  private[this] var id2String = new ArrayBuffer[Array[Byte]](initialSize)
+  id2String += "*".getBytes(utf8)
   // Wildcard entry at 0
-  private[this] var string2Id = new IntValueHashMap[String](initialSize, rehashFraction)
+  private[this] var string2Id = new ByteArrayHashMap(initialSize, rehashFraction)
   private[this] var maxId = 0
 
   def clear(): Unit = {
     write.lock
     try {
       maxId = 0
-      id2String = new ArrayBuffer[String](initialSize)
-      id2String += "*" // Wildcard entry at 0
-      string2Id = new IntValueHashMap[String](initialSize, rehashFraction)
+      id2String = new ArrayBuffer[Array[Byte]](initialSize)
+      id2String += "*".getBytes(utf8) // Wildcard entry at 0
+      string2Id = new ByteArrayHashMap(initialSize, rehashFraction)
     } finally {
       write.unlock
     }
   }
 
   def contains(s: String): Boolean = {
+    val encoded = s.getBytes(utf8)
     read.lock
     try {
-      val hasExistingEncoding = string2Id.get(s) != 0
+      val hasExistingEncoding = string2Id.get(encoded) != 0
       hasExistingEncoding
     } finally {
       read.unlock
@@ -80,7 +84,8 @@ class HashMapDictionary(
   }
 
   @inline final def unsafeGetEncoded(s: String): Int = {
-    string2Id.get(s)
+    val e = s.getBytes(utf8)
+    string2Id.get(e)
   }
 
   def reserveId: Int = {
@@ -97,9 +102,10 @@ class HashMapDictionary(
   }
 
   def apply(s: String): Int = {
+    val encoded = s.getBytes(utf8)
     read.lock
     val existingEncoding: Int = try {
-      string2Id.get(s)
+      string2Id.get(encoded)
     } finally {
       read.unlock
     }
@@ -110,8 +116,8 @@ class HashMapDictionary(
           maxId += 1
           maxId
         }
-        string2Id.put(s, id)
-        id2String += s
+        string2Id.put(encoded, id)
+        id2String += encoded
         id
       } finally {
         write.unlock
@@ -122,12 +128,14 @@ class HashMapDictionary(
   }
 
   def apply(id: Int): String = {
+    var encoded: Array[Byte] = null.asInstanceOf[Array[Byte]]
     read.lock
     try {
-      id2String(id)
+      encoded = id2String(id)
     } finally {
       read.unlock
     }
+    new String(encoded, utf8)
   }
 
   /**
@@ -136,7 +144,7 @@ class HashMapDictionary(
    * Only call if there are no concurrent modifications of the dictionary.
    */
   @inline final def unsafeDecode(id: Int): String = {
-    id2String(id)
+    new String(id2String(id), utf8)
   }
 
   def decode(id: Int): Option[String] = {
@@ -163,7 +171,6 @@ class HashMapDictionary(
   def loadFromFile(fileName: String): Unit = {
     assert(string2Id.isEmpty)
     assert(id2String.isEmpty)
-    println(s"Parsing dictionary from $fileName.")
 
     def parseEntry(line: String): (Int, String) = {
       val split = line.split(" -> ")
@@ -176,11 +183,12 @@ class HashMapDictionary(
     write.lock
     var entriesAdded = 0
     try {
-      for {entry <- entries} {
+      for { entry <- entries } {
         val (id, string) = parseEntry(entry)
         maxId = math.max(id, maxId)
-        string2Id.put(string, id)
-        id2String += string
+        val encoded = string.getBytes(utf8)
+        string2Id.put(encoded, id)
+        id2String += encoded
         entriesAdded += 1
         if (entriesAdded % 10000 == 0) {
           println(s"Added $entriesAdded to dictionary so far...")
