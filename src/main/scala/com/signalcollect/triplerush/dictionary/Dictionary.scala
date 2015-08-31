@@ -48,7 +48,7 @@ trait Dictionary {
 
 class HashMapDictionary(
     initialSize: Int = 32768,
-    rehashFraction: Float = 0.9f) extends Dictionary {
+    rehashFraction: Float = 0.8f) extends Dictionary {
   private[this] val lock = new ReentrantReadWriteLock
   private[this] val read = lock.readLock
   private[this] val write = lock.writeLock
