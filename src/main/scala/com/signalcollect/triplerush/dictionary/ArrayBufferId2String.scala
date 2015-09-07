@@ -50,14 +50,6 @@ final class ArrayBufferId2String extends Id2String {
     new String(encoded, utf8)
   }
 
-  def get(i: Int): Option[String] = {
-    if (contains(i)) {
-      Some(apply(i))
-    } else {
-      None
-    }
-  }
-
   def clear(): Unit = synchronized {
     impl.clear()
     nextId = 0
