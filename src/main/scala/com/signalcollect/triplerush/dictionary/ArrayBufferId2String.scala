@@ -33,8 +33,9 @@ final class ArrayBufferId2String extends Id2String {
   /**
    * Entry IDs have to start with 0 and increase in increments of 1.
    */
-  def addEntry(s: String): Int = {
-    impl += s.getBytes(utf8)
+  def addEntry(s: String): Int = synchronized {
+    val encoded = s.getBytes(utf8)
+    impl += encoded
     val id = nextId
     nextId += 1
     id
@@ -44,9 +45,6 @@ final class ArrayBufferId2String extends Id2String {
     i >= 0 && i < nextId
   }
 
-  /**
-   * Can crash if the ID was never added.
-   */
   def apply(i: Int): String = {
     val encoded = impl(i)
     new String(encoded, utf8)
@@ -60,10 +58,11 @@ final class ArrayBufferId2String extends Id2String {
     }
   }
 
-  def clear(): Unit = {
+  def clear(): Unit = synchronized {
     impl.clear()
+    nextId = 0
   }
 
   def close(): Unit = clear
-  
+
 }

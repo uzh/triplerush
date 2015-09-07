@@ -42,7 +42,14 @@ trait RdfDictionary {
   def apply(i: Int): String
   def get(i: Int): Option[String]
 
+  /**
+   * Can only be called when there are no concurrent reads/writes.
+   */
   def clear(): Unit
+
+  /**
+   * Can only be called when there are no ongoing operations.
+   */
   def close(): Unit
 }
 
