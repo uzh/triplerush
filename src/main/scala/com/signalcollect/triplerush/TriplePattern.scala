@@ -25,7 +25,7 @@ import scala.language.implicitConversions
 import scala.util.hashing.MurmurHash3.{ finalizeHash, mix, mixLast }
 
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.dictionary.Dictionary
+import com.signalcollect.triplerush.dictionary.RdfDictionary
 import com.signalcollect.triplerush.EfficientIndexPattern._
 
 object EfficientIndexPattern {
@@ -150,7 +150,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     s"TriplePattern(${s.toString},${p.toString},${o.toString})"
   }
 
-  def lookup(d: Dictionary) = s"(${d(s)},${d(p)},${d(o)})"
+  def lookup(d: RdfDictionary) = s"(${d(s)},${d(p)},${d(o)})"
 
   def variables: List[Int] = {
     val sOpt = if (s < 0) Some(s) else None

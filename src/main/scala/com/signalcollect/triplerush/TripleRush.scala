@@ -50,7 +50,7 @@ import org.apache.jena.graph.Triple
  * Global accessor for the console visualization.
  */
 object TrGlobal {
-  var dictionary: Option[Dictionary] = None
+  var dictionary: Option[RdfDictionary] = None
 }
 
 /**
@@ -59,7 +59,7 @@ object TrGlobal {
  */
 case class TripleRush(
     graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
-    val dictionary: Dictionary = new CompressedDictionary(),
+    val dictionary: RdfDictionary = new ModularDictionary(),
     tripleMapperFactory: Option[MapperFactory[Long]] = None,
     fastStart: Boolean = false,
     console: Boolean = false,
@@ -244,7 +244,7 @@ case class TripleRush(
   }
 
   def shutdown(): Unit = {
-    clearDictionary
+    dictionary.close()
     graph.shutdown
   }
 

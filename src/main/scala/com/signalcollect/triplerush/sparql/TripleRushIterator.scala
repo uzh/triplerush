@@ -22,7 +22,7 @@ package com.signalcollect.triplerush.sparql
 import org.apache.jena.graph.{ NodeFactory, Triple }
 import org.apache.jena.graph.impl.LiteralLabelFactory
 import org.apache.jena.datatypes.TypeMapper
-import com.signalcollect.triplerush.dictionary.Dictionary
+import com.signalcollect.triplerush.dictionary.RdfDictionary
 
 object TripleRushIterator {
 
@@ -33,7 +33,7 @@ object TripleRushIterator {
     sOption: Option[String],
     pOption: Option[String],
     oOption: Option[String],
-    dictionary: Dictionary,
+    dictionary: RdfDictionary,
     i: Iterator[Array[Int]]): Iterator[Triple] = {
     val sNode = sOption.map(NodeConversion.stringToNode(_))
     val pNode = pOption.map(NodeConversion.stringToNode(_))

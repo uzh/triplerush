@@ -27,7 +27,7 @@ import org.apache.jena.sparql.engine.binding.{ Binding, BindingHashMap }
 import org.apache.jena.sparql.engine.iterator.{ QueryIterConcat, QueryIterPlainWrapper }
 import org.apache.jena.sparql.engine.main.StageGenerator
 import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
-import com.signalcollect.triplerush.dictionary.Dictionary
+import com.signalcollect.triplerush.dictionary.RdfDictionary
 import org.apache.jena.sparql.engine.iterator.QueryIterSingleton
 import org.apache.jena.graph.Node_Blank
 import scala.concurrent.duration.DurationInt
@@ -97,7 +97,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
   }
 
   private[this] def decodeResult(
-    dictionary: Dictionary,
+    dictionary: RdfDictionary,
     parentBinding: Binding,
     unbound: Vector[Var],
     result: Array[Int],
@@ -114,7 +114,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
   }
 
   private[this] def createBoundQuery(
-    dictionary: Dictionary,
+    dictionary: RdfDictionary,
     originalQuery: Array[TriplePattern],
     binding: Binding,
     varToId: Map[String, Int],
@@ -155,7 +155,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
 
   // TODO: Make more efficient.
   private[this] def arqNodesToPattern(
-    dictionary: Dictionary,
+    dictionary: RdfDictionary,
     s: Node, p: Node, o: Node,
     varToId: Map[String, Int],
     idToVar: Vector[Var]): (TriplePattern, Map[String, Int], Vector[Var]) = {
