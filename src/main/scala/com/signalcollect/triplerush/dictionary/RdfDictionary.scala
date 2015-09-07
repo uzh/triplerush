@@ -73,7 +73,15 @@ trait Id2String {
    * Can crash if the ID was never added.
    */
   def apply(i: Int): String
-  def get(i: Int): Option[String]
+
+  def get(i: Int): Option[String] = {
+    if (contains(i)) {
+      Some(apply(i))
+    } else {
+      None
+    }
+  }
+
   def clear(): Unit
   def close(): Unit
 }
