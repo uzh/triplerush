@@ -41,8 +41,11 @@ final class ArrayBufferId2String extends Id2String {
     id
   }
 
+  /**
+   * `i` needs to be i >= 0
+   */
   def contains(i: Int): Boolean = {
-    i >= 0 && i < nextId
+    i < nextId
   }
 
   def apply(i: Int): String = {
