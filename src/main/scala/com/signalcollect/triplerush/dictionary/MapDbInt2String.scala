@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger
 final class MapDbInt2String() extends Id2String {
 
   private[this] val utf8 = Charset.forName("UTF-8")
-  private[this] val nextId = new AtomicInteger(0)
+  private[this] val nextId = new AtomicInteger(-1)
 
   private[this] val db = DBMaker
     .memoryUnsafeDB() // TODO: Evaluate vs. memoryDirectDB
@@ -66,6 +66,7 @@ final class MapDbInt2String() extends Id2String {
 
   def clear(): Unit = {
     btree.clear()
+    nextId.set(-1)
   }
 
   def close(): Unit = {
