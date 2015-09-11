@@ -23,10 +23,10 @@ package com.signalcollect.triplerush.loading
 import java.io.InputStream
 import java.util.concurrent.Executors
 
-import org.apache.jena.riot.{Lang, RDFDataMgr}
+import org.apache.jena.graph.{ Triple => JenaTriple }
+import org.apache.jena.riot.{ Lang, RDFDataMgr }
 import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
 
-import org.apache.jena.graph.{ Triple => JenaTriple }
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.{ EfficientIndexPattern, IndexVertexEdge }
 import com.signalcollect.triplerush.dictionary.RdfDictionary
@@ -40,7 +40,7 @@ case class DataLoader(filePathOrInputStream: Either[String, InputStream], dictio
   val parser = new Runnable {
     def run: Unit = {
       filePathOrInputStream match {
-        case Left(filePath) => RDFDataMgr.parse(sink, filePath, lang.getOrElse(null))
+        case Left(filePath)     => RDFDataMgr.parse(sink, filePath, lang.getOrElse(null))
         case Right(inputStream) => RDFDataMgr.parse(sink, inputStream, lang.getOrElse(null))
       }
     }
