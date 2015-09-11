@@ -50,3 +50,5 @@ lubm1*/
 .idea/*
 
 *.iml
+
+*history.ntriples.gz
