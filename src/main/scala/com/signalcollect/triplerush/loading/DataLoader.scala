@@ -34,6 +34,8 @@ import com.signalcollect.triplerush.sparql.NodeConversion
 
 case class DataLoader(filePathOrInputStream: Either[String, InputStream], dictionary: RdfDictionary, lang: Option[Lang] = None) extends Iterator[GraphEditor[Long, Any] => Unit] {
 
+  var loaded = 0
+  val startTime = System.currentTimeMillis
   val tripleIterator = new PipedRDFIterator[JenaTriple]
   val sink = new PipedTriplesStream(tripleIterator)
   val executor = Executors.newSingleThreadExecutor
@@ -52,6 +54,11 @@ case class DataLoader(filePathOrInputStream: Either[String, InputStream], dictio
   }
 
   def next: GraphEditor[Long, Any] => Unit = {
+    loaded += 1
+    if (loaded % 10000 == 0) {
+      val seconds = ((System.currentTimeMillis - startTime)/100.0).round/10.0
+      println(s"$loaded triples loaded after $seconds seconds")
+    }
     val triple = tripleIterator.next
     val subjectString = NodeConversion.nodeToString(triple.getSubject)
     val predicateString = NodeConversion.nodeToString(triple.getPredicate)

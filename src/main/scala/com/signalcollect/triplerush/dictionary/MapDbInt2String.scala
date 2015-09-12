@@ -26,23 +26,25 @@ import org.mapdb.Serializer
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicInteger
 
-final class MapDbInt2String() extends Id2String {
+final class MapDbInt2String(val nodeSize: Int = 256) extends Id2String {
 
   private[this] val utf8 = Charset.forName("UTF-8")
   private[this] val nextId = new AtomicInteger(-1)
 
   private[this] val db = DBMaker
-    .memoryUnsafeDB() // TODO: Evaluate vs. memoryDirectDB
+    .memoryUnsafeDB()
     .closeOnJvmShutdown()
     .transactionDisable()
-    .asyncWriteFlushDelay(128) // TODO: Evaluate different values
+    .asyncWriteEnable()
+    .asyncWriteQueueSize(5000)
+    .asyncWriteFlushDelay(5000) // TODO: Evaluate different values
     .compressionEnable() // TODO: Verify this does something useful
     .make()
 
   private[this] val btree = db.treeMapCreate("btree")
     .keySerializer(BTreeKeySerializer.INTEGER)
     .valueSerializer(Serializer.BYTE_ARRAY)
-    .nodeSize(32) // Default
+    .nodeSize(nodeSize) // Default
     .makeOrGet[Int, Array[Byte]]()
 
   /**

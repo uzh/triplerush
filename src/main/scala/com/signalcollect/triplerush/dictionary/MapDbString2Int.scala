@@ -25,22 +25,23 @@ import org.mapdb.BTreeKeySerializer
 import org.mapdb.Serializer
 import java.nio.charset.Charset
 
-final class MapDbString2Int() extends String2Id {
+final class MapDbString2Int(val nodeSize: Int = 128) extends String2Id {
 
   private[this] val utf8 = Charset.forName("UTF-8")
 
   private[this] val db = DBMaker
-    .memoryUnsafeDB() // TODO: Evaluate vs. memoryDirectDB
+    .memoryUnsafeDB()
     .closeOnJvmShutdown()
     .transactionDisable()
-    .asyncWriteFlushDelay(128) // TODO: Evaluate different values
-    .compressionEnable() // TODO: Verify this does something useful
+    .asyncWriteEnable()
+    .asyncWriteQueueSize(5000)
+    .asyncWriteFlushDelay(5000) // TODO: Evaluate different values
     .make()
 
   private[this] val btree = db.treeMapCreate("btree")
     .keySerializer(BTreeKeySerializer.BYTE_ARRAY)
     .valueSerializer(Serializer.INTEGER_PACKED)
-    .nodeSize(32) // Default
+    .nodeSize(nodeSize) // Default
     .makeOrGet[Array[Byte], Int]()
 
   /**
