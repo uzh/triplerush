@@ -35,7 +35,6 @@ final class MapDbInt2String(
       .transactionDisable
       .asyncWriteEnable
       .asyncWriteQueueSize(4096)
-      .asyncWriteFlushDelay(4096)
       .compressionEnable) extends Id2String {
 
   private[this] val utf8 = Charset.forName("UTF-8")
