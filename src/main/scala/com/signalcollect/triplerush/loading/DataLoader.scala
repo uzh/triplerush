@@ -22,32 +22,21 @@ package com.signalcollect.triplerush.loading
 
 import java.io.InputStream
 import java.util.concurrent.Executors
-
 import org.apache.jena.graph.{ Triple => JenaTriple }
 import org.apache.jena.riot.{ Lang, RDFDataMgr }
 import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
-
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.{ EfficientIndexPattern, IndexVertexEdge }
 import com.signalcollect.triplerush.dictionary.RdfDictionary
 import com.signalcollect.triplerush.sparql.NodeConversion
+import java.io.FileInputStream
 
-case class DataLoader(filePathOrInputStream: Either[String, InputStream], dictionary: RdfDictionary, lang: Option[Lang] = None) extends Iterator[GraphEditor[Long, Any] => Unit] {
+class DataLoader(
+    tripleIterator: Iterator[JenaTriple],
+    dictionary: RdfDictionary) extends Iterator[GraphEditor[Long, Any] => Unit] {
 
   var loaded = 0
   val startTime = System.currentTimeMillis
-  val tripleIterator = new PipedRDFIterator[JenaTriple]
-  val sink = new PipedTriplesStream(tripleIterator)
-  val executor = Executors.newSingleThreadExecutor
-  val parser = new Runnable {
-    def run: Unit = {
-      filePathOrInputStream match {
-        case Left(filePath)     => RDFDataMgr.parse(sink, filePath, lang.getOrElse(null))
-        case Right(inputStream) => RDFDataMgr.parse(sink, inputStream, lang.getOrElse(null))
-      }
-    }
-  }
-  executor.submit(parser)
 
   def hasNext = {
     tripleIterator.hasNext
@@ -56,7 +45,7 @@ case class DataLoader(filePathOrInputStream: Either[String, InputStream], dictio
   def next: GraphEditor[Long, Any] => Unit = {
     loaded += 1
     if (loaded % 10000 == 0) {
-      val seconds = ((System.currentTimeMillis - startTime)/100.0).round/10.0
+      val seconds = ((System.currentTimeMillis - startTime) / 100.0).round / 10.0
       println(s"$loaded triples loaded after $seconds seconds")
     }
     val triple = tripleIterator.next

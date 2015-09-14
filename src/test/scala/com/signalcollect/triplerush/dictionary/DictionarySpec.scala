@@ -138,4 +138,101 @@ class DictionarySpec extends FlatSpec with TestAnnouncements {
     }
   }
 
+  "HashDictionary" should "correctly encode and decode a simple string" in {
+    val d = new HashDictionary
+    try {
+      val id = d("simple")
+      val contained = d.contains("simple")
+      assert(contained == true)
+      val decoded = d(id)
+      assert(decoded == "simple")
+    } finally {
+      d.close()
+    }
+  }
+
+  it should "correctly encode and decode an encoded string literal" in {
+    val d = new HashDictionary
+    try {
+      val id = d("\"Bob\"")
+      val contained = d.contains("\"Bob\"")
+      assert(contained == true)
+      val decoded = d(id)
+      assert(decoded == "\"Bob\"")
+    } finally {
+      d.close()
+    }
+  }
+
+  it should "correctly encode a compressable string" in {
+    val d = new HashDictionary
+    try {
+      val id = d("prefix#remainder")
+      val contained = d.contains("prefix#remainder")
+      assert(contained == true)
+    } finally {
+      d.close()
+    }
+  }
+
+  it should "correctly decode a compressable string" in {
+    val d = new HashDictionary
+    try {
+      val id = d("prefix#remainder")
+      val decoded = d(id)
+      assert(decoded == "prefix#remainder")
+    } finally {
+      d.close()
+    }
+  }
+
+  it should "correctly encode and decode a string with a hash at the beginning" in {
+    val d = new HashDictionary
+    try {
+      val id = d("#simple")
+      val contained = d.contains("#simple")
+      assert(contained == true)
+      val decoded = d(id)
+      assert(decoded == "#simple")
+    } finally {
+      d.close()
+    }
+  }
+
+  it should "support adding entries in parallel" in {
+    val d = new HashDictionary
+    try {
+      val stringEntries = (1 to 1000).map(s => s + "#" + s)
+      val ids = stringEntries.par.map(d(_)).toSet
+      val reverseMapped = ids.map(d(_))
+      assert(reverseMapped.size == 1000)
+      assert(stringEntries.toSet == reverseMapped.seq.toSet)
+    } finally {
+      d.close()
+    }
+  }
+
+  it should "support clear" in {
+    val d = new HashDictionary
+    try {
+      val lowStringEntries = (1 to 1000).map(_.toString)
+      for (s <- lowStringEntries) {
+        val id = d(s)
+        assert(d.contains(id), s"Dictionary does not contain an entry for string $s, which should have ID $id.")
+      }
+      d.clear
+      val highStringEntries = (1001 to 2000).map(_.toString)
+      highStringEntries.map { s =>
+        val id = d(s)
+        assert(d.contains(id), s"Dictionary does not contain an entry for string $s, which should have ID $id.")
+      }.toSet
+      (1 to 1000).foreach { s =>
+        assert(!d.contains(s.toString))
+      }
+      assert(highStringEntries.size == 1000)
+    } finally {
+      d.close()
+    }
+  }
+
 }

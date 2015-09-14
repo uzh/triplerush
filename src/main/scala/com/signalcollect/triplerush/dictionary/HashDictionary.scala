@@ -1,3 +1,23 @@
+/*
+ *  @author Philip Stutz
+ *  @author Jahangir Mohammed
+ *
+ *  Copyright 2015 iHealth Technologies
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.signalcollect.triplerush.dictionary
 
 import org.mapdb.DBMaker
@@ -21,16 +41,16 @@ final class HashDictionary(
 
   private[this] val db = dbMaker.make
 
-    private[this] val id2String = db.treeMapCreate("int2String")
-      .keySerializer(BTreeKeySerializer.INTEGER)
-      .valueSerializer(Serializer.BYTE_ARRAY)
-      .nodeSize(id2StringNodeSize)
-      .makeOrGet[Int, Array[Byte]]()
+  private[this] val id2String = db.treeMapCreate("int2String")
+    .keySerializer(BTreeKeySerializer.INTEGER)
+    .valueSerializer(Serializer.BYTE_ARRAY)
+    .nodeSize(id2StringNodeSize)
+    .makeOrGet[Int, Array[Byte]]()
 
-//  private[this] val id2String = db.hashMapCreate("int2String")
-//    .keySerializer(Serializer.INTEGER_PACKED)
-//    .valueSerializer(Serializer.BYTE_ARRAY)
-//    .makeOrGet[Int, Array[Byte]]()
+  //  private[this] val id2String = db.hashMapCreate("int2String")
+  //    .keySerializer(Serializer.INTEGER_PACKED)
+  //    .valueSerializer(Serializer.BYTE_ARRAY)
+  //    .makeOrGet[Int, Array[Byte]]()
 
   private[this] val string2Id = db.treeMapCreate("string2Int")
     .keySerializer(BTreeKeySerializer.BYTE_ARRAY)
@@ -59,12 +79,17 @@ final class HashDictionary(
   private[this] def addEntry(s: Array[Byte], idCandidate: Int): Int = {
     val existing = id2String.putIfAbsent(idCandidate, s)
     if (existing == null) {
+      println(s"Added string ${new String(s, utf8)} with hash-based ID $idCandidate")
+      assert(id2String.containsKey(idCandidate))
       idCandidate
     } else {
       if (Arrays.equals(s, existing)) {
+        println(s"Did not add string ${new String(s, utf8)}, because it already exists in the dictionary with ID $idCandidate")
         idCandidate // existing
       } else {
-        addEntryToExceptions(s) // collision
+        val id = addEntryToExceptions(s) // collision
+        println(s"Collision of new string ${new String(s, utf8)} with existing string ${new String(existing, utf8)}, added it with exception ID $id")
+        id
       }
     }
   }
@@ -79,9 +104,9 @@ final class HashDictionary(
   /**
    * Can only be called when there are no concurrent reads/writes.
    */
-  def clear(): Unit = {
-    string2Id.clear()
-    id2String.clear()
+  def clear(): Unit = synchronized {
+    string2Id.clear
+    id2String.clear
   }
 
   def contains(s: String): Boolean = {
@@ -157,7 +182,7 @@ final class HashDictionary(
     id2String.close()
   }
 
-  private[this] val hashChars = 10
+  private[this] val hashChars = 20
 
   @inline private[this] def fastHash(b: Array[Byte]): Int = {
     if (b.length == 0) {

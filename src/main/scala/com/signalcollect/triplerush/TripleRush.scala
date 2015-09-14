@@ -44,7 +44,7 @@ import com.signalcollect.triplerush.util._
 import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush.vertices.query._
 import com.signalcollect.examples.PlaceholderEdge
-import org.apache.jena.graph.Triple
+import org.apache.jena.graph.{ Triple => JenaTriple }
 
 /**
  * Global accessor for the console visualization.
@@ -120,12 +120,14 @@ class TripleRush(
    * The placement hint should ensure that this gets processed on node 0, because the dictionary resides on that node.
    * If you get a serialization error for the dictionary, it is probably due to a problematic placement hint.
    */
-  def load(filePath: String, placementHint: Option[Long] = Some(OperationIds.embedInLong(1)), lang: Option[Lang] = None): Unit = {
-    graph.loadGraph(new DataLoader(Left(filePath), dictionary, lang), placementHint)
+  def load(filePath: String, placementHint: Option[Long] = Some(OperationIds.embedInLong(1))): Unit = {
+    val loader = new DataLoader(TripleIterator(filePath), dictionary)
+    graph.loadGraph(loader, placementHint)
   }
 
   def loadStream(inputStream: InputStream, placementHint: Option[Long] = Some(OperationIds.embedInLong(1)), lang: Lang): Unit = {
-    graph.loadGraph(new DataLoader(Right(inputStream), dictionary, Some(lang)), placementHint)
+    val loader = new DataLoader(TripleIterator(inputStream, lang), dictionary)
+    graph.loadGraph(loader, placementHint)
   }
 
   /**
@@ -144,14 +146,14 @@ class TripleRush(
     addEncodedTriple(sId, pId, oId, blocking)
   }
 
-  def addTriple(triple: Triple, blocking: Boolean = false): Unit = {
+  def addTriple(triple: JenaTriple, blocking: Boolean = false): Unit = {
     val sString = NodeConversion.nodeToString(triple.getSubject)
     val pString = NodeConversion.nodeToString(triple.getPredicate)
     val oString = NodeConversion.nodeToString(triple.getObject)
     addStringTriple(sString, pString, oString, blocking)
   }
 
-  def addTriples(i: Iterator[Triple], blocking: Boolean = false): Unit = {
+  def addTriples(i: Iterator[JenaTriple], blocking: Boolean = false): Unit = {
     val mappedIterator = i.map { t =>
       val s = dictionary(NodeConversion.nodeToString(t.getSubject))
       val p = dictionary(NodeConversion.nodeToString(t.getPredicate))
