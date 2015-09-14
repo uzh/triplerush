@@ -55,7 +55,7 @@ object TrGlobal {
 
 object TripleRush {
   def apply(graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
-            dictionary: RdfDictionary = new ModularDictionary(),
+            dictionary: RdfDictionary = new HashDictionary(),
             tripleMapperFactory: Option[MapperFactory[Long]] = None,
             fastStart: Boolean = false,
             console: Boolean = false,

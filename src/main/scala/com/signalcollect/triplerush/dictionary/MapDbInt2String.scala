@@ -36,7 +36,7 @@ final class MapDbInt2String(
       .asyncWriteEnable
       .asyncWriteQueueSize(4096)
       .compressionEnable) extends Id2String {
-
+  
   private[this] val utf8 = Charset.forName("UTF-8")
   private[this] val nextId = new AtomicInteger(-1)
 
@@ -45,12 +45,9 @@ final class MapDbInt2String(
   private[this] val btree = db.treeMapCreate("btree")
     .keySerializer(BTreeKeySerializer.INTEGER)
     .valueSerializer(Serializer.BYTE_ARRAY)
-    .nodeSize(nodeSize) // Default
+    .nodeSize(nodeSize)
     .makeOrGet[Int, Array[Byte]]()
 
-  /**
-   * Entry IDs have to start with 0 and increase in increments of 1.
-   */
   def addEntry(s: String): Int = {
     val encoded = s.getBytes(utf8)
     val id = nextId.incrementAndGet()

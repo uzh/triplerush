@@ -2,7 +2,7 @@ package com.signalcollect.triplerush.dictionary
 
 final class ModularDictionary(
     val string2Id: String2Id = new MapDbString2Int,
-    val id2String: Id2String = new ArrayBufferId2String) extends RdfDictionary {
+    val id2String: Id2String = new MapDbInt2String) extends RdfDictionary {
 
   initialize()
 

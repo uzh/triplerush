@@ -76,7 +76,7 @@ case class DataLoader(filePathOrInputStream: Either[String, InputStream], dictio
 case object DataLoader {
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Long, Any]): Unit = {
-    assert(sId > 0 && pId > 0 && oId > 0)
+    assert(sId > 0 && pId > 0 && oId > 0, s"Ids have to be positive, but got s=$sId p=$pId o=$oId.")
     val po = EfficientIndexPattern(0, pId, oId)
     val so = EfficientIndexPattern(sId, 0, oId)
     val sp = EfficientIndexPattern(sId, pId, 0)

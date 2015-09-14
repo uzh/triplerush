@@ -33,8 +33,7 @@ final class MapDbString2Int(
       .closeOnJvmShutdown
       .transactionDisable
       .asyncWriteEnable
-      .asyncWriteQueueSize(4096)
-      .asyncWriteFlushDelay(4096)) extends String2Id {
+      .asyncWriteQueueSize(4096)) extends String2Id {
 
   private[this] val utf8 = Charset.forName("UTF-8")
 
@@ -43,7 +42,7 @@ final class MapDbString2Int(
   private[this] val btree = db.treeMapCreate("btree")
     .keySerializer(BTreeKeySerializer.BYTE_ARRAY)
     .valueSerializer(Serializer.INTEGER_PACKED)
-    .nodeSize(nodeSize) // Default
+    .nodeSize(nodeSize)
     .makeOrGet[Array[Byte], Int]()
 
   /**
