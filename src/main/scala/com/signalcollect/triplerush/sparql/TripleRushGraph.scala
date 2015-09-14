@@ -35,7 +35,7 @@ import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
 /**
  * A TripleRush implementation of the Jena Graph interface.
  */
-class TripleRushGraph(val tr: TripleRush = new TripleRush) extends GraphBase with GraphStatisticsHandler {
+class TripleRushGraph(val tr: TripleRush = TripleRush()) extends GraphBase with GraphStatisticsHandler {
 
   def getModel = ModelFactory.createModelForGraph(this)
 
