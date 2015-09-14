@@ -37,7 +37,7 @@ import com.signalcollect.util.TestAnnouncements
 class TicketsSpec extends FlatSpec with TestAnnouncements {
 
   "TripleRush" should "correctly answer a query with a limited number of tickets" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       tr.addEncodedTriple(1, 2, 3)
       tr.addEncodedTriple(4, 5, 6)

@@ -36,7 +36,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
   "TripleRush" should "correctly answer a query for data that is not in the store" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -49,7 +49,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   }
 
   it should "correctly answer a query for a specific pattern that exists" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -62,7 +62,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   }
 
   it should "correctly answer a query for a specific pattern that does not exist" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -75,7 +75,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   }
 
   it should "correctly answer a simple query 1" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -88,7 +88,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   }
 
   it should "correctly answer a simple query 2" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -104,7 +104,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   }
 
   it should "correctly answer a simple query, where one pattern is fully bound and that triple exists" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -119,7 +119,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   }
 
   it should "correctly answer a simple query, where one pattern is fully bound and that triple does not exist" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -134,7 +134,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   }
 
   it should "correctly answer queries after blocking triple additions" in {
-    val tr = new TripleRush(fastStart = true)
+    val tr = TripleRush(fastStart = true)
     try {
       for (i <- 1 to 100) {
         tr.addEncodedTriple(1, 2, i, blocking = true)
@@ -152,7 +152,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   }
 
   it should "correctly answer a simple query over a reasonable amount of data" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     val jena = new Jena
     try {
       val query = List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 10))
@@ -182,7 +182,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
         (triples: Set[TriplePattern], query: List[TriplePattern]) =>
-          val tr = new TripleRush
+          val tr = TripleRush()
           val jena = new Jena
           try {
             val jenaResults = TestHelper.execute(jena, triples, query)
@@ -200,7 +200,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
         (triples: Set[TriplePattern], query: List[TriplePattern]) =>
-          val tr = new TripleRush
+          val tr = TripleRush()
           val jena = new Jena
           try {
             val jenaResults = TestHelper.execute(jena, triples, query)

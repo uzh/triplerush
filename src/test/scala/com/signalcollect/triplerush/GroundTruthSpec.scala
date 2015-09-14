@@ -252,8 +252,8 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
     runTest(14)
   }
 
-  val tr = new TripleRush
-  val graph = new TripleRushGraph(tr)
+  val tr = TripleRush()
+  val graph = TripleRushGraph(tr)
   implicit val model = graph.getModel
   Lubm.load(tr)
 

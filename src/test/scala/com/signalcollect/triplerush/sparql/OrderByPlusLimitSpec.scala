@@ -43,8 +43,8 @@ WHERE {
 ORDER BY ?label
 LIMIT 3
                  """
-    val tr = new TripleRush
-    val graph = new TripleRushGraph(tr)
+    val tr = TripleRush()
+    val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
       tr.addStringTriple("http://SomeProduct2", "http://www.w3.org/2000/01/rdf-schema#label", "http://B")

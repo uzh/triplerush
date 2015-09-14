@@ -27,7 +27,7 @@ import com.signalcollect.util.TestAnnouncements
 class SerializationSpec extends FlatSpec with TestAnnouncements {
 
   "TripleRush" should "run when messages are serialized" in {
-    val tr = new TripleRush(new GraphBuilder[Long, Any]().withMessageSerialization(true))
+    val tr = TripleRush(new GraphBuilder[Long, Any]().withMessageSerialization(true))
     try {
       tr.addEncodedTriple(1, 2, 3)
       tr.prepareExecution

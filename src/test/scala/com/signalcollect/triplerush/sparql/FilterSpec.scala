@@ -33,8 +33,8 @@ SELECT ?r {
   FILTER EXISTS { ?r <http://p> <http://r3> }
 }
 """
-    val tr = new TripleRush
-    val graph = new TripleRushGraph(tr)
+    val tr = TripleRush()
+    val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
       tr.addStringTriple("http://r1", "http://p", "r2")

@@ -33,7 +33,7 @@ class IndexSpec extends FlatSpec with TestAnnouncements {
         o <- Array(3, -3)
       } yield TriplePattern(s, p, o)
     }
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       tr.addEncodedTriple(1, 2, 3)
       tr.prepareExecution

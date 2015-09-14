@@ -28,7 +28,7 @@ class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements 
   val p5 = 1005
 
   "ChildIdsForPattern" should "correctly return all the predicates from the root vertex" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       tr.addEncodedTriple(s1, p1, o1)
       tr.addEncodedTriple(s2, p1, o2)
@@ -51,7 +51,7 @@ class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements 
   }
 
   "An index query" should "be able to retrieve all predicates" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       tr.addEncodedTriple(s1, p1, o1)
       tr.addEncodedTriple(s2, p1, o2)

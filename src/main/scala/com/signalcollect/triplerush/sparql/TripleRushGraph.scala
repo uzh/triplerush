@@ -32,10 +32,16 @@ import org.apache.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
 
 import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
 
+object TripleRushGraph {
+  def apply(tr: TripleRush = TripleRush()): TripleRushGraph = {
+    new TripleRushGraph(tr)
+  }
+}
+
 /**
  * A TripleRush implementation of the Jena Graph interface.
  */
-class TripleRushGraph(val tr: TripleRush = TripleRush()) extends GraphBase with GraphStatisticsHandler {
+class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatisticsHandler {
 
   def getModel = ModelFactory.createModelForGraph(this)
 

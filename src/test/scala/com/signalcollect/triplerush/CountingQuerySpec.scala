@@ -34,7 +34,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
   "Counting Query" should "correctly answer a query for data that is not in the store" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(1, 2, 3))
       val query = List(TriplePattern(-1, 4, -1))
@@ -47,7 +47,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer a query for a specific pattern that exists" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(1, 2, 3))
       val query = List(TriplePattern(1, 2, 3))
@@ -60,7 +60,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "count zero results for an empty query" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(8, 23, 19), TriplePattern(13, 25, 5), TriplePattern(6, 23, 18))
       val query = List()
@@ -73,7 +73,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer a query for a specific pattern that does not exist" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(1, 2, 3))
       val query = List(TriplePattern(1, 4, 3))
@@ -86,7 +86,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer a query that successfully binds the same variable twice" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(1, 2, 1))
       val query = List(TriplePattern(-1, 2, -1))
@@ -98,7 +98,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer a query that successfully binds the same variable three times" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(1, 1, 1))
       val query = List(TriplePattern(-1, -1, -1))
@@ -110,7 +110,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer a query that unsuccessfully binds the same variable twice" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(1, 2, 3))
       val query = List(TriplePattern(-1, 2, -1))
@@ -122,7 +122,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer a query that unsuccessfully binds the same variable three times" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(1, 1, 2))
       val query = List(TriplePattern(-1, -1, -1))
@@ -134,7 +134,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer a simple query 1" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(4, 3, 4))
       val query = List(TriplePattern(-1, 3, -1))
@@ -147,7 +147,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer a simple query 2" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
         TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
@@ -162,7 +162,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer a simple query, where one pattern is fully bound and that triple exists" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
         TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
@@ -177,7 +177,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "correctly answer a simple query, where one pattern is fully bound and that triple does not exist" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val triples = Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
         TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
@@ -200,7 +200,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       } yield TriplePattern(s, p, o)
     }.toSet
 
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       val query = List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 25))
       val trCount = TestHelper.count(tr, triples, query)
@@ -212,7 +212,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "compute predicate selectivities over some triples" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     val jena = new Jena
     try {
       val triples = {
@@ -234,7 +234,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
   }
 
   it should "also work with encoded triples" in {
-    val tr = new TripleRush
+    val tr = TripleRush()
     try {
       tr.addStringTriple("Elvis", "inspired", "Dylan")
       tr.addStringTriple("Dylan", "inspired", "Jobs")
@@ -254,7 +254,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
         (triples: Set[TriplePattern], query: List[TriplePattern]) =>
-          val tr = new TripleRush
+          val tr = TripleRush()
           try {
             val trCount = TestHelper.count(tr, triples, query)
             val trResults = TestHelper.execute(tr, Set(), query)
