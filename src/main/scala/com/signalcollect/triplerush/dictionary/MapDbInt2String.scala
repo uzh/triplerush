@@ -25,21 +25,23 @@ import org.mapdb.BTreeKeySerializer
 import org.mapdb.Serializer
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicInteger
+import org.mapdb.DBMaker.Maker
 
-final class MapDbInt2String(val nodeSize: Int = 256) extends Id2String {
+final class MapDbInt2String(
+    val nodeSize: Int = 128,
+    dbMaker: Maker = DBMaker
+      .memoryUnsafeDB
+      .closeOnJvmShutdown
+      .transactionDisable
+      .asyncWriteEnable
+      .asyncWriteQueueSize(4096)
+      .asyncWriteFlushDelay(4096)
+      .compressionEnable) extends Id2String {
 
   private[this] val utf8 = Charset.forName("UTF-8")
   private[this] val nextId = new AtomicInteger(-1)
 
-  private[this] val db = DBMaker
-    .memoryUnsafeDB()
-    .closeOnJvmShutdown()
-    .transactionDisable()
-    .asyncWriteEnable()
-    .asyncWriteQueueSize(5000)
-    .asyncWriteFlushDelay(5000) // TODO: Evaluate different values
-    .compressionEnable() // TODO: Verify this does something useful
-    .make()
+  private[this] val db = dbMaker.make
 
   private[this] val btree = db.treeMapCreate("btree")
     .keySerializer(BTreeKeySerializer.INTEGER)
