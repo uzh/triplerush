@@ -9,8 +9,8 @@ import java.util.Arrays
 import scala.util.hashing.MurmurHash3
 
 final class HashDictionary(
-    val id2StringNodeSize: Int = 200,
-    val string2IdNodeSize: Int = 200,
+    val id2StringNodeSize: Int = 32,
+    val string2IdNodeSize: Int = 32,
     dbMaker: Maker = DBMaker
       .memoryUnsafeDB
       .closeOnJvmShutdown
