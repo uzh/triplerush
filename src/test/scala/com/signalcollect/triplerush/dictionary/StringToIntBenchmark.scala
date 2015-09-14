@@ -4,7 +4,7 @@ import org.mapdb.DBMaker
 import scala.util.Random
 import java.util.Arrays
 
-object IntToStringBenchmark extends App {
+object StringToIntBenchmark extends App {
 
   val prefix = "http://www.signalcollect.com/triplerush#"
   val suffixLength = 10
@@ -17,66 +17,38 @@ object IntToStringBenchmark extends App {
     new java.lang.StringBuilder(prefix.length + suffixLength).append(prefix).append(generateSuffix(suffixLength)).toString
   }
 
+  val nodeSize = 128
   val asyncQueueSize = 4096
-  val nodeSize = 32
+  
   val dbMaker = DBMaker
     .memoryUnsafeDB
     .closeOnJvmShutdown
     .transactionDisable
     .asyncWriteEnable
     .asyncWriteQueueSize(asyncQueueSize)
-    .compressionEnable
 
   val warmupStrings = 1000000
   val timedStrings = 1000000
   val maxId = warmupStrings + timedStrings
 
-  val intToString = new MapDbInt2String(nodeSize, dbMaker)
+  val stringToInt = new MapDbString2Int(nodeSize, dbMaker)
   addStrings(warmupStrings)
-  addStrings(timedStrings, Some(s"PUTS: nodeSize=$nodeSize, asyncQueueSize=$asyncQueueSize"))
+  addStrings(timedStrings, Some(s"PUTS: nodeSize=$nodeSize"))
 
-  val numberOfWarmupLookups = 10000
-  val numberOfSuccessfulLookups = 1000000
-
-  var doIt = 0 // To ensure read is actually performed.
-
-  performSuccessfulLookups(numberOfWarmupLookups)
-  performSuccessfulLookups(numberOfSuccessfulLookups, Some(s"GETS: nodeSize=$nodeSize, asyncQueueSize=$asyncQueueSize"))
-
-  def performSuccessfulLookups(howMany: Int, timed: Option[String] = None): Unit = {
-    def run(): Unit = {
-      var i = 0
-      while (i < numberOfSuccessfulLookups) {
-        val id = Random.nextInt(maxId)
-        val s = intToString(id)
-        doIt += s(0)
-        i += 1
-      }
-    }
-    timed match {
-      case Some(name) =>
-        println(s"Performing $howMany reads ...")
-        time {
-          run
-        }(name, Some(howMany))
-      case None =>
-        run
-    }
-  }
+  var nextId = 1
 
   def addStrings(howMany: Int, timed: Option[String] = None): Unit = {
-    //def run(strings: Array[String]): Unit = {
     def run(): Unit = {
       var i = 0
       while (i < howMany) {
-        intToString.addEntry(generateString)
+        stringToInt.addEntry(generateString, nextId)
+        nextId += 1
         i += 1
       }
     }
-    //val strings = Array.fill(howMany)(generateString)
     timed match {
       case Some(name) =>
-        println(s"Adding $howMany strings ...")
+        println(s"Adding $howMany entries ...")
         time {
           run //(strings)
         }(name, Some(howMany))
