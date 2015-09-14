@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.mapdb.DBMaker.Maker
 
 final class MapDbInt2String(
-    val nodeSize: Int = 128,
+    val nodeSize: Int = 32,
     dbMaker: Maker = DBMaker
       .memoryUnsafeDB
       .closeOnJvmShutdown

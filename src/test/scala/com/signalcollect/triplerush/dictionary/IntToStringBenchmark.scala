@@ -19,22 +19,51 @@ object IntToStringBenchmark extends App {
 
   val asyncQueueSize = 4096
   val asyncWriteFlushDelay = 0
-  val nodeSize = 128
+  val nodeSize = 32
   val dbMaker = DBMaker
     .memoryUnsafeDB
     .closeOnJvmShutdown
     .transactionDisable
     .asyncWriteEnable
     .asyncWriteQueueSize(asyncQueueSize)
-    .asyncWriteFlushDelay(asyncWriteFlushDelay)
     .compressionEnable
 
-  val warmupString = 1000000
+  val warmupStrings = 1000000
   val timedStrings = 1000000
+  val maxId = warmupStrings + timedStrings
 
   val intToString = new MapDbInt2String(nodeSize, dbMaker)
-  addStrings(warmupString)
-  addStrings(timedStrings, Some(s"nodeSize=$nodeSize, asyncQueueSize=$asyncQueueSize, asyncWriteFlushDelay=$asyncWriteFlushDelay"))
+  addStrings(warmupStrings)
+  addStrings(timedStrings, Some(s"PUTS: nodeSize=$nodeSize, asyncQueueSize=$asyncQueueSize"))
+
+  val numberOfWarmupLookups = 10000
+  val numberOfSuccessfulLookups = 1000000
+
+  var doIt = 0 // To ensure read is actually performed.
+
+  performSuccessfulLookups(numberOfWarmupLookups)
+  performSuccessfulLookups(numberOfSuccessfulLookups, Some(s"GETS: nodeSize=$nodeSize, asyncQueueSize=$asyncQueueSize"))
+
+  def performSuccessfulLookups(howMany: Int, timed: Option[String] = None): Unit = {
+    def run(): Unit = {
+      var i = 0
+      while (i < numberOfSuccessfulLookups) {
+        val id = Random.nextInt(maxId)
+        val s = intToString(id)
+        doIt += s(0)
+        i += 1
+      }
+    }
+    timed match {
+      case Some(name) =>
+        println(s"Performing $howMany reads ...")
+        time {
+          run
+        }(name, Some(howMany))
+      case None =>
+        run
+    }
+  }
 
   def addStrings(howMany: Int, timed: Option[String] = None): Unit = {
     //def run(strings: Array[String]): Unit = {
@@ -50,10 +79,10 @@ object IntToStringBenchmark extends App {
       case Some(name) =>
         println(s"Adding $howMany strings ...")
         time {
-          run//(strings)
+          run //(strings)
         }(name, Some(howMany))
       case None =>
-        run//(strings)
+        run //(strings)
     }
   }
 
