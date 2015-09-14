@@ -53,16 +53,27 @@ object TrGlobal {
   var dictionary: Option[RdfDictionary] = None
 }
 
+object TripleRush {
+  def apply(graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
+            dictionary: RdfDictionary = new ModularDictionary(),
+            tripleMapperFactory: Option[MapperFactory[Long]] = None,
+            fastStart: Boolean = false,
+            console: Boolean = false,
+            kryoRegistrations: List[String] = Kryo.defaultRegistrations): TripleRush = {
+    new TripleRush(graphBuilder, dictionary, tripleMapperFactory, fastStart, console, kryoRegistrations)
+  }
+}
+
 /**
  * `fastStart`: Faster startup time, might delay first query execution times and
  *  allows to skip calling `prepareExecution`.
  */
-case class TripleRush(
-    graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
-    val dictionary: RdfDictionary = new ModularDictionary(),
-    tripleMapperFactory: Option[MapperFactory[Long]] = None,
-    fastStart: Boolean = false,
-    console: Boolean = false,
+class TripleRush(
+    graphBuilder: GraphBuilder[Long, Any],
+    val dictionary: RdfDictionary,
+    tripleMapperFactory: Option[MapperFactory[Long]],
+    fastStart: Boolean,
+    console: Boolean,
     kryoRegistrations: List[String] = Kryo.defaultRegistrations) extends QueryEngine {
 
   TrGlobal.dictionary = Some(dictionary)
