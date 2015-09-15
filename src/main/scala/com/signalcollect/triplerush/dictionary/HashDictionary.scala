@@ -182,23 +182,43 @@ final class HashDictionary(
     id2String.close()
   }
 
-  private[this] val hashChars = 20
+  private[this] val suffixChars = 45
+  private[this] val prefixChars = 5
+  private[this] val fullStringUptTo = 50
 
   @inline private[this] def fastHash(b: Array[Byte]): Int = {
     if (b.length == 0) {
-      0
-    } else {
-      var hash = 2147483647 // large prime.
-      val l = b.length - 1
-      var i = math.max(0, b.length - hashChars)
+      return 0
+    }
+    var hash = 2147483647 // large prime.
+    var i = 0
+    val l = b.length - 1
+    if (b.length <= fullStringUptTo) {
       while (i < l) {
         hash = MurmurHash3.mix(hash, b(i))
         i += 1
       }
-      hash = MurmurHash3.mixLast(hash, b(i))
-      hash = MurmurHash3.finalizeHash(hash, 3)
-      hash & Int.MaxValue
+    } else {
+      // Skip `http://www.`
+      i = if (b(0) == 'h') {
+        11
+      } else {
+        0
+      }
+      val prefixEndIndex = math.min(l, i + prefixChars)
+      while (i < prefixEndIndex) {
+        hash = MurmurHash3.mix(hash, b(i))
+        i += 1
+      }
+      i = math.max(i, b.length - suffixChars)
+      while (i < l) {
+        hash = MurmurHash3.mix(hash, b(i))
+        i += 1
+      }
     }
+    hash = MurmurHash3.mixLast(hash, b(i))
+    hash = MurmurHash3.finalizeHash(hash, 3)
+    hash & Int.MaxValue
   }
 
   override def toString = s"HashDictionary(id2String=${id2String.size}, string2Id=${string2Id.size})"
