@@ -74,7 +74,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
   "TripleRush" should "pass SELECT Sparql-1.1 syntax tests" in {
     val manifestFile = "testcases-sparql-1.1-w3c/manifest-all.ttl"
     //Load main manifest.
-    tr.load(tmpDir.toString + File.separator + manifestFile)
+    tr.loadFromFile(tmpDir.toString + File.separator + manifestFile)
     tr.awaitIdle
     tr.prepareExecution
     //Retrieve sub-manifests
@@ -95,7 +95,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
     subManifests.map {
       subManifest =>
         val subManifestFile = subManifest.replace("file://", "")
-        tr.load(subManifestFile)
+        tr.loadFromFile(subManifestFile)
         tr.awaitIdle
     }
     tr.prepareExecution
