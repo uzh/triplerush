@@ -40,8 +40,8 @@ final class HashDictionary(
       .asyncWriteEnable
       .asyncWriteQueueSize(4096)
       .storeExecutorEnable(Executors.newScheduledThreadPool(math.min(16, Runtime.getRuntime.availableProcessors)))
-//      .metricsEnable(10000)
-//      .metricsExecutorEnable
+      //      .metricsEnable(10000)
+      //      .metricsExecutorEnable
       .compressionEnable) extends RdfDictionary {
 
   private[this] val db = dbMaker.make
@@ -137,7 +137,8 @@ final class HashDictionary(
     if (id == 0) {
       "*"
     } else {
-      new String(id2String.get(id), utf8)
+      val bytes = id2String.get(id)
+      new String(bytes, utf8)
     }
   }
 
