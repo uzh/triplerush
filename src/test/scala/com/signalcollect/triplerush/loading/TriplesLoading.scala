@@ -20,17 +20,12 @@
 
 package com.signalcollect.triplerush.loading
 
-import java.io.{ FileInputStream, InputStream }
-import java.util.zip.GZIPInputStream
-
-import org.apache.jena.riot.Lang
-
-import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.triplerush._
 
 object TriplesLoading extends App {
 
   val tr = TripleRush(fastStart = true)
-  val i = TripleIterator(args(0)).take(1000000)
+  val i = TripleIterator(args(0)).take(10000000)
   tr.loadFromIterator(i)
   tr.awaitIdle()
   println(tr.dictionary)
