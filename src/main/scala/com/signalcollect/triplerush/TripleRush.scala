@@ -157,18 +157,15 @@ class TripleRush(
   }
 
   def addTriple(triple: JenaTriple, blocking: Boolean = false): Unit = {
-    val sString = NodeConversion.nodeToString(triple.getSubject)
-    val pString = NodeConversion.nodeToString(triple.getPredicate)
-    val oString = NodeConversion.nodeToString(triple.getObject)
-    addStringTriple(sString, pString, oString, blocking)
+    addTriplePattern(DataLoader.toTriplePattern(triple, dictionary), blocking)
   }
 
   def addTriples(i: Iterator[JenaTriple], blocking: Boolean = false): Unit = {
+    val mappedIterator = i.map(DataLoader.toTriplePattern(_, dictionary))
     if (blocking) {
-      val mappedIterator = i.map(DataLoader.toTriplePattern(_, dictionary))
       addTriplePatterns(mappedIterator, blocking)
     } else {
-      loadFromIterator(i)
+      addTriplePatterns(mappedIterator)
     }
   }
 
