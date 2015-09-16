@@ -80,7 +80,7 @@ final class HashDictionary(
     val existing = id2String.putIfAbsent(idCandidate, s)
     if (existing == null) {
 //      println(s"Added string ${new String(s, utf8)} with hash-based ID $idCandidate")
-      assert(id2String.containsKey(idCandidate))
+//      assert(id2String.containsKey(idCandidate)) // TODO: Verify MapDB beta 7 fixex this.
       idCandidate
     } else {
       if (Arrays.equals(s, existing)) {
