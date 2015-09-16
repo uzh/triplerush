@@ -22,17 +22,17 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
   def getGraph: Graph = {
     val tr = getTripleRushInstance
     tr.prepareExecution
-    new TripleRushGraph(tr)
+    TripleRushGraph(tr)
   }
 
   private[this] def getTripleRushInstance: TripleRush = {
     val trSystem = ActorSystem(UUID.randomUUID.toString)
-    new TripleRush(graphBuilder = new GraphBuilder[Long, Any]().withActorSystem(trSystem))
+    TripleRush(graphBuilder = new GraphBuilder[Long, Any]().withActorSystem(trSystem))
   }
 
   override def getGraphWith(facts: String): Graph = {
     val tr = getTripleRushInstance
-    val g = new TripleRushGraph(tr)
+    val g = TripleRushGraph(tr)
     GraphTestBase.graphAdd(g, facts)
     tr.prepareExecution
     g

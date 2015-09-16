@@ -33,8 +33,8 @@ class DistinctSpec extends FlatSpec with Matchers with TestAnnouncements {
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
                  """
-    val tr = new TripleRush
-    val graph = new TripleRushGraph(tr)
+    val tr = TripleRush()
+    val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
       tr.addStringTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
@@ -53,8 +53,8 @@ SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 SELECT (COUNT(DISTINCT ?name) as ?count) WHERE { ?x foaf:name ?name }
                  """
-    val tr = new TripleRush
-    val graph = new TripleRushGraph(tr)
+    val tr = TripleRush()
+    val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
       tr.addStringTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")

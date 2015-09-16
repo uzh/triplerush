@@ -1,7 +1,8 @@
 /*
  *  @author Philip Stutz
+ *  @author Jahangir Mohammed
  *
- *  Copyright 2014 University of Zurich
+ *  Copyright 2015 iHealth Technologies
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,23 +18,19 @@
  *
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.loading
 
-import org.scalatest.FlatSpec
+import java.io.{ FileInputStream, InputStream }
+import java.util.zip.GZIPInputStream
 
-import com.signalcollect.GraphBuilder
-import com.signalcollect.util.TestAnnouncements
+import org.apache.jena.riot.Lang
 
-class SerializationSpec extends FlatSpec with TestAnnouncements {
+import com.signalcollect.triplerush.TripleRush
 
-  "TripleRush" should "run when messages are serialized" in {
-    val tr = TripleRush(new GraphBuilder[Long, Any]().withMessageSerialization(true))
-    try {
-      tr.addEncodedTriple(1, 2, 3)
-      tr.prepareExecution
-    } finally {
-      tr.shutdown
-    }
-  }
+object TriplesLoading extends App {
+
+  val tr = TripleRush(fastStart = true)
+  tr.loadFromFile(args(0))
+  tr.awaitIdle()
 
 }

@@ -21,7 +21,6 @@
 package com.signalcollect.triplerush
 
 import org.apache.jena.riot.Lang
-
 import scala.collection.immutable.TreeMap
 import scala.concurrent.Await
 import scala.io.Source
@@ -37,14 +36,17 @@ import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.util.TestAnnouncements
 import com.signalcollect.triplerush.sparql.TripleRushGraph
 import collection.JavaConversions._
+import com.signalcollect.triplerush.loading.TripleIterator
 
 object Lubm {
 
   def load(qe: TripleRush) {
     println("Loading LUBM1 ... ")
     for (fileNumber <- 0 to 14) {
-      val filename = s".${File.separator}lubm${File.separator}university0_$fileNumber.nt"
-      qe.loadStream(new FileInputStream(filename), lang = Lang.TURTLE)
+      val filePath = s".${File.separator}lubm${File.separator}university0_$fileNumber.nt"
+      println(s"Loading file $filePath ...")
+      qe.addTriples(TripleIterator(filePath), blocking = true)
+      println(s"Done loading $filePath.")
     }
     qe.prepareExecution
     println("Finished loading LUBM1.")
@@ -252,8 +254,8 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
     runTest(14)
   }
 
-  val tr = new TripleRush
-  val graph = new TripleRushGraph(tr)
+  val tr = TripleRush(fastStart = true)
+  val graph = TripleRushGraph(tr)
   implicit val model = graph.getModel
   Lubm.load(tr)
 

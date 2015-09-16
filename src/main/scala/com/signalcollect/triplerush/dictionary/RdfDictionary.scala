@@ -63,9 +63,6 @@ trait String2Id {
 
 trait Id2String {
 
-  /**
-   * Entry IDs have to start with 0 and increase in increments of 1.
-   */
   def addEntry(s: String): Int
   def contains(i: Int): Boolean
 

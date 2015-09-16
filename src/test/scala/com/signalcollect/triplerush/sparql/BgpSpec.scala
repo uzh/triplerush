@@ -38,8 +38,8 @@ SELECT ?name ?project WHERE {
   }
 }
                  """
-    val tr = new TripleRush
-    val graph = new TripleRushGraph(tr)
+    val tr = TripleRush()
+    val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
       tr.addStringTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "\"Arnie\"")
@@ -66,8 +66,8 @@ SELECT ?name ?project WHERE {
   }
 }
                  """
-    val tr = new TripleRush
-    val graph = new TripleRushGraph(tr)
+    val tr = TripleRush()
+    val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
       tr.addStringTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "\"Arnie\"")
@@ -100,8 +100,8 @@ SELECT ?name ?project WHERE {
     FILTER (?projectCount > 1)
   }
                  """
-    val tr = new TripleRush
-    val graph = new TripleRushGraph(tr)
+    val tr = TripleRush()
+    val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
       tr.addStringTriple("http://PersonA", "http://xmlns.com/foaf/0.1/name", "\"Arnie\"")
@@ -137,8 +137,8 @@ SELECT ?name ?project WHERE {
     }
   }
                  """
-    val tr = new TripleRush
-    val graph = new TripleRushGraph(tr)
+    val tr = TripleRush()
+    val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
       tr.addStringTriple("http://people.example/alice", "http://people.example/knows", "http://people.example/bob")

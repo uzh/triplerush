@@ -39,8 +39,8 @@ SELECT ?name WHERE {
   }
 }
                  """
-    val tr = new TripleRush
-    val graph = new TripleRushGraph(tr)
+    val tr = TripleRush()
+    val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
       tr.addStringTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")

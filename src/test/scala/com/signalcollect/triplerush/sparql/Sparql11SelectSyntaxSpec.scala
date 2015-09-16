@@ -38,8 +38,8 @@ import com.signalcollect.util.TestAnnouncements
  */
 class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfter with TestAnnouncements {
 
-  val tr = new TripleRush
-  val graph = new TripleRushGraph(tr)
+  val tr = TripleRush()
+  val graph = TripleRushGraph(tr)
   implicit val model = graph.getModel
   // Unzip test jar into a temporary directory and delete after the tests are run.
   val tmpDir = Files.createTempDirectory("sparql-syntax")
@@ -74,7 +74,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
   "TripleRush" should "pass SELECT Sparql-1.1 syntax tests" in {
     val manifestFile = "testcases-sparql-1.1-w3c/manifest-all.ttl"
     //Load main manifest.
-    tr.load(tmpDir.toString + File.separator + manifestFile)
+    tr.loadFromFile(tmpDir.toString + File.separator + manifestFile)
     tr.awaitIdle
     tr.prepareExecution
     //Retrieve sub-manifests
@@ -95,7 +95,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
     subManifests.map {
       subManifest =>
         val subManifestFile = subManifest.replace("file://", "")
-        tr.load(subManifestFile)
+        tr.loadFromFile(subManifestFile)
         tr.awaitIdle
     }
     tr.prepareExecution

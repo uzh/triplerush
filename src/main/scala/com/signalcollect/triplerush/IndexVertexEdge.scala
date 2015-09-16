@@ -47,7 +47,7 @@ class IndexVertexEdge(
 
   override def weight: Double = 1
 
-  override def toString = s"PlaceholderEdge(childDelta=$childDelta)"
+  override def toString = s"${this.getClass.getSimpleName}(childDelta=$childDelta)"
 
   override def hashCode = throw new UnsupportedOperationException
 
