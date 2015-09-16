@@ -120,13 +120,18 @@ class TripleRush(
    * The placement hint should ensure that this gets processed on node 0, because the dictionary resides on that node.
    * If you get a serialization error for the dictionary, it is probably due to a problematic placement hint.
    */
-  def load(filePath: String, placementHint: Option[Long] = Some(OperationIds.embedInLong(1))): Unit = {
-    val loader = new DataLoader(TripleIterator(filePath), dictionary)
-    graph.loadGraph(loader, placementHint)
+  def loadFromFile(filePath: String, placementHint: Option[Long] = Some(OperationIds.embedInLong(1))): Unit = {
+    val iterator = TripleIterator(filePath)
+    loadFromIterator(iterator, placementHint)
   }
 
-  def loadStream(inputStream: InputStream, placementHint: Option[Long] = Some(OperationIds.embedInLong(1)), lang: Lang): Unit = {
-    val loader = new DataLoader(TripleIterator(inputStream, lang), dictionary)
+  def loadFromStream(inputStream: InputStream, placementHint: Option[Long] = Some(OperationIds.embedInLong(1)), lang: Lang): Unit = {
+    val iterator = TripleIterator(inputStream, lang)
+    loadFromIterator(iterator, placementHint)
+  }
+
+  def loadFromIterator(iterator: Iterator[JenaTriple], placementHint: Option[Long] = Some(OperationIds.embedInLong(1))): Unit = {
+    val loader = new DataLoader(iterator, dictionary)
     graph.loadGraph(loader, placementHint)
   }
 
@@ -154,13 +159,12 @@ class TripleRush(
   }
 
   def addTriples(i: Iterator[JenaTriple], blocking: Boolean = false): Unit = {
-    val mappedIterator = i.map { t =>
-      val s = dictionary(NodeConversion.nodeToString(t.getSubject))
-      val p = dictionary(NodeConversion.nodeToString(t.getPredicate))
-      val o = dictionary(NodeConversion.nodeToString(t.getObject))
-      TriplePattern(s, p, o)
+    if (blocking) {
+      val mappedIterator = i.map(DataLoader.toTriplePattern(_, dictionary))
+      addTriplePatterns(mappedIterator, blocking)
+    } else {
+      loadFromIterator(i)
     }
-    addTriplePatterns(mappedIterator, blocking)
   }
 
   def addTriplePattern(tp: TriplePattern, blocking: Boolean = false): Unit = {
@@ -169,15 +173,20 @@ class TripleRush(
 
   def addTriplePatterns(i: Iterator[TriplePattern], blocking: Boolean = false): Unit = {
     if (blocking) {
+      assert(canExecute, "Blocking additions only work with `fastStart` or after having called `prepareExecution`.")
       val promise = Promise[Unit]()
       val vertex = new BlockingTripleAdditionsVertex(i, promise)
       graph.addVertex(vertex)
       Await.result(promise.future, 7200.seconds)
     } else {
+
       Future {
+        var counter = 0
         while (i.hasNext) {
           addTriplePattern(i.next, blocking = false)
+          counter += 1
         }
+        println(s"TripleRush.addTriplePatterns added $counter triples")
       }
     }
   }
@@ -185,17 +194,13 @@ class TripleRush(
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, blocking: Boolean = false): Unit = {
     assert(sId > 0 && pId > 0 && oId > 0)
     if (blocking) {
+      assert(canExecute, "Blocking additions only work with `fastStart` or after having called `prepareExecution`.")
       val promise = Promise[Unit]()
       val vertex = new BlockingTripleAdditionsVertex(Some(TriplePattern(sId, pId, oId)).iterator, promise)
       graph.addVertex(vertex)
       Await.result(promise.future, 7200.seconds)
     } else {
-      val po = EfficientIndexPattern(0, pId, oId)
-      val so = EfficientIndexPattern(sId, 0, oId)
-      val sp = EfficientIndexPattern(sId, pId, 0)
-      graph.addEdge(po, new IndexVertexEdge(sId))
-      graph.addEdge(so, new IndexVertexEdge(pId))
-      graph.addEdge(sp, new IndexVertexEdge(oId))
+      DataLoader.addEncodedTriple(sId, pId, oId, graph)
     }
   }
 
