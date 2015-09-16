@@ -32,11 +32,11 @@ object OperationIds {
   private[this] val minOperationId = new AtomicInteger(0)
 
   def nextId(): Int = {
-    maxOperationId.incrementAndGet
+    maxOperationId.incrementAndGet & Int.MaxValue
   }
 
   def nextCountQueryId(): Int = {
-    minOperationId.decrementAndGet
+    minOperationId.decrementAndGet | Int.MinValue
   }
 
   def reset(): Unit = {
