@@ -181,12 +181,9 @@ class TripleRush(
     } else {
 
       Future {
-        var counter = 0
         while (i.hasNext) {
           addTriplePattern(i.next, blocking = false)
-          counter += 1
         }
-        println(s"TripleRush.addTriplePatterns added $counter triples")
       }
     }
   }
