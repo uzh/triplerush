@@ -30,7 +30,6 @@ import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
 object TripleIterator {
 
   def apply(input: InputStream, lang: Lang): TripleIterator = {
-    println("IS!")
     new TripleIterator(Left(input), Option(lang))
   }
 
