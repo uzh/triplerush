@@ -30,6 +30,7 @@ import com.signalcollect.triplerush.{ EfficientIndexPattern, IndexVertexEdge }
 import com.signalcollect.triplerush.dictionary.RdfDictionary
 import com.signalcollect.triplerush.sparql.NodeConversion
 import java.io.FileInputStream
+import com.signalcollect.triplerush.TriplePattern
 
 class DataLoader(
     tripleIterator: Iterator[JenaTriple],
@@ -49,20 +50,29 @@ class DataLoader(
       println(s"$loaded triples loaded after $seconds seconds")
     }
     val triple = tripleIterator.next
-    val subjectString = NodeConversion.nodeToString(triple.getSubject)
-    val predicateString = NodeConversion.nodeToString(triple.getPredicate)
-    val objectString = NodeConversion.nodeToString(triple.getObject)
-    val sId = dictionary(subjectString)
-    val pId = dictionary(predicateString)
-    val oId = dictionary(objectString)
-    val loader: GraphEditor[Long, Any] => Unit = DataLoader.addEncodedTriple(
-      sId, pId, oId, _)
+    val loader: GraphEditor[Long, Any] => Unit = DataLoader.addTriple(
+      triple, dictionary, _)
     loader
   }
 
 }
 
 case object DataLoader {
+
+  def toTriplePattern(triple: JenaTriple, dictionary: RdfDictionary): TriplePattern = {
+    val subjectString = NodeConversion.nodeToString(triple.getSubject)
+    val predicateString = NodeConversion.nodeToString(triple.getPredicate)
+    val objectString = NodeConversion.nodeToString(triple.getObject)
+    val sId = dictionary(subjectString)
+    val pId = dictionary(predicateString)
+    val oId = dictionary(objectString)
+    TriplePattern(sId, pId, oId)
+  }
+
+  def addTriple(triple: JenaTriple, dictionary: RdfDictionary, graphEditor: GraphEditor[Long, Any]): Unit = {
+    val tp = toTriplePattern(triple, dictionary)
+    addEncodedTriple(tp.s, tp.p, tp.o, graphEditor)
+  }
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, graphEditor: GraphEditor[Long, Any]): Unit = {
     assert(sId > 0 && pId > 0 && oId > 0, s"Ids have to be positive, but got s=$sId p=$pId o=$oId.")
