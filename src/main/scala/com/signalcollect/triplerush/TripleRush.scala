@@ -24,7 +24,6 @@ import java.io.InputStream
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.jena.riot.Lang
-
 import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration.DurationInt
 import scala.reflect.ManifestFactory
@@ -120,17 +119,23 @@ class TripleRush(
    * The placement hint should ensure that this gets processed on node 0, because the dictionary resides on that node.
    * If you get a serialization error for the dictionary, it is probably due to a problematic placement hint.
    */
-  def loadFromFile(filePath: String, placementHint: Option[Long] = Some(OperationIds.embedInLong(1))): Unit = {
+  def loadFromFile(
+    filePath: String,
+    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId))): Unit = {
     val iterator = TripleIterator(filePath)
     loadFromIterator(iterator, placementHint)
   }
 
-  def loadFromStream(inputStream: InputStream, placementHint: Option[Long] = Some(OperationIds.embedInLong(1)), lang: Lang): Unit = {
+  def loadFromStream(
+    inputStream: InputStream,
+    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId)), lang: Lang): Unit = {
     val iterator = TripleIterator(inputStream, lang)
     loadFromIterator(iterator, placementHint)
   }
 
-  def loadFromIterator(iterator: Iterator[JenaTriple], placementHint: Option[Long] = Some(OperationIds.embedInLong(1))): Unit = {
+  def loadFromIterator(
+    iterator: Iterator[JenaTriple],
+    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId))): Unit = {
     val loader = new DataLoader(iterator, dictionary)
     graph.loadGraph(loader, placementHint)
   }
