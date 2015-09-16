@@ -20,13 +20,15 @@
 
 package com.signalcollect.triplerush.dictionary
 
-import org.mapdb.DBMaker
-import org.mapdb.DBMaker.Maker
-import org.mapdb.BTreeKeySerializer
-import org.mapdb.Serializer
 import java.nio.charset.Charset
 import java.util.Arrays
+import java.util.concurrent.atomic.AtomicInteger
+
 import scala.util.hashing.MurmurHash3
+
+import org.mapdb.{ BTreeKeySerializer, DBMaker }
+import org.mapdb.DBMaker.Maker
+import org.mapdb.Serializer
 
 final class HashDictionary(
     val id2StringNodeSize: Int = 32,
@@ -60,46 +62,40 @@ final class HashDictionary(
 
   private[this] val utf8 = Charset.forName("UTF-8")
 
-  var allIdsTakenUpTo = 0
-
   def initialize(): Unit = {
     id2String.put(0, "*".getBytes(utf8))
-  }
-
-  def getNextId(): Int = {
-    var keepLooking = true
-    while (keepLooking) {
-      allIdsTakenUpTo += 1
-      keepLooking = id2String.containsKey(allIdsTakenUpTo)
-    }
-    allIdsTakenUpTo
   }
 
   // idCandidate is the hashCode of the byte array
   private[this] def addEntry(s: Array[Byte], idCandidate: Int): Int = {
     val existing = id2String.putIfAbsent(idCandidate, s)
     if (existing == null) {
-//      println(s"Added string ${new String(s, utf8)} with hash-based ID $idCandidate")
-//      assert(id2String.containsKey(idCandidate)) // TODO: Verify MapDB beta 7 fixes this.
+      //      println(s"Added string ${new String(s, utf8)} with hash-based ID $idCandidate")
+      //      assert(id2String.containsKey(idCandidate)) // TODO: Verify MapDB beta 7 fixes this.
       idCandidate
     } else {
       if (Arrays.equals(s, existing)) {
-//        println(s"Did not add string ${new String(s, utf8)}, because it already exists in the dictionary with ID $idCandidate")
+        //        println(s"Did not add string ${new String(s, utf8)}, because it already exists in the dictionary with ID $idCandidate")
         idCandidate // existing
       } else {
         val id = addEntryToExceptions(s) // collision
-//        println(s"Collision of new string ${new String(s, utf8)} with existing string ${new String(existing, utf8)}, added it with exception ID $id")
+        //        println(s"Collision of new string ${new String(s, utf8)} with existing string ${new String(existing, utf8)}, added it with exception ID $id")
         id
       }
     }
   }
 
-  // TODO: Fix case where the next ID is stolen by a regular `putIfAbsent`
-  def addEntryToExceptions(s: Array[Byte]): Int = synchronized {
-    val id = getNextId
-    id2String.put(id, s)
-    string2Id.put(s, id)
-    id
+  val allIdsTakenUpTo = new AtomicInteger(0)
+
+  def addEntryToExceptions(s: Array[Byte]): Int = {
+    var idToAttempt: Int = 0
+    var existingEntry: Array[Byte] = null
+    do {
+      idToAttempt = allIdsTakenUpTo.incrementAndGet
+      existingEntry = id2String.putIfAbsent(idToAttempt, s)
+    } while (existingEntry != null)
+    string2Id.put(s, idToAttempt)
+    idToAttempt
   }
 
   /**
