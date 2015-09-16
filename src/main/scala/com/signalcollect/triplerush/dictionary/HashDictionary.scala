@@ -28,6 +28,7 @@ import org.mapdb.{ BTreeKeySerializer, DBMaker }
 import org.mapdb.DBMaker.Maker
 import org.mapdb.Serializer
 import scala.annotation.tailrec
+import java.util.concurrent.Executors
 
 final class HashDictionary(
     val id2StringNodeSize: Int = 32,
@@ -38,6 +39,9 @@ final class HashDictionary(
       .transactionDisable
       .asyncWriteEnable
       .asyncWriteQueueSize(4096)
+      .storeExecutorEnable(Executors.newScheduledThreadPool(math.min(16, Runtime.getRuntime.availableProcessors)))
+//      .metricsEnable(10000)
+//      .metricsExecutorEnable
       .compressionEnable) extends RdfDictionary {
 
   private[this] val db = dbMaker.make

@@ -49,19 +49,19 @@ object DictionaryBenchmark extends App {
   val id2StringNodeSize = 32
   val asyncQueueSize = 4096
 
-  val dbMaker = DBMaker
-    .memoryUnsafeDB
-    .closeOnJvmShutdown
-    .transactionDisable
-    .asyncWriteEnable
-    .asyncWriteQueueSize(asyncQueueSize)
-    .compressionEnable
+//  val dbMaker = DBMaker
+//    .memoryUnsafeDB
+//    .closeOnJvmShutdown
+//    .transactionDisable
+//    .asyncWriteEnable
+//    .asyncWriteQueueSize(asyncQueueSize)
+//    .compressionEnable
 
   val warmupStrings = 10
   val timedStrings = 100000000
   val maxId = warmupStrings + timedStrings
 
-  val dictionary = new HashDictionary(id2StringNodeSize, string2IdNodeSize, dbMaker)
+  val dictionary = new HashDictionary(id2StringNodeSize, string2IdNodeSize)//, dbMaker
 
   val startTime = System.currentTimeMillis
   val inputStream = new FileInputStream(args(0))
