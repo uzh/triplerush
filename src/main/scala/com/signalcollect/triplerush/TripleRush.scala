@@ -179,7 +179,6 @@ class TripleRush(
       graph.addVertex(vertex)
       Await.result(promise.future, 7200.seconds)
     } else {
-
       Future {
         while (i.hasNext) {
           addTriplePattern(i.next, blocking = false)
