@@ -55,9 +55,6 @@ object HashDictionaryBenchmark extends App {
   addStrings(stringIterator(warmupStrings))
   addStrings(stringIterator(timedStrings), Some(s"PUTS: nodeSize=$nodeSize, asyncQueueSize=$asyncQueueSize"), Some(timedStrings))
 
-  val numberOfWarmupLookups = 10000
-  val numberOfSuccessfulLookups = 1000000
-
   def stringIterator(n: Int): Iterator[String] = {
     new Iterator[String] {
       var counter = 0
