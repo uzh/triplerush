@@ -19,38 +19,35 @@
 
 package com.signalcollect.triplerush.loading
 
-import java.io.FileInputStream
-import org.apache.jena.riot.lang.PipedRDFIterator
-import org.apache.jena.riot.lang.PipedTriplesStream
-import org.apache.jena.riot.RDFDataMgr
+import java.io.{ FileInputStream, InputStream }
 import java.util.concurrent.Executors
-import java.io.InputStream
-import org.apache.jena.riot.Lang
 import java.util.zip.GZIPInputStream
+
 import org.apache.jena.graph.{ Triple => JenaTriple }
-import org.apache.jena.riot.RDFLanguages
+import org.apache.jena.riot.{ Lang, RDFDataMgr, RDFLanguages }
+import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
 
 object TripleIterator {
 
   def apply(input: InputStream, lang: Lang = Lang.TURTLE): TripleIterator = {
-    new TripleIterator(input, lang)
+    new TripleIterator(Left(input), Option(lang))
   }
 
   def apply(filePath: String): TripleIterator = {
-    val inputStream = new FileInputStream(filePath)
     val lang = RDFLanguages.filenameToLang(filePath)
     if (filePath.endsWith("gz")) {
-      apply(new GZIPInputStream(inputStream))
+      val inputStream = new FileInputStream(filePath)
+      apply(new GZIPInputStream(inputStream), lang)
     } else {
-      apply(inputStream, lang)
+      new TripleIterator(Right(filePath), Option(lang))
     }
   }
 
 }
 
 class TripleIterator(
-    inputStream: InputStream,
-    lang: Lang,
+    inputStreamOrFilePath: Either[InputStream, String],
+    lang: Option[Lang],
     bufferSize: Int = 10000,
     pollTimeout: Int = 100000, // 100 seconds
     maxPolls: Int = 10000) extends Iterator[JenaTriple] {
@@ -58,7 +55,12 @@ class TripleIterator(
   private[this] val sink = new PipedTriplesStream(tripleIterator)
   private[this] val executor = Executors.newSingleThreadExecutor
   private[this] val parser = new Runnable {
-    def run: Unit = RDFDataMgr.parse(sink, inputStream, lang)
+    def run: Unit = {
+      inputStreamOrFilePath match {
+        case Left(filePath)     => RDFDataMgr.parse(sink, filePath, lang.getOrElse(null))
+        case Right(inputStream) => RDFDataMgr.parse(sink, inputStream, lang.getOrElse(null))
+      }
+    }
   }
   executor.submit(parser)
 
