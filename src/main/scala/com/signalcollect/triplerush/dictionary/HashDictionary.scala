@@ -23,12 +23,11 @@ package com.signalcollect.triplerush.dictionary
 import java.nio.charset.Charset
 import java.util.Arrays
 import java.util.concurrent.atomic.AtomicInteger
-
 import scala.util.hashing.MurmurHash3
-
 import org.mapdb.{ BTreeKeySerializer, DBMaker }
 import org.mapdb.DBMaker.Maker
 import org.mapdb.Serializer
+import scala.annotation.tailrec
 
 final class HashDictionary(
     val id2StringNodeSize: Int = 32,
@@ -88,14 +87,14 @@ final class HashDictionary(
   val allIdsTakenUpTo = new AtomicInteger(0)
 
   def addEntryToExceptions(s: Array[Byte]): Int = {
-    var idToAttempt: Int = 0
-    var existingEntry: Array[Byte] = null
-    do {
-      idToAttempt = allIdsTakenUpTo.incrementAndGet
-      existingEntry = id2String.putIfAbsent(idToAttempt, s)
-    } while (existingEntry != null)
-    string2Id.put(s, idToAttempt)
-    idToAttempt
+    @tailrec def recursiveAddEntryToExceptions(s: Array[Byte]): Int = {
+      val attemptedId = allIdsTakenUpTo.incrementAndGet
+      val existing = id2String.putIfAbsent(attemptedId, s)
+      if (existing == null) attemptedId else recursiveAddEntryToExceptions(s)
+    }
+    val id = recursiveAddEntryToExceptions(s)
+    string2Id.put(s, id)
+    id
   }
 
   /**
