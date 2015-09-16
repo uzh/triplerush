@@ -29,17 +29,26 @@ import org.apache.jena.riot.lang.{ PipedRDFIterator, PipedTriplesStream }
 
 object TripleIterator {
 
-  def apply(input: InputStream, lang: Lang = Lang.TURTLE): TripleIterator = {
+  def apply(input: InputStream, lang: Lang): TripleIterator = {
+    println("IS!")
     new TripleIterator(Left(input), Option(lang))
   }
 
-  def apply(filePath: String): TripleIterator = {
-    val lang = RDFLanguages.filenameToLang(filePath)
-    if (filePath.endsWith("gz")) {
+  def apply(filePath: String, langOpt: Option[Lang] = None): TripleIterator = {
+    if (filePath.endsWith("ntriples.gz")) {
+      val lang = langOpt.getOrElse {
+        val withoutGz = filePath.substring(0, filePath.length - 3)
+        if (withoutGz.endsWith("ntriples")) {
+          Lang.NTRIPLES
+        } else {
+          RDFLanguages.filenameToLang(filePath)
+        }
+      }
       val inputStream = new FileInputStream(filePath)
       apply(new GZIPInputStream(inputStream), lang)
     } else {
-      new TripleIterator(Right(filePath), Option(lang))
+      val lang = langOpt.getOrElse(RDFLanguages.filenameToLang(filePath))
+      new TripleIterator(Right(filePath), Some(lang))
     }
   }
 
@@ -67,5 +76,17 @@ class TripleIterator(
   def next: JenaTriple = tripleIterator.next
 
   def hasNext: Boolean = tripleIterator.hasNext
+
+  def withProgressPrinting(everyNtriples: Int = 10000): Iterator[JenaTriple] = {
+    var counter = 0
+    this.map { t =>
+      if (counter % everyNtriples == 0) {
+        println(s"Loaded $counter triples.")
+      }
+      println(counter)
+      counter += 1
+      t
+    }
+  }
 
 }
