@@ -94,6 +94,7 @@ final class HashDictionary(
     }
   }
 
+  // TODO: Fix case where the next ID is stolen by a regular `putIfAbsent`
   def addEntryToExceptions(s: Array[Byte]): Int = synchronized {
     val id = getNextId
     id2String.put(id, s)
