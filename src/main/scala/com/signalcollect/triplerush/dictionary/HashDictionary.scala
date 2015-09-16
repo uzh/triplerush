@@ -79,16 +79,16 @@ final class HashDictionary(
   private[this] def addEntry(s: Array[Byte], idCandidate: Int): Int = {
     val existing = id2String.putIfAbsent(idCandidate, s)
     if (existing == null) {
-      println(s"Added string ${new String(s, utf8)} with hash-based ID $idCandidate")
+//      println(s"Added string ${new String(s, utf8)} with hash-based ID $idCandidate")
       assert(id2String.containsKey(idCandidate))
       idCandidate
     } else {
       if (Arrays.equals(s, existing)) {
-        println(s"Did not add string ${new String(s, utf8)}, because it already exists in the dictionary with ID $idCandidate")
+//        println(s"Did not add string ${new String(s, utf8)}, because it already exists in the dictionary with ID $idCandidate")
         idCandidate // existing
       } else {
         val id = addEntryToExceptions(s) // collision
-        println(s"Collision of new string ${new String(s, utf8)} with existing string ${new String(existing, utf8)}, added it with exception ID $id")
+//        println(s"Collision of new string ${new String(s, utf8)} with existing string ${new String(existing, utf8)}, added it with exception ID $id")
         id
       }
     }
