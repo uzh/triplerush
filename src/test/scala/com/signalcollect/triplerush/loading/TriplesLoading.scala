@@ -30,7 +30,10 @@ import com.signalcollect.triplerush.TripleRush
 object TriplesLoading extends App {
 
   val tr = TripleRush(fastStart = true)
-  tr.loadFromFile(args(0))
+  val i = TripleIterator(args(0)).take(1000000)
+  tr.loadFromIterator(i)
   tr.awaitIdle()
+  println(tr.dictionary)
+  tr.shutdown
 
 }
