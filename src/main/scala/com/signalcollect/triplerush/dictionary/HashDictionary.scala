@@ -38,7 +38,7 @@ final class HashDictionary(
       .closeOnJvmShutdown
       .transactionDisable
       .asyncWriteEnable
-      .asyncWriteQueueSize(4096)
+      .asyncWriteQueueSize(100000)
       .storeExecutorEnable(Executors.newScheduledThreadPool(math.min(16, Runtime.getRuntime.availableProcessors)))
       //      .metricsEnable(10000)
       //      .metricsExecutorEnable
