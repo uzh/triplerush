@@ -292,6 +292,7 @@ object Kryo {
       classOf[IndexVertex[_]].getName,
       classOf[BaseVertex[_]].getName,
       classOf[Binding].getName,
+      classOf[MemoryEfficientSplayIntSet].getName,
       classOf[TriplePattern].getName,
       classOf[IndexVertexEdge].getName,
       classOf[BlockingIndexVertexEdge].getName,

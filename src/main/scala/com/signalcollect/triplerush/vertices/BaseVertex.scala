@@ -28,7 +28,7 @@ import com.signalcollect._
 abstract class BaseVertex[StateType]
     extends Vertex[Long, StateType, Long, Any] {
 
-  @transient var state: StateType = _
+  var state: StateType = _
 
   def setState(s: StateType): Unit = {
     state = s

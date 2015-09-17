@@ -41,6 +41,28 @@ final class MapDbVertexMap(
       .storeExecutorEnable(Executors.newScheduledThreadPool(math.min(16, Runtime.getRuntime.availableProcessors))),
     serializer: Serialization = new Serialization(ActorSystemRegistry.systems.values.head.asInstanceOf[ExtendedActorSystem])) extends VertexStore[Long, Any] {
 
+  // Care, does not set the unflushed vertex null.
+  @inline private[this] def flush(): Unit = {
+    val vertex = unflushedVertex
+    val id = vertex.id
+    val first = id.extractFirst
+    val second = id.extractSecond
+    if (first < 0 && second < 0) {
+      nonSerializingMap.put(vertex)
+    } else {
+      id2Vertex.put(id, toBytes(vertex))
+    }
+  }
+
+  var unflushedVertex: Vertex[Long, _, Long, Any] = _
+
+  def updateStateOfVertex(vertex: Vertex[Long, _, Long, Any]): Unit = {
+    if (unflushedVertex != null && vertex != unflushedVertex) {
+      flush()
+      unflushedVertex = vertex
+    }
+  }
+
   private[this] val db = dbMaker.make
 
   private[this] val id2Vertex = db.treeMapCreate("vertex-map")
@@ -60,79 +82,108 @@ final class MapDbVertexMap(
   }
 
   def get(id: Long): Vertex[Long, _, Long, Any] = {
-    val first = id.extractFirst
-    val second = id.extractSecond
-    if (first < 0 && second < 0) {
-      nonSerializingMap.get(id)
+    if (unflushedVertex != null && unflushedVertex.id == id) {
+      unflushedVertex
     } else {
-      val bytes = id2Vertex.get(id)
-      if (bytes != null) {
-        toVertex(bytes)
+      val first = id.extractFirst
+      val second = id.extractSecond
+      if (first < 0 && second < 0) {
+        nonSerializingMap.get(id)
       } else {
-        null.asInstanceOf[Vertex[Long, _, Long, Any]]
+        val bytes = id2Vertex.get(id)
+        if (bytes != null) {
+          toVertex(bytes)
+        } else {
+          null.asInstanceOf[Vertex[Long, _, Long, Any]]
+        }
       }
     }
   }
 
   def put(vertex: Vertex[Long, _, Long, Any]): Boolean = {
-    val id = vertex.id
-    val first = id.extractFirst
-    val second = id.extractSecond
-    if (first < 0 && second < 0) {
-      nonSerializingMap.put(vertex)
+    if (unflushedVertex != vertex) {
+      if (unflushedVertex != null) {
+        flush()
+      }
+      unflushedVertex = vertex
+      nonSerializingMap.get(vertex.id) == null && !id2Vertex.containsKey(vertex.id)
     } else {
-      Option(id2Vertex.putIfAbsent(vertex.id, toBytes(vertex))).isEmpty
+      false
     }
   }
 
   def remove(id: Long): Unit = {
+    if (unflushedVertex != null && unflushedVertex.id == id) {
+      unflushedVertex = null
+    }
     id2Vertex.remove(id)
+    nonSerializingMap.remove(id)
   }
 
   def isEmpty: Boolean = {
-    id2Vertex.isEmpty && nonSerializingMap.isEmpty
+    unflushedVertex == null && id2Vertex.isEmpty && nonSerializingMap.isEmpty
   }
 
   def size: Long = {
+    if (unflushedVertex != null) {
+      flush()
+      unflushedVertex = null
+    }
     id2Vertex.size + nonSerializingMap.size
   }
 
-  def stream(): Stream[Vertex[Long, _, Long, Any]] = {
-    //id2Vertex.valuesIterator.map(toVertex(_)).toStream
-    ???
+  def foreach(f: Vertex[Long, _, Long, Any] => Unit): Unit = {
+    if (unflushedVertex != null) {
+      flush()
+      unflushedVertex = null
+    }
+    id2Vertex.valuesIterator.map(toVertex(_)).foreach(f)
+    nonSerializingMap.foreach(f)
   }
 
-  def foreach(f: Vertex[Long, _, Long, Any] => Unit): Unit = {
-    //id2Vertex.valuesIterator.map(toVertex(_)).foreach(f)
-    ???
+  def stream(): Stream[Vertex[Long, _, Long, Any]] = {
+    if (unflushedVertex != null) {
+      flush()
+      unflushedVertex = null
+    }
+    nonSerializingMap.stream ++
+      id2Vertex.valuesIterator.map(toVertex(_)).toStream
   }
 
   def process(p: Vertex[Long, _, Long, Any] => Unit, numberOfVertices: Option[Int] = None): Int = {
-    //    var processed = 0
-    //    val i = numberOfVertices match {
-    //      case None    => id2Vertex.keysIterator
-    //      case Some(n) => id2Vertex.keysIterator.take(n)
-    //    }
-    //    i.foreach { id =>
-    //      val vertex = toVertex(id2Vertex.remove(id))
-    //      p(vertex)
-    //      processed += 1
-    //    }
-    //    processed
-    ???
+    if (unflushedVertex != null) {
+      flush()
+      unflushedVertex = null
+    }
+    val alreadyProcessed = nonSerializingMap.process(p, numberOfVertices)
+    val remainingNumber = numberOfVertices.map(_ - alreadyProcessed)
+    var processed = 0
+    val i = remainingNumber match {
+      case None    => id2Vertex.keysIterator
+      case Some(n) => id2Vertex.keysIterator.take(n)
+    }
+    i.foreach { id =>
+      val vertex = toVertex(id2Vertex.remove(id))
+      p(vertex)
+      processed += 1
+    }
+    processed
   }
 
   def processWithCondition(p: Vertex[Long, _, Long, Any] => Unit, breakCondition: () => Boolean): Int = {
-    //    var processed = 0
-    //    val i = id2Vertex.keysIterator
-    //    while (breakCondition() == false && i.hasNext) {
-    //      val id = i.next
-    //      val vertex = toVertex(id2Vertex.remove(id))
-    //      p(vertex)
-    //      processed += 1
-    //    }
-    //    processed
-    ???
+    if (unflushedVertex != null) {
+      flush()
+      unflushedVertex = null
+    }
+    var processed = nonSerializingMap.processWithCondition(p, breakCondition)
+    val i = id2Vertex.keysIterator
+    while (breakCondition() == false && i.hasNext) {
+      val id = i.next
+      val vertex = toVertex(id2Vertex.remove(id))
+      p(vertex)
+      processed += 1
+    }
+    processed
   }
 
 }

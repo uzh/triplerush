@@ -20,11 +20,16 @@ package com.signalcollect.triplerush.util
 
 import com.signalcollect.interfaces.Storage
 import com.signalcollect.interfaces.VertexStore
+import com.signalcollect.Vertex
 
 /**
  * Storage backed by a custom-tailored open hash map implementation for vertices.
  */
 final class MapDbVertexMapStorage extends Storage[Long, Any] {
+
+  def updateStateOfVertex(vertex: Vertex[Long, _, Long, Any]): Unit = {
+    vertices.updateStateOfVertex(vertex)
+  }
 
   val vertices = vertexStoreFactory
 
