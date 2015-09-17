@@ -37,8 +37,7 @@ final class MapDbVertexMap(
       .closeOnJvmShutdown
       .transactionDisable
       .asyncWriteEnable
-      .asyncWriteQueueSize(32768)
-      .storeExecutorEnable(Executors.newScheduledThreadPool(math.min(16, Runtime.getRuntime.availableProcessors))),
+      .asyncWriteQueueSize(32768),
     serializer: Serialization = new Serialization(ActorSystemRegistry.systems.values.head.asInstanceOf[ExtendedActorSystem])) extends VertexStore[Long, Any] {
 
   // Care, does not set the unflushed vertex null.
