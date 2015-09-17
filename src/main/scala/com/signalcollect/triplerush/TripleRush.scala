@@ -44,6 +44,7 @@ import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush.vertices.query._
 import com.signalcollect.examples.PlaceholderEdge
 import org.apache.jena.graph.{ Triple => JenaTriple }
+import com.signalcollect.Vertex
 
 /**
  * Global accessor for the console visualization.
@@ -89,7 +90,8 @@ class TripleRush(
         } else {
           DistributedTripleMapperFactory
         })).
-      withStorageFactory(TripleRushStorage).
+      //withStorageFactory(TripleRushStorage).
+      withStorageFactory(MapDbStorage).
       withThrottlingEnabled(false).
       withThrottlingDuringLoadingEnabled(true).
       withWorkerFactory(new TripleRushWorkerFactory[Any]).
@@ -286,6 +288,10 @@ object Kryo {
       classOf[SPIndex].getName,
       classOf[POIndex].getName,
       classOf[SOIndex].getName,
+      classOf[OptimizedIndexVertex].getName,
+      classOf[IndexVertex[_]].getName,
+      classOf[BaseVertex[_]].getName,
+      classOf[Binding].getName,
       classOf[TriplePattern].getName,
       classOf[IndexVertexEdge].getName,
       classOf[BlockingIndexVertexEdge].getName,
@@ -306,6 +312,7 @@ object Kryo {
       TripleRushEdgeAddedToNonExistentVertexHandlerFactory.getClass.getName,
       TripleRushUndeliverableSignalHandlerFactory.getClass.getName,
       TripleRushStorage.getClass.getName,
+      MapDbStorage.getClass.getName,
       SingleNodeTripleMapperFactory.getClass.getName,
       new AlternativeTripleMapperFactory(false).getClass.getName,
       DistributedTripleMapperFactory.getClass.getName,
@@ -313,7 +320,7 @@ object Kryo {
       LoadBalancingTripleMapperFactory.getClass.getName,
       ManifestFactory.Long.getClass.getName,
       classOf[CombiningMessageBusFactory[_]].getName,
-      classOf[AddEdge[Any, Any]].getName,
+      classOf[Vertex[_, _, _, _]].getName,
       classOf[AddEdge[Long, Long]].getName, // TODO: Can we force the use of the specialized version?
       new Throughput[Long, Any].getClass.getName,
       SignalMessageWithoutSourceId[Long, Any](
