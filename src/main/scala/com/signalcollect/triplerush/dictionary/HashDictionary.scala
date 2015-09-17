@@ -22,13 +22,15 @@ package com.signalcollect.triplerush.dictionary
 
 import java.nio.charset.Charset
 import java.util.Arrays
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+
+import scala.annotation.tailrec
 import scala.util.hashing.MurmurHash3
+
 import org.mapdb.{ BTreeKeySerializer, DBMaker }
 import org.mapdb.DBMaker.Maker
 import org.mapdb.Serializer
-import scala.annotation.tailrec
-import java.util.concurrent.Executors
 
 final class HashDictionary(
     val id2StringNodeSize: Int = 32,
@@ -38,7 +40,7 @@ final class HashDictionary(
       .closeOnJvmShutdown
       .transactionDisable
       .asyncWriteEnable
-      .asyncWriteQueueSize(100000)
+      .asyncWriteQueueSize(32768)
       .storeExecutorEnable(Executors.newScheduledThreadPool(math.min(16, Runtime.getRuntime.availableProcessors)))
       //      .metricsEnable(10000)
       //      .metricsExecutorEnable
