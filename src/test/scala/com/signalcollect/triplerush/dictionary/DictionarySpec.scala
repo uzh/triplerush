@@ -199,20 +199,18 @@ class DictionarySpec extends FlatSpec with TestAnnouncements {
     }
   }
 
-  
-  // TODO: Enable test again with MapDB beta 7
-//  it should "support adding entries in parallel" in {
-//    val d = new HashDictionary
-//    try {
-//      val stringEntries = (1 to 1000).map(s => s + "#" + s)
-//      val ids = stringEntries.par.map(d(_)).toSet
-//      val reverseMapped = ids.map(d(_))
-//      assert(reverseMapped.size == 1000)
-//      assert(stringEntries.toSet == reverseMapped.seq.toSet)
-//    } finally {
-//      d.close()
-//    }
-//  }
+  it should "support adding entries in parallel" in {
+    val d = new HashDictionary
+    try {
+      val stringEntries = (1 to 1000).map(s => s + "#" + s)
+      val ids = stringEntries.par.map(d(_)).toSet
+      val reverseMapped = ids.map(d(_))
+      assert(reverseMapped.size == 1000)
+      assert(stringEntries.toSet == reverseMapped.seq.toSet)
+    } finally {
+      d.close()
+    }
+  }
 
   it should "support clear" in {
     val d = new HashDictionary
