@@ -37,23 +37,24 @@ object HashDictionaryBenchmark extends App {
     new java.lang.StringBuilder(prefix.length + suffixLength).append(prefix).append(generateSuffix(suffixLength)).toString
   }
 
-  val asyncQueueSize = 4096
+  val asyncQueueSize = 100000
   val nodeSize = 32
-  val dbMaker = DBMaker
-    .memoryUnsafeDB
-    .closeOnJvmShutdown
-    .transactionDisable
-    .asyncWriteEnable
-    .asyncWriteQueueSize(asyncQueueSize)
-    .compressionEnable
+  //  val dbMaker = DBMaker
+  //    .memoryUnsafeDB
+  //    .closeOnJvmShutdown
+  //    .transactionDisable
+  //    .asyncWriteEnable
+  //    .asyncWriteQueueSize(asyncQueueSize)
+  //    .compressionEnable
 
   val warmupStrings = 10000
   val timedStrings = 1000000
   val maxId = warmupStrings + timedStrings
 
-  val dictionary = new HashDictionary(nodeSize, nodeSize, dbMaker)
+  val dictionary = new HashDictionary(nodeSize, nodeSize) //, dbMaker
   addStrings(stringIterator(warmupStrings))
   addStrings(stringIterator(timedStrings), Some(s"PUTS: nodeSize=$nodeSize, asyncQueueSize=$asyncQueueSize"), Some(timedStrings))
+  dictionary.close()
 
   def stringIterator(n: Int): Iterator[String] = {
     new Iterator[String] {
