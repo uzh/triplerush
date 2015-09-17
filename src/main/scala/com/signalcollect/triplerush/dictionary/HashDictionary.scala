@@ -29,6 +29,15 @@ import org.mapdb.DBMaker.Maker
 import org.mapdb.Serializer
 import scala.annotation.tailrec
 import java.util.concurrent.Executors
+import org.mapdb.DataIO
+
+object HashDictionary {
+
+  @inline final def hash(bytes: Array[Byte]): Int = {
+    DataIO.longHash(DataIO.hash(bytes, 0, math.min(50, bytes.length), 2147483647)) & Int.MaxValue
+  }
+
+}
 
 final class HashDictionary(
     val id2StringNodeSize: Int = 32,
@@ -111,7 +120,7 @@ final class HashDictionary(
 
   def contains(s: String): Boolean = {
     val stringBytes = s.getBytes(utf8)
-    val idCandidate = fastHash(stringBytes)
+    val idCandidate = HashDictionary.hash(stringBytes)
     val existing = id2String.get(idCandidate)
     if (existing == null) {
       false
@@ -124,7 +133,7 @@ final class HashDictionary(
 
   def apply(s: String): Int = {
     val stringBytes = s.getBytes(utf8)
-    val idCandidate = fastHash(stringBytes)
+    val idCandidate = HashDictionary.hash(stringBytes)
     val existing = id2String.get(idCandidate)
     if (existing != null && Arrays.equals(stringBytes, existing)) {
       idCandidate
@@ -160,7 +169,7 @@ final class HashDictionary(
 
   def get(s: String): Option[Int] = {
     val stringBytes = s.getBytes(utf8)
-    val idCandidate = fastHash(stringBytes)
+    val idCandidate = HashDictionary.hash(stringBytes)
     val existing = id2String.get(idCandidate)
     if (existing != null) {
       if (Arrays.equals(stringBytes, existing)) {
@@ -181,45 +190,6 @@ final class HashDictionary(
   def close(): Unit = {
     string2Id.close()
     id2String.close()
-  }
-
-  private[this] val suffixChars = 45
-  private[this] val prefixChars = 5
-  private[this] val fullStringUptTo = 50
-
-  @inline private[this] def fastHash(b: Array[Byte]): Int = {
-    if (b.length == 0) {
-      return 0
-    }
-    var hash = 2147483647 // large prime.
-    var i = 0
-    val l = b.length - 1
-    if (b.length <= fullStringUptTo) {
-      while (i < l) {
-        hash = MurmurHash3.mix(hash, b(i))
-        i += 1
-      }
-    } else {
-      // Skip `http://www.`
-      i = if (b(0) == 'h') {
-        11
-      } else {
-        0
-      }
-      val prefixEndIndex = math.min(l, i + prefixChars)
-      while (i < prefixEndIndex) {
-        hash = MurmurHash3.mix(hash, b(i))
-        i += 1
-      }
-      i = math.max(i, b.length - suffixChars)
-      while (i < l) {
-        hash = MurmurHash3.mix(hash, b(i))
-        i += 1
-      }
-    }
-    hash = MurmurHash3.mixLast(hash, b(i))
-    hash = MurmurHash3.finalizeHash(hash, 3)
-    hash & Int.MaxValue
   }
 
   override def toString = s"HashDictionary(id2String=${id2String.size}, string2Id=${string2Id.size})"
