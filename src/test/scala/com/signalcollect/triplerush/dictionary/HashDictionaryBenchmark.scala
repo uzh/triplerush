@@ -23,6 +23,9 @@ package com.signalcollect.triplerush.dictionary
 import org.mapdb.DBMaker
 import scala.util.Random
 import java.util.Arrays
+import com.signalcollect.triplerush.loading.TripleIterator
+import com.signalcollect.triplerush.loading.DataLoader
+import com.signalcollect.triplerush.sparql.NodeConversion
 
 object HashDictionaryBenchmark extends App {
 
@@ -37,24 +40,25 @@ object HashDictionaryBenchmark extends App {
     new java.lang.StringBuilder(prefix.length + suffixLength).append(prefix).append(generateSuffix(suffixLength)).toString
   }
 
-  val asyncQueueSize = 100000
   val nodeSize = 32
-  //  val dbMaker = DBMaker
-  //    .memoryUnsafeDB
-  //    .closeOnJvmShutdown
-  //    .transactionDisable
-  //    .asyncWriteEnable
-  //    .asyncWriteQueueSize(asyncQueueSize)
-  //    .compressionEnable
-
   val warmupStrings = 10000
-  val timedStrings = 1000000
+  val timedStrings = 100000000
   val maxId = warmupStrings + timedStrings
 
-  val dictionary = new HashDictionary(nodeSize, nodeSize) //, dbMaker
+  val dictionary = new HashDictionary(nodeSize, nodeSize)
   addStrings(stringIterator(warmupStrings))
-  addStrings(stringIterator(timedStrings), Some(s"PUTS: nodeSize=$nodeSize, asyncQueueSize=$asyncQueueSize"), Some(timedStrings))
+  addStrings(tripleStringIterator(timedStrings), Some(s"PUTS: nodeSize=$nodeSize"), Some(timedStrings))
+  println(dictionary)
   dictionary.close()
+
+  def tripleStringIterator(n: Int): Iterator[String] = {
+    TripleIterator(args(0)).flatMap { triple =>
+      val subjectString = NodeConversion.nodeToString(triple.getSubject)
+      val predicateString = NodeConversion.nodeToString(triple.getPredicate)
+      val objectString = NodeConversion.nodeToString(triple.getObject)
+      List(subjectString, predicateString, objectString)
+    }.take(n)
+  }
 
   def stringIterator(n: Int): Iterator[String] = {
     new Iterator[String] {
