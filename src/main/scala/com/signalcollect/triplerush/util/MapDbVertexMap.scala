@@ -34,7 +34,6 @@ final class MapDbVertexMap(
     val nodeSize: Int = 32,
     dbMaker: Maker = DBMaker
       .memoryUnsafeDB
-      .closeOnJvmShutdown
       .transactionDisable
       .asyncWriteEnable
       .asyncWriteQueueSize(32768),
@@ -60,6 +59,10 @@ final class MapDbVertexMap(
       flush()
       unflushedVertex = vertex
     }
+  }
+
+  def close(): Unit = {
+    db.close()
   }
 
   private[this] val db = dbMaker.make
