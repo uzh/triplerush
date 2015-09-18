@@ -95,6 +95,7 @@ final class TripleRushVertexMap(
   private[this] var nextPositionToProcess: Int = 0
 
   def updateStateOfVertex(vertex: Vertex[Long, _, Long, Any]): Unit = Unit
+  def close(): Unit = Unit
   
   @inline override def size: Long = numberOfElements
 

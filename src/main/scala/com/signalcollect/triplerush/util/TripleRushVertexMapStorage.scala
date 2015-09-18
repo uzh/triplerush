@@ -28,6 +28,7 @@ import com.signalcollect.Vertex
 final class TripleRushVertexMapStorage extends Storage[Long, Any] {
 
   def updateStateOfVertex(vertex: Vertex[Long, _, Long, Any]): Unit = Unit
+  def close(): Unit = Unit
 
   val vertices = vertexStoreFactory
 

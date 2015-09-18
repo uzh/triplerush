@@ -30,6 +30,10 @@ final class MapDbVertexMapStorage extends Storage[Long, Any] {
   def updateStateOfVertex(vertex: Vertex[Long, _, Long, Any]): Unit = {
     vertices.updateStateOfVertex(vertex)
   }
+  
+  def close(): Unit = {
+    vertices.close
+  }
 
   val vertices = vertexStoreFactory
 
