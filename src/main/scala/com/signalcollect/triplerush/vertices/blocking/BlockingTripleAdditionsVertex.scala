@@ -17,12 +17,13 @@
  *
  */
 
-package com.signalcollect.triplerush.vertices.query
+package com.signalcollect.triplerush.vertices.blocking
 
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush._
 import com.signalcollect.triplerush.vertices.BaseVertex
 import scala.concurrent.Promise
+import com.signalcollect.triplerush.vertices.query.TicketSynchronization
 
 class BlockingTripleAdditionsVertex(
     val triples: Iterator[TriplePattern],

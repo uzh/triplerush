@@ -45,6 +45,8 @@ import com.signalcollect.triplerush.vertices.query._
 import com.signalcollect.examples.PlaceholderEdge
 import org.apache.jena.graph.{ Triple => JenaTriple }
 import com.signalcollect.Vertex
+import akka.cluster.ClusterEvent
+import com.signalcollect.triplerush.vertices.blocking.BlockingTripleAdditionsVertex
 
 /**
  * Global accessor for the console visualization.
@@ -310,6 +312,7 @@ object Kryo {
       classOf[AtomicBoolean].getName,
       classOf[LinkedBlockingQueue[Any]].getName,
       classOf[TripleRushWorkerFactory[Any]].getName,
+      ClusterEvent.InitialStateAsSnapshot.getClass.getName,
       TripleRushEdgeAddedToNonExistentVertexHandlerFactory.getClass.getName,
       TripleRushUndeliverableSignalHandlerFactory.getClass.getName,
       TripleRushStorage.getClass.getName,
