@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright (c) 2011, Paul Phillips. All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -25,7 +27,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#!/usr/bin/env bash
 #
 # A more capable sbt runner, coincidentally also called sbt.
 # Author: Paul Phillips <paulp@typesafe.com>
