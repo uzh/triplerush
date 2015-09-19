@@ -42,10 +42,10 @@ object HashDictionaryBenchmark extends App {
 
   val nodeSize = 32
   val warmupStrings = 10000
-  val timedStrings = 100000000
+  val timedStrings = 10000000
   val maxId = warmupStrings + timedStrings
 
-  val dictionary = new HashDictionary(nodeSize, nodeSize)
+  val dictionary = new HashDictionary()
   addStrings(stringIterator(warmupStrings))
   addStrings(tripleStringIterator(timedStrings), Some(s"PUTS: nodeSize=$nodeSize"), Some(timedStrings))
   println(dictionary)

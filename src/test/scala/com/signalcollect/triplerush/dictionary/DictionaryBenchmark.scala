@@ -61,7 +61,7 @@ object DictionaryBenchmark extends App {
   val timedStrings = 100000000
   val maxId = warmupStrings + timedStrings
 
-  val dictionary = new HashDictionary(id2StringNodeSize, string2IdNodeSize)//, dbMaker
+  val dictionary = new HashDictionary()//, dbMaker
 
   val startTime = System.currentTimeMillis
   val inputStream = new FileInputStream(args(0))

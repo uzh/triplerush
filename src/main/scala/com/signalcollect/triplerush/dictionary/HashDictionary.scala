@@ -30,6 +30,10 @@ import org.mapdb.{ BTreeKeySerializer, DBMaker }
 import org.mapdb.DBMaker.Maker
 import org.mapdb.Serializer
 import org.mapdb.DataIO
+import java.io.DataOutput
+import java.io.DataInput
+import java.io.DataOutputStream
+import java.io.ByteArrayOutputStream
 
 final object HashDictionary {
 
@@ -62,39 +66,40 @@ final object HashDictionary {
 }
 
 final class HashDictionary(
-    val id2StringNodeSize: Int = 32,
-    val string2IdNodeSize: Int = 32,
     dbMaker: Maker = DBMaker
       .memoryUnsafeDB
       .closeOnJvmShutdown
-      .transactionDisable
-      .asyncWriteEnable
-      .asyncWriteQueueSize(32768)
-      .storeExecutorEnable(Executors.newScheduledThreadPool(math.min(16, Runtime.getRuntime.availableProcessors)))
-      //      .metricsEnable(10000)
+      .transactionDisable //      .metricsEnable(10000)
       //      .metricsExecutorEnable
-      .compressionEnable) extends RdfDictionary {
+      ) extends RdfDictionary {
+
+  private[this] val utf8 = Charset.forName("UTF-8")
 
   private[this] val db = dbMaker.make
 
-  private[this] val id2String = db.treeMapCreate("int2String")
-    .keySerializer(BTreeKeySerializer.INTEGER)
+  class PrintCompressionRate(s: Serializer[Array[Byte]]) extends Serializer[Array[Byte]] {
+    def serialize(out: DataOutput, a: Array[Byte]): Unit = {
+      val bos = new ByteArrayOutputStream()
+      val dos = new DataOutputStream(bos)
+      s.serialize(dos, a)
+      val compressed = bos.toByteArray
+      out.write(compressed)
+      println(s"${((compressed.length.toDouble / a.length) * 1000.0).round / 10.0}%")
+    }
+    def deserialize(in: DataInput, available: Int): Array[Byte] = {
+      s.deserialize(in, available)
+    }
+  }
+
+  private[this] val id2String = db.hashMapCreate("int2String")
+    .keySerializer(Serializer.INTEGER_PACKED)
     .valueSerializer(Serializer.BYTE_ARRAY)
-    .nodeSize(id2StringNodeSize)
     .makeOrGet[Int, Array[Byte]]()
 
-  //  private[this] val id2String = db.hashMapCreate("int2String")
-  //    .keySerializer(Serializer.INTEGER_PACKED)
-  //    .valueSerializer(Serializer.BYTE_ARRAY)
-  //    .makeOrGet[Int, Array[Byte]]()
-
-  private[this] val string2Id = db.treeMapCreate("string2Int")
-    .keySerializer(BTreeKeySerializer.BYTE_ARRAY)
+  private[this] val string2Id = db.hashMapCreate("string2Int")
+    .keySerializer(Serializer.BYTE_ARRAY)
     .valueSerializer(Serializer.INTEGER_PACKED)
-    .nodeSize(string2IdNodeSize)
     .makeOrGet[Array[Byte], Int]()
-
-  private[this] val utf8 = Charset.forName("UTF-8")
 
   def initialize(): Unit = {
     id2String.put(0, "*".getBytes(utf8))
