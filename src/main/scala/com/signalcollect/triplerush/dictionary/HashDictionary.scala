@@ -98,18 +98,17 @@ final class HashDictionary(
 
   private[this] val stringCompressor = new Serializer.CompressionDeflateWrapper(Serializer.BYTE_ARRAY, compressionLevel, symbolMapping)
 
-  //  private[this] val id2String = db.treeMapCreate("int2String")
-  //    .keySerializer(BTreeKeySerializer.INTEGER)
-  //    .valueSerializer(Serializer.BYTE_ARRAY)
-  //    .nodeSize(id2StringNodeSize)
-  //    .makeOrGet[Int, Array[Byte]]()
+//    private[this] val id2String = db.treeMapCreate("int2String")
+//      .keySerializer(BTreeKeySerializer.INTEGER)
+//      .valueSerializer(Serializer.BYTE_ARRAY)
+//      .nodeSize(id2StringNodeSize)
+//      .makeOrGet[Int, Array[Byte]]()
 
-  private[this] val id2String = db.hashMap[Int, Array[Byte]]("test")
-//    db.hashMapCreate("int2String")
-//    .keySerializer(Serializer.INTEGER_PACKED)
+  private[this] val id2String = db.hashMapCreate("int2String")
+    .keySerializer(Serializer.INTEGER_PACKED)
 //    .valueSerializer(stringCompressor)
-//    //.executorEnable(Executors.newScheduledThreadPool(math.min(4, Runtime.getRuntime.availableProcessors)))
-//    .makeOrGet[Int, Array[Byte]]()
+    .valueSerializer(Serializer.BYTE_ARRAY)
+    .makeOrGet[Int, Array[Byte]]()
 
   private[this] val string2Id = db.treeMapCreate("string2Int")
     .keySerializer(BTreeKeySerializer.BYTE_ARRAY)

@@ -42,23 +42,23 @@ object HashDictionaryBenchmark extends App {
 
   val nodeSize = 32
   val warmupStrings = 10000
-  val timedStrings = 100000000
+  val timedStrings = 1000000
   val maxId = warmupStrings + timedStrings
 
   val dictionary = new HashDictionary(List(), nodeSize, nodeSize)
   addStrings(stringIterator(warmupStrings))
-  addStrings(tripleStringIterator(timedStrings), Some(s"PUTS: nodeSize=$nodeSize"), Some(timedStrings))
+  addStrings(stringIterator(timedStrings), Some(s"PUTS: nodeSize=$nodeSize"), Some(timedStrings))
   println(dictionary)
   dictionary.close()
 
-  def tripleStringIterator(n: Int): Iterator[String] = {
-    TripleIterator(args(0)).flatMap { triple =>
-      val subjectString = NodeConversion.nodeToString(triple.getSubject)
-      val predicateString = NodeConversion.nodeToString(triple.getPredicate)
-      val objectString = NodeConversion.nodeToString(triple.getObject)
-      List(subjectString, predicateString, objectString)
-    }.take(n)
-  }
+//  def tripleStringIterator(n: Int): Iterator[String] = {
+//    TripleIterator(args(0)).flatMap { triple =>
+//      val subjectString = NodeConversion.nodeToString(triple.getSubject)
+//      val predicateString = NodeConversion.nodeToString(triple.getPredicate)
+//      val objectString = NodeConversion.nodeToString(triple.getObject)
+//      List(subjectString, predicateString, objectString)
+//    }.take(n)
+//  }
 
   def stringIterator(n: Int): Iterator[String] = {
     new Iterator[String] {
