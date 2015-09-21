@@ -18,6 +18,7 @@
 
 package com.signalcollect.triplerush.util
 
+import com.signalcollect.Vertex
 import com.signalcollect.interfaces.Storage
 import com.signalcollect.interfaces.VertexStore
 
@@ -39,5 +40,9 @@ final class TripleRushVertexMapStorage extends Storage[Long, Any] {
 
   //holds all vertex ids that need to signal
   protected def vertexSetFactory = new TripleRushVertexMap(initialSize = 2, rehashFraction = .9f)
+
+  def close(): Unit = Unit
+
+  def updateStateOfVertex(vertex: Vertex[Long, _, Long, Any]): Unit = Unit
 
 }

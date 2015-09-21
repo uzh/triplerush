@@ -118,6 +118,10 @@ final class TripleRushVertexMap(
     remainder(0, 0)
   }
 
+  def close(): Unit = Unit
+
+  def updateStateOfVertex(vertex: Vertex[Long, _, Long, Any]): Unit = Unit
+
   def clear: Unit = {
     values = new Array[Vertex[Long, _, Long, Any]](maxSize)
     keys = new Array[Long](maxSize)
