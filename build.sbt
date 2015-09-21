@@ -1,6 +1,10 @@
 import AssemblyKeys._
+import com.typesafe.sbt.SbtMultiJvm
+import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
 
 assemblySettings
+
+SbtMultiJvm.multiJvmSettings
 
 /** Project */
 name := "triplerush"
@@ -84,3 +88,21 @@ pomExtra := (
      <url>https://github.com/jahangirmohammed</url>
    </developer>
  </developers>)
+
+// make sure that MultiJvm test are compiled by the default test compilation
+compile in MultiJvm <<= (compile in MultiJvm) triggeredBy (compile in Test)
+// make sure that MultiJvm tests are executed by the default test target,
+// and combine the results from ordinary test and multi-jvm tests
+executeTests in Test <<= (executeTests in Test, executeTests in MultiJvm) map {
+  case (testResults, multiNodeResults)  =>
+    val overall =
+      if (testResults.overall.id < multiNodeResults.overall.id)
+        multiNodeResults.overall
+      else
+        testResults.overall
+    Tests.Output(overall,
+      testResults.events ++ multiNodeResults.events,
+      testResults.summaries ++ multiNodeResults.summaries)
+}
+
+configs(MultiJvm)
