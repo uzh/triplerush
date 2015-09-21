@@ -23,6 +23,7 @@ package com.signalcollect.triplerush
 import java.io.InputStream
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import com.signalcollect.nodeprovisioning.cluster.ClusterNodeProvisioner
 import org.apache.jena.riot.Lang
 import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration.DurationInt
@@ -76,7 +77,6 @@ class TripleRush(
     kryoRegistrations: List[String] = Kryo.defaultRegistrations) extends QueryEngine {
 
   TrGlobal.dictionary = Some(dictionary)
-
   val graph = graphBuilder.withConsole(console).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, 1024)).
     withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
@@ -322,7 +322,23 @@ object Kryo {
       BulkSignalNoSourceIds[Long, Any](
         signals = null.asInstanceOf[Array[Any]],
         targetIds = null.asInstanceOf[Array[Long]]).getClass.getName,
-      "akka.actor.RepointableActorRef")
+      "akka.actor.RepointableActorRef",
+      //TODO: SOme of these should come from sc akka config
+      "com.signalcollect.triplerush.vertices.RootIndex",
+      "com.signalcollect.triplerush.IndexVertexEdge",
+      "akka.cluster.ClusterEvent$InitialStateAsSnapshot$",
+      "akka.remote.transport.netty.NettyTransport$$anonfun$associate$1$$anon$2",
+      "com.signalcollect.worker.AkkaWorker$$anonfun$2",
+      "akka.remote.transport.AkkaProtocolException",
+      "akka.cluster.ClusterEvent$MemberEvent",
+      "akka.cluster.ClusterEvent$ClusterDomainEvent",
+      "akka.cluster.ClusterEvent$ReachabilityEvent",
+      "scala.collection.immutable.TreeSet",
+      "akka.cluster.Member$$anon$1",
+      "java.util.Collections$UnmodifiableRandomAccessList",
+      classOf[StackTraceElement].getName,
+      classOf[Array[StackTraceElement]].getName
+    )
   }
 
 }
