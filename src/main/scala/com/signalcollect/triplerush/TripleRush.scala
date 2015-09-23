@@ -23,6 +23,7 @@ package com.signalcollect.triplerush
 import java.io.InputStream
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
 import com.signalcollect.nodeprovisioning.cluster.ClusterNodeProvisioner
 import org.apache.jena.riot.Lang
 import scala.concurrent.{Await, Future, Promise}
@@ -79,7 +80,7 @@ class TripleRush(
   TrGlobal.dictionary = Some(dictionary)
   val graph = graphBuilder.withConsole(console).
     withNodeProvisioner(new ClusterNodeProvisioner[Long, Any](numberOfNodes = 1)).
-    withMessageBusFactory(new CombiningMessageBusFactory(8096, 1024)).
+    withMessageBusFactory(new BulkAkkaMessageBusFactory[Long, Any](1000, true)).
     withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
     withEdgeAddedToNonExistentVertexHandlerFactory(TripleRushEdgeAddedToNonExistentVertexHandlerFactory).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
