@@ -78,6 +78,7 @@ class TripleRush(
 
   TrGlobal.dictionary = Some(dictionary)
   val graph = graphBuilder.withConsole(console).
+    withNodeProvisioner(new ClusterNodeProvisioner[Long, Any](numberOfNodes = 1)).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, 1024)).
     withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
     withEdgeAddedToNonExistentVertexHandlerFactory(TripleRushEdgeAddedToNonExistentVertexHandlerFactory).
