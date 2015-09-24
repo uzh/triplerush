@@ -59,6 +59,7 @@ class TicketsSpec extends FlatSpec with TestAnnouncements {
       assert(bindings.size === 1)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

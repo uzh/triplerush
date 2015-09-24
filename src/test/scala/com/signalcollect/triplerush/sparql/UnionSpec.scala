@@ -52,6 +52,7 @@ SELECT ?name WHERE {
       assert(resultBindings === Set("Harold", "Arthur"))
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

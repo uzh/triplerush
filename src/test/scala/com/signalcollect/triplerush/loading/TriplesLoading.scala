@@ -61,5 +61,6 @@ object TriplesLoading extends App {
   }
   println(tr.dictionary)
   tr.shutdown
+  tr.system.shutdown()
 
 }

@@ -47,6 +47,7 @@ class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements 
       assert(predicates === Set(p1, p2, p3, p4, p5))
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -70,6 +71,7 @@ class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements 
       assert(predicates.toSet === Set(p1, p2, p3, p4, p5))
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

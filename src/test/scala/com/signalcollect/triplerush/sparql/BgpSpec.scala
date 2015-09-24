@@ -52,6 +52,7 @@ SELECT ?name ?project WHERE {
       assert(resultBindings === Set("Gardening", "Volleyball"))
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -81,6 +82,7 @@ SELECT ?name ?project WHERE {
       assert(resultBindings === Set("Caroline"))
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -117,6 +119,7 @@ SELECT ?name ?project WHERE {
       assert(resultBindings === Set("http://PersonA"))
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -157,6 +160,7 @@ SELECT ?name ?project WHERE {
       assert(resultBindings === Set("B. Bar", "C. Baz"))
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

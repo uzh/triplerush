@@ -43,6 +43,7 @@ SELECT ?r {
       assert(!results.hasNext)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

@@ -43,6 +43,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -56,6 +57,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -69,6 +71,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -82,6 +85,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -94,6 +98,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(1 === trCount)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -106,6 +111,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trCount === 1)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -118,6 +124,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trCount === 0)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -130,6 +137,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trCount === 0)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -143,6 +151,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -158,6 +167,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -173,6 +183,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trResults.size === trCount, s"Bindings found: ${trResults.size}, counting query results: $trCount")
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -188,6 +199,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -208,6 +220,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(trResults.size === trCount)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -230,6 +243,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
     } finally {
       tr.shutdown
       jena.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -247,6 +261,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
       assert(countOption.get === 2)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -262,6 +277,7 @@ class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
             trResults.size === trCount
           } finally {
             tr.shutdown
+            tr.system.shutdown()
           }
       }, minSuccessful(5))
   }

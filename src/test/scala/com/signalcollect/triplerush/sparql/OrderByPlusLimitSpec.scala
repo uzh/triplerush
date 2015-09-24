@@ -59,6 +59,7 @@ LIMIT 3
       assert(bindingsList === List(("http://A", "http://SomeProduct1"), ("http://B", "http://SomeProduct2"), ("http://C", "http://SomeProduct3")))
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

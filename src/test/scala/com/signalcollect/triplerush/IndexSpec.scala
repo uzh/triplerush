@@ -63,6 +63,7 @@ class IndexSpec extends FlatSpec with TestAnnouncements {
       }
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

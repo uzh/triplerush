@@ -53,6 +53,7 @@ WHERE {
         throw t
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -81,6 +82,7 @@ WHERE {
         throw t
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -103,6 +105,7 @@ WHERE {
       assert(results.toList == Nil)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

@@ -33,10 +33,15 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
 
   override def getGraphWith(facts: String): Graph = {
     val tr = getTripleRushInstance
-    val g = TripleRushGraph(tr)
-    GraphTestBase.graphAdd(g, facts)
-    tr.prepareExecution
-    g
+    try {
+      val g = TripleRushGraph(tr)
+      GraphTestBase.graphAdd(g, facts)
+      tr.prepareExecution
+      g
+    } finally {
+      tr.shutdown()
+      tr.system.shutdown()
+    }
   }
 
   override def testIsomorphismFile(): Unit = {

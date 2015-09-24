@@ -39,4 +39,5 @@ object SplayIntSetDiagnostics extends App {
   }
 
   tr.shutdown
+  tr.system.shutdown()
 }

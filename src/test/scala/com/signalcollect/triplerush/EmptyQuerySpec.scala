@@ -18,6 +18,7 @@ class EmptyQuerySpec extends FlatSpec with Matchers with TestAnnouncements {
       assert(result.size == 0)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

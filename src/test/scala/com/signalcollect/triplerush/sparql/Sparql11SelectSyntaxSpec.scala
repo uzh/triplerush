@@ -69,6 +69,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
   after {
     FileUtils.deleteDirectory(new File(tmpDir.toString))
     tr.shutdown()
+    tr.system.shutdown()
   }
 
   "TripleRush" should "pass SELECT Sparql-1.1 syntax tests" in {

@@ -45,6 +45,7 @@ SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
       assert(results.size === 2)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -69,6 +70,7 @@ SELECT (COUNT(DISTINCT ?name) as ?count) WHERE { ?x foaf:name ?name }
       assert(results.hasNext === false)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

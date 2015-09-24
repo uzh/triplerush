@@ -261,6 +261,7 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
 
   override def afterAll {
     tr.shutdown
+    tr.system.shutdown()
     super.afterAll
   }
 

@@ -49,6 +49,7 @@ LIMIT 3
       Thread.sleep(1000)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

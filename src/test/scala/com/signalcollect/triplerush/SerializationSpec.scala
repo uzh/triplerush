@@ -33,6 +33,7 @@ class SerializationSpec extends FlatSpec with TestAnnouncements {
       tr.prepareExecution()
     } finally {
       tr.shutdown()
+      tr.system.shutdown()
     }
   }
 

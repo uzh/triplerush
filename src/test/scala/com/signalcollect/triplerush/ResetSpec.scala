@@ -22,6 +22,7 @@ class ResetSpec extends FlatSpec with Matchers with TestAnnouncements {
       val result2 = tr.resultIteratorForQuery(query)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

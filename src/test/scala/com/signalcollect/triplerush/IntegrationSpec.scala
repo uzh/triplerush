@@ -45,6 +45,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       assert(Set[Map[Int, Int]]() === trResults)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -58,6 +59,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       assert(Set[Map[Int, Int]](Map()) === trResults)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -71,6 +73,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       assert(Set[Map[Int, Int]]() === trResults)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -84,6 +87,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       assert(Set(Map(-1 -> 4)) === trResults)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -100,6 +104,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
         Map(-1 -> 4, -2 -> 4)) === trResults)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -115,6 +120,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
         Map(-1 -> 2, -2 -> 3, -3 -> 3), Map(-1 -> 3, -2 -> 3, -3 -> 3)) === trResults)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -130,6 +136,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       assert(Set[Map[Int, Int]]() === trResults)
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -148,6 +155,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       }
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -175,6 +183,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
     } finally {
       tr.shutdown
       jena.shutdown
+      tr.system.shutdown()
     }
   }
 
@@ -192,6 +201,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
           } finally {
             tr.shutdown
             jena.shutdown
+            tr.system.shutdown()
           }
       }, minSuccessful(10))
   }
@@ -212,6 +222,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
           } finally {
             tr.shutdown
             jena.shutdown
+            tr.system.shutdown()
           }
       }, minSuccessful(20))
   }

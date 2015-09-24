@@ -10,5 +10,6 @@ object VisualizationExample extends App {
   //tr.load(filename)
   tr.addStringTriple("Elvis","inspired", "Dylan")
   tr.addStringTriple("Dylan","inspired", "Jobs")
-
+  tr.shutdown()
+  tr.system.shutdown()
 }
