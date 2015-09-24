@@ -23,21 +23,12 @@ package com.signalcollect.triplerush
 import java.io.InputStream
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
-import akka.actor.ActorSystem
-import com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory
-import com.signalcollect.nodeprovisioning.cluster.ClusterNodeProvisioner
-import com.typesafe.config.{ConfigFactory, Config}
-import org.apache.jena.riot.Lang
-import scala.concurrent.{Await, Future, Promise}
-import scala.concurrent.duration.DurationInt
-import scala.reflect.ManifestFactory
-import scala.reflect.runtime.universe
-import com.signalcollect.{ExecutionConfiguration, GraphBuilder}
+
 import com.signalcollect.configuration.{ActorSystemRegistry, ExecutionMode}
 import com.signalcollect.factory.scheduler.Throughput
-import com.signalcollect.interfaces.AddEdge
+import com.signalcollect.interfaces.{AddEdge, _}
+import com.signalcollect.nodeprovisioning.cluster.ClusterNodeProvisioner
 import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
-import com.signalcollect.interfaces._
 import com.signalcollect.triplerush.dictionary._
 import com.signalcollect.triplerush.handlers._
 import com.signalcollect.triplerush.loading._
@@ -46,8 +37,14 @@ import com.signalcollect.triplerush.sparql._
 import com.signalcollect.triplerush.util._
 import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush.vertices.query._
-import com.signalcollect.examples.PlaceholderEdge
+import com.signalcollect.{ExecutionConfiguration, GraphBuilder}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.jena.graph.{Triple => JenaTriple}
+import org.apache.jena.riot.Lang
+
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future, Promise}
+import scala.reflect.ManifestFactory
 
 /**
  * Global accessor for the console visualization.
@@ -62,8 +59,9 @@ object TripleRush {
             tripleMapperFactory: Option[MapperFactory[Long]] = None,
             fastStart: Boolean = false,
             console: Boolean = false,
+            config: Config = ConfigFactory.load(),
             kryoRegistrations: List[String] = Kryo.defaultRegistrations): TripleRush = {
-    new TripleRush(graphBuilder, dictionary, tripleMapperFactory, fastStart, console, kryoRegistrations)
+    new TripleRush(graphBuilder, dictionary, tripleMapperFactory, fastStart, console, config, kryoRegistrations)
   }
 }
 
@@ -72,20 +70,21 @@ object TripleRush {
  * allows to skip calling `prepareExecution`.
  */
 class TripleRush(
-                  graphBuilder: GraphBuilder[Long, Any],
+                  graphBuilderWithNoProvisioner: GraphBuilder[Long, Any],
                   val dictionary: RdfDictionary,
                   tripleMapperFactory: Option[MapperFactory[Long]],
                   fastStart: Boolean,
                   console: Boolean,
+                  config: Config = ConfigFactory.load(),
                   kryoRegistrations: List[String] = Kryo.defaultRegistrations) extends QueryEngine {
-
+  val provisioner = new ClusterNodeProvisioner[Long, Any](numberOfNodes = 1, config = config)
   TrGlobal.dictionary = Some(dictionary)
+  val graphBuilder = graphBuilderWithNoProvisioner.withNodeProvisioner(provisioner).
+    withActorSystem(provisioner.system)
   val graph = graphBuilder.withConsole(console).
-    withActorSystem(ActorSystem("SignalCollect")).
-    withNodeProvisioner(new ClusterNodeProvisioner[Long, Any](numberOfNodes = 1)).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withKryoRegistrations(kryoRegistrations).
-    withMessageBusFactory(new BulkAkkaMessageBusFactory[Long, Any](1000, true)).
+    withMessageBusFactory(new CombiningMessageBusFactory(8096, 1024)).
     withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
     withEdgeAddedToNonExistentVertexHandlerFactory(TripleRushEdgeAddedToNonExistentVertexHandlerFactory).
     withMapperFactory(
@@ -195,7 +194,6 @@ class TripleRush(
   }
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, blocking: Boolean = false): Unit = {
-    println("&&&& addEncodedTriple ")
     assert(sId > 0 && pId > 0 && oId > 0)
     if (blocking) {
       assert(canExecute, "Blocking additions only work with `fastStart` or after having called `prepareExecution`.")
@@ -370,7 +368,9 @@ object Kryo {
       "akka.cluster.ClusterHeartbeatSender$ExpectedFirstHeartbeat",
       "akka.cluster.Metric",
       "akka.cluster.EWMA",
-      "com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory$mcJ$sp"
+      "com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory$mcJ$sp",
+      "com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex",
+      "scala.collection.mutable.WrappedArray$ofRef"
     )
   }
 
