@@ -22,7 +22,7 @@ package com.signalcollect.triplerush.serialization
 import org.scalatest.{ FlatSpec, Matchers }
 
 import com.signalcollect.GraphBuilder
-import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
+import com.signalcollect.triplerush.{TestConfig, TriplePattern, TripleRush}
 import com.signalcollect.util.TestAnnouncements
 
 class TripleRushSerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
@@ -37,8 +37,9 @@ WHERE {
 ORDER BY ?label
 LIMIT 3
                  """
+    val config = TestConfig.system()
     implicit val tr = TripleRush(
-      graphBuilder = new GraphBuilder[Long, Any].withMessageSerialization(true))
+      graphBuilder = new GraphBuilder[Long, Any].withMessageSerialization(true), config = config)
     try {
       tr.addTriplePattern(TriplePattern(1, 2, 3))
       tr.addTriplePattern(TriplePattern(3, 2, 5))

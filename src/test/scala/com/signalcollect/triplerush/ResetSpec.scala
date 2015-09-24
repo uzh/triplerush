@@ -10,7 +10,7 @@ import com.signalcollect.util.TestAnnouncements
 class ResetSpec extends FlatSpec with Matchers with TestAnnouncements {
 
   "TripleRush" should "correctly function even after a reset" in {
-    val tr = TripleRush()
+    val tr = TripleRush(config = TestConfig.system())
     try {
       tr.addTriplePattern(TriplePattern(1, 2, 3))
       tr.prepareExecution

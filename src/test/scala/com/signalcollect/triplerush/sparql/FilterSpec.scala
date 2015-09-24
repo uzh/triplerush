@@ -21,7 +21,7 @@ package com.signalcollect.triplerush.sparql
 
 import org.scalatest.{ Finders, FlatSpec, Matchers }
 
-import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.triplerush.{TestConfig, TripleRush}
 import com.signalcollect.util.TestAnnouncements
 
 class FilterSpec extends FlatSpec with Matchers with TestAnnouncements {
@@ -33,7 +33,7 @@ SELECT ?r {
   FILTER EXISTS { ?r <http://p> <http://r3> }
 }
 """
-    val tr = TripleRush()
+    val tr = TripleRush(config = TestConfig.system())
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {

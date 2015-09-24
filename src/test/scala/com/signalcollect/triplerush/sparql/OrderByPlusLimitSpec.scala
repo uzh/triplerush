@@ -21,7 +21,7 @@ package com.signalcollect.triplerush.sparql
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.triplerush.{TestConfig, TripleRush}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import org.apache.jena.query.QueryFactory
@@ -43,7 +43,7 @@ WHERE {
 ORDER BY ?label
 LIMIT 3
                  """
-    val tr = TripleRush()
+    val tr = TripleRush(config = TestConfig.system())
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
