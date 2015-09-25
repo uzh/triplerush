@@ -59,9 +59,12 @@ object TripleRush {
             tripleMapperFactory: Option[MapperFactory[Long]] = None,
             fastStart: Boolean = false,
             console: Boolean = false,
+            numberOfNodes: Int = 1,
             config: Config = ConfigFactory.load(),
             kryoRegistrations: List[String] = Kryo.defaultRegistrations): TripleRush = {
-    new TripleRush(graphBuilder, dictionary, tripleMapperFactory, fastStart, console, config, kryoRegistrations)
+    val provisioner = new ClusterNodeProvisioner[Long, Any](numberOfNodes = numberOfNodes, config = config)
+    new TripleRush(graphBuilder.withNodeProvisioner(provisioner).withActorSystem(provisioner.system),
+      dictionary, tripleMapperFactory, fastStart, console, config, kryoRegistrations)
   }
 }
 
@@ -70,17 +73,14 @@ object TripleRush {
  * allows to skip calling `prepareExecution`.
  */
 class TripleRush(
-                  graphBuilderWithNoProvisioner: GraphBuilder[Long, Any],
+                  graphBuilder: GraphBuilder[Long, Any],
                   val dictionary: RdfDictionary,
                   tripleMapperFactory: Option[MapperFactory[Long]],
                   fastStart: Boolean,
                   console: Boolean,
                   config: Config = ConfigFactory.load(),
                   kryoRegistrations: List[String] = Kryo.defaultRegistrations) extends QueryEngine {
-  val provisioner = new ClusterNodeProvisioner[Long, Any](numberOfNodes = 1, config = config)
   TrGlobal.dictionary = Some(dictionary)
-  val graphBuilder = graphBuilderWithNoProvisioner.withNodeProvisioner(provisioner).
-    withActorSystem(provisioner.system)
   val graph = graphBuilder.withConsole(console).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withKryoRegistrations(kryoRegistrations).
