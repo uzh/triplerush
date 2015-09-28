@@ -63,6 +63,7 @@ object TripleRush {
             config: Config = ConfigFactory.load(),
             actorNamePrefix: String = "",
             kryoRegistrations: List[String] = Kryo.defaultRegistrations): TripleRush = {
+    // TODO: This is just a convenience constructor, it should not silently override GraphBuilder settings.
     val provisioner = new ClusterNodeProvisioner[Long, Any](numberOfNodes = numberOfNodes, config = config, actorNamePrefix = actorNamePrefix)
     val nodeActors = provisioner.getNodes(provisioner.system, actorNamePrefix, config)
     new TripleRush(graphBuilder.withPreallocatedNodes(nodeActors).withActorSystem(provisioner.system),
