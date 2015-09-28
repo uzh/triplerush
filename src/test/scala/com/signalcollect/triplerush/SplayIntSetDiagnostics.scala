@@ -6,7 +6,7 @@ import com.signalcollect.util.SplayIntSet
 
 object SplayIntSetDiagnostics extends App {
 
-  implicit val tr = TripleRush()
+  implicit val tr = TripleRush(config = TestConfig.system())
   Lubm.load(tr)
 
   tr.graph.foreachVertex {
@@ -39,4 +39,5 @@ object SplayIntSetDiagnostics extends App {
   }
 
   tr.shutdown
+  tr.system.shutdown()
 }

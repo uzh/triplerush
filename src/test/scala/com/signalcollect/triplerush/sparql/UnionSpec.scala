@@ -23,7 +23,7 @@ import scala.collection.JavaConversions.asScalaIterator
 
 import org.scalatest.{ FlatSpec, Matchers }
 
-import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.triplerush.{TestConfig, TripleRush}
 import com.signalcollect.util.TestAnnouncements
 
 class UnionSpec extends FlatSpec with Matchers with TestAnnouncements {
@@ -39,7 +39,7 @@ SELECT ?name WHERE {
   }
 }
                  """
-    val tr = TripleRush()
+    val tr = TripleRush(config = TestConfig.system())
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -52,6 +52,7 @@ SELECT ?name WHERE {
       assert(resultBindings === Set("Harold", "Arthur"))
     } finally {
       tr.shutdown
+      tr.system.shutdown()
     }
   }
 

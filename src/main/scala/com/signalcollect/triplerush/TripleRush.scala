@@ -23,17 +23,12 @@ package com.signalcollect.triplerush
 import java.io.InputStream
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
-import org.apache.jena.riot.Lang
-import scala.concurrent.{ Await, Future, Promise }
-import scala.concurrent.duration.DurationInt
-import scala.reflect.ManifestFactory
-import scala.reflect.runtime.universe
-import com.signalcollect.{ ExecutionConfiguration, GraphBuilder }
+
 import com.signalcollect.configuration.{ ActorSystemRegistry, ExecutionMode }
 import com.signalcollect.factory.scheduler.Throughput
-import com.signalcollect.interfaces.AddEdge
-import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
 import com.signalcollect.interfaces._
+import com.signalcollect.nodeprovisioning.cluster.ClusterNodeProvisioner
+import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
 import com.signalcollect.triplerush.dictionary._
 import com.signalcollect.triplerush.handlers._
 import com.signalcollect.triplerush.loading._
@@ -42,8 +37,14 @@ import com.signalcollect.triplerush.sparql._
 import com.signalcollect.triplerush.util._
 import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush.vertices.query._
-import com.signalcollect.examples.PlaceholderEdge
+import com.signalcollect.{ ExecutionConfiguration, GraphBuilder }
+import com.typesafe.config.{ Config, ConfigFactory }
 import org.apache.jena.graph.{ Triple => JenaTriple }
+import org.apache.jena.riot.Lang
+
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ Await, Future, Promise }
+import scala.reflect.ManifestFactory
 
 /**
  * Global accessor for the console visualization.
@@ -58,14 +59,20 @@ object TripleRush {
             tripleMapperFactory: Option[MapperFactory[Long]] = None,
             fastStart: Boolean = false,
             console: Boolean = false,
+            numberOfNodes: Int = 1,
+            config: Config = ConfigFactory.load(),
+            actorNamePrefix: String = "",
             kryoRegistrations: List[String] = Kryo.defaultRegistrations): TripleRush = {
-    new TripleRush(graphBuilder, dictionary, tripleMapperFactory, fastStart, console, kryoRegistrations)
+    val provisioner = new ClusterNodeProvisioner[Long, Any](numberOfNodes = numberOfNodes, config = config, actorNamePrefix = actorNamePrefix)
+    val nodeActors = provisioner.getNodes(provisioner.system, actorNamePrefix, config)
+    new TripleRush(graphBuilder.withPreallocatedNodes(nodeActors).withActorSystem(provisioner.system),
+      dictionary, tripleMapperFactory, fastStart, console, config, kryoRegistrations)
   }
 }
 
 /**
  * `fastStart`: Faster startup time, might delay first query execution times and
- *  allows to skip calling `prepareExecution`.
+ * allows to skip calling `prepareExecution`.
  */
 class TripleRush(
     graphBuilder: GraphBuilder[Long, Any],
@@ -73,15 +80,15 @@ class TripleRush(
     tripleMapperFactory: Option[MapperFactory[Long]],
     fastStart: Boolean,
     console: Boolean,
+    config: Config = ConfigFactory.load(),
     kryoRegistrations: List[String] = Kryo.defaultRegistrations) extends QueryEngine {
-
   TrGlobal.dictionary = Some(dictionary)
-
   val graph = graphBuilder.withConsole(console).
+    withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
+    withKryoRegistrations(kryoRegistrations).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, 1024)).
     withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
     withEdgeAddedToNonExistentVertexHandlerFactory(TripleRushEdgeAddedToNonExistentVertexHandlerFactory).
-    withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withMapperFactory(
       tripleMapperFactory.getOrElse(
         if (graphBuilder.config.preallocatedNodes.isEmpty && graphBuilder.config.nodeProvisioner.isInstanceOf[LocalNodeProvisioner[_, _]]) {
@@ -95,8 +102,7 @@ class TripleRush(
       withWorkerFactory(new TripleRushWorkerFactory[Any]).
       withBlockingGraphModificationsSupport(false).
       withStatsReportingInterval(500).
-      withEagerIdleDetection(false).
-      withKryoRegistrations(kryoRegistrations).build
+      withEagerIdleDetection(false).build
   val system = graphBuilder.config.actorSystem.getOrElse(ActorSystemRegistry.retrieve("SignalCollect").get)
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
@@ -300,8 +306,6 @@ object Kryo {
       classOf[PredicateStats].getName,
       classOf[ResultIteratorQueryVertex].getName,
       classOf[ResultIterator].getName,
-      classOf[AtomicBoolean].getName,
-      classOf[LinkedBlockingQueue[Any]].getName,
       classOf[TripleRushWorkerFactory[Any]].getName,
       TripleRushEdgeAddedToNonExistentVertexHandlerFactory.getClass.getName,
       TripleRushUndeliverableSignalHandlerFactory.getClass.getName,
@@ -311,18 +315,9 @@ object Kryo {
       DistributedTripleMapperFactory.getClass.getName,
       RelievedNodeZeroTripleMapperFactory.getClass.getName,
       LoadBalancingTripleMapperFactory.getClass.getName,
-      ManifestFactory.Long.getClass.getName,
       classOf[CombiningMessageBusFactory[_]].getName,
       classOf[AddEdge[Any, Any]].getName,
-      classOf[AddEdge[Long, Long]].getName, // TODO: Can we force the use of the specialized version?
-      new Throughput[Long, Any].getClass.getName,
-      SignalMessageWithoutSourceId[Long, Any](
-        signal = null.asInstanceOf[Any],
-        targetId = null.asInstanceOf[Long]).getClass.getName,
-      BulkSignalNoSourceIds[Long, Any](
-        signals = null.asInstanceOf[Array[Any]],
-        targetIds = null.asInstanceOf[Array[Long]]).getClass.getName,
-      "akka.actor.RepointableActorRef")
+      classOf[AddEdge[Long, Long]].getName) // TODO: Can we force the use of the specialized version?)
   }
 
 }

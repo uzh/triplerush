@@ -2,7 +2,7 @@ package com.signalcollect.triplerush.sparql
 
 import org.apache.jena.graph.Graph
 import org.apache.jena.graph.test.AbstractTestGraph
-import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.triplerush.{TestConfig, TripleRush}
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 import com.signalcollect.GraphBuilder
@@ -27,15 +27,21 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
 
   private[this] def getTripleRushInstance: TripleRush = {
     val trSystem = ActorSystem(UUID.randomUUID.toString)
-    TripleRush(graphBuilder = new GraphBuilder[Long, Any]().withActorSystem(trSystem))
+    val config = TestConfig.system()
+    TripleRush(graphBuilder = new GraphBuilder[Long, Any]().withActorSystem(trSystem), config = config)
   }
 
   override def getGraphWith(facts: String): Graph = {
     val tr = getTripleRushInstance
-    val g = TripleRushGraph(tr)
-    GraphTestBase.graphAdd(g, facts)
-    tr.prepareExecution
-    g
+    try {
+      val g = TripleRushGraph(tr)
+      GraphTestBase.graphAdd(g, facts)
+      tr.prepareExecution
+      g
+    } finally {
+      tr.shutdown()
+      tr.system.shutdown()
+    }
   }
 
   override def testIsomorphismFile(): Unit = {
