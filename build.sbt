@@ -57,30 +57,35 @@ libraryDependencies ++= Seq(
 )
 
 pomExtra := (
- <url>https://github.com/uzh/triplerush</url>
- <scm>
-   <url>git@github.com:uzh/triplerush.git</url>
-   <connection>scm:git:git@github.com:uzh/triplerush.git</connection>
- </scm>
- <developers>
-   <developer>
-     <id>pstutz</id>
-     <name>Philip Stutz</name>
-     <url>https://github.com/pstutz</url>
-   </developer>
-   <developer>
-     <id>bibekp</id>
-     <name>Bibek Paudel</name>
-     <url>https://github.com/bibekp</url>
-   </developer>
-   <developer>
-     <id>elaverman</id>
-     <name>Mihaela Verman</name>
-     <url>https://github.com/elaverman</url>
-   </developer>
-   <developer>
-     <id>jahangirmohammed</id>
-     <name>Jahangir Mohammed</name>
-     <url>https://github.com/jahangirmohammed</url>
-   </developer>
+<url>https://github.com/uzh/triplerush</url>
+<scm>
+  <url>git@github.com:uzh/triplerush.git</url>
+  <connection>scm:git:git@github.com:uzh/triplerush.git</connection>
+</scm>
+<developers>
+  <developer>
+    <id>pstutz</id>
+    <name>Philip Stutz</name>
+    <url>https://github.com/pstutz</url>
+  </developer>
+  <developer>
+    <id>bibekp</id>
+    <name>Bibek Paudel</name>
+    <url>https://github.com/bibekp</url>
+  </developer>
+  <developer>
+    <id>elaverman</id>
+    <name>Mihaela Verman</name>
+    <url>https://github.com/elaverman</url>
+  </developer>
+  <developer>
+    <id>jahangirmohammed</id>
+    <name>Jahangir Mohammed</name>
+    <url>https://github.com/jahangirmohammed</url>
+  </developer>
+  <developer>
+    <id>sunnylbk</id>
+    <name>Bharath Kumar</name>
+    <url>https://github.com/sunnylbk</url>
+  </developer>
  </developers>)
