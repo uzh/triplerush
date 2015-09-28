@@ -24,9 +24,9 @@ import java.io.InputStream
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.signalcollect.configuration.{ActorSystemRegistry, ExecutionMode}
+import com.signalcollect.configuration.{ ActorSystemRegistry, ExecutionMode }
 import com.signalcollect.factory.scheduler.Throughput
-import com.signalcollect.interfaces.{AddEdge, _}
+import com.signalcollect.interfaces._
 import com.signalcollect.nodeprovisioning.cluster.ClusterNodeProvisioner
 import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
 import com.signalcollect.triplerush.dictionary._
@@ -37,13 +37,13 @@ import com.signalcollect.triplerush.sparql._
 import com.signalcollect.triplerush.util._
 import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush.vertices.query._
-import com.signalcollect.{ExecutionConfiguration, GraphBuilder}
-import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.jena.graph.{Triple => JenaTriple}
+import com.signalcollect.{ ExecutionConfiguration, GraphBuilder }
+import com.typesafe.config.{ Config, ConfigFactory }
+import org.apache.jena.graph.{ Triple => JenaTriple }
 import org.apache.jena.riot.Lang
 
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.{ Await, Future, Promise }
 import scala.reflect.ManifestFactory
 
 /**
@@ -75,13 +75,13 @@ object TripleRush {
  * allows to skip calling `prepareExecution`.
  */
 class TripleRush(
-                  graphBuilder: GraphBuilder[Long, Any],
-                  val dictionary: RdfDictionary,
-                  tripleMapperFactory: Option[MapperFactory[Long]],
-                  fastStart: Boolean,
-                  console: Boolean,
-                  config: Config = ConfigFactory.load(),
-                  kryoRegistrations: List[String] = Kryo.defaultRegistrations) extends QueryEngine {
+    graphBuilder: GraphBuilder[Long, Any],
+    val dictionary: RdfDictionary,
+    tripleMapperFactory: Option[MapperFactory[Long]],
+    fastStart: Boolean,
+    console: Boolean,
+    config: Config = ConfigFactory.load(),
+    kryoRegistrations: List[String] = Kryo.defaultRegistrations) extends QueryEngine {
   TrGlobal.dictionary = Some(dictionary)
   val graph = graphBuilder.withConsole(console).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
@@ -96,13 +96,13 @@ class TripleRush(
         } else {
           DistributedTripleMapperFactory
         })).
-    withStorageFactory(TripleRushStorage).
-    withThrottlingEnabled(false).
-    withThrottlingDuringLoadingEnabled(true).
-    withWorkerFactory(new TripleRushWorkerFactory[Any]).
-    withBlockingGraphModificationsSupport(false).
-    withStatsReportingInterval(500).
-    withEagerIdleDetection(false).build
+      withStorageFactory(TripleRushStorage).
+      withThrottlingEnabled(false).
+      withThrottlingDuringLoadingEnabled(true).
+      withWorkerFactory(new TripleRushWorkerFactory[Any]).
+      withBlockingGraphModificationsSupport(false).
+      withStatsReportingInterval(500).
+      withEagerIdleDetection(false).build
   val system = graphBuilder.config.actorSystem.getOrElse(ActorSystemRegistry.retrieve("SignalCollect").get)
   implicit val executionContext = system.dispatcher
   graph.addVertex(new RootIndex)
@@ -126,22 +126,22 @@ class TripleRush(
    * If you get a serialization error for the dictionary, it is probably due to a problematic placement hint.
    */
   def loadFromFile(
-                    filePath: String,
-                    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId))): Unit = {
+    filePath: String,
+    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId))): Unit = {
     val iterator = TripleIterator(filePath)
     loadFromIterator(iterator, placementHint)
   }
 
   def loadFromStream(
-                      inputStream: InputStream,
-                      placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId)), lang: Lang): Unit = {
+    inputStream: InputStream,
+    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId)), lang: Lang): Unit = {
     val iterator = TripleIterator(inputStream, lang)
     loadFromIterator(iterator, placementHint)
   }
 
   def loadFromIterator(
-                        iterator: Iterator[JenaTriple],
-                        placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId))): Unit = {
+    iterator: Iterator[JenaTriple],
+    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId))): Unit = {
     val loader = new DataLoader(iterator, dictionary)
     graph.loadGraph(loader, placementHint)
   }
@@ -209,8 +209,8 @@ class TripleRush(
   }
 
   def executeCountingQuery(
-                            q: Seq[TriplePattern],
-                            tickets: Long = Long.MaxValue): Future[Option[Long]] = {
+    q: Seq[TriplePattern],
+    tickets: Long = Long.MaxValue): Future[Option[Long]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     // Efficient counting query.
     val resultCountPromise = Promise[Option[Long]]()
@@ -239,9 +239,9 @@ class TripleRush(
   }
 
   def resultIteratorForQuery(
-                              query: Seq[TriplePattern],
-                              numberOfSelectVariables: Option[Int] = None,
-                              tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
+    query: Seq[TriplePattern],
+    numberOfSelectVariables: Option[Int] = None,
+    tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
     assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
     val selectVariables = numberOfSelectVariables.getOrElse(
       VariableEncoding.requiredVariableBindingsSlots(query))
@@ -306,8 +306,6 @@ object Kryo {
       classOf[PredicateStats].getName,
       classOf[ResultIteratorQueryVertex].getName,
       classOf[ResultIterator].getName,
-      classOf[AtomicBoolean].getName,
-      classOf[LinkedBlockingQueue[Any]].getName,
       classOf[TripleRushWorkerFactory[Any]].getName,
       TripleRushEdgeAddedToNonExistentVertexHandlerFactory.getClass.getName,
       TripleRushUndeliverableSignalHandlerFactory.getClass.getName,
@@ -317,63 +315,9 @@ object Kryo {
       DistributedTripleMapperFactory.getClass.getName,
       RelievedNodeZeroTripleMapperFactory.getClass.getName,
       LoadBalancingTripleMapperFactory.getClass.getName,
-      ManifestFactory.Long.getClass.getName,
       classOf[CombiningMessageBusFactory[_]].getName,
       classOf[AddEdge[Any, Any]].getName,
-      classOf[AddEdge[Long, Long]].getName, // TODO: Can we force the use of the specialized version?
-      new Throughput[Long, Any].getClass.getName,
-      SignalMessageWithoutSourceId[Long, Any](
-        signal = null.asInstanceOf[Any],
-        targetId = null.asInstanceOf[Long]).getClass.getName,
-      BulkSignalNoSourceIds[Long, Any](
-        signals = null.asInstanceOf[Array[Any]],
-        targetIds = null.asInstanceOf[Array[Long]]).getClass.getName,
-      "akka.actor.RepointableActorRef",
-      "akka.remote.transport.AkkaProtocolException",
-      "akka.remote.transport.netty.NettyTransport$$anonfun$associate$1$$anon$2",
-      "akka.cluster.ClusterEvent$InitialStateAsSnapshot$",
-      "akka.cluster.ClusterEvent$ClusterDomainEvent",
-      "akka.cluster.ClusterEvent$MemberEvent",
-      classOf[Array[StackTraceElement]].getName,
-      "akka.cluster.ClusterEvent$ReachabilityEvent",
-      "scala.collection.immutable.TreeSet",
-      "java.lang.StackTraceElement",
-      "java.util.Collections$UnmodifiableRandomAccessList",
-      "akka.cluster.Member$$anon$1",
-      "akka.remote.ReliableDeliverySupervisor$GotUid",
-      "akka.cluster.ClusterUserAction$JoinTo",
-      "akka.cluster.InternalClusterAction$MetricsTick$",
-      "akka.cluster.InternalClusterAction$PublishChanges",
-      "akka.cluster.Gossip",
-      "akka.cluster.Member",
-      "akka.remote.Ack",
-      "akka.remote.EndpointWriter$OutboundAck",
-      "akka.cluster.MemberStatus$Joining$",
-      "akka.cluster.ClusterHeartbeatSender$HeartbeatTick$",
-      "akka.cluster.InternalClusterAction$PublishEvent",
-      "akka.cluster.ClusterHeartbeatSender$HeartbeatTick$",
-      "akka.remote.SeqNo",
-      "akka.remote.EndpointWriter$StopReading",
-      "akka.cluster.UniqueAddress",
-      "akka.cluster.MemberStatus$Up$",
-      "akka.cluster.GossipOverview",
-      "akka.cluster.Reachability",
-      "akka.cluster.ClusterEvent$ClusterMetricsChanged",
-      "akka.cluster.VectorClock",
-      "scala.collection.immutable.TreeMap",
-      "scala.math.Ordering$String$",
-      "akka.cluster.ClusterEvent$MemberUp",
-      "akka.cluster.ClusterEvent$ReachabilityChanged",
-      "akka.cluster.ClusterEvent$SeenChanged",
-      "akka.cluster.ClusterEvent$LeaderChanged",
-      "akka.cluster.NodeMetrics",
-      "akka.cluster.ClusterHeartbeatSender$ExpectedFirstHeartbeat",
-      "akka.cluster.Metric",
-      "akka.cluster.EWMA",
-      "com.signalcollect.factory.messagebus.BulkAkkaMessageBusFactory$mcJ$sp",
-      "com.signalcollect.triplerush.vertices.query.ResultIteratorQueryVertex",
-      "scala.collection.mutable.WrappedArray$ofRef"
-    )
+      classOf[AddEdge[Long, Long]].getName) // TODO: Can we force the use of the specialized version?)
   }
 
 }
