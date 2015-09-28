@@ -61,9 +61,11 @@ object TripleRush {
             console: Boolean = false,
             numberOfNodes: Int = 1,
             config: Config = ConfigFactory.load(),
+            actorNamePrefix: String = "",
             kryoRegistrations: List[String] = Kryo.defaultRegistrations): TripleRush = {
-    val provisioner = new ClusterNodeProvisioner[Long, Any](numberOfNodes = numberOfNodes, config = config)
-    new TripleRush(graphBuilder.withNodeProvisioner(provisioner).withActorSystem(provisioner.system),
+    val provisioner = new ClusterNodeProvisioner[Long, Any](numberOfNodes = numberOfNodes, config = config, actorNamePrefix = actorNamePrefix)
+    val nodeActors = provisioner.getNodes(provisioner.system, actorNamePrefix, config)
+    new TripleRush(graphBuilder.withPreallocatedNodes(nodeActors).withActorSystem(provisioner.system),
       dictionary, tripleMapperFactory, fastStart, console, config, kryoRegistrations)
   }
 }
