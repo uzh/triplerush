@@ -60,9 +60,11 @@ abstract class OptimizedIndexVertex(
       case i: Int =>
         if (i != 0) 1 else 0
       case a: Array[Byte] =>
-        new FastInsertIntSet(a).size
+        val count = new FastInsertIntSet(a).size
+        count
       case s: SplayIntSet =>
-        s.size
+        val count = s.size
+        count
       case _ => 0
     }
   }
@@ -98,7 +100,6 @@ abstract class OptimizedIndexVertex(
           val sizeBefore = new FastInsertIntSet(a).size
           val intSetAfter = new FastInsertIntSet(a).insert(delta, 0.01f)
           val sizeAfter = new FastInsertIntSet(intSetAfter).size
-
           if (sizeAfter >= 1000) {
             val splayIntSet = new MemoryEfficientSplayIntSet
             val root = new SplayNode(intSetAfter)
