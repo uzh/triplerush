@@ -34,7 +34,7 @@ class BlockingTripleAdditionsVertex(
 
   def dispatchTripleAdditionBatch(graphEditor: GraphEditor[Long, Any]): Unit = {
     var dispatchedTriples = 0L
-    while (triples.hasNext && dispatchedTriples <= batchSize) {
+    while (triples.hasNext && dispatchedTriples < batchSize) {
       dispatchedTriples += 1
       val t = triples.next
       val s = t.s
@@ -54,6 +54,7 @@ class BlockingTripleAdditionsVertex(
         dispatchTripleAdditionBatch(graphEditor)
       } else {
         operationCompletedPromise.success(())
+        graphEditor.removeVertex(id)
       }
     }
     setState(Some(synchronization))
