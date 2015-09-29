@@ -23,12 +23,10 @@ package com.signalcollect.triplerush
 import java.io.InputStream
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
-
 import com.signalcollect.configuration.{ ActorSystemRegistry, ExecutionMode }
 import com.signalcollect.factory.scheduler.Throughput
 import com.signalcollect.interfaces._
 import com.signalcollect.nodeprovisioning.cluster.ClusterNodeProvisioner
-import com.signalcollect.nodeprovisioning.local.LocalNodeProvisioner
 import com.signalcollect.triplerush.dictionary._
 import com.signalcollect.triplerush.handlers._
 import com.signalcollect.triplerush.loading._
@@ -41,10 +39,10 @@ import com.signalcollect.{ ExecutionConfiguration, GraphBuilder }
 import com.typesafe.config.{ Config, ConfigFactory }
 import org.apache.jena.graph.{ Triple => JenaTriple }
 import org.apache.jena.riot.Lang
-
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ Await, Future, Promise }
 import scala.reflect.ManifestFactory
+import com.signalcollect.nodeprovisioning.NodeProvisioner
 
 /**
  * Global accessor for the console visualization.
@@ -59,15 +57,10 @@ object TripleRush {
             tripleMapperFactory: Option[MapperFactory[Long]] = None,
             fastStart: Boolean = false,
             console: Boolean = false,
-            numberOfNodes: Int = 1,
             config: Config = ConfigFactory.load().getConfig("signalcollect"),
-            actorNamePrefix: String = "",
             kryoRegistrations: List[String] = Kryo.defaultRegistrations): TripleRush = {
-    // TODO: This is just a convenience constructor, it should not silently override GraphBuilder settings.
-    val provisioner = new ClusterNodeProvisioner[Long, Any](numberOfNodes = numberOfNodes, config = config, actorNamePrefix = actorNamePrefix)
-    val nodeActors = provisioner.getNodes(provisioner.system, actorNamePrefix, config)
-    new TripleRush(graphBuilder.withPreallocatedNodes(nodeActors).withActorSystem(provisioner.system),
-      dictionary, tripleMapperFactory, fastStart, console, config, kryoRegistrations)
+    new TripleRush(
+      graphBuilder, dictionary, tripleMapperFactory, fastStart, console, config, kryoRegistrations)
   }
 }
 
@@ -81,10 +74,12 @@ class TripleRush(
     tripleMapperFactory: Option[MapperFactory[Long]],
     fastStart: Boolean,
     console: Boolean,
-    config: Config = ConfigFactory.load().getConfig("signalcollect"),
-    kryoRegistrations: List[String] = Kryo.defaultRegistrations) extends QueryEngine {
+    config: Config,
+    kryoRegistrations: List[String]) extends QueryEngine {
   TrGlobal.dictionary = Some(dictionary)
-  val graph = graphBuilder.withConsole(console).
+
+  val graph = graphBuilder.
+    withConsole(console).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withKryoRegistrations(kryoRegistrations).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, 1024)).
@@ -92,7 +87,7 @@ class TripleRush(
     withEdgeAddedToNonExistentVertexHandlerFactory(TripleRushEdgeAddedToNonExistentVertexHandlerFactory).
     withMapperFactory(
       tripleMapperFactory.getOrElse(
-        if (graphBuilder.config.preallocatedNodes.isEmpty && graphBuilder.config.nodeProvisioner.isInstanceOf[LocalNodeProvisioner[_, _]]) {
+        if (graphBuilder.config.preallocatedNodes.isEmpty && graphBuilder.config.nodeProvisioner.numberOfNodes == 1) {
           SingleNodeTripleMapperFactory
         } else {
           DistributedTripleMapperFactory
