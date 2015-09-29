@@ -31,7 +31,6 @@ import com.signalcollect.util.TestAnnouncements
 class SparqlSpec extends FlatSpec with TestAnnouncements {
 
   "Sparql" should "correctly translate a SPARQL query that has results" in {
-    println("^^^^ Sparql config: " + ConfigFactory.load())
     val tr = TripleRush(config = TestConfig.system())
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
