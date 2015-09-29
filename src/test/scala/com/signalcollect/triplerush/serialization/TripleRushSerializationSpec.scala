@@ -27,7 +27,7 @@ import com.signalcollect.util.TestAnnouncements
 
 class TripleRushSerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
 
-  "TripleRush serialization" should "support full message serialization" in {
+  "TripleRush serialization" should "support full message serialization during loading" in {
     val sparql = """
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?product ?label
@@ -45,8 +45,6 @@ LIMIT 3
       tr.addTriplePattern(TriplePattern(3, 2, 5))
       tr.addTriplePattern(TriplePattern(3, 2, 7))
       tr.prepareExecution
-      tr.resultIteratorForQuery(Seq(TriplePattern(1, 2, -1), TriplePattern(-1, 2, -2)))
-      Thread.sleep(1000)
     } finally {
       tr.shutdown
       tr.system.shutdown()

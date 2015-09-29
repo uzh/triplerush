@@ -19,6 +19,8 @@
 
 package com.signalcollect.triplerush
 
+import com.typesafe.config.ConfigFactory
+
 import scala.collection.JavaConversions.asScalaIterator
 
 import org.scalatest.{ Finders, FlatSpec }

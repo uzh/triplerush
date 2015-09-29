@@ -42,8 +42,8 @@ excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
 /** Dependencies */
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-library" % scalaVersion.value % "compile",
-  "com.signalcollect" %% "signal-collect" % "6.0.1" % "compile",
-  "org.mapdb" % "mapdb" % "2.0-beta7" % "compile",
+  "com.signalcollect" %% "signal-collect" % "6.1.1" % "compile",
+  "org.mapdb" % "mapdb" % "2.0-beta8" % "compile",
   "org.apache.jena" % "jena-arq" % "3.0.0" % "compile",
   "org.apache.jena" % "jena-core" % "3.0.0" % "compile",
   "org.apache.jena" % "jena-core" % "3.0.0" % "test" classifier "tests",

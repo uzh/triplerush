@@ -14,7 +14,7 @@ object TestConfig {
         |akka.clustering.seed-port=$seedPort
         |akka.remote.netty.tcp.port=$seedPort
         |akka.cluster.seed-nodes=["akka.tcp://"${actorSystemName}"@"${seedIp}":"${seedPort}]""".stripMargin)
-    .withFallback(ConfigFactory.load())
+    .withFallback(ConfigFactory.load().getConfig("signalcollect"))
 
   def randomPort: Int = {
     val socket = new ServerSocket(0)
