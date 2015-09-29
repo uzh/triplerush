@@ -60,7 +60,7 @@ object TripleRush {
             fastStart: Boolean = false,
             console: Boolean = false,
             numberOfNodes: Int = 1,
-            config: Config = ConfigFactory.load(),
+            config: Config = ConfigFactory.load().getConfig("signalcollect"),
             actorNamePrefix: String = "",
             kryoRegistrations: List[String] = Kryo.defaultRegistrations): TripleRush = {
     // TODO: This is just a convenience constructor, it should not silently override GraphBuilder settings.
@@ -81,7 +81,7 @@ class TripleRush(
     tripleMapperFactory: Option[MapperFactory[Long]],
     fastStart: Boolean,
     console: Boolean,
-    config: Config = ConfigFactory.load(),
+    config: Config = ConfigFactory.load().getConfig("signalcollect"),
     kryoRegistrations: List[String] = Kryo.defaultRegistrations) extends QueryEngine {
   TrGlobal.dictionary = Some(dictionary)
   val graph = graphBuilder.withConsole(console).
