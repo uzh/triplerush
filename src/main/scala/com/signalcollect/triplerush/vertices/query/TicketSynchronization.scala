@@ -57,6 +57,7 @@ class TicketSynchronization(
         t
       }
     }
+    println(s"synchronization: $receivedTickets/$expectedTickets")
     if (t < 0) {
       ranOutOfTickets = true
     }

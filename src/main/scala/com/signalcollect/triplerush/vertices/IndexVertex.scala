@@ -22,6 +22,7 @@ package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.{ Edge, GraphEditor }
 import com.signalcollect.triplerush._
+import com.signalcollect.triplerush.EfficientIndexPattern._
 
 /**
  * This vertex represents part of the TripleRush index.
@@ -67,6 +68,7 @@ abstract class IndexVertex[StateType](val id: Long)
     e match {
       case b: BlockingIndexVertexEdge =>
         val ticketsToReturn = b.tickets
+        //println(s"${id.toTriplePattern} is returning $ticketsToReturn tickets")
         val wasAdded = addChildDelta(b.childDelta)
         val operationVertexId = OperationIds.embedInLong(b.blockingOperationId)
         graphEditor.sendSignal(ticketsToReturn, operationVertexId)

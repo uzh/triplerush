@@ -46,8 +46,11 @@ class BlockingTripleAdditionsVertex(
       graphEditor.addEdge(po, new BlockingIndexVertexEdge(s, IndexStructure.ticketsForIndexOperation(po), operationId))
       graphEditor.addEdge(so, new BlockingIndexVertexEdge(p, IndexStructure.ticketsForIndexOperation(so), operationId))
       graphEditor.addEdge(sp, new BlockingIndexVertexEdge(o, IndexStructure.ticketsForIndexOperation(sp), operationId))
+      dispatchedTriples += 1
+      if (dispatchedTriples % 1000 == 0) println(s"dispatched so far = $dispatchedTriples")
     }
     val expectedTickets = dispatchedTriples * IndexStructure.ticketsForTripleOperation
+    println(s"expected tickets = $expectedTickets, ticketsForTripleOperation = ${IndexStructure.ticketsForTripleOperation}, dispatchedTriples = $dispatchedTriples")
     val synchronization = new TicketSynchronization("BlockingTripleAdditionsVertex", expectedTickets)
     synchronization.onSuccess { () =>
       if (triples.hasNext) {
@@ -74,7 +77,7 @@ class BlockingTripleAdditionsVertex(
           case Some(s) =>
             s.receivedTickets(deliveredTickets)
         }
-      case other@_ =>
+      case other @ _ =>
         throw new UnsupportedOperationException(
           s"Blocking triple addition vertex received an unsupported message $signal of type ${signal.getClass.getSimpleName}.")
     }

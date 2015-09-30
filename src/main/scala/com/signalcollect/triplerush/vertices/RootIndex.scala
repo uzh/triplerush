@@ -39,6 +39,11 @@ final class RootIndex extends OptimizedIndexVertex(EfficientIndexPattern(0, 0, 0
     }
   }
 
+  override def addChildDelta(delta: Int): Boolean = {
+    println(s"adding delta $delta to root vertex")
+    super.addChildDelta(delta)
+  }
+  
   def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(0, childDelta, 0)
 
 }
