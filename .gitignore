@@ -52,3 +52,5 @@ lubm1*/
 *.iml
 
 *history.ntriples.gz
+
+*.prefs
