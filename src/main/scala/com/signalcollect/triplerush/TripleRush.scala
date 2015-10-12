@@ -99,8 +99,7 @@ class TripleRush(
       withBlockingGraphModificationsSupport(false).
       withStatsReportingInterval(500).
       withEagerIdleDetection(false).build
-  val system = graphBuilder.config.actorSystem.getOrElse(ActorSystemRegistry.retrieve("SignalCollect").get)
-  implicit val executionContext = system.dispatcher
+  implicit private[this] val executionContext = graph.system.dispatcher
   graph.addVertex(new RootIndex)
 
   private[this] var canExecute = false
@@ -132,7 +131,8 @@ class TripleRush(
 
   def loadFromStream(
     inputStream: InputStream,
-    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId)), lang: Lang): Unit = {
+    lang: Lang,
+    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId))): Unit = {
     val iterator = TripleIterator(inputStream, lang)
     loadFromIterator(iterator, placementHint)
   }

@@ -33,7 +33,7 @@ class IndexSpec extends FlatSpec with TestAnnouncements {
         o <- Array(3, -3)
       } yield TriplePattern(s, p, o)
     }
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     try {
       tr.addEncodedTriple(1, 2, 3)
       tr.prepareExecution
@@ -63,7 +63,6 @@ class IndexSpec extends FlatSpec with TestAnnouncements {
       }
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 

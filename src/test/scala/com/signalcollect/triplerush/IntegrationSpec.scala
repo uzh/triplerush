@@ -36,7 +36,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
   "TripleRush" should "correctly answer a query for data that is not in the store" in {
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -45,12 +45,11 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       assert(Set[Map[Int, Int]]() === trResults)
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
   it should "correctly answer a query for a specific pattern that exists" in {
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -59,12 +58,11 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       assert(Set[Map[Int, Int]](Map()) === trResults)
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
   it should "correctly answer a query for a specific pattern that does not exist" in {
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -73,12 +71,11 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       assert(Set[Map[Int, Int]]() === trResults)
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
   it should "correctly answer a simple query 1" in {
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -87,12 +84,11 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       assert(Set(Map(-1 -> 4)) === trResults)
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
   it should "correctly answer a simple query 2" in {
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -104,12 +100,11 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
         Map(-1 -> 4, -2 -> 4)) === trResults)
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
   it should "correctly answer a simple query, where one pattern is fully bound and that triple exists" in {
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -120,12 +115,11 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
         Map(-1 -> 2, -2 -> 3, -3 -> 3), Map(-1 -> 3, -2 -> 3, -3 -> 3)) === trResults)
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
   it should "correctly answer a simple query, where one pattern is fully bound and that triple does not exist" in {
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     try {
       val trResults = TestHelper.execute(
         tr,
@@ -136,7 +130,6 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       assert(Set[Map[Int, Int]]() === trResults)
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
@@ -155,12 +148,11 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
       }
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
   it should "correctly answer a simple query over a reasonable amount of data" in {
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     val jena = new Jena
     try {
       val query = List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 10))
@@ -183,7 +175,6 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
     } finally {
       tr.shutdown
       jena.shutdown
-      tr.system.shutdown()
     }
   }
 
@@ -191,7 +182,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
         (triples: Set[TriplePattern], query: List[TriplePattern]) =>
-          val tr = TripleRush()
+          val tr = TestUtil.testInstance()
           val jena = new Jena
           try {
             val jenaResults = TestHelper.execute(jena, triples, query)
@@ -201,7 +192,6 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
           } finally {
             tr.shutdown
             jena.shutdown
-            tr.system.shutdown()
           }
       }, minSuccessful(10))
   }
@@ -210,7 +200,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
         (triples: Set[TriplePattern], query: List[TriplePattern]) =>
-          val tr = TripleRush()
+          val tr = TestUtil.testInstance()
           val jena = new Jena
           try {
             val jenaResults = TestHelper.execute(jena, triples, query)
@@ -222,7 +212,6 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
           } finally {
             tr.shutdown
             jena.shutdown
-            tr.system.shutdown()
           }
       }, minSuccessful(20))
   }

@@ -21,7 +21,7 @@ package com.signalcollect.triplerush.sparql
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import com.signalcollect.triplerush.{TestConfig, TripleRush}
+import com.signalcollect.triplerush.{TestUtil, TripleRush}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import org.apache.jena.query.QueryFactory
@@ -43,7 +43,7 @@ WHERE {
 ORDER BY ?label
 LIMIT 3
                  """
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -59,7 +59,6 @@ LIMIT 3
       assert(bindingsList === List(("http://A", "http://SomeProduct1"), ("http://B", "http://SomeProduct2"), ("http://C", "http://SomeProduct3")))
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 

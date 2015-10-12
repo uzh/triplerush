@@ -22,7 +22,7 @@ package com.signalcollect.triplerush.serialization
 import org.scalatest.{ FlatSpec, Matchers }
 
 import com.signalcollect.GraphBuilder
-import com.signalcollect.triplerush.{TestConfig, TriplePattern, TripleRush}
+import com.signalcollect.triplerush.{TestUtil, TriplePattern, TripleRush}
 import com.signalcollect.util.TestAnnouncements
 
 class TripleRushSerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
@@ -46,7 +46,6 @@ LIMIT 3
       tr.prepareExecution
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 

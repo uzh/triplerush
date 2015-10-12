@@ -10,7 +10,7 @@ import com.signalcollect.util.TestAnnouncements
 class EmptyQuerySpec extends FlatSpec with Matchers with TestAnnouncements {
 
   "TripleRush" should "correctly answer result counts for queries with zero results" in {
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     try {
       tr.prepareExecution
       val query = Seq(TriplePattern(-1, 2, 3))
@@ -18,7 +18,6 @@ class EmptyQuerySpec extends FlatSpec with Matchers with TestAnnouncements {
       assert(result.size == 0)
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 

@@ -43,12 +43,13 @@ object Lubm {
   def load(qe: TripleRush) {
     println("Loading LUBM1 ... ")
     for (fileNumber <- 0 to 14) {
-      val filePath = s".${File.separator}lubm${File.separator}university0_$fileNumber.nt"
-      println(s"Loading file $filePath ...")
-      qe.addTriples(TripleIterator(filePath), blocking = true)
-      println(s"Done loading $filePath.")
+      val resource = s"university0_$fileNumber.nt"
+      val tripleStream = getClass.getResourceAsStream(resource)
+      println(s"Loading file $resource ...")
+      //println(Source.fromURL(getClass.getResource(resource)).getLines.take(10).mkString("\n"))
+      qe.addTriples(TripleIterator(tripleStream, Lang.NTRIPLES), blocking = true)
+      println(s"Done loading $resource.")
     }
-    qe.prepareExecution
     println("Finished loading LUBM1.")
   }
 
@@ -254,14 +255,13 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
     runTest(14)
   }
 
-  val tr = TripleRush(fastStart = true)
+  val tr = TestUtil.testInstance(fastStart = true)
   val graph = TripleRushGraph(tr)
   implicit val model = graph.getModel
   Lubm.load(tr)
 
   override def afterAll {
     tr.shutdown
-    tr.system.shutdown()
     super.afterAll
   }
 
@@ -289,13 +289,15 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
     }
   }
 
-  val queryBaseName = s".${File.separator}answers${File.separator}answers_query"
-  val referenceFiles: Map[Int, String] = ((1 to 14) map (queryNumber => queryNumber -> (queryBaseName + queryNumber + ".txt"))).toMap
+  val queryBaseName = s"answers_query"
+  val answerResources = (1 to 14).map { queryNumber =>
+    queryNumber -> getClass.getResource(queryBaseName + queryNumber + ".txt")
+  }.toMap
   val referenceResults: Map[Int, QuerySolution] = {
-    referenceFiles map { entry =>
-      val fileName = entry._2
-      val file = Source.fromFile(fileName)
-      val lines = file.getLines
+    answerResources map { entry =>
+      val resource = entry._2
+      val source = Source.fromURL(resource)
+      val lines = source.getLines
       val bindings = getQueryBindings(lines)
       (entry._1, bindings)
     }

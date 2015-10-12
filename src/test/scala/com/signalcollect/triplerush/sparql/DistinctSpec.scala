@@ -23,7 +23,7 @@ import scala.collection.JavaConversions.asScalaIterator
 
 import org.scalatest.{ Finders, FlatSpec, Matchers }
 
-import com.signalcollect.triplerush.{TestConfig, TripleRush}
+import com.signalcollect.triplerush.{TestUtil, TripleRush}
 import com.signalcollect.util.TestAnnouncements
 
 class DistinctSpec extends FlatSpec with Matchers with TestAnnouncements {
@@ -33,7 +33,7 @@ class DistinctSpec extends FlatSpec with Matchers with TestAnnouncements {
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
                  """
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -45,7 +45,6 @@ SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
       assert(results.size === 2)
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
@@ -54,7 +53,7 @@ SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 SELECT (COUNT(DISTINCT ?name) as ?count) WHERE { ?x foaf:name ?name }
                  """
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -70,7 +69,6 @@ SELECT (COUNT(DISTINCT ?name) as ?count) WHERE { ?x foaf:name ?name }
       assert(results.hasNext === false)
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 

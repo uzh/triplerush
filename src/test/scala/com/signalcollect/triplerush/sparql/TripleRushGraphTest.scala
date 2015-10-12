@@ -2,7 +2,7 @@ package com.signalcollect.triplerush.sparql
 
 import org.apache.jena.graph.Graph
 import org.apache.jena.graph.test.AbstractTestGraph
-import com.signalcollect.triplerush.{ TestConfig, TripleRush }
+import com.signalcollect.triplerush.{ TestUtil, TripleRush }
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 import com.signalcollect.GraphBuilder
@@ -20,23 +20,8 @@ class GraphTestSuite
 class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
 
   def getGraph: Graph = {
-    val tr = getTripleRushInstance
-    tr.prepareExecution
+    val tr = TestUtil.testInstance(fastStart = true)
     TripleRushGraph(tr)
-  }
-
-  private[this] def getTripleRushInstance: TripleRush = {
-    TripleRush(
-      graphBuilder = new GraphBuilder[Long, Any]().withActorNamePrefix(UUID.randomUUID.toString),
-      fastStart = true)
-  }
-
-  override def getGraphWith(facts: String): Graph = {
-    val tr = getTripleRushInstance
-    val g = TripleRushGraph(tr)
-    GraphTestBase.graphAdd(g, facts)
-    tr.prepareExecution
-    g
   }
 
   override def testIsomorphismFile(): Unit = {

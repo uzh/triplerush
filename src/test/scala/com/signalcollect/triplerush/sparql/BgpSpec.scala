@@ -23,7 +23,7 @@ import scala.collection.JavaConversions.asScalaIterator
 
 import org.scalatest.{ FlatSpec, Matchers }
 
-import com.signalcollect.triplerush.{TestConfig, TripleRush}
+import com.signalcollect.triplerush.{TestUtil, TripleRush}
 import com.signalcollect.util.TestAnnouncements
 
 class BgpSpec extends FlatSpec with Matchers with TestAnnouncements {
@@ -38,7 +38,7 @@ SELECT ?name ?project WHERE {
   }
 }
                  """
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -52,7 +52,6 @@ SELECT ?name ?project WHERE {
       assert(resultBindings === Set("Gardening", "Volleyball"))
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
@@ -67,7 +66,7 @@ SELECT ?name ?project WHERE {
   }
 }
                  """
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -82,7 +81,6 @@ SELECT ?name ?project WHERE {
       assert(resultBindings === Set("Caroline"))
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
@@ -102,7 +100,7 @@ SELECT ?name ?project WHERE {
     FILTER (?projectCount > 1)
   }
                  """
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -119,7 +117,6 @@ SELECT ?name ?project WHERE {
       assert(resultBindings === Set("http://PersonA"))
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 
@@ -140,7 +137,7 @@ SELECT ?name ?project WHERE {
     }
   }
                  """
-    val tr = TripleRush()
+    val tr = TestUtil.testInstance()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -160,7 +157,6 @@ SELECT ?name ?project WHERE {
       assert(resultBindings === Set("B. Bar", "C. Baz"))
     } finally {
       tr.shutdown
-      tr.system.shutdown()
     }
   }
 

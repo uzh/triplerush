@@ -30,7 +30,7 @@ import org.apache.jena.query.QueryFactory
 import org.scalatest.{ BeforeAndAfter, Finders, FlatSpec, Matchers }
 import org.scalatest.exceptions.TestFailedException
 
-import com.signalcollect.triplerush.{TestConfig, TripleRush}
+import com.signalcollect.triplerush.{TestUtil, TripleRush}
 import com.signalcollect.util.TestAnnouncements
 
 /**
@@ -38,7 +38,7 @@ import com.signalcollect.util.TestAnnouncements
  */
 class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfter with TestAnnouncements {
 
-  val tr = TripleRush()
+  val tr = TestUtil.testInstance()
   val graph = TripleRushGraph(tr)
   implicit val model = graph.getModel
   // Unzip test jar into a temporary directory and delete after the tests are run.
@@ -69,7 +69,6 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
   after {
     FileUtils.deleteDirectory(new File(tmpDir.toString))
     tr.shutdown()
-    tr.system.shutdown()
   }
 
   "TripleRush" should "pass SELECT Sparql-1.1 syntax tests" in {
@@ -100,7 +99,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
         tr.awaitIdle
     }
     tr.prepareExecution
-    //Retrieve location of query to run and type(whether it could parse or not).
+    //Retrieve location of query to run and type (whether it could parse or not).
     val query =
       """
         |PREFIX mf:  <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#>
