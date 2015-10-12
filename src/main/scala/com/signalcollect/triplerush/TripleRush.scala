@@ -104,6 +104,8 @@ class TripleRush(
   graph.addVertex(new RootIndex)
 
   private[this] var canExecute = false
+  private[this] val cannotExecuteQueryMessage = "Cannot execute query: Either did not call `prepareExecution` or already called `shutdown`."
+  private[this] val cannotExecuteBlockingMessage = "Blocking additions only work with `fastStart` or after having called `prepareExecution`."
 
   if (fastStart) {
     graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
@@ -177,7 +179,7 @@ class TripleRush(
 
   def addTriplePatterns(i: Iterator[TriplePattern], blocking: Boolean = false): Unit = {
     if (blocking) {
-      assert(canExecute, "Blocking additions only work with `fastStart` or after having called `prepareExecution`.")
+      assert(canExecute, cannotExecuteBlockingMessage)
       val promise = Promise[Unit]()
       val vertex = new BlockingTripleAdditionsVertex(i, promise)
       graph.addVertex(vertex)
@@ -194,7 +196,7 @@ class TripleRush(
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, blocking: Boolean = false): Unit = {
     assert(sId > 0 && pId > 0 && oId > 0)
     if (blocking) {
-      assert(canExecute, "Blocking additions only work with `fastStart` or after having called `prepareExecution`.")
+      assert(canExecute, cannotExecuteBlockingMessage)
       val promise = Promise[Unit]()
       val vertex = new BlockingTripleAdditionsVertex(Some(TriplePattern(sId, pId, oId)).iterator, promise)
       graph.addVertex(vertex)
@@ -207,10 +209,11 @@ class TripleRush(
   def executeCountingQuery(
     q: Seq[TriplePattern],
     tickets: Long = Long.MaxValue): Future[Option[Long]] = {
-    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    assert(canExecute, cannotExecuteQueryMessage)
     // Efficient counting query.
     val resultCountPromise = Promise[Option[Long]]()
-    graph.addVertex(new ResultCountingQueryVertex(q, tickets, resultCountPromise))
+    val v = new ResultCountingQueryVertex(q, tickets, resultCountPromise)
+    graph.addVertex(v)
     resultCountPromise.future
   }
 
@@ -223,7 +226,7 @@ class TripleRush(
   }
 
   def executeIndexQuery(indexId: Long): Future[Array[Int]] = {
-    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    assert(canExecute, cannotExecuteQueryMessage)
     val childIdPromise = Promise[Array[Int]]()
     graph.addVertex(new IndexQueryVertex(indexId, childIdPromise))
     childIdPromise.future
@@ -238,7 +241,7 @@ class TripleRush(
     query: Seq[TriplePattern],
     numberOfSelectVariables: Option[Int] = None,
     tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
-    assert(canExecute, "Call TripleRush.prepareExecution before executing queries.")
+    assert(canExecute, cannotExecuteQueryMessage)
     val selectVariables = numberOfSelectVariables.getOrElse(
       VariableEncoding.requiredVariableBindingsSlots(query))
     val resultIterator = new ResultIterator
@@ -263,6 +266,7 @@ class TripleRush(
   }
 
   def shutdown(): Unit = {
+    canExecute = false
     dictionary.close()
     graph.shutdown
   }
