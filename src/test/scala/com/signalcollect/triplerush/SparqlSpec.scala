@@ -31,7 +31,7 @@ import com.signalcollect.util.TestAnnouncements
 class SparqlSpec extends FlatSpec with TestAnnouncements {
 
   "Sparql" should "correctly translate a SPARQL query that has results" in {
-    val tr = TripleRush(config = TestConfig.system())
+    val tr = TripleRush()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -60,7 +60,7 @@ WHERE {
   }
 
   it should "correctly translate a SPARQL query that has no results" in {
-    val tr = TripleRush(config = TestConfig.system())
+    val tr = TripleRush()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -89,7 +89,7 @@ WHERE {
   }
 
   it should "correctly eliminate a SPARQL query that is guaranteed to have no results" in {
-    val tr = TripleRush(config = TestConfig.system())
+    val tr = TripleRush()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {

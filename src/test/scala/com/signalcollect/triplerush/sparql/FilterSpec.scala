@@ -33,7 +33,7 @@ SELECT ?r {
   FILTER EXISTS { ?r <http://p> <http://r3> }
 }
 """
-    val tr = TripleRush(config = TestConfig.system())
+    val tr = TripleRush()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {

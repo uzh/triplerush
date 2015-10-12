@@ -40,13 +40,10 @@ object TriplesLoading extends App {
   var triplesSoFar = 0
   val batchSize = 10000
   val dictionary = new HashDictionary()
-  //  val dictionary = MockDictionary
-  val config = TestConfig.system()
   val tr = TripleRush(
     fastStart = true,
     dictionary = dictionary,
-    graphBuilder = new GraphBuilder[Long, Any](),
-    config = config)
+    graphBuilder = new GraphBuilder[Long, Any]())
   val i = TripleIterator(args(0))
   val start = System.currentTimeMillis
   i.grouped(batchSize).foreach { triples =>

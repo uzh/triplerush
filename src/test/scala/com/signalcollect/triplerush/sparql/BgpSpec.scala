@@ -38,7 +38,7 @@ SELECT ?name ?project WHERE {
   }
 }
                  """
-    val tr = TripleRush(config = TestConfig.system())
+    val tr = TripleRush()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -67,7 +67,7 @@ SELECT ?name ?project WHERE {
   }
 }
                  """
-    val tr = TripleRush(config = TestConfig.system())
+    val tr = TripleRush()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -102,7 +102,7 @@ SELECT ?name ?project WHERE {
     FILTER (?projectCount > 1)
   }
                  """
-    val tr = TripleRush(config = TestConfig.system())
+    val tr = TripleRush()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {
@@ -140,7 +140,7 @@ SELECT ?name ?project WHERE {
     }
   }
                  """
-    val tr = TripleRush(config = TestConfig.system())
+    val tr = TripleRush()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {

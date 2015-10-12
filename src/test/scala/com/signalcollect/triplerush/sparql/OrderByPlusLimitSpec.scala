@@ -43,7 +43,7 @@ WHERE {
 ORDER BY ?label
 LIMIT 3
                  """
-    val tr = TripleRush(config = TestConfig.system())
+    val tr = TripleRush()
     val graph = TripleRushGraph(tr)
     implicit val model = graph.getModel
     try {

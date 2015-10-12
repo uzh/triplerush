@@ -37,9 +37,8 @@ WHERE {
 ORDER BY ?label
 LIMIT 3
                  """
-    val config = TestConfig.system()
     implicit val tr = TripleRush(
-      graphBuilder = new GraphBuilder[Long, Any].withMessageSerialization(true), config = config)
+      graphBuilder = new GraphBuilder[Long, Any].withMessageSerialization(true))
     try {
       tr.addTriplePattern(TriplePattern(1, 2, 3))
       tr.addTriplePattern(TriplePattern(3, 2, 5))

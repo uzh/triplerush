@@ -2,7 +2,7 @@ package com.signalcollect.triplerush.sparql
 
 import org.apache.jena.graph.Graph
 import org.apache.jena.graph.test.AbstractTestGraph
-import com.signalcollect.triplerush.{TestConfig, TripleRush}
+import com.signalcollect.triplerush.{ TestConfig, TripleRush }
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 import com.signalcollect.GraphBuilder
@@ -26,22 +26,17 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
   }
 
   private[this] def getTripleRushInstance: TripleRush = {
-    val trSystem = ActorSystem(UUID.randomUUID.toString)
-    val config = TestConfig.system()
-    TripleRush(graphBuilder = new GraphBuilder[Long, Any]().withActorSystem(trSystem), config = config)
+    TripleRush(
+      graphBuilder = new GraphBuilder[Long, Any]().withActorNamePrefix(UUID.randomUUID.toString),
+      fastStart = true)
   }
 
   override def getGraphWith(facts: String): Graph = {
     val tr = getTripleRushInstance
-    try {
-      val g = TripleRushGraph(tr)
-      GraphTestBase.graphAdd(g, facts)
-      tr.prepareExecution
-      g
-    } finally {
-      tr.shutdown()
-      tr.system.shutdown()
-    }
+    val g = TripleRushGraph(tr)
+    GraphTestBase.graphAdd(g, facts)
+    tr.prepareExecution
+    g
   }
 
   override def testIsomorphismFile(): Unit = {
@@ -64,7 +59,6 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
   }
 
   def testIsomorphismFile(n: Int, lang: String, suffix: String, result: Boolean): Unit = {
-    println("OVERRIDDEN")
     val g1 = getGraph
     val g2 = getGraph
     val m1 = ModelFactory.createModelForGraph(g1)

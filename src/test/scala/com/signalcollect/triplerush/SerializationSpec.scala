@@ -26,8 +26,7 @@ import org.scalatest.FlatSpec
 class SerializationSpec extends FlatSpec with TestAnnouncements {
 
   "TripleRush" should "run when messages are serialized" in {
-    val config = TestConfig.system()
-    val tr = TripleRush(graphBuilder = new GraphBuilder[Long, Any]().withMessageSerialization(true), config = config)
+    val tr = TripleRush(graphBuilder = new GraphBuilder[Long, Any]().withMessageSerialization(true))
     try {
       tr.addEncodedTriple(1, 2, 3)
       tr.prepareExecution()
