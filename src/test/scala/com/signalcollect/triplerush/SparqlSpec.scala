@@ -30,82 +30,48 @@ import com.signalcollect.util.TestAnnouncements
 
 class SparqlSpec extends FlatSpec with TestAnnouncements {
 
-  "Sparql" should "correctly translate a SPARQL query that has results" in {
-    val tr = TestUtil.testInstance()
-    val graph = TripleRushGraph(tr)
-    implicit val model = graph.getModel
-    try {
-      tr.addStringTriple("http://a", "http://b", "http://c")
-      tr.addStringTriple("http://a", "http://d", "http://e")
-      tr.prepareExecution
-      val query = """
+  "Sparql" should "correctly translate a SPARQL query that has results" in new TestStore {
+    tr.addStringTriple("http://a", "http://b", "http://c")
+    tr.addStringTriple("http://a", "http://d", "http://e")
+    val query = """
 SELECT ?X
 WHERE {
     	?X <http://b> <http://c> .
     	?X <http://d> <http://e>
 }
                   """
-      val results = Sparql(query)
-      val decodedResults = results.map(_.get("X").toString)
-      assert(decodedResults.toSet === Set("http://a"))
-    } catch {
-      case t: Throwable =>
-        println(t.getMessage)
-        t.printStackTrace
-        throw t
-    } finally {
-      tr.shutdown
-    }
+    val results = Sparql(query)
+    val decodedResults = results.map(_.get("X").toString)
+    assert(decodedResults.toSet === Set("http://a"))
   }
 
-  it should "correctly translate a SPARQL query that has no results" in {
-    val tr = TestUtil.testInstance()
-    val graph = TripleRushGraph(tr)
-    implicit val model = graph.getModel
-    try {
-      tr.addStringTriple("http://a", "http://b", "http://c")
-      tr.addStringTriple("http://f", "http://d", "http://e")
-      tr.prepareExecution
-      val query = """
+  it should "correctly translate a SPARQL query that has no results" in new TestStore {
+    tr.addStringTriple("http://a", "http://b", "http://c")
+    tr.addStringTriple("http://f", "http://d", "http://e")
+    val query = """
 SELECT ?X
 WHERE {
     	?X <http://b> <http://c> .
     	?X <http://d> <http://e>
 }
                   """
-      val results = Sparql(query)
-      val decodedResults = results.map(_.get("X").toString)
-      assert(decodedResults.toSet === Set())
-    } catch {
-      case t: Throwable =>
-        println(t.getMessage)
-        t.printStackTrace
-        throw t
-    } finally {
-      tr.shutdown
-    }
+    val results = Sparql(query)
+    val decodedResults = results.map(_.get("X").toString)
+    assert(decodedResults.toSet === Set())
   }
 
-  it should "correctly eliminate a SPARQL query that is guaranteed to have no results" in {
-    val tr = TestUtil.testInstance()
-    val graph = TripleRushGraph(tr)
-    implicit val model = graph.getModel
-    try {
-      tr.addStringTriple("http://a", "http://b", "http://c")
-      tr.addStringTriple("http://f", "http://d", "http://e")
-      tr.prepareExecution
-      val query = """
+  it should "correctly eliminate a SPARQL query that is guaranteed to have no results" in new TestStore {
+    tr.addStringTriple("http://a", "http://b", "http://c")
+    tr.addStringTriple("http://f", "http://d", "http://e")
+        val query = """
 SELECT ?X
 WHERE {
     	?X <http://z> <http://c> .
     	?X <http://d> <http://e>
 }
                   """
-      val results = Sparql(query)
-      assert(results.toList == Nil)
-    } finally {
-      tr.shutdown
-    }
+    val results = Sparql(query)
+    assert(results.toList == Nil)
   }
 
 }

@@ -6,7 +6,7 @@ import com.signalcollect.util.SplayIntSet
 
 object SplayIntSetDiagnostics extends App {
 
-  implicit val tr = TestUtil.testInstance()
+  implicit val tr = TestStore.instantiateUniqueStore()
   try {
     Lubm.load(tr)
     tr.graph.foreachVertex {

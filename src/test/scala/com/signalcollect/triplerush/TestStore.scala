@@ -22,25 +22,33 @@ package com.signalcollect.triplerush
 import com.signalcollect.GraphBuilder
 import java.util.concurrent.atomic.AtomicInteger
 import org.scalatest.fixture.NoArg
+import org.apache.jena.graph.Graph
+import org.apache.jena.rdf.model.Model
+import com.signalcollect.triplerush.sparql.TripleRushGraph
 
 object TestStore {
 
   val nextUniquePrefix = new AtomicInteger(0)
 
-  def instantiateUniqueStore(fastStart: Boolean): TripleRush = {
+  def instantiateUniqueStore(): TripleRush = {
     val uniquePrefix = nextUniquePrefix.incrementAndGet.toString
     val graphBuilder = new GraphBuilder[Long, Any]().withActorNamePrefix(uniquePrefix)
-    TripleRush(graphBuilder = graphBuilder, fastStart = fastStart)
+    TripleRush(graphBuilder = graphBuilder)
   }
 
 }
 
 class TestStore(val tr: TripleRush) extends NoArg {
 
-  def this() = this(
-    TestStore.instantiateUniqueStore(fastStart = true))
+  lazy implicit val graph = TripleRushGraph(tr)
+  lazy implicit val model = graph.getModel
 
-  def shutdown(): Unit = tr.shutdown()
+  def this() = this(TestStore.instantiateUniqueStore())
+
+  def shutdown(): Unit = {
+    //graph.shutdown()
+    tr.shutdown()
+  }
 
   override def apply(): Unit = {
     try super.apply()

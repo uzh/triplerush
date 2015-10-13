@@ -20,30 +20,21 @@
 package com.signalcollect.triplerush.sparql
 
 import org.scalatest.{ Finders, FlatSpec, Matchers }
-
-import com.signalcollect.triplerush.{TestUtil, TripleRush}
+import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.util.TestAnnouncements
+import com.signalcollect.triplerush.TestStore
 
 class FilterSpec extends FlatSpec with Matchers with TestAnnouncements {
 
-  "ARQ FILTER" should "return the correct result even when all variables are bound during an existence check" in {
+  "ARQ FILTER" should "return the correct result even when all variables are bound during an existence check" in new TestStore {
     val sparql = """
 SELECT ?r {
   ?r <http://p> <http://r2>
   FILTER EXISTS { ?r <http://p> <http://r3> }
-}
-"""
-    val tr = TestUtil.testInstance()
-    val graph = TripleRushGraph(tr)
-    implicit val model = graph.getModel
-    try {
-      tr.addStringTriple("http://r1", "http://p", "r2")
-      tr.prepareExecution
-      val results = Sparql(sparql)
-      assert(!results.hasNext)
-    } finally {
-      tr.shutdown
-    }
+}"""
+    tr.addStringTriple("http://r1", "http://p", "r2")
+        val results = Sparql(sparql)
+    assert(!results.hasNext)
   }
 
 }

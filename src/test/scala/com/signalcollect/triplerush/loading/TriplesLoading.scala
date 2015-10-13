@@ -41,7 +41,6 @@ object TriplesLoading extends App {
   val batchSize = 10000
   val dictionary = new HashDictionary()
   val tr = TripleRush(
-    fastStart = true,
     dictionary = dictionary,
     graphBuilder = new GraphBuilder[Long, Any]())
   try {
@@ -49,7 +48,7 @@ object TriplesLoading extends App {
     val start = System.currentTimeMillis
     i.grouped(batchSize).foreach { triples =>
       val batchStart = System.currentTimeMillis
-      tr.addTriples(triples.iterator, true)
+      tr.addTriples(triples.iterator)
       triplesSoFar += batchSize
       println(s"batch finished, took ${((System.currentTimeMillis - batchStart) / 100.0).round / 10.0} seconds")
       println(s"total triples so far: $triplesSoFar")

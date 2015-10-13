@@ -57,10 +57,7 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
 
   def getStatistic(s: Node, p: Node, o: Node): Long = {
     val q = Seq(arqNodesToPattern(s, p, o))
-    val countOptionFuture = tr.executeCountingQuery(q)
-    val countOption = Await.result(countOptionFuture, 300.seconds)
-    val count = countOption.getOrElse(throw new Exception(s"Incomplete counting query execution for $q."))
-    count
+    tr.count(q)
   }
 
   override def createStatisticsHandler = this
@@ -73,7 +70,7 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
    * - If a string starts with `"` or "<", then it is interpreted as a general literal.
    */
   override def performAdd(triple: Triple): Unit = {
-    tr.addTriple(triple, blocking = true)
+    tr.addTriple(triple)
   }
 
   override def clear: Unit = {

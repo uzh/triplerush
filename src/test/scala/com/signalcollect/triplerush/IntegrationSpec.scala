@@ -35,124 +35,78 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   implicit lazy val arbTriples = Arbitrary(tripleSet)
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
-  "TripleRush" should "correctly answer a query for data that is not in the store" in {
-    val tr = TestUtil.testInstance()
-    try {
-      val trResults = TestHelper.execute(
-        tr,
-        Set(TriplePattern(1, 2, 3)),
-        List(TriplePattern(-1, 4, -1)))
-      assert(Set[Map[Int, Int]]() === trResults)
-    } finally {
-      tr.shutdown
+  "TripleRush" should "correctly answer a query for data that is not in the store" in new TestStore {
+    val trResults = TestHelper.execute(
+      tr,
+      Set(TriplePattern(1, 2, 3)),
+      List(TriplePattern(-1, 4, -1)))
+    assert(Set[Map[Int, Int]]() === trResults)
+  }
+
+  it should "correctly answer a query for a specific pattern that exists" in new TestStore {
+    val trResults = TestHelper.execute(
+      tr,
+      Set(TriplePattern(1, 2, 3)),
+      List(TriplePattern(1, 2, 3)))
+    assert(Set[Map[Int, Int]](Map()) === trResults)
+  }
+
+  it should "correctly answer a query for a specific pattern that does not exist" in new TestStore {
+    val trResults = TestHelper.execute(
+      tr,
+      Set(TriplePattern(1, 2, 3)),
+      List(TriplePattern(1, 4, 3)))
+    assert(Set[Map[Int, Int]]() === trResults)
+  }
+
+  it should "correctly answer a simple query 1" in new TestStore {
+    val trResults = TestHelper.execute(
+      tr,
+      Set(TriplePattern(4, 3, 4)),
+      List(TriplePattern(-1, 3, -1)))
+    assert(Set(Map(-1 -> 4)) === trResults)
+  }
+
+  it should "correctly answer a simple query 2" in new TestStore {
+    val trResults = TestHelper.execute(
+      tr,
+      Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
+        TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
+        TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
+      List(TriplePattern(-2, -1, 3)))
+    assert(Set(Map(-1 -> 3, -2 -> 2), Map(-1 -> 3, -2 -> 3),
+      Map(-1 -> 4, -2 -> 4)) === trResults)
+  }
+
+  it should "correctly answer a simple query, where one pattern is fully bound and that triple exists" in new TestStore {
+    val trResults = TestHelper.execute(
+      tr,
+      Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
+        TriplePattern(3, 3, 3)),
+      List(TriplePattern(3, 4, 2), TriplePattern(-1, -2, -3)))
+    assert(Set(Map(-1 -> 3, -2 -> 4, -3 -> 2), Map(-1 -> 3, -2 -> 4, -3 -> 4),
+      Map(-1 -> 2, -2 -> 3, -3 -> 3), Map(-1 -> 3, -2 -> 3, -3 -> 3)) === trResults)
+  }
+
+  it should "correctly answer a simple query, where one pattern is fully bound and that triple does not exist" in new TestStore {
+    val trResults = TestHelper.execute(
+      tr,
+      Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
+        TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
+        TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
+      List(TriplePattern(1, 2, 3), TriplePattern(-2, -1, 3)))
+    assert(Set[Map[Int, Int]]() === trResults)
+  }
+
+  it should "correctly answer queries after blocking triple additions" in new TestStore {
+    for (i <- (1 to 100).par) {
+      tr.addEncodedTriple(1, 2, i)
+      val count = tr.count(Seq(TriplePattern(1, 2, -1)))
+      assert(count.toInt == i)
     }
   }
 
-  it should "correctly answer a query for a specific pattern that exists" in {
-    val tr = TestUtil.testInstance()
-    try {
-      val trResults = TestHelper.execute(
-        tr,
-        Set(TriplePattern(1, 2, 3)),
-        List(TriplePattern(1, 2, 3)))
-      assert(Set[Map[Int, Int]](Map()) === trResults)
-    } finally {
-      tr.shutdown
-    }
-  }
-
-  it should "correctly answer a query for a specific pattern that does not exist" in {
-    val tr = TestUtil.testInstance()
-    try {
-      val trResults = TestHelper.execute(
-        tr,
-        Set(TriplePattern(1, 2, 3)),
-        List(TriplePattern(1, 4, 3)))
-      assert(Set[Map[Int, Int]]() === trResults)
-    } finally {
-      tr.shutdown
-    }
-  }
-
-  it should "correctly answer a simple query 1" in {
-    val tr = TestUtil.testInstance()
-    try {
-      val trResults = TestHelper.execute(
-        tr,
-        Set(TriplePattern(4, 3, 4)),
-        List(TriplePattern(-1, 3, -1)))
-      assert(Set(Map(-1 -> 4)) === trResults)
-    } finally {
-      tr.shutdown
-    }
-  }
-
-  it should "correctly answer a simple query 2" in {
-    val tr = TestUtil.testInstance()
-    try {
-      val trResults = TestHelper.execute(
-        tr,
-        Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
-          TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
-          TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
-        List(TriplePattern(-2, -1, 3)))
-      assert(Set(Map(-1 -> 3, -2 -> 2), Map(-1 -> 3, -2 -> 3),
-        Map(-1 -> 4, -2 -> 4)) === trResults)
-    } finally {
-      tr.shutdown
-    }
-  }
-
-  it should "correctly answer a simple query, where one pattern is fully bound and that triple exists" in {
-    val tr = TestUtil.testInstance()
-    try {
-      val trResults = TestHelper.execute(
-        tr,
-        Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
-          TriplePattern(3, 3, 3)),
-        List(TriplePattern(3, 4, 2), TriplePattern(-1, -2, -3)))
-      assert(Set(Map(-1 -> 3, -2 -> 4, -3 -> 2), Map(-1 -> 3, -2 -> 4, -3 -> 4),
-        Map(-1 -> 2, -2 -> 3, -3 -> 3), Map(-1 -> 3, -2 -> 3, -3 -> 3)) === trResults)
-    } finally {
-      tr.shutdown
-    }
-  }
-
-  it should "correctly answer a simple query, where one pattern is fully bound and that triple does not exist" in {
-    val tr = TestUtil.testInstance()
-    try {
-      val trResults = TestHelper.execute(
-        tr,
-        Set(TriplePattern(3, 4, 2), TriplePattern(3, 4, 4), TriplePattern(2, 3, 3),
-          TriplePattern(3, 3, 3), TriplePattern(1, 1, 2), TriplePattern(3, 3, 4),
-          TriplePattern(4, 4, 1), TriplePattern(4, 4, 3)),
-        List(TriplePattern(1, 2, 3), TriplePattern(-2, -1, 3)))
-      assert(Set[Map[Int, Int]]() === trResults)
-    } finally {
-      tr.shutdown
-    }
-  }
-
-  it should "correctly answer queries after blocking triple additions" in {
-    val tr = TripleRush(fastStart = true)
-    try {
-      for (i <- 1 to 100) {
-        tr.addEncodedTriple(1, 2, i, blocking = true)
-        val countOptionFuture = tr.executeCountingQuery(Seq(TriplePattern(1, 2, -1)))
-        whenReady(countOptionFuture) { countOption =>
-          countOption match {
-            case Some(count) => assert(count.toInt == i)
-            case None        => throw new Exception("TripleRush failed to return a count.")
-          }
-        }
-      }
-    } finally {
-      tr.shutdown
-    }
-  }
-
-  it should "correctly answer a simple query over a reasonable amount of data" in {
-    val tr = TestUtil.testInstance()
+  it should "correctly answer a simple query over a reasonable amount of data" in new TestStore {
     val jena = new Jena
     try {
       val query = List(TriplePattern(-1, 1, -1), TriplePattern(-1, 2, -2), TriplePattern(-1, -3, 10))
@@ -173,16 +127,14 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
         query)
       assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
     } finally {
-      tr.shutdown
       jena.shutdown
     }
   }
 
-  it should "correctly answer random queries with basic graph patterns" in {
+  it should "correctly answer random queries with basic graph patterns" in new TestStore {
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
         (triples: Set[TriplePattern], query: List[TriplePattern]) =>
-          val tr = TestUtil.testInstance()
           val jena = new Jena
           try {
             val jenaResults = TestHelper.execute(jena, triples, query)
@@ -190,17 +142,15 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
             assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
             jenaResults === trResults
           } finally {
-            tr.shutdown
             jena.shutdown
           }
       }, minSuccessful(10))
   }
 
-  "ResultIteratorQueries" should "correctly answer random queries with basic graph patterns" in {
+  "ResultIteratorQueries" should "correctly answer random queries with basic graph patterns" in new TestStore {
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
         (triples: Set[TriplePattern], query: List[TriplePattern]) =>
-          val tr = TestUtil.testInstance()
           val jena = new Jena
           try {
             val jenaResults = TestHelper.execute(jena, triples, query)
@@ -210,7 +160,6 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
             assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
             jenaResults === trResults
           } finally {
-            tr.shutdown
             jena.shutdown
           }
       }, minSuccessful(20))
@@ -223,18 +172,15 @@ object TestHelper {
   def prepareStore(qe: QueryEngine,
                    triples: Set[TriplePattern]) {
     for (triple <- triples) {
-      qe.addEncodedTriple(triple.s, triple.p, triple.o, false)
+      qe.addEncodedTriple(triple.s, triple.p, triple.o)
     }
-    qe.prepareExecution
   }
 
   def count(tr: TripleRush,
             triples: Set[TriplePattern],
             query: List[TriplePattern]): Long = {
     prepareStore(tr, triples)
-    val resultFuture = tr.executeCountingQuery(query)
-    val result = Await.result(resultFuture, 7200.seconds).get //we assume the query execution is complete
-    result
+    tr.count(query)
   }
 
   def resultsToBindings(results: Iterator[Array[Int]]): Set[Map[Int, Int]] = {

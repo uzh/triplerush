@@ -31,7 +31,7 @@ import com.signalcollect.triplerush.QueryParticle._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import java.io.{FileInputStream, File}
+import java.io.{ FileInputStream, File }
 import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.util.TestAnnouncements
 import com.signalcollect.triplerush.sparql.TripleRushGraph
@@ -46,8 +46,7 @@ object Lubm {
       val resource = s"university0_$fileNumber.nt"
       val tripleStream = getClass.getResourceAsStream(resource)
       println(s"Loading file $resource ...")
-      //println(Source.fromURL(getClass.getResource(resource)).getLines.take(10).mkString("\n"))
-      qe.addTriples(TripleIterator(tripleStream, Lang.NTRIPLES), blocking = true)
+      qe.addTriples(TripleIterator(tripleStream, Lang.NTRIPLES))
       println(s"Done loading $resource.")
     }
     println("Finished loading LUBM1.")
@@ -255,10 +254,14 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
     runTest(14)
   }
 
-  val tr = TestUtil.testInstance(fastStart = true)
-  val graph = TripleRushGraph(tr)
-  implicit val model = graph.getModel
-  Lubm.load(tr)
+  var tr: TripleRush = _
+  lazy val graph = TripleRushGraph(tr)
+  implicit lazy val model = graph.getModel
+
+  override def beforeAll {
+    tr = TestStore.instantiateUniqueStore()
+    Lubm.load(tr)
+  }
 
   override def afterAll {
     tr.shutdown

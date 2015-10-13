@@ -36,13 +36,10 @@ import com.signalcollect.util.TestAnnouncements
 
 class TicketsSpec extends FlatSpec with TestAnnouncements {
 
-  "TripleRush" should "correctly answer a query with a limited number of tickets" in {
-    val tr = TestUtil.testInstance()
-    try {
+  "TripleRush" should "correctly answer a query with a limited number of tickets" in new TestStore {
       tr.addEncodedTriple(1, 2, 3)
       tr.addEncodedTriple(4, 5, 6)
-      tr.prepareExecution
-      val q = Seq(TriplePattern(-1, -2, -3))
+            val q = Seq(TriplePattern(-1, -2, -3))
       val results = tr.resultIteratorForQuery(q, tickets = 1)
       val bindings: Set[Map[Int, Int]] = {
         results.map({ binding: Array[Int] =>
@@ -57,9 +54,7 @@ class TicketsSpec extends FlatSpec with TestAnnouncements {
         }).toSet
       }
       assert(bindings.size === 1)
-    } finally {
-      tr.shutdown
-    }
+
   }
 
 }

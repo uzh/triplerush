@@ -73,9 +73,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
       (query, unbound) = createBoundQuery(
         dictionary, tripleRushQuery, parentBinding, variableNameToId, idToVariableName)
       decodedResults = if (unbound.isEmpty) {
-        val countOptionFuture = tr.executeCountingQuery(query)
-        val countOption = Await.result(countOptionFuture, 300.seconds)
-        val count = countOption.getOrElse(throw new Exception(s"Incomplete counting query execution for $query."))
+        val count = tr.count(query)
         if (count > 0) {
           QueryIterSingleton.create(parentBinding, execCxt)
         } else {

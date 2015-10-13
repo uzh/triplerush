@@ -20,14 +20,14 @@
 package com.signalcollect.triplerush.serialization
 
 import org.scalatest.{ FlatSpec, Matchers }
-
 import com.signalcollect.GraphBuilder
-import com.signalcollect.triplerush.{TestUtil, TriplePattern, TripleRush}
+import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
 import com.signalcollect.util.TestAnnouncements
+import com.signalcollect.triplerush.TestStore
 
 class TripleRushSerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
 
-  "TripleRush serialization" should "support full message serialization during loading" in {
+  "TripleRush serialization" should "support full message serialization during loading" in new TestStore {
     val sparql = """
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?product ?label
@@ -35,18 +35,10 @@ WHERE {
   ?product rdfs:label ?label .
 }
 ORDER BY ?label
-LIMIT 3
-                 """
-    implicit val tr = TripleRush(
-      graphBuilder = new GraphBuilder[Long, Any].withMessageSerialization(true))
-    try {
-      tr.addTriplePattern(TriplePattern(1, 2, 3))
-      tr.addTriplePattern(TriplePattern(3, 2, 5))
-      tr.addTriplePattern(TriplePattern(3, 2, 7))
-      tr.prepareExecution
-    } finally {
-      tr.shutdown
-    }
+LIMIT 3"""
+    tr.addTriplePattern(TriplePattern(1, 2, 3))
+    tr.addTriplePattern(TriplePattern(3, 2, 5))
+    tr.addTriplePattern(TriplePattern(3, 2, 7))
   }
 
 }

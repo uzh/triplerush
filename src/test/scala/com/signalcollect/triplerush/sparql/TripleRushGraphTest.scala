@@ -2,7 +2,7 @@ package com.signalcollect.triplerush.sparql
 
 import org.apache.jena.graph.Graph
 import org.apache.jena.graph.test.AbstractTestGraph
-import com.signalcollect.triplerush.{ TestUtil, TripleRush }
+import com.signalcollect.triplerush.TripleRush
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 import com.signalcollect.GraphBuilder
@@ -12,6 +12,7 @@ import org.apache.jena.graph.test.GraphTestBase
 import org.apache.jena.test.JenaTestBase
 import org.apache.jena.rdf.model.ModelFactory
 import java.io.InputStream
+import com.signalcollect.triplerush.TestStore
 
 @RunWith(classOf[Suite])
 @Suite.SuiteClasses(Array(classOf[TripleRushGraphTest]))
@@ -20,7 +21,7 @@ class GraphTestSuite
 class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
 
   def getGraph: Graph = {
-    val tr = TestUtil.testInstance(fastStart = true)
+    val tr = TestStore.instantiateUniqueStore()
     TripleRushGraph(tr)
   }
 

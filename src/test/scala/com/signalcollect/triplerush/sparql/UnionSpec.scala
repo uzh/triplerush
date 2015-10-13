@@ -20,15 +20,14 @@
 package com.signalcollect.triplerush.sparql
 
 import scala.collection.JavaConversions.asScalaIterator
-
 import org.scalatest.{ FlatSpec, Matchers }
-
-import com.signalcollect.triplerush.{ TestUtil, TripleRush }
+import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.util.TestAnnouncements
+import com.signalcollect.triplerush.TestStore
 
 class UnionSpec extends FlatSpec with Matchers with TestAnnouncements {
 
-  "ARQ UNION" should "return the results of two separate queries" in {
+  "ARQ UNION" should "return the results of two separate queries" in new TestStore {
     val sparql = """
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 SELECT ?name WHERE {
@@ -37,22 +36,13 @@ SELECT ?name WHERE {
   } UNION {
       <http://ThatGuy> foaf:name ?name
   }
-}
-                 """
-    val tr = TestUtil.testInstance()
-    val graph = TripleRushGraph(tr)
-    implicit val model = graph.getModel
-    try {
-      tr.addStringTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
-      tr.addStringTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
-      tr.addStringTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "\"Arthur\"")
-      tr.prepareExecution
-      val results = Sparql(sparql)
-      val resultBindings = results.map(_.get("name").asLiteral.getString).toSet
-      assert(resultBindings === Set("Harold", "Arthur"))
-    } finally {
-      tr.shutdown
-    }
+}"""
+    tr.addStringTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+    tr.addStringTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+    tr.addStringTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "\"Arthur\"")
+    val results = Sparql(sparql)
+    val resultBindings = results.map(_.get("name").asLiteral.getString).toSet
+    assert(resultBindings === Set("Harold", "Arthur"))
   }
 
 }

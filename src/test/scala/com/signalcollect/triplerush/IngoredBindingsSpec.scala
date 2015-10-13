@@ -27,50 +27,38 @@ class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements 
   val p4 = 1004
   val p5 = 1005
 
-  "ChildIdsForPattern" should "correctly return all the predicates from the root vertex" in {
-    val tr = TestUtil.testInstance()
-    try {
-      tr.addEncodedTriple(s1, p1, o1)
-      tr.addEncodedTriple(s2, p1, o2)
-      tr.addEncodedTriple(s1, p2, o3)
-      tr.addEncodedTriple(s1, p2, o4)
-      tr.addEncodedTriple(s3, p2, o10)
-      tr.addEncodedTriple(s2, p3, o5)
-      tr.addEncodedTriple(o5, p4, o6)
-      tr.addEncodedTriple(o4, p4, o7)
-      tr.addEncodedTriple(o3, p4, o8)
-      tr.addEncodedTriple(o10, p4, o11)
-      tr.addEncodedTriple(o3, p5, o9)
-      tr.addEncodedTriple(o10, p5, o9)
-      tr.prepareExecution
-      val predicates = tr.childIdsForPattern(EfficientIndexPattern(0, 0, 0)).toSet
-      assert(predicates === Set(p1, p2, p3, p4, p5))
-    } finally {
-      tr.shutdown
-    }
+  "ChildIdsForPattern" should "correctly return all the predicates from the root vertex" in new TestStore {
+    tr.addEncodedTriple(s1, p1, o1)
+    tr.addEncodedTriple(s2, p1, o2)
+    tr.addEncodedTriple(s1, p2, o3)
+    tr.addEncodedTriple(s1, p2, o4)
+    tr.addEncodedTriple(s3, p2, o10)
+    tr.addEncodedTriple(s2, p3, o5)
+    tr.addEncodedTriple(o5, p4, o6)
+    tr.addEncodedTriple(o4, p4, o7)
+    tr.addEncodedTriple(o3, p4, o8)
+    tr.addEncodedTriple(o10, p4, o11)
+    tr.addEncodedTriple(o3, p5, o9)
+    tr.addEncodedTriple(o10, p5, o9)
+    val predicates = tr.getIndexAt(EfficientIndexPattern(0, 0, 0)).toSet
+    assert(predicates === Set(p1, p2, p3, p4, p5))
   }
 
-  "An index query" should "be able to retrieve all predicates" in {
-    val tr = TestUtil.testInstance()
-    try {
-      tr.addEncodedTriple(s1, p1, o1)
-      tr.addEncodedTriple(s2, p1, o2)
-      tr.addEncodedTriple(s1, p2, o3)
-      tr.addEncodedTriple(s1, p2, o4)
-      tr.addEncodedTriple(s3, p2, o10)
-      tr.addEncodedTriple(s2, p3, o5)
-      tr.addEncodedTriple(o5, p4, o6)
-      tr.addEncodedTriple(o4, p4, o7)
-      tr.addEncodedTriple(o3, p4, o8)
-      tr.addEncodedTriple(o10, p4, o11)
-      tr.addEncodedTriple(o3, p5, o9)
-      tr.addEncodedTriple(o10, p5, o9)
-      tr.prepareExecution
-      val predicates = tr.childIdsForPattern(EfficientIndexPattern(0, 0, 0))
-      assert(predicates.toSet === Set(p1, p2, p3, p4, p5))
-    } finally {
-      tr.shutdown
-    }
+  "An index query" should "be able to retrieve all predicates" in new TestStore {
+    tr.addEncodedTriple(s1, p1, o1)
+    tr.addEncodedTriple(s2, p1, o2)
+    tr.addEncodedTriple(s1, p2, o3)
+    tr.addEncodedTriple(s1, p2, o4)
+    tr.addEncodedTriple(s3, p2, o10)
+    tr.addEncodedTriple(s2, p3, o5)
+    tr.addEncodedTriple(o5, p4, o6)
+    tr.addEncodedTriple(o4, p4, o7)
+    tr.addEncodedTriple(o3, p4, o8)
+    tr.addEncodedTriple(o10, p4, o11)
+    tr.addEncodedTriple(o3, p5, o9)
+    tr.addEncodedTriple(o10, p5, o9)
+    val predicates = tr.getIndexAt(EfficientIndexPattern(0, 0, 0)).toSet
+    assert(predicates === Set(p1, p2, p3, p4, p5))
   }
 
   def getBindingsFor(variable: Int, bindings: Traversable[Array[Int]]): Set[Int] = {
