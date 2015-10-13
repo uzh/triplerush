@@ -1,12 +1,19 @@
-TripleRush: A Fast Distributed Triple Pattern Matcher
-=====================================================
+TripleRush: A Distributed In-Memory Graph Store
+===============================================
 
-Version 6.0.0 has a much more efficient default dictionary implementation and a refactored loading API.  
+TripleRush is a distributed in-memory graph store that supports SPARQL select queries. Its [architecture](http://www.zora.uzh.ch/111243/1/TR_WWW.pdf) is designed to take full advantage of cluster resources by distributing and parallelizing the query processing.
 
-Version 5.0.0 has new dictionary interfaces and implementations. The new MapDB-based String->Int off-heap B-tree is very memory efficient compared to the previous implementation.
+How to develop in Eclipse
+-------------------------
+Install the [Typesafe IDE for Scala 2.11](http://scala-ide.org/download/sdk.html).
 
-Version 4.0.0 allows for fast blocking triple additions that are interleaved with querying. Incrementally updating the cardinality statistics requires work that we deferred for now, which is why we removed the query optimizer in this version. This does affect performance: unless the patterns are arranged well, version 4.0.0 is not suitable for benchmarks. The last released version with the query optimizer is 3.1.0.
+Ensure that Eclipse uses a Java 8 library and JVM: Preferences → Java → Installed JREs → JRE/JDK 8 should be installed and selected.
+
+Open the Scala project and import it with: File → Import... → Maven → Existing Maven Projects → select "triplerush" folder
 
 Thanks a lot to
 ---------------
-* [University of Zurich](http://www.ifi.uzh.ch/ddis.html) and the [Hasler Foundation](http://www.haslerstiftung.ch/en/home) have funded the research on graph processing.
+* [University of Zurich](http://www.ifi.uzh.ch/ddis.html) and the [Hasler Foundation](http://www.haslerstiftung.ch/en/home) have generously funded the research on graph processing.
+* GitHub helps us by hosting our [code repositories](https://github.com/uzh/triplerush).
+* Travis.CI offers us very convenient [continuous integration](https://travis-ci.org/uzh/triplerush).
+* Codacy gives us automated [code reviews](https://www.codacy.com/public/uzh/triplerush).
