@@ -17,7 +17,7 @@
 	</parent>
 	<artifactId>triplerush</artifactId>
 	<groupId>com.signalcollect</groupId>
-	<version>6.1.4-SNAPSHOT</version>
+	<version>7.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>triplerush</name>
 	<description>Matching triple patterns with Signal/Collect.</description>
