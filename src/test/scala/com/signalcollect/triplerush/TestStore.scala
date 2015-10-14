@@ -46,7 +46,8 @@ class TestStore(val tr: TripleRush) extends NoArg {
   def this() = this(TestStore.instantiateUniqueStore())
 
   def shutdown(): Unit = {
-    //graph.shutdown()
+    model.close()
+    graph.close()
     tr.shutdown()
   }
 
