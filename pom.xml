@@ -16,7 +16,7 @@
 	<properties>
 		<team.group.id>uzh</team.group.id>
 		<scala.release>7</scala.release>
-		<signalcollect.version>6.1.2-SNAPSHOT</signalcollect.version>
+		<signalcollect.version>7.0.0-SNAPSHOT</signalcollect.version>
 		<mapdb.version>2.0-beta8</mapdb.version>
 		<apache.jena.version>3.0.0</apache.jena.version>
 		<sesame.version>4.0.0-RC1</sesame.version>
