@@ -1,11 +1,11 @@
 package com.signalcollect.triplerush
 
-import org.scalatest.FlatSpec
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 import org.scalatest.prop.Checkers
 import org.scalacheck.Arbitrary
 import com.signalcollect.util.TestAnnouncements
 
-class IgnoredBindingsSpec extends FlatSpec with Checkers with TestAnnouncements {
+class IgnoredBindingsSpec extends FlatSpec with UnitFixture with Checkers with TestAnnouncements {
 
   val s1 = 1
   val s2 = 2

@@ -106,5 +106,7 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
 
   // Uses GraphBase::delete.
   override def testAGraph(): Unit = {} // Uses GraphBase::delete.
+  
+  override def testRemoveAllEvent(): Unit = {} // `clear` unsupported.
 
 }

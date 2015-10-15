@@ -19,13 +19,13 @@
 
 package com.signalcollect.triplerush.serialization
 
-import org.scalatest.{ FlatSpec, Matchers }
-import com.signalcollect.GraphBuilder
-import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
-import com.signalcollect.util.TestAnnouncements
-import com.signalcollect.triplerush.TestStore
+import org.scalatest.{ Finders, Matchers }
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 
-class TripleRushSerializationSpec extends FlatSpec with Matchers with TestAnnouncements {
+import com.signalcollect.triplerush.{ TestStore, TriplePattern }
+import com.signalcollect.util.TestAnnouncements
+
+class TripleRushSerializationSpec extends FlatSpec with UnitFixture with Matchers with TestAnnouncements {
 
   "TripleRush serialization" should "support full message serialization during loading" in new TestStore {
     val sparql = """

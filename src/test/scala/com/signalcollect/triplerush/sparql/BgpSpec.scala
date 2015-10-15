@@ -20,12 +20,14 @@
 package com.signalcollect.triplerush.sparql
 
 import scala.collection.JavaConversions.asScalaIterator
-import org.scalatest.{ FlatSpec, Matchers }
-import com.signalcollect.triplerush.TripleRush
-import com.signalcollect.util.TestAnnouncements
-import com.signalcollect.triplerush.TestStore
 
-class BgpSpec extends FlatSpec with Matchers with TestAnnouncements {
+import org.scalatest.{ Finders, Matchers }
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
+
+import com.signalcollect.triplerush.TestStore
+import com.signalcollect.util.TestAnnouncements
+
+class BgpSpec extends FlatSpec with UnitFixture with Matchers with TestAnnouncements {
 
   "ARQ BGP" should "return the results of a simple BGP query" in new TestStore {
     val sparql = """

@@ -54,7 +54,7 @@ object TrGlobal {
 }
 
 object TripleRush {
-  
+
   val defaultBlockingOperationTimeout: Duration = 1.hour
 
   def apply(graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
@@ -73,7 +73,7 @@ object TripleRush {
  * allows to skip calling `prepareExecution`.
  */
 class TripleRush(
-    graphBuilder: GraphBuilder[Long, Any],
+    val graphBuilder: GraphBuilder[Long, Any],
     val dictionary: RdfDictionary,
     tripleMapperFactory: Option[MapperFactory[Long]],
     console: Boolean,
@@ -104,12 +104,15 @@ class TripleRush(
       withBlockingGraphModificationsSupport(false).
       withStatsReportingInterval(500).
       withEagerIdleDetection(false).build
-      
-  implicit private[this] val executionContext = graph.system.dispatcher
-  
-  graph.addVertex(new RootIndex)
 
-  graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+  implicit private[this] val executionContext = graph.system.dispatcher
+
+  initialize()
+
+  def initialize(): Unit = {
+    graph.addVertex(new RootIndex)
+    graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+  }
 
   def asyncLoadFromIterator(
     iterator: Iterator[JenaTriple],
@@ -161,22 +164,10 @@ class TripleRush(
     resultIterator
   }
 
-  private[this] def awaitIdle(): Unit = {
-    graph.awaitIdle
-  }
-
-  def clear(): Unit = {
-    clearDictionary
-    graph.reset
-    graph.awaitIdle
-    graph.addVertex(new RootIndex)
-  }
-
-  def clearDictionary(): Unit = {
-    dictionary.clear
-  }
-
+  var isShutDown = false
+  
   def shutdown(): Unit = {
+    isShutDown = true
     dictionary.close()
     graph.shutdown
   }

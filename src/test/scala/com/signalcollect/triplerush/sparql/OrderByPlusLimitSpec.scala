@@ -19,7 +19,7 @@
 
 package com.signalcollect.triplerush.sparql
 
-import org.scalatest.FlatSpec
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 import org.scalatest.Matchers
 import com.signalcollect.triplerush.TripleRush
 import scala.concurrent.Await
@@ -32,7 +32,7 @@ import collection.JavaConversions._
 import com.signalcollect.util.TestAnnouncements
 import com.signalcollect.triplerush.TestStore
 
-class OrderByPlusLimitSpec extends FlatSpec with Matchers with TestAnnouncements {
+class OrderByPlusLimitSpec extends FlatSpec with UnitFixture with Matchers with TestAnnouncements {
 
   "ARQ ORDER BY and LIMIT" should "return the same results as Jena for IRIs" in new TestStore {
     val sparql = """

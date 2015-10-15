@@ -19,16 +19,16 @@
 
 package com.signalcollect.triplerush
 
+import org.scalacheck.{ Arbitrary, Prop }
+import org.scalatest.Finders
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
+import org.scalatest.prop.Checkers
+
+import com.signalcollect.triplerush.TripleGenerators.{ genTriples, queryPatterns, tripleSet }
 import com.signalcollect.triplerush.jena.Jena
 import com.signalcollect.util.TestAnnouncements
-import org.scalacheck.{ Arbitrary, Prop }
-import org.scalatest.FlatSpec
-import org.scalatest.prop.Checkers
-import com.signalcollect.triplerush.TripleGenerators._
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
 
-class CountingQuerySpec extends FlatSpec with Checkers with TestAnnouncements {
+class CountingQuerySpec extends FlatSpec with UnitFixture with Checkers with TestAnnouncements {
 
   implicit lazy val arbTriples = Arbitrary(genTriples map (_.toSet))
   implicit lazy val arbQuery = Arbitrary(queryPatterns)

@@ -75,7 +75,7 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
 
   override def clear: Unit = {
     getEventManager.notifyEvent(this, GraphEvents.removeAll)
-    tr.clear
+    throw new UnsupportedOperationException("TripleRush implementation does not support the `clear` operation.")
   }
 
   override def close: Unit = {

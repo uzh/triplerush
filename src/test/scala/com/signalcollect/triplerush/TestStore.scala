@@ -1,5 +1,6 @@
 /*
  *  @author Philip Stutz
+ *  @author Bharath Kumar
  *
  *  Copyright 2015 iHealth Technologies
  *
@@ -19,21 +20,86 @@
 
 package com.signalcollect.triplerush
 
-import com.signalcollect.GraphBuilder
+import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicInteger
+
+import scala.annotation.tailrec
+import scala.reflect.runtime.universe
+import scala.util.{ Failure, Success, Try }
+
 import org.scalatest.fixture.NoArg
-import org.apache.jena.graph.Graph
-import org.apache.jena.rdf.model.Model
+
+import com.signalcollect.GraphBuilder
+import com.signalcollect.configuration.Akka
 import com.signalcollect.triplerush.sparql.TripleRushGraph
+import com.typesafe.config.{ Config, ConfigFactory }
+
+import akka.actor.ActorSystem
 
 object TestStore {
 
-  val nextUniquePrefix = new AtomicInteger(0)
+  private[this] val uniquePrefixTracker = new AtomicInteger(0)
+
+  private[this] val uniqueNameTracker = new AtomicInteger(0)
+
+  def nextUniquePrefix = uniquePrefixTracker.incrementAndGet.toString
+
+  def nextUniqueName = uniqueNameTracker.incrementAndGet.toString
 
   def instantiateUniqueStore(): TripleRush = {
-    val uniquePrefix = nextUniquePrefix.incrementAndGet.toString
-    val graphBuilder = new GraphBuilder[Long, Any]().withActorNamePrefix(uniquePrefix)
+    val uniquePrefix = nextUniquePrefix
+    val graphBuilder = instantiateUniqueGraphBuilder
     TripleRush(graphBuilder = graphBuilder)
+  }
+
+  def customClusterConfig(actorSystemName: String, seedPort: Int, seedIp: String = "127.0.0.1"): Config = {
+    ConfigFactory.parseString(
+      s"""|akka.clustering.name=$actorSystemName
+          |akka.clustering.seed-ip=$seedIp
+          |akka.clustering.seed-port=$seedPort
+          |akka.remote.netty.tcp.port=$seedPort
+          |akka.cluster.seed-nodes=["akka.tcp://"${actorSystemName}"@"${seedIp}":"${seedPort}]"""
+        .stripMargin)
+  }
+
+  def instantiateUniqueActorSystem(): ActorSystem = {
+    val defaultGraphConfig = GraphBuilder.config
+    val defaultAkkaConfig = Akka.config(
+      serializeMessages = None,
+      loggingLevel = None,
+      kryoRegistrations = defaultGraphConfig.kryoRegistrations,
+      kryoInitializer = None)
+    val actorSystemName = nextUniqueName
+    val customAkkaConfig = customClusterConfig(actorSystemName = actorSystemName, seedPort = freePort)
+      .withFallback(defaultAkkaConfig)
+    ActorSystem(actorSystemName, customAkkaConfig)
+  }
+
+  def instantiateUniqueGraphBuilder(): GraphBuilder[Long, Any] = {
+    new GraphBuilder[Long, Any]()
+      .withActorNamePrefix(nextUniquePrefix)
+      .withActorSystem(instantiateUniqueActorSystem())
+  }
+
+  private[this] val portUsageTracker = new AtomicInteger(2500)
+
+  def freePort: Int = {
+    @tailrec def attemptToBindAPort(failuresSoFar: Int): Int = {
+      val checkedPort = portUsageTracker.incrementAndGet
+      val socketTry = Try(new ServerSocket(checkedPort))
+      socketTry match {
+        case Success(s) =>
+          s.close()
+          checkedPort
+        case Failure(f) =>
+          if (failuresSoFar > 10) {
+            throw f
+          } else {
+            attemptToBindAPort(failuresSoFar + 1)
+          }
+      }
+    }
+    attemptToBindAPort(0)
   }
 
 }
@@ -49,11 +115,16 @@ class TestStore(val tr: TripleRush) extends NoArg {
     model.close()
     graph.close()
     tr.shutdown()
+    tr.graphBuilder.config.actorSystem.get.shutdown()
+    tr.graphBuilder.config.actorSystem.get.awaitTermination()
   }
 
   override def apply(): Unit = {
-    try super.apply()
-    finally shutdown()
+    try {
+      super.apply()
+    } finally {
+      shutdown()
+    }
   }
 
 }

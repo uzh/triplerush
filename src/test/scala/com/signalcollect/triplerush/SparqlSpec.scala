@@ -19,16 +19,15 @@
 
 package com.signalcollect.triplerush
 
-import com.typesafe.config.ConfigFactory
-
 import scala.collection.JavaConversions.asScalaIterator
 
-import org.scalatest.{ Finders, FlatSpec }
+import org.scalatest.Finders
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 
-import com.signalcollect.triplerush.sparql.{ Sparql, TripleRushGraph }
+import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.util.TestAnnouncements
 
-class SparqlSpec extends FlatSpec with TestAnnouncements {
+class SparqlSpec extends FlatSpec with UnitFixture with TestAnnouncements {
 
   "Sparql" should "correctly translate a SPARQL query that has results" in new TestStore {
     tr.addStringTriple("http://a", "http://b", "http://c")
@@ -63,7 +62,7 @@ WHERE {
   it should "correctly eliminate a SPARQL query that is guaranteed to have no results" in new TestStore {
     tr.addStringTriple("http://a", "http://b", "http://c")
     tr.addStringTriple("http://f", "http://d", "http://e")
-        val query = """
+    val query = """
 SELECT ?X
 WHERE {
     	?X <http://z> <http://c> .

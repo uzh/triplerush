@@ -20,10 +20,10 @@
 
 package com.signalcollect.triplerush
 
-import org.scalatest.FlatSpec
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 import com.signalcollect.util.TestAnnouncements
 
-class IndexSpec extends FlatSpec with TestAnnouncements {
+class IndexSpec extends FlatSpec with UnitFixture with TestAnnouncements {
 
   "TripleRush" should "correctly answer all 1 pattern queries when there is only 1 triple in the store" in new TestStore {
     val queries = {

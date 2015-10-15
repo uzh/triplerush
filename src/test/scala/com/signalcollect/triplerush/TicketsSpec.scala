@@ -21,7 +21,7 @@ package com.signalcollect.triplerush
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import org.scalatest.FlatSpec
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 import org.scalatest.prop.Checkers
 import com.signalcollect.triplerush.QueryParticle._
 import scala.util.Random
@@ -34,7 +34,7 @@ import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
 import com.signalcollect.util.TestAnnouncements
 
-class TicketsSpec extends FlatSpec with TestAnnouncements {
+class TicketsSpec extends FlatSpec with UnitFixture with TestAnnouncements {
 
   "TripleRush" should "correctly answer a query with a limited number of tickets" in new TestStore {
       tr.addEncodedTriple(1, 2, 3)

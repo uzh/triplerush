@@ -23,32 +23,39 @@ import com.signalcollect.triplerush.jena.Jena
 import com.signalcollect.util.TestAnnouncements
 import org.scalacheck.Gen._
 import org.scalacheck.{ Arbitrary, Gen, Prop }
-import org.scalatest.FlatSpec
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 import org.scalatest.prop.Checkers
 import com.signalcollect.triplerush.TripleGenerators._
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.fixture.NoArg
 
-class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with ScalaFutures {
+class IntegrationSpec extends FlatSpec with UnitFixture with Checkers with TestAnnouncements with ScalaFutures {
 
   implicit lazy val arbTriples = Arbitrary(tripleSet)
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
   "TripleRush" should "correctly answer a query for data that is not in the store" in new TestStore {
+    println(s"1 $tr")
     val trResults = TestHelper.execute(
       tr,
       Set(TriplePattern(1, 2, 3)),
       List(TriplePattern(-1, 4, -1)))
+    println("2")
     assert(Set[Map[Int, Int]]() === trResults)
+    println("woot?")
   }
 
   it should "correctly answer a query for a specific pattern that exists" in new TestStore {
+    println(s"1 $tr")
     val trResults = TestHelper.execute(
       tr,
       Set(TriplePattern(1, 2, 3)),
       List(TriplePattern(1, 2, 3)))
+    println("2")
     assert(Set[Map[Int, Int]](Map()) === trResults)
+    println("woot?")
   }
 
   it should "correctly answer a query for a specific pattern that does not exist" in new TestStore {
@@ -99,7 +106,7 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
   }
 
   it should "correctly answer queries after blocking triple additions" in new TestStore {
-    for (i <- (1 to 100).par) {
+    for (i <- (1 to 100)) {
       tr.addEncodedTriple(1, 2, i)
       val count = tr.count(Seq(TriplePattern(1, 2, -1)))
       assert(count.toInt == i)
@@ -131,27 +138,30 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
     }
   }
 
-  it should "correctly answer random queries with basic graph patterns" in new TestStore {
+  it should "correctly answer random queries with basic graph patterns" in new NoArg {
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
         (triples: Set[TriplePattern], query: List[TriplePattern]) =>
-          val jena = new Jena
+          val jena = new Jena()
+          val tr = TestStore.instantiateUniqueStore()
           try {
             val jenaResults = TestHelper.execute(jena, triples, query)
             val trResults = TestHelper.execute(tr, triples, query)
             assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
             jenaResults === trResults
           } finally {
-            jena.shutdown
+            jena.shutdown()
+            tr.shutdown()
           }
       }, minSuccessful(10))
   }
 
-  "ResultIteratorQueries" should "correctly answer random queries with basic graph patterns" in new TestStore {
+  "ResultIteratorQueries" should "correctly answer random queries with basic graph patterns" in new NoArg {
     check(
       Prop.forAllNoShrink(tripleSet, queryPatterns) {
         (triples: Set[TriplePattern], query: List[TriplePattern]) =>
-          val jena = new Jena
+          val jena = new Jena()
+          val tr = TestStore.instantiateUniqueStore()
           try {
             val jenaResults = TestHelper.execute(jena, triples, query)
             TestHelper.prepareStore(tr, triples)
@@ -160,7 +170,8 @@ class IntegrationSpec extends FlatSpec with Checkers with TestAnnouncements with
             assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
             jenaResults === trResults
           } finally {
-            jena.shutdown
+            jena.shutdown()
+            tr.shutdown()
           }
       }, minSuccessful(20))
   }
