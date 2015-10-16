@@ -21,7 +21,7 @@
 package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.{ Edge, GraphEditor }
-import com.signalcollect.triplerush.{ IndexStructure, OperationIds }
+import com.signalcollect.triplerush.{IndexVertexEdge, BlockingIndexVertexEdge, IndexStructure, OperationIds}
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 
 trait Binding extends IndexVertex[Any] {
@@ -42,11 +42,18 @@ trait Binding extends IndexVertex[Any] {
   }
 
   override def addEdge(e: Edge[Long], ge: GraphEditor[Long, Any]): Boolean = {
-    val wasAdded = super.addEdge(e, ge)
-    if (wasAdded) {
-      onEdgeAdded(ge)
+    e match {
+      case b: BlockingIndexVertexEdge => {
+        onEdgeAdded(ge)
+        super.addEdge(e, ge)
+      }
+      case i =>
+        val wasAdded = super.addEdge(e, ge)
+        if (wasAdded) {
+          onEdgeAdded(ge)
+        }
+        wasAdded
     }
-    wasAdded
   }
 
   def bindIndividualQuery(childDelta: Int, queryParticle: Array[Int]): Array[Int]
