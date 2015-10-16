@@ -23,9 +23,8 @@ import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.util.TestAnnouncements
 
-class QueryIdEmbeddingSpec extends FlatSpec with Checkers with TestAnnouncements {
+class QueryIdEmbeddingSpec extends FlatSpec with Checkers {
 
   "QueryIds" should "correctly embed and recover query IDs" in {
     check((queryId: Int) => {

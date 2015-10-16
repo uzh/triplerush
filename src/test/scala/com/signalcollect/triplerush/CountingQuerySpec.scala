@@ -26,9 +26,8 @@ import org.scalatest.prop.Checkers
 
 import com.signalcollect.triplerush.TripleGenerators.{ genTriples, queryPatterns, tripleSet }
 import com.signalcollect.triplerush.jena.Jena
-import com.signalcollect.util.TestAnnouncements
 
-class CountingQuerySpec extends FlatSpec with UnitFixture with Checkers with TestAnnouncements {
+class CountingQuerySpec extends FlatSpec with UnitFixture with Checkers {
 
   implicit lazy val arbTriples = Arbitrary(genTriples map (_.toSet))
   implicit lazy val arbQuery = Arbitrary(queryPatterns)

@@ -20,7 +20,6 @@
 package com.signalcollect.triplerush
 
 import com.signalcollect.triplerush.jena.Jena
-import com.signalcollect.util.TestAnnouncements
 import org.scalacheck.Gen._
 import org.scalacheck.{ Arbitrary, Gen, Prop }
 import org.scalatest.fixture.{ FlatSpec, UnitFixture }
@@ -31,7 +30,7 @@ import scala.concurrent.duration.DurationInt
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.fixture.NoArg
 
-class IntegrationSpec extends FlatSpec with UnitFixture with Checkers with TestAnnouncements with ScalaFutures {
+class IntegrationSpec extends FlatSpec with UnitFixture with Checkers with ScalaFutures {
 
   implicit lazy val arbTriples = Arbitrary(tripleSet)
   implicit lazy val arbQuery = Arbitrary(queryPatterns)

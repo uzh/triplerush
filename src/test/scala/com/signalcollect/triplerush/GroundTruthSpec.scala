@@ -33,7 +33,6 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import java.io.{ FileInputStream, File }
 import com.signalcollect.triplerush.sparql.Sparql
-import com.signalcollect.util.TestAnnouncements
 import com.signalcollect.triplerush.sparql.TripleRushGraph
 import collection.JavaConversions._
 import com.signalcollect.triplerush.loading.TripleIterator
@@ -194,7 +193,7 @@ WHERE {
 
 }
 
-class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
+class GroundTruthSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
 
@@ -265,7 +264,6 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
 
   override def afterAll {
     tr.shutdown
-    super.afterAll
   }
 
   def executeOnQueryEngine(q: String): List[Bindings] = {

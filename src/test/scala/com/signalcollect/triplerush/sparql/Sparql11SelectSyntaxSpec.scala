@@ -28,14 +28,13 @@ import org.apache.jena.query.QueryFactory
 import org.scalatest.{ BeforeAndAfter, Finders, FlatSpec, Matchers }
 import org.scalatest.exceptions.TestFailedException
 import com.signalcollect.triplerush.TripleRush
-import com.signalcollect.util.TestAnnouncements
 import com.signalcollect.triplerush.TestStore
 import com.signalcollect.triplerush.Conversions.filePathToTripleIterator
 
 /**
  * Uses w3c test files to run SELECT syntax tests against Sparql 1.1 spec*
  */
-class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfter with TestAnnouncements {
+class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfter {
 
   val tr = TestStore.instantiateUniqueStore()
   val graph = TripleRushGraph(tr)

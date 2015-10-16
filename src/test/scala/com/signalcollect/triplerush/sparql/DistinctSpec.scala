@@ -25,9 +25,8 @@ import org.scalatest.{ Finders, Matchers }
 import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 
 import com.signalcollect.triplerush.TestStore
-import com.signalcollect.util.TestAnnouncements
 
-class DistinctSpec extends FlatSpec with UnitFixture with Matchers with TestAnnouncements {
+class DistinctSpec extends FlatSpec with UnitFixture with Matchers {
 
   "ARQ DISTINCT" should "eliminate results with same bindings" in new TestStore {
     val sparql = """

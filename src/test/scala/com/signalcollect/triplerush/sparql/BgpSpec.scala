@@ -25,9 +25,8 @@ import org.scalatest.{ Finders, Matchers }
 import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 
 import com.signalcollect.triplerush.TestStore
-import com.signalcollect.util.TestAnnouncements
 
-class BgpSpec extends FlatSpec with UnitFixture with Matchers with TestAnnouncements {
+class BgpSpec extends FlatSpec with UnitFixture with Matchers {
 
   "ARQ BGP" should "return the results of a simple BGP query" in new TestStore {
     val sparql = """

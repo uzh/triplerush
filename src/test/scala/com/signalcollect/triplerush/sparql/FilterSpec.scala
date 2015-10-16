@@ -22,10 +22,9 @@ package com.signalcollect.triplerush.sparql
 import org.scalatest.{ Finders, Matchers }
 import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 import com.signalcollect.triplerush.TripleRush
-import com.signalcollect.util.TestAnnouncements
 import com.signalcollect.triplerush.TestStore
 
-class FilterSpec extends FlatSpec with UnitFixture with Matchers with TestAnnouncements {
+class FilterSpec extends FlatSpec with UnitFixture with Matchers {
 
   "ARQ FILTER" should "return the correct result even when all variables are bound during an existence check" in new TestStore {
     val sparql = """

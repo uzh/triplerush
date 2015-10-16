@@ -25,9 +25,8 @@ import org.scalatest.Finders
 import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 
 import com.signalcollect.triplerush.sparql.Sparql
-import com.signalcollect.util.TestAnnouncements
 
-class SparqlSpec extends FlatSpec with UnitFixture with TestAnnouncements {
+class SparqlSpec extends FlatSpec with UnitFixture {
 
   "Sparql" should "correctly translate a SPARQL query that has results" in new TestStore {
     tr.addStringTriple("http://a", "http://b", "http://c")

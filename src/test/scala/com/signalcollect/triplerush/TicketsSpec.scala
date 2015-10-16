@@ -32,9 +32,8 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Prop
 import org.scalacheck.Prop.BooleanOperators
 import com.signalcollect.triplerush.jena.Jena
-import com.signalcollect.util.TestAnnouncements
 
-class TicketsSpec extends FlatSpec with UnitFixture with TestAnnouncements {
+class TicketsSpec extends FlatSpec with UnitFixture {
 
   "TripleRush" should "correctly answer a query with a limited number of tickets" in new TestStore {
       tr.addEncodedTriple(1, 2, 3)

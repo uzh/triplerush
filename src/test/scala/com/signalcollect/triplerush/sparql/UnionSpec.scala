@@ -25,9 +25,8 @@ import org.scalatest.{ Finders, Matchers }
 import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 
 import com.signalcollect.triplerush.TestStore
-import com.signalcollect.util.TestAnnouncements
 
-class UnionSpec extends FlatSpec with UnitFixture with Matchers with TestAnnouncements {
+class UnionSpec extends FlatSpec with UnitFixture with Matchers {
 
   "ARQ UNION" should "return the results of two separate queries" in new TestStore {
     val sparql = """

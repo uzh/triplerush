@@ -22,9 +22,8 @@ package com.signalcollect.triplerush
 import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.util.TestAnnouncements
 
-class EfficientIndexPatternSpec extends FlatSpec with Checkers with TestAnnouncements {
+class EfficientIndexPatternSpec extends FlatSpec with Checkers {
 
   "EfficientIndexPattern" should "correctly encode and decode index triple patterns" in {
     check((s: Int, p: Int, o: Int) => {

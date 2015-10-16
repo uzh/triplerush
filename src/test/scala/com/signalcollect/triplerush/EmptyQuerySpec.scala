@@ -5,9 +5,8 @@ import org.scalatest.Matchers
 import org.scalacheck.Arbitrary
 import org.scalatest.prop.Checkers
 import org.scalacheck.Gen._
-import com.signalcollect.util.TestAnnouncements
 
-class EmptyQuerySpec extends FlatSpec with UnitFixture with Matchers with TestAnnouncements {
+class EmptyQuerySpec extends FlatSpec with UnitFixture with Matchers {
 
   "TripleRush" should "correctly answer result counts for queries with zero results" in new TestStore {
     val query = Seq(TriplePattern(-1, 2, 3))
