@@ -24,33 +24,40 @@ import org.apache.jena.riot.Lang
 import com.signalcollect.triplerush.loading.TripleIterator
 import scala.language.implicitConversions
 import org.apache.jena.graph.{ Triple => JenaTriple }
-import com.signalcollect.triplerush.loading.DataLoader
+import com.signalcollect.triplerush.dictionary.RdfDictionary
+import com.signalcollect.triplerush.sparql.NodeConversion
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
-object Conversions {
+object ConvenienceOperations {
 
   implicit def filePathToTripleIterator(filePath: String): TripleIterator = {
     TripleIterator(filePath)
   }
 
+  def toTriplePattern(triple: JenaTriple, dictionary: RdfDictionary): TriplePattern = {
+    val subjectString = NodeConversion.nodeToString(triple.getSubject)
+    val predicateString = NodeConversion.nodeToString(triple.getPredicate)
+    val objectString = NodeConversion.nodeToString(triple.getObject)
+    val sId = dictionary(subjectString)
+    val pId = dictionary(predicateString)
+    val oId = dictionary(objectString)
+    TriplePattern(sId, pId, oId)
+  }
+
 }
 
-trait ConvenienceOperations  {
-  this: TripleRush with BlockingOperations =>
+trait ConvenienceOperations {
+  this: TripleRush =>
 
-  def loadFromStream(
-    inputStream: InputStream,
-    lang: Lang,
-    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId))): Unit = {
-    val iterator = TripleIterator(inputStream, lang)
-    loadFromIterator(iterator, placementHint)
-  }
+  import ConvenienceOperations._
 
   def asyncLoadFromStream(
     inputStream: InputStream,
-    lang: Lang,
-    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId))): Unit = {
+    lang: Lang): Future[Unit] = {
     val iterator = TripleIterator(inputStream, lang)
-    asyncLoadFromIterator(iterator, placementHint)
+    asyncAddTriples(iterator)
   }
 
   /**
@@ -62,52 +69,23 @@ trait ConvenienceOperations  {
    * If something starts with '_', then the remainder is assumed to be a blank node ID where uniqueness is the
    * responsibility of the caller.
    */
-  def addStringTriple(s: String, p: String, o: String): Unit = {
-    val sId = dictionary(s)
-    val pId = dictionary(p)
-    val oId = dictionary(o)
-    addEncodedTriple(sId, pId, oId)
-  }
-
-  /**
-   * String encoding:
-   * By default something is interpreted as an IRI.
-   * If something starts with a hyphen or a digit, it is interpreted as an integer literal
-   * If something starts with '"' it is interpreted as a string literal.
-   * If something has an extra '<' prefix, then the remainder is interpreted as an XML literal.
-   * If something starts with '_', then the remainder is assumed to be a blank node ID where uniqueness is the
-   * responsibility of the caller.
-   */
-  def asyncAddStringTriple(s: String, p: String, o: String): Unit = {
+  def asyncAddStringTriple(s: String, p: String, o: String): Future[Unit] = {
     val sId = dictionary(s)
     val pId = dictionary(p)
     val oId = dictionary(o)
     asyncAddEncodedTriple(sId, pId, oId)
   }
 
-  def addTriple(triple: JenaTriple): Unit = {
-    addTriplePattern(DataLoader.toTriplePattern(triple, dictionary))
+  def asyncAddTriple(triple: JenaTriple): Future[Unit] = {
+    asyncAddTriplePattern(toTriplePattern(triple, dictionary))
   }
 
-  def asyncAddTriple(triple: JenaTriple): Unit = {
-    asyncAddTriplePattern(DataLoader.toTriplePattern(triple, dictionary))
-  }
-
-  def addTriples(i: Iterator[JenaTriple]): Unit = {
-    val mappedIterator = i.map(DataLoader.toTriplePattern(_, dictionary))
-    addTriplePatterns(mappedIterator)
-  }
-
-  def asynccAddTriples(i: Iterator[JenaTriple]): Unit = {
-    val mappedIterator = i.map(DataLoader.toTriplePattern(_, dictionary))
+  def asyncAddTriples(i: Iterator[JenaTriple]): Future[Unit] = {
+    val mappedIterator = i.map(toTriplePattern(_, dictionary))
     asyncAddTriplePatterns(mappedIterator)
   }
 
-  def addTriplePattern(tp: TriplePattern): Unit = {
-    addEncodedTriple(tp.s, tp.p, tp.o)
-  }
-
-  def asyncAddTriplePattern(tp: TriplePattern): Unit = {
+  def asyncAddTriplePattern(tp: TriplePattern): Future[Unit] = {
     asyncAddEncodedTriple(tp.s, tp.p, tp.o)
   }
 
@@ -116,8 +94,4 @@ trait ConvenienceOperations  {
     resultIteratorForQuery(query, None, Long.MaxValue)
   }
 
-  def addEncodedTriple(sId: Int, pId: Int, oId: Int): Unit = {
-    addEncodedTriple(sId, pId, oId, TripleRush.defaultBlockingOperationTimeout)
-  }
-  
 }

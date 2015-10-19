@@ -35,20 +35,20 @@ abstract class SearchableIndexVertex[SignalType, State](
   }
 
   @inline final def childIdsContain(n: Int): Boolean = {
+    // state is not allowed to be null at this point.
     state match {
       case i: Int        => i == n
       case a: Array[Int] => new SearchableIntSet(a).contains(n)
-      case _ => false
     }
   }
 
   def handleChildIdRequest(requestor: Long, graphEditor: GraphEditor[Long, Any]): Unit = {
+    // state is not allowed to be null at this point.
     state match {
       case i: Int =>
         graphEditor.sendSignal(ChildIdReply(Array(i)), requestor)
       case a: Array[Int] =>
         graphEditor.sendSignal(ChildIdReply(a.toArray), requestor)
-      case _ =>
     }
   }
 
@@ -64,18 +64,17 @@ abstract class SearchableIndexVertex[SignalType, State](
           f(a(i))
           i += 1
         }
-      case _ =>
     }
   }
 
   override def edgeCount = {
-      state match {
-        case i: Int =>
-          1
-        case a: Array[Int] =>
-          a.length
-        case _ => 0
-      }
+    state match {
+      case i: Int =>
+        1
+      case a: Array[Int] =>
+        a.length
+      case _ => 0
+    }
   }
 
   def cardinality = edgeCount
@@ -108,4 +107,3 @@ abstract class SearchableIndexVertex[SignalType, State](
   }
 
 }
-

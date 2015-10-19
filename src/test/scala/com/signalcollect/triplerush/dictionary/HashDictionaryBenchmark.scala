@@ -24,7 +24,6 @@ import org.mapdb.DBMaker
 import scala.util.Random
 import java.util.Arrays
 import com.signalcollect.triplerush.loading.TripleIterator
-import com.signalcollect.triplerush.loading.DataLoader
 import com.signalcollect.triplerush.sparql.NodeConversion
 
 object HashDictionaryBenchmark extends App {

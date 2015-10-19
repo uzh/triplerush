@@ -3,17 +3,22 @@ package com.signalcollect.triplerush.jena
 import scala.Option.option2Iterable
 import scala.collection.JavaConversions.asScalaIterator
 import scala.collection.mutable.UnrolledBuffer
-
 import org.apache.jena.query.{ QueryExecutionFactory, QueryFactory, QuerySolution }
 import org.apache.jena.rdf.model.{ ModelFactory, RDFNode }
-
 import com.signalcollect.triplerush.{ QueryEngine, TriplePattern }
+import scala.concurrent.duration.Duration
 
 class Jena extends QueryEngine {
 
   val model = ModelFactory.createDefaultModel
 
-  def addEncodedTriple(s: Int, p: Int, o: Int) {
+  // Ignores timeout.
+  def addTriplePatterns(i: Iterator[TriplePattern], timeout: Duration): Unit = {
+    i.foreach(t => addEncodedTriple(t.s, t.p, t.o, Duration.Inf))
+  }
+
+  // Ignores timeout.
+  def addEncodedTriple(s: Int, p: Int, o: Int, timeout: Duration) {
     val resource = model.createResource(intToInsertString(s))
     val prop = model.createProperty(intToInsertString(p))
     val obj = model.createResource(intToInsertString(o))

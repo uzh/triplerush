@@ -25,16 +25,22 @@ import com.signalcollect.interfaces.EdgeId
 import com.signalcollect.GraphEditor
 import com.signalcollect.Vertex
 
-class BlockingIndexVertexEdge(
-  childDelta: Int,
-  var tickets: Long,
-  val blockingOperationId: Int) extends IndexVertexEdge(childDelta)
-
 /**
  * Trickery! It's actually the child delta (an Int), but we just pretend it's a Long.
  */
-class IndexVertexEdge(
-    val childDelta: Int) extends Edge[Long] {
+class BlockingIndexVertexEdge(
+    val childDelta: Int,
+    private var _tickets: Long,
+    val blockingOperationId: Int) extends Edge[Long] {
+
+  def tickets = synchronized {
+    _tickets
+  }
+
+  def tickets_=(m: Long): Unit = synchronized {
+    _tickets = m
+  }
+  
   override def id: EdgeId[_] = throw new UnsupportedOperationException
 
   override def sourceId: Any = throw new UnsupportedOperationException
@@ -54,4 +60,5 @@ class IndexVertexEdge(
   override def equals(other: Any): Boolean = throw new UnsupportedOperationException
 
   override def executeSignalOperation(sourceVertex: Vertex[_, _, _, _], graphEditor: GraphEditor[Any, Any]) = throw new UnsupportedOperationException
+
 }

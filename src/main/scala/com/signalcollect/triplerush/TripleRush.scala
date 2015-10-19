@@ -114,13 +114,6 @@ class TripleRush(
     graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
   }
 
-  def asyncLoadFromIterator(
-    iterator: Iterator[JenaTriple],
-    placementHint: Option[Long] = Some(OperationIds.embedInLong(OperationIds.nextId))): Unit = {
-    val loader = new DataLoader(iterator, dictionary)
-    graph.loadGraph(loader, placementHint)
-  }
-
   def asyncAddTriplePatterns(i: Iterator[TriplePattern]): Future[Unit] = {
     val promise = Promise[Unit]()
     val vertex = new BlockingTripleAdditionsVertex(i, promise)

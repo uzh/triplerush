@@ -79,7 +79,7 @@ object IndexStructure {
     ticketsForIndexOperation(Sp) + ticketsForIndexOperation(Po) + ticketsForIndexOperation(So)
   }
 
-  def parentIds(id: Long): Array[Long] = {
+  def parentIds(id: Long): Set[Long] = {
     val s = id.s
     val p = id.p
     val o = id.o
@@ -91,10 +91,10 @@ object IndexStructure {
      * Based on the diagram of the index structure @ http://www.zora.uzh.ch/111243/1/TR_WWW.pdf
      */
     IndexType(id) match {
-      case P         => Array(rootId)
-      case Po        => Array(oIndexId)
-      case Sp        => Array(sIndexId, pIndexId)
-      case other @ _ => Array()
+      case P         => Set(rootId)
+      case Po        => Set(oIndexId)
+      case Sp        => Set(sIndexId, pIndexId)
+      case other @ _ => Set()
     }
   }
 

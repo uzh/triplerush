@@ -67,12 +67,11 @@ abstract class IndexVertex[StateType](val id: Long)
     e match {
       case b: BlockingIndexVertexEdge =>
         val ticketsToReturn = b.tickets
-        val wasAdded = addChildDelta(b.childDelta)
-        val operationVertexId = OperationIds.embedInLong(b.blockingOperationId)
+        val childDelta = b.childDelta
+        val operationId = b.blockingOperationId
+        val wasAdded = addChildDelta(childDelta)
+        val operationVertexId = OperationIds.embedInLong(operationId)
         graphEditor.sendSignal(ticketsToReturn, operationVertexId)
-        wasAdded
-      case i: IndexVertexEdge =>
-        val wasAdded = addChildDelta(i.childDelta)
         wasAdded
       case other: Any =>
         val msg = s"IndexVertex does not support adding edge $e of type ${e.getClass.getSimpleName}."

@@ -181,9 +181,7 @@ object TestHelper {
 
   def prepareStore(qe: QueryEngine,
                    triples: Set[TriplePattern]) {
-    for (triple <- triples) {
-      qe.addEncodedTriple(triple.s, triple.p, triple.o)
-    }
+    qe.addTriplePatterns(triples.iterator, 60.seconds)
   }
 
   def count(tr: TripleRush,
