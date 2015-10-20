@@ -49,19 +49,7 @@ abstract class IndexVertex[StateType](val id: Long)
 
   def handleCardinalityIncrement(i: Int) = {}
 
-  def handleObjectCount(count: ObjectCountSignal) = {}
-
-  def handleSubjectCount(count: SubjectCountSignal) = {}
-
   def cardinality: Int
-
-  /**
-   * Default reply, is only overridden by SOIndex.
-   */
-  def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]): Unit = {
-    graphEditor.sendSignal(CardinalityReply(
-      c.forPattern, cardinality), c.requestor)
-  }
 
   override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {
     e match {
@@ -71,7 +59,6 @@ abstract class IndexVertex[StateType](val id: Long)
         val operationId = b.blockingOperationId
         val wasAdded = addChildDelta(childDelta)
         val operationVertexId = OperationIds.embedInLong(operationId)
-        println(s"index vertex $id = ${new EfficientIndexPattern(id).toTriplePattern} got edge $b with tickets $ticketsToReturn from operation vertex $operationId")
         graphEditor.sendSignal(ticketsToReturn, operationVertexId)
         wasAdded
       case other: Any =>
@@ -91,16 +78,10 @@ abstract class IndexVertex[StateType](val id: Long)
     signal match {
       case query: Array[Int] =>
         processQuery(query, graphEditor)
-      case cr: CardinalityRequest =>
-        handleCardinalityRequest(cr, graphEditor)
       case ChildIdRequest(requestor) =>
         handleChildIdRequest(requestor, graphEditor)
       case cardinalityIncrement: Int =>
         handleCardinalityIncrement(cardinalityIncrement)
-      case count: ObjectCountSignal =>
-        handleObjectCount(count)
-      case count: SubjectCountSignal =>
-        handleSubjectCount(count)
       case other: Any => throw new Exception(s"Unexpected signal @ $id: $other")
     }
     true

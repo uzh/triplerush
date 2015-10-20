@@ -21,39 +21,14 @@
 package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.ObjectCountSignal
-import com.signalcollect.triplerush.PredicateStats
-import com.signalcollect.triplerush.PredicateStatsReply
-import com.signalcollect.triplerush.SubjectCountSignal
 import com.signalcollect.util.SplayIntSet
+import com.signalcollect.Edge
 
 final class PIndex(id: Long) extends CardinalityCountingIndex(id)
     with Forwarding[Any] {
 
   def nextRoutingAddress(childDelta: Int): Long = EfficientIndexPattern(childDelta, id.p, 0)
 
-  @transient var objectCountMap = Map[Int, Int]()
-  var maxObjectCount = 1
-  var maxSubjectCount = 1
-
-  override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]): Unit = {
-    graphEditor.sendSignal(PredicateStatsReply(
-      c.forPattern, cardinality,
-      PredicateStats(edgeCount = edgeCount, objectCount = maxObjectCount, subjectCount = maxSubjectCount)), c.requestor)
-  }
-
-  override def handleObjectCount(objCount: ObjectCountSignal) = {
-    if (objCount.count > maxObjectCount) {
-      maxObjectCount = objCount.count
-    }
-  }
-
-  override def handleSubjectCount(subCount: SubjectCountSignal) = {
-    if (subCount.count > maxSubjectCount) {
-      maxSubjectCount = subCount.count
-    }
-  }
 }

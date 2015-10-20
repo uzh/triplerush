@@ -157,10 +157,7 @@ class TripleRush(
     resultIterator
   }
 
-  var isShutDown = false
-  
   def shutdown(): Unit = {
-    isShutDown = true
     dictionary.close()
     graph.shutdown
   }

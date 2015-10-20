@@ -24,7 +24,6 @@ import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
-import com.signalcollect.triplerush.SubjectCountSignal
 import com.signalcollect.util.SplayIntSet
 
 final class POIndex(id: Long) extends OptimizedIndexVertex(id)
@@ -36,15 +35,6 @@ final class POIndex(id: Long) extends OptimizedIndexVertex(id)
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     super.afterInitialization(graphEditor)
-  }
-
-  override def onEdgeAdded(ge: GraphEditor[Long, Any]): Unit = {
-    incrementParentIndexCardinalities(ge)
-    updatePredicateSubjectCount(ge)
-  }
-
-  def updatePredicateSubjectCount(ge: GraphEditor[Long, Any]): Unit = {
-    ge.sendSignal(SubjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0))
   }
 
 }

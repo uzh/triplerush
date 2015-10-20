@@ -14,6 +14,7 @@
 	<name>triplerush</name>
 	<description>A distributed in-memory graph store.</description>
 	<properties>
+		<triplerush.version>${project.version}</triplerush.version>
 		<team.group.id>uzh</team.group.id>
 		<scala.release>7</scala.release>
 		<signalcollect.version>7.0.0-SNAPSHOT</signalcollect.version>
@@ -23,6 +24,12 @@
 		<scalatest.version>2.2.5</scalatest.version>
 		<scalacheck.version>1.12.4</scalacheck.version>
 		<easymock.version>3.3.1</easymock.version>
+		<akka.version>2.4.0</akka.version>
+		<akka.kryo.version>0.3.3</akka.kryo.version>
+		<d3js.version>3.5.6</d3js.version>
+		<introjs.version>1.0.0</introjs.version>
+		<jquery.version>2.1.4</jquery.version>
+		<reconnecting-websocket.version>1.0.0</reconnecting-websocket.version>
 	</properties>
 	<url>${ghe.url.base}/${project.artifactId}</url>
 	<scm>

@@ -21,8 +21,6 @@
 package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush.CardinalityReply
-import com.signalcollect.triplerush.CardinalityRequest
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.util.SearchableIntSet
@@ -30,27 +28,6 @@ import com.signalcollect.triplerush.OperationIds
 
 final class SOIndex(id: Long) extends SearchableIndexVertex(id)
     with Binding {
-
-  override def onEdgeAdded(ge: GraphEditor[Long, Any]): Unit = {}
-
-  /**
-   * Need to check if the pattern is fully bound, then answer with appropriate cardinality.
-   */
-  override def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]): Unit = {
-    val pattern = c.forPattern
-    if (pattern.isFullyBound) {
-      val exists = childIdsContain(pattern.p)
-      if (exists) {
-        graphEditor.sendSignal(
-          CardinalityReply(pattern, 1), c.requestor)
-      } else {
-        graphEditor.sendSignal(
-          CardinalityReply(pattern, 0), c.requestor)
-      }
-    } else {
-      super.handleCardinalityRequest(c, graphEditor)
-    }
-  }
 
   @inline def bindIndividualQuery(childDelta: Int, query: Array[Int]): Array[Int] = {
     query.bind(id.s, childDelta, id.o)

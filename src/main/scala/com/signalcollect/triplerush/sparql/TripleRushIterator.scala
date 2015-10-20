@@ -42,21 +42,27 @@ object TripleRushIterator {
     @inline def toTriple(r: Array[Int]): Triple = {
       var i = 0
       val s = sNode.getOrElse {
-        val n = NodeConversion.stringToNode(dictionary(r(i)))
+        val encodedId = r(i)
+        val decodedString = dictionary(encodedId)
+        val n = NodeConversion.stringToNode(decodedString)
         i += 1
         n
       }
       val p = pNode.getOrElse {
-        val n = NodeConversion.stringToNode(dictionary(r(i)))
+        val encodedId = r(i)
+        val decodedString = dictionary(encodedId)
+        val n = NodeConversion.stringToNode(decodedString)
         i += 1
         n
       }
       val o = oNode.getOrElse {
-        NodeConversion.stringToNode(dictionary(r(i)))
+        val encodedId = r(i)
+        val decodedString = dictionary(encodedId)
+        NodeConversion.stringToNode(decodedString)
       }
-      new Triple(s, p, o)
+      val triple = new Triple(s, p, o)
+      triple
     }
-
     i.map(toTriple(_))
   }
 

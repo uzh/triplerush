@@ -23,7 +23,6 @@ package com.signalcollect.triplerush.vertices
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.ObjectCountSignal
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.util.SplayIntSet
 
@@ -32,15 +31,6 @@ final class SPIndex(id: Long) extends OptimizedIndexVertex(id)
 
   @inline def bindIndividualQuery(childDelta: Int, query: Array[Int]): Array[Int] = {
     query.bind(id.s, id.p, childDelta)
-  }
-
-  override def onEdgeAdded(ge: GraphEditor[Long, Any]): Unit = {
-    incrementParentIndexCardinalities(ge)
-    updatePredicateObjectCount(ge)
-  }
-
-  def updatePredicateObjectCount(ge: GraphEditor[Long, Any]): Unit = {
-    ge.sendSignal(ObjectCountSignal(edgeCount), EfficientIndexPattern(0, id.p, 0))
   }
 
 }

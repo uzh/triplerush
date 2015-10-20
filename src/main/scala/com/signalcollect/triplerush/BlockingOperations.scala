@@ -33,9 +33,7 @@ trait BlockingOperations {
   import TripleRush.defaultBlockingOperationTimeout
 
   def addTriplePatterns(i: Iterator[TriplePattern], timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    println("adding patterns")
     Await.result(asyncAddTriplePatterns(i), timeout)
-    println("done adding patterns")
   }
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, timeout: Duration = defaultBlockingOperationTimeout): Unit = {

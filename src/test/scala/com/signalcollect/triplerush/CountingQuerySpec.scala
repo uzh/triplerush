@@ -35,12 +35,8 @@ class CountingQuerySpec extends FlatSpec with UnitFixture with Checkers {
   "Counting Query" should "correctly answer a query for data that is not in the store" in new TestStore {
     val triples = Set(TriplePattern(1, 2, 3))
     val query = List(TriplePattern(-1, 4, -1))
-    println("counting")
     val trCount = TestHelper.count(tr, triples, query)
-    println(s"counting done: $trCount")
-    println("executing ...")
     val trResults = TestHelper.execute(tr, Set(), query).size
-    println(s"executing done: $trResults")
     assert(trResults === trCount)
   }
 

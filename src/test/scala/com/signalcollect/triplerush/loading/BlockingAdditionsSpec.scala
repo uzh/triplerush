@@ -1,34 +1,20 @@
 package com.signalcollect.triplerush.loading
 
-import java.io.File
-import org.scalatest.{ Finders, FlatSpec }
-import org.scalatest.concurrent.ScalaFutures
-import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
-import com.signalcollect.triplerush.dictionary.HashDictionary
 import org.apache.jena.riot.Lang
-import com.signalcollect.triplerush.GroundTruthSpec
-import com.signalcollect.triplerush.TestStore
+import org.scalatest.FlatSpec
+import org.scalatest.concurrent.ScalaFutures
+
+import com.signalcollect.triplerush.{ GroundTruthSpec, TestStore, TriplePattern }
 
 class BlockingAdditionsSpec extends FlatSpec with ScalaFutures {
 
-  "Blocking additions" should "correctly load triples from a file" in { 
-    val tr = TestStore.instantiateUniqueStore()
-    try {
-      println("Loading LUBM1 ... ")
-      val resource = s"university0_0.nt"
-      val tripleStream = classOf[GroundTruthSpec].getResourceAsStream(resource)
-      println(s"Loading file $resource ...")
-      tr.addTriples(TripleIterator(tripleStream, Lang.NTRIPLES))//.take(1)
-      println(s"Done loading $resource.")
-      println("Finished loading LUBM1.")
-      val howMany = 25700
-      println(tr.dictionary)
-      println(tr.resultIteratorForQuery(Seq(TriplePattern(-1, -2, -3))).size)
-//      println(tr.countVerticesByType)
-//      println(tr.edgesPerIndexType)
-    } finally {
-      tr.shutdown
-    }
+  "Blocking additions" should "correctly load triples from a file" in new TestStore {
+    val resource = "university0_0.nt"
+    val tripleStream = classOf[GroundTruthSpec].getResourceAsStream(resource)
+    tr.addTriples(TripleIterator(tripleStream, Lang.NTRIPLES))
+    val count = tr.resultIteratorForQuery(Seq(TriplePattern(-1, -2, -3))).size
+    val expectedCount = 25700
+    assert(count == expectedCount)
   }
 
 }
