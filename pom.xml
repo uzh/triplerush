@@ -45,7 +45,7 @@
 			<uniqueVersion>false</uniqueVersion>
 			<id>central</id>
 			<name>Proxy Releases</name>
-			<url>${proxy.url.base}/external-local</url>
+			<url>${proxy.url.base}/libs-releases-local</url>
 			<layout>default</layout>
 		</repository>
 
@@ -53,7 +53,7 @@
 			<uniqueVersion>false</uniqueVersion>
 			<id>snapshots</id>
 			<name>Proxy Snapshots</name>
-			<url>${proxy.url.base}/external-local</url>
+			<url>${proxy.url.base}/libs-snapshots-local</url>
 		</snapshotRepository>
 		<site>
 			<id>githubsite</id>
