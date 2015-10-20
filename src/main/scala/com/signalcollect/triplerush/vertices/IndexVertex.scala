@@ -71,6 +71,7 @@ abstract class IndexVertex[StateType](val id: Long)
         val operationId = b.blockingOperationId
         val wasAdded = addChildDelta(childDelta)
         val operationVertexId = OperationIds.embedInLong(operationId)
+        println(s"index vertex $id = ${new EfficientIndexPattern(id).toTriplePattern} got edge $b with tickets $ticketsToReturn from operation vertex $operationId")
         graphEditor.sendSignal(ticketsToReturn, operationVertexId)
         wasAdded
       case other: Any =>

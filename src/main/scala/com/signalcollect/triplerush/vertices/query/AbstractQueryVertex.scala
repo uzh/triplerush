@@ -52,7 +52,7 @@ abstract class AbstractQueryVertex[StateType](
   override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]): Boolean = {
     signal match {
       case deliveredTickets: Long =>
-        queryTicketsReceived.receivedTickets(deliveredTickets)
+        queryTicketsReceived.receive(deliveredTickets)
       case bindings: Array[_] =>
         handleBindings(bindings.asInstanceOf[Array[Array[Int]]])
       case resultCount: Int =>

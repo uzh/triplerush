@@ -36,25 +36,19 @@ class IntegrationSpec extends FlatSpec with UnitFixture with Checkers with Scala
   implicit lazy val arbQuery = Arbitrary(queryPatterns)
 
   "TripleRush" should "correctly answer a query for data that is not in the store" in new TestStore {
-    println(s"1 $tr")
     val trResults = TestHelper.execute(
       tr,
       Set(TriplePattern(1, 2, 3)),
       List(TriplePattern(-1, 4, -1)))
-    println("2")
     assert(Set[Map[Int, Int]]() === trResults)
-    println("woot?")
   }
 
   it should "correctly answer a query for a specific pattern that exists" in new TestStore {
-    println(s"1 $tr")
     val trResults = TestHelper.execute(
       tr,
       Set(TriplePattern(1, 2, 3)),
       List(TriplePattern(1, 2, 3)))
-    println("2")
     assert(Set[Map[Int, Int]](Map()) === trResults)
-    println("woot?")
   }
 
   it should "correctly answer a query for a specific pattern that does not exist" in new TestStore {

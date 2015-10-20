@@ -76,6 +76,26 @@ trait ConvenienceOperations {
     asyncAddEncodedTriple(sId, pId, oId)
   }
 
+  /**
+   * String encoding:
+   * By default something is interpreted as an IRI.
+   * If something starts with a hyphen or a digit, it is interpreted as an integer literal
+   * If something starts with '"' it is interpreted as a string literal.
+   * If something has an extra '<' prefix, then the remainder is interpreted as an XML literal.
+   * If something starts with '_', then the remainder is assumed to be a blank node ID where uniqueness is the
+   * responsibility of the caller.
+   */
+  def asyncAddStringTriples(i: Iterator[(String, String, String)]): Future[Unit] = {
+    val mappedIterator = i.map {
+      case (s, p, o) =>
+        val sId = dictionary(s)
+        val pId = dictionary(p)
+        val oId = dictionary(o)
+        TriplePattern(sId, pId, oId)
+    }
+    asyncAddTriplePatterns(mappedIterator)
+  }
+
   def asyncAddTriple(triple: JenaTriple): Future[Unit] = {
     asyncAddTriplePattern(toTriplePattern(triple, dictionary))
   }

@@ -33,6 +33,7 @@ class BlockingTripleAdditionsVertex(
   val id = OperationIds.embedInLong(operationId)
 
   def dispatchTripleAdditionBatch(graphEditor: GraphEditor[Long, Any]): Unit = {
+    println(s"BlockingTripleAdditionsVertex $id is dispatching")
     var dispatchedTriples = 0L
     while (triples.hasNext && dispatchedTriples < batchSize) {
       dispatchedTriples += 1
@@ -48,6 +49,7 @@ class BlockingTripleAdditionsVertex(
       graphEditor.addEdge(sp, new BlockingIndexVertexEdge(o, IndexStructure.ticketsForIndexOperation(sp), operationId))
     }
     val expectedTickets = dispatchedTriples * IndexStructure.ticketsForTripleOperation
+    println(s"add edge operations dispatched, expected tickets = $expectedTickets")
     val synchronization = new TicketSynchronization("BlockingTripleAdditionsVertex", expectedTickets)
     synchronization.onSuccess { () =>
       if (triples.hasNext) {
@@ -58,6 +60,7 @@ class BlockingTripleAdditionsVertex(
       }
     }
     setState(Some(synchronization))
+    synchronization.receive(0)
   }
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
@@ -72,9 +75,10 @@ class BlockingTripleAdditionsVertex(
             throw new Exception(
               s"Blocking triple addition vertex received tickets when there was no ongoing synchronization.")
           case Some(s) =>
-            s.receivedTickets(deliveredTickets)
+            s.receive(deliveredTickets)
+            println(s"operation vertex $id received ${s.receivedTickets}/${s.expectedTickets} tickets")
         }
-      case other@_ =>
+      case other @ _ =>
         throw new UnsupportedOperationException(
           s"Blocking triple addition vertex received an unsupported message $signal of type ${signal.getClass.getSimpleName}.")
     }

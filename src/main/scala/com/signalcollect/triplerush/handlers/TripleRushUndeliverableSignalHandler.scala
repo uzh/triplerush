@@ -38,13 +38,17 @@ case object TripleRushUndeliverableSignalHandler extends UndeliverableSignalHand
   def vertexForSignalNotFound(signal: Any, inexistentTargetId: Long, senderId: Option[Long], graphEditor: GraphEditor[Long, Any]): Unit = {
     signal match {
       case queryParticle: Array[Int] =>
+        println(s"vertexForSignalNotFound(queryParticle)")
         val queryVertexId = OperationIds.embedInLong(queryParticle.queryId)
         graphEditor.sendSignal(queryParticle.tickets, queryVertexId)
       case CardinalityRequest(forPattern: TriplePattern, requestor: Long) =>
+        println(s"vertexForSignalNotFound(cardinalityRequest)")
         graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor)
       case ChildIdRequest =>
+        println(s"vertexForSignalNotFound(childIdRequest)")
         graphEditor.sendSignal(ChildIdReply(Array()), senderId.get, inexistentTargetId)
       case s: SubjectCountSignal =>
+        println(s"vertexForSignalNotFound(SubjectCountSignal)")
         // This count could potentially arrive before the vertex is created.
         val predicateIndex = new PIndex(inexistentTargetId.asInstanceOf[Long])
         graphEditor.addVertex(predicateIndex)

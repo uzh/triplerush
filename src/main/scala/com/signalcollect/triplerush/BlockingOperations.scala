@@ -33,7 +33,9 @@ trait BlockingOperations {
   import TripleRush.defaultBlockingOperationTimeout
 
   def addTriplePatterns(i: Iterator[TriplePattern], timeout: Duration = defaultBlockingOperationTimeout): Unit = {
+    println("adding patterns")
     Await.result(asyncAddTriplePatterns(i), timeout)
+    println("done adding patterns")
   }
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
@@ -67,6 +69,19 @@ trait BlockingOperations {
    */
   def addStringTriple(s: String, p: String, o: String, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
     Await.result(asyncAddStringTriple(s, p, o), timeout)
+  }
+
+  /**
+   * String encoding:
+   * By default something is interpreted as an IRI.
+   * If something starts with a hyphen or a digit, it is interpreted as an integer literal
+   * If something starts with '"' it is interpreted as a string literal.
+   * If something has an extra '<' prefix, then the remainder is interpreted as an XML literal.
+   * If something starts with '_', then the remainder is assumed to be a blank node ID where uniqueness is the
+   * responsibility of the caller.
+   */
+  def addStringTriples(i: Iterator[(String, String, String)], timeout: Duration = defaultBlockingOperationTimeout): Unit = {
+    Await.result(asyncAddStringTriples(i), timeout)
   }
 
   def addTriple(triple: JenaTriple, timeout: Duration = defaultBlockingOperationTimeout): Unit = {

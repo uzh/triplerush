@@ -34,6 +34,7 @@ case object TripleRushEdgeAddedToNonExistentVertexHandlerFactory extends EdgeAdd
 case object TripleRushEdgeAddedToNonExistentVertexHandler extends EdgeAddedToNonExistentVertexHandler[Long, Any] {
 
   def handleImpossibleEdgeAddition(edge: Edge[Long], vertexId: Long, graphEditor: GraphEditor[Long, Any]): Option[Vertex[Long, _, Long, Any]] = {
+    println(s"handleImpossibleEdgeAddition($edge)")
     edge match {
       case b: BlockingIndexVertexEdge =>
         var remainingTickets = b.tickets
@@ -46,7 +47,7 @@ case object TripleRushEdgeAddedToNonExistentVertexHandler extends EdgeAddedToNon
         }
         b.tickets = remainingTickets
     }
-    Thread.sleep(1)
+    //Thread.sleep(1)
     IndexType(vertexId) match {
       case Root => Some(new RootIndex)
       case S    => Some(new SIndex(vertexId))
