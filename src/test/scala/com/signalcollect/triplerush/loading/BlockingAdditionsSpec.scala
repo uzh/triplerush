@@ -8,13 +8,19 @@ import com.signalcollect.triplerush.{ GroundTruthSpec, TestStore, TriplePattern 
 
 class BlockingAdditionsSpec extends FlatSpec with ScalaFutures {
 
-  "Blocking additions" should "correctly load triples from a file" in new TestStore {
-    val resource = "university0_0.nt"
-    val tripleStream = classOf[GroundTruthSpec].getResourceAsStream(resource)
-    tr.addTriples(TripleIterator(tripleStream, Lang.NTRIPLES))
-    val count = tr.resultIteratorForQuery(Seq(TriplePattern(-1, -2, -3))).size
-    val expectedCount = 25700
-    assert(count == expectedCount)
+  "Blocking additions" should "correctly load triples from a file" in  {
+    val tr = TestStore.instantiateUniqueStore()
+    try {
+      val resource = s"university0_0.nt"
+      val tripleStream = classOf[GroundTruthSpec].getResourceAsStream(resource)
+      println(s"Loading file $resource ...")
+      tr.addTriples(TripleIterator(tripleStream, Lang.NTRIPLES))
+      println(s"Done loading $resource.")
+      val expectedCount = 25700
+      val count = tr.resultIteratorForQuery(Seq(TriplePattern(-1, -2, -3))).size
+      assert(count == expectedCount)
+    } finally {
+      tr.shutdown
+    }
   }
-
 }
