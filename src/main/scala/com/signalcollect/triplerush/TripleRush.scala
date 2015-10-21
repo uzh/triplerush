@@ -55,7 +55,7 @@ object TrGlobal {
 
 object TripleRush {
 
-  val defaultBlockingOperationTimeout: Duration = 1.minute
+  val defaultBlockingOperationTimeout: Duration = 1.hours
 
   def apply(graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
             dictionary: RdfDictionary = new HashDictionary(),
