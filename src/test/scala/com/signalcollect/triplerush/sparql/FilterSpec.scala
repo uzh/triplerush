@@ -26,15 +26,74 @@ import com.signalcollect.triplerush.TestStore
 
 class FilterSpec extends FlatSpec with UnitFixture with Matchers {
 
-  "ARQ FILTER" should "return the correct result even when all variables are bound during an existence check" in new TestStore {
+  "ARQ FILTER" should "return no result when all variables are bound during an EXISTS check and the checked thing does not exist" in new TestStore {
     val sparql = """
 SELECT ?r {
-  ?r <http://p> <http://r2>
-  FILTER EXISTS { ?r <http://p> <http://r3> }
+  ?r <http://p> "r2"
+  FILTER EXISTS { <http://r1> <http://p> <http://r3> }
 }"""
-    tr.addStringTriple("http://r1", "http://p", "r2")
-        val results = Sparql(sparql)
+    tr.addStringTriple("http://r1", "http://p", "\"r2\"")
+    val results = Sparql(sparql)
     assert(!results.hasNext)
+  }
+
+  it should "return a result when all variables are bound during an EXISTS check and the checked thing does exist" in new TestStore {
+    val sparql = """
+SELECT ?r {
+  ?r <http://p> "r2"
+  FILTER EXISTS { <http://r1> <http://p> "r2" }
+}"""
+    tr.addStringTriple("http://r1", "http://p", "\"r2\"")
+    val results = Sparql(sparql)
+    assert(results.hasNext)
+    assert(results.next.get("r").toString == "http://r1")
+  }
+
+  it should "return a result when all variables are bound during a NOT EXISTS check and the checked thing does not exist" in new TestStore {
+    val sparql = """
+SELECT ?r {
+  ?r <http://p> "r2"
+  FILTER NOT EXISTS { <http://r1> <http://p> <http://r3> }
+}"""
+    tr.addStringTriple("http://r1", "http://p", "\"r2\"")
+    val results = Sparql(sparql)
+    assert(results.hasNext)
+    assert(results.next.get("r").toString == "http://r1")
+  }
+
+  it should "return no result when all variables are bound during a NOT EXISTS check and the checked thing does exist" in new TestStore {
+    val sparql = """
+SELECT ?r {
+  ?r <http://p> "r2"
+  FILTER NOT EXISTS { <http://r1> <http://p> "r2" }
+}"""
+    tr.addStringTriple("http://r1", "http://p", "\"r2\"")
+    val results = Sparql(sparql)
+    assert(!results.hasNext)
+  }
+
+  it should "support filtering around dates (negative)" in new TestStore {
+    val sparql = """
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?r ?start {
+  ?r <http://p> ?start
+  FILTER (xsd:dateTime(?start) > xsd:dateTime("2010-01-01T00:00:00"))
+}"""
+    tr.addStringTriple("http://r1", "http://p", "\"2009-01-01T00:00:00\"")
+    val results = Sparql(sparql)
+    assert(!results.hasNext)
+  }
+
+  it should "support filtering around dates (positive)" in new TestStore {
+    val sparql = """
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?r ?start {
+  ?r <http://p> ?start
+  FILTER (xsd:dateTime(?start) > xsd:dateTime("2010-01-01T00:00:00"))
+}"""
+    tr.addStringTriple("http://r1", "http://p", "\"2011-01-01T00:00:00\"")
+    val results = Sparql(sparql)
+    assert(results.hasNext)
   }
 
 }
