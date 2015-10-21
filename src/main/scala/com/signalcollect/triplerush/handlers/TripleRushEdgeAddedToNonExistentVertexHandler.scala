@@ -37,18 +37,15 @@ case object TripleRushEdgeAddedToNonExistentVertexHandler extends EdgeAddedToNon
   def handleImpossibleEdgeAddition(edge: Edge[Long], vertexId: Long, graphEditor: GraphEditor[Long, Any]): Option[Vertex[Long, _, Long, Any]] = {
     edge match {
       case b: BlockingIndexVertexEdge =>
-        var remainingTickets = b.tickets
         val parentIds = IndexStructure.parentIds(vertexId)
         parentIds foreach { parentId =>
           val idDelta = vertexId.parentIdDelta(parentId)
           val indexType = IndexType(parentId)
           val tickets = IndexStructure.ticketsForIndexOperation(indexType)
           val oId = b.blockingOperationId
-          remainingTickets -= tickets
+          b.tickets -= tickets
           graphEditor.addEdge(parentId, new BlockingIndexVertexEdge(idDelta, tickets, oId))
         }
-        assert(remainingTickets > 0)
-        b.tickets = remainingTickets
     }
     IndexType(vertexId) match {
       case Root => Some(new RootIndex)

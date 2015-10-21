@@ -30,17 +30,9 @@ import com.signalcollect.Vertex
  */
 class BlockingIndexVertexEdge(
     val childDelta: Int,
-    private var _tickets: Long,
+    var tickets: Long,
     val blockingOperationId: Int) extends Edge[Long] {
 
-  def tickets = synchronized {
-    _tickets
-  }
-
-  def tickets_=(m: Long): Unit = synchronized {
-    _tickets = m
-  }
-  
   override def id: EdgeId[_] = throw new UnsupportedOperationException
 
   override def sourceId: Any = throw new UnsupportedOperationException
