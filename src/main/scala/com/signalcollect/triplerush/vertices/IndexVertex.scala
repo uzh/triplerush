@@ -30,14 +30,20 @@ abstract class IndexVertex[StateType](val id: Long)
     extends BaseVertex[StateType] {
 
   override def expose: Map[String, Any] = {
+    val dOption = TrGlobal.dictionary
+    def resolveWithDictionary(id: Int): String = {
+      dOption match {
+        case None    => "Dictionary is unavailable."
+        case Some(d) => d.get(id).getOrElse("*")
+      }
+    }
     val indexType = getClass.getSimpleName
-    val d = TrGlobal.dictionary
     val p = new EfficientIndexPattern(id)
     Map[String, Any](
       "Outgoing edges" -> targetIds.size,
-      "Subject" -> d.get(p.s),
-      "Predicate" -> d.get(p.p),
-      "Object" -> d.get(p.o),
+      "Subject" -> resolveWithDictionary(p.s),
+      "Predicate" -> resolveWithDictionary(p.p),
+      "Object" -> resolveWithDictionary(p.o),
       "TriplePattern" -> s"(sId=${p.s}, pId=${p.p}, oId=${p.o})")
   }
 
