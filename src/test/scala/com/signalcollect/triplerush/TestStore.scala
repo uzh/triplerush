@@ -115,8 +115,6 @@ class TestStore(val tr: TripleRush) extends NoArg {
     model.close()
     graph.close()
     tr.shutdown()
-    tr.graphBuilder.config.actorSystem.get.shutdown()
-    tr.graphBuilder.config.actorSystem.get.awaitTermination()
   }
 
   override def apply(): Unit = {
