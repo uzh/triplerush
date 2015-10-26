@@ -24,7 +24,7 @@
 		<apache.jena.version>3.0.0</apache.jena.version>
 		<sesame.version>4.0.0-RC1</sesame.version>
 		<scalatest.version>2.2.5</scalatest.version>
-		<scalacheck.version>1.12.4</scalacheck.version>
+		<scalacheck.version>1.12.5</scalacheck.version>
 		<easymock.version>3.3.1</easymock.version>
 		<akka.version>2.4.0</akka.version>
 		<akka.kryo.version>0.3.3</akka.kryo.version>
