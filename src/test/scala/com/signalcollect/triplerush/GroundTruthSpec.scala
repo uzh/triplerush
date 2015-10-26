@@ -41,7 +41,7 @@ object Lubm {
 
   def load(qe: TripleRush, toId: Int = 14) {
     println("Loading LUBM1 ... ")
-    for (fileNumber <- 0 to toId) {
+    for (fileNumber <- (0 to toId).par) {
       val resource = s"university0_$fileNumber.nt"
       val tripleStream = getClass.getResourceAsStream(resource)
       println(s"Loading file $resource ...")
