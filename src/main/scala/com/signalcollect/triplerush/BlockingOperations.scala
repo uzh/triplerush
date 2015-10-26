@@ -19,21 +19,26 @@
 
 package com.signalcollect.triplerush
 
-import org.apache.jena.graph.{ Triple => JenaTriple }
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import java.io.InputStream
+
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+
+import org.apache.jena.graph.{ Triple => JenaTriple }
 import org.apache.jena.riot.Lang
 
 trait BlockingOperations {
   this: TripleRush with ConvenienceOperations =>
 
   import ConvenienceOperations._
-
   import TripleRush.defaultBlockingOperationTimeout
 
+  private[this] def combineWithShutdownFuture[G](f: Future[G]): Future[G] = Future.firstCompletedOf[G](List(tripleRushShutdown, f))
+
   def addTriplePatterns(i: Iterator[TriplePattern], timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(asyncAddTriplePatterns(i), timeout)
+    Await.result(combineWithShutdownFuture(asyncAddTriplePatterns(i)), timeout)
   }
 
   def addEncodedTriple(sId: Int, pId: Int, oId: Int, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
@@ -41,19 +46,19 @@ trait BlockingOperations {
   }
 
   def count(q: Seq[TriplePattern], timeout: Duration = defaultBlockingOperationTimeout): Long = {
-    Await.result(asyncCount(q), timeout)
+    Await.result(combineWithShutdownFuture(asyncCount(q)), timeout)
       .getOrElse(throw new Exception("Insufficient tickets to completely execute counting query."))
   }
 
   def getIndexAt(indexId: Long, timeout: Duration = defaultBlockingOperationTimeout): Array[Int] = {
-    Await.result(asyncGetIndexAt(indexId), timeout)
+    Await.result(combineWithShutdownFuture(asyncGetIndexAt(indexId)), timeout)
   }
 
   def loadFromStream(
     inputStream: InputStream,
     lang: Lang,
     timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(asyncLoadFromStream(inputStream, lang), timeout)
+    Await.result(combineWithShutdownFuture(asyncLoadFromStream(inputStream, lang)), timeout)
   }
 
   /**
@@ -66,7 +71,7 @@ trait BlockingOperations {
    * responsibility of the caller.
    */
   def addStringTriple(s: String, p: String, o: String, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(asyncAddStringTriple(s, p, o), timeout)
+    Await.result(combineWithShutdownFuture(asyncAddStringTriple(s, p, o)), timeout)
   }
 
   /**
@@ -79,19 +84,19 @@ trait BlockingOperations {
    * responsibility of the caller.
    */
   def addStringTriples(i: Iterator[(String, String, String)], timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(asyncAddStringTriples(i), timeout)
+    Await.result(combineWithShutdownFuture(asyncAddStringTriples(i)), timeout)
   }
 
   def addTriple(triple: JenaTriple, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(asyncAddTriple(triple), timeout)
+    Await.result(combineWithShutdownFuture(asyncAddTriple(triple)), timeout)
   }
 
   def addTriples(i: Iterator[JenaTriple], timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(asyncAddTriples(i), timeout)
+    Await.result(combineWithShutdownFuture(asyncAddTriples(i)), timeout)
   }
 
   def addTriplePattern(tp: TriplePattern, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(asyncAddTriplePattern(tp), timeout)
+    Await.result(combineWithShutdownFuture(asyncAddTriplePattern(tp)), timeout)
   }
 
 }

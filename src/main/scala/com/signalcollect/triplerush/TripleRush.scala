@@ -22,7 +22,6 @@ package com.signalcollect.triplerush
 
 import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration.{ Duration, DurationInt }
-
 import com.signalcollect.{ ExecutionConfiguration, GraphBuilder }
 import com.signalcollect.configuration.ExecutionMode
 import com.signalcollect.interfaces.MapperFactory
@@ -36,8 +35,9 @@ import com.signalcollect.triplerush.vertices.RootIndex
 import com.signalcollect.triplerush.vertices.blocking.TripleAdditionSynchronizationVertex
 import com.signalcollect.triplerush.vertices.query._
 import com.typesafe.config._
-
 import akka.cluster.Cluster
+import scala.util.Success
+import scala.util.Failure
 
 /**
  * Global accessor for the console visualization.
@@ -101,7 +101,6 @@ class TripleRush(
       withBlockingGraphModificationsSupport(false).
       withStatsReportingInterval(500).
       withEagerIdleDetection(false).build
-  implicit private[this] val executionContext = graph.system.dispatcher
   private[this] val system = graph.system
   private[this] val cluster = Cluster(system)
   val log = system.log
@@ -115,9 +114,11 @@ class TripleRush(
       shutdown()
     }
   }
+  private[this] val tripleRushShutdownPromise: Promise[Nothing] = Promise[Nothing]()
+  protected val tripleRushShutdown: Future[Nothing] = tripleRushShutdownPromise.future
   graph.addVertex(new RootIndex)
   graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
-  // End initialization ============= 
+  // End initialization =============
 
   def isShutdown = _isShutdown
 
@@ -170,11 +171,14 @@ class TripleRush(
   }
 
   def shutdown(): Unit = {
-    _isShutdown = true
-    dictionary.close()
-    graph.shutdown()
-    val terminationFuture = system.terminate()
-    Await.result(terminationFuture, Duration.Inf)
+    if (!_isShutdown) {
+      _isShutdown = true
+      dictionary.close()
+      graph.shutdown()
+      val terminationFuture = system.terminate()
+      tripleRushShutdownPromise.complete(Failure(
+        new Exception("Operation was not completed, because TripleRush has shut down, possibly due to a cluster node failure.")))
+    }
   }
 
   def edgesPerIndexType: Map[String, Int] = {
