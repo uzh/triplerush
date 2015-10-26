@@ -1,7 +1,7 @@
 /*
  *  @author Philip Stutz
  *
- *  Copyright 2015 iHealth Technologies
+ *  Copyright 2015 Cotiviti
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import com.signalcollect.triplerush.vertices.BaseVertex
 import scala.concurrent.Promise
 import com.signalcollect.triplerush.vertices.query.TicketSynchronization
 
-class BlockingTripleAdditionsVertex(
+class TripleAdditionSynchronizationVertex(
     triples: Iterator[TriplePattern],
     operationCompletedPromise: Promise[Unit],
     batchSize: Int = 10000) extends BaseVertex[Option[TicketSynchronization]] {

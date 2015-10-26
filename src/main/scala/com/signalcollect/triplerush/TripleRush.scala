@@ -33,7 +33,7 @@ import com.signalcollect.triplerush.mapper._
 import com.signalcollect.triplerush.sparql.VariableEncoding
 import com.signalcollect.triplerush.util._
 import com.signalcollect.triplerush.vertices.RootIndex
-import com.signalcollect.triplerush.vertices.blocking.BlockingTripleAdditionsVertex
+import com.signalcollect.triplerush.vertices.blocking.TripleAdditionSynchronizationVertex
 import com.signalcollect.triplerush.vertices.query._
 import com.typesafe.config._
 
@@ -124,7 +124,7 @@ class TripleRush(
   def asyncAddTriplePatterns(i: Iterator[TriplePattern]): Future[Unit] = {
     assert(!_isShutdown, noOperationsWhenShutdownMessage)
     val promise = Promise[Unit]()
-    val vertex = new BlockingTripleAdditionsVertex(i, promise)
+    val vertex = new TripleAdditionSynchronizationVertex(i, promise)
     graph.addVertex(vertex)
     promise.future
   }
@@ -133,7 +133,7 @@ class TripleRush(
     assert(!_isShutdown, noOperationsWhenShutdownMessage)
     assert(sId > 0 && pId > 0 && oId > 0)
     val promise = Promise[Unit]()
-    val vertex = new BlockingTripleAdditionsVertex(Some(TriplePattern(sId, pId, oId)).iterator, promise)
+    val vertex = new TripleAdditionSynchronizationVertex(Some(TriplePattern(sId, pId, oId)).iterator, promise)
     graph.addVertex(vertex)
     promise.future
   }
