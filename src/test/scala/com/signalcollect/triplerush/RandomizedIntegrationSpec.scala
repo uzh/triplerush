@@ -24,9 +24,10 @@ import org.scalacheck.Gen.{ const, containerOfN, freqTuple, frequency }
 import org.scalacheck.Prop
 import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
-
 import com.signalcollect.triplerush.TripleGenerators.{ queryPatterns, tripleSet }
 import com.signalcollect.triplerush.jena.Jena
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class RandomizedIntegrationSpec extends FlatSpec with Checkers {
 
@@ -44,6 +45,7 @@ class RandomizedIntegrationSpec extends FlatSpec with Checkers {
           } finally {
             jena.shutdown()
             tr.shutdown()
+            Await.result(tr.graph.system.terminate(), Duration.Inf)
           }
       }, minSuccessful(100))
   }

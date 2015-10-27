@@ -3,8 +3,9 @@ package com.signalcollect.triplerush.loading
 import org.apache.jena.riot.Lang
 import org.scalatest.FlatSpec
 import org.scalatest.concurrent.ScalaFutures
-
 import com.signalcollect.triplerush.{ GroundTruthSpec, TestStore, TriplePattern }
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class BlockingAdditionsSpec extends FlatSpec with ScalaFutures {
 
@@ -21,6 +22,7 @@ class BlockingAdditionsSpec extends FlatSpec with ScalaFutures {
       assert(count == expectedCount)
     } finally {
       tr.shutdown
+      Await.result(tr.graph.system.terminate(), Duration.Inf)
     }
   }
 }

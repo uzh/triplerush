@@ -3,6 +3,8 @@ package com.signalcollect.triplerush
 import com.signalcollect.triplerush.vertices.OptimizedIndexVertex
 import com.signalcollect.util.FastInsertIntSet
 import com.signalcollect.util.SplayIntSet
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 object SplayIntSetDiagnostics extends App {
 
@@ -39,6 +41,7 @@ object SplayIntSetDiagnostics extends App {
     }
   } finally {
     tr.shutdown
+    Await.result(tr.graph.system.terminate(), Duration.Inf)
   }
 
 }

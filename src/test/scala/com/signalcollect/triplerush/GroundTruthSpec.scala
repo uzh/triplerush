@@ -36,6 +36,7 @@ import com.signalcollect.triplerush.sparql.Sparql
 import com.signalcollect.triplerush.sparql.TripleRushGraph
 import collection.JavaConversions._
 import com.signalcollect.triplerush.loading.TripleIterator
+import scala.concurrent.duration.Duration
 
 object Lubm {
 
@@ -264,6 +265,7 @@ class GroundTruthSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   override def afterAll {
     tr.shutdown
+    Await.result(tr.graph.system.terminate(), Duration.Inf)
   }
 
   def executeOnQueryEngine(q: String): List[Bindings] = {

@@ -23,6 +23,7 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
   def getGraph: Graph = {
     val tr = TestStore.instantiateUniqueStore()
     TripleRushGraph(tr)
+    // TODO: Actor system not shut down.
   }
 
   override def testIsomorphismFile(): Unit = {

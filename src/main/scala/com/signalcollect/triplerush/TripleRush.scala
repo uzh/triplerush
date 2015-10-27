@@ -110,7 +110,7 @@ class TripleRush(
     if (!_isShutdown) {
       val msg = "Cluster unexpectedly lost a member, TripleRush can no longer operate and is shutting down."
       println(msg)
-      log.info(msg)
+      log.error(new Exception(msg), msg)
       shutdown()
     }
   }
@@ -175,7 +175,6 @@ class TripleRush(
       _isShutdown = true
       dictionary.close()
       graph.shutdown()
-      val terminationFuture = system.terminate()
       tripleRushShutdownPromise.complete(Failure(
         new Exception("Operation was not completed, because TripleRush has shut down, possibly due to a cluster node failure.")))
     }

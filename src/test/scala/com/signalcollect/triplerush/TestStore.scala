@@ -22,22 +22,20 @@ package com.signalcollect.triplerush
 
 import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicInteger
-
 import scala.annotation.tailrec
 import scala.reflect.runtime.universe
 import scala.util.{ Failure, Success, Try }
-
 import org.scalatest.fixture.NoArg
-
 import com.signalcollect.GraphBuilder
 import com.signalcollect.configuration.Akka
 import com.signalcollect.triplerush.sparql.TripleRushGraph
 import com.typesafe.config.{ Config, ConfigFactory }
-
 import akka.actor.ActorSystem
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 object TestStore {
-
+  
   private[this] val uniquePrefixTracker = new AtomicInteger(0)
 
   private[this] val uniqueNameTracker = new AtomicInteger(0)
@@ -115,6 +113,7 @@ class TestStore(val tr: TripleRush) extends NoArg {
     model.close()
     graph.close()
     tr.shutdown()
+    Await.result(tr.graph.system.terminate(), Duration.Inf)
   }
 
   override def apply(): Unit = {
