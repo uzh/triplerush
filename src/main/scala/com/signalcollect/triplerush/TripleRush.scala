@@ -115,7 +115,7 @@ class TripleRush(
     }
   }
   private[this] val tripleRushShutdownPromise: Promise[Nothing] = Promise[Nothing]()
-  protected val tripleRushShutdown: Future[Nothing] = tripleRushShutdownPromise.future
+  protected val tripleRushShutdown: Future[Nothing] = tripleRushShutdownPromise.future // Future is failed when TripleRush shuts down.
   graph.addVertex(new RootIndex)
   graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
   // End initialization =============
