@@ -61,10 +61,6 @@ object TripleRush {
   }
 }
 
-/**
- * `fastStart`: Faster startup time, might delay first query execution times and
- * allows to skip calling `prepareExecution`.
- */
 class TripleRush(
     val graphBuilder: GraphBuilder[Long, Any],
     val dictionary: RdfDictionary,
