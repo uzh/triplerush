@@ -22,6 +22,7 @@
 		<signalcollect.version>7.0.0-SNAPSHOT</signalcollect.version>
 		<mapdb.version>2.0-beta10</mapdb.version>
 		<apache.jena.version>3.0.0</apache.jena.version>
+		<nxparser.version>2.2</nxparser.version>
 		<sesame.version>4.0.0-RC1</sesame.version>
 		<scalatest.version>2.2.5</scalatest.version>
 		<scalacheck.version>1.12.5</scalacheck.version>
@@ -88,6 +89,17 @@
 			<groupId>org.apache.jena</groupId>
 			<artifactId>jena-core</artifactId>
 			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.semanticweb.yars</groupId>
+			<artifactId>nxparser-parsers</artifactId>
+			<version>${nxparser.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.typesafe.akka</groupId>
+			<artifactId>akka-testkit_${scala.minor.version}</artifactId>
+			<version>${akka.version}</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.jena</groupId>
@@ -225,6 +237,11 @@
 			<id>sunnylbk</id>
 			<name>Bharath Kumar</name>
 			<url>https://github.com/sunnylbk</url>
+		</developer>
+		<developer>
+			<id>kolarm</id>
+			<name>Marko Kolar</name>
+			<url>https://github.com/kolarm</url>
 		</developer>
 	</developers>
 </project>

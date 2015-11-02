@@ -32,10 +32,6 @@ import scala.concurrent.duration.Duration
 
 object ConvenienceOperations {
 
-  implicit def filePathToTripleIterator(filePath: String): TripleIterator = {
-    TripleIterator(filePath)
-  }
-
   def toTriplePattern(triple: JenaTriple, dictionary: RdfDictionary): TriplePattern = {
     val subjectString = NodeConversion.nodeToString(triple.getSubject)
     val predicateString = NodeConversion.nodeToString(triple.getPredicate)
@@ -53,10 +49,8 @@ trait ConvenienceOperations {
 
   import ConvenienceOperations._
 
-  def asyncLoadFromStream(
-    inputStream: InputStream,
-    lang: Lang): Future[Unit] = {
-    val iterator = TripleIterator(inputStream, lang)
+  def asyncLoadFromStream(inputStream: InputStream): Future[Unit] = {
+    val iterator = TripleIterator(inputStream)
     asyncAddTriples(iterator)
   }
 

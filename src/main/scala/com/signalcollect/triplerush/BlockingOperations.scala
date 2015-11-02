@@ -56,9 +56,8 @@ trait BlockingOperations {
 
   def loadFromStream(
     inputStream: InputStream,
-    lang: Lang,
     timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(combineWithShutdownFuture(asyncLoadFromStream(inputStream, lang)), timeout)
+    Await.result(combineWithShutdownFuture(asyncLoadFromStream(inputStream)), timeout)
   }
 
   /**

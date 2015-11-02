@@ -46,7 +46,7 @@ object Lubm {
       val resource = s"university0_$fileNumber.nt"
       val tripleStream = getClass.getResourceAsStream(resource)
       println(s"Loading file $resource ...")
-      qe.addTriples(TripleIterator(tripleStream, Lang.NTRIPLES))
+      qe.addTriples(TripleIterator(tripleStream))
       println(s"Done loading $resource.")
     }
     println("Finished loading LUBM1.")

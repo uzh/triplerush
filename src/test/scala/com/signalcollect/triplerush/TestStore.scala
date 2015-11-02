@@ -106,6 +106,7 @@ class TestStore(val tr: TripleRush) extends NoArg {
 
   lazy implicit val graph = TripleRushGraph(tr)
   lazy implicit val model = graph.getModel
+  lazy implicit val system = tr.graph.system
 
   def this() = this(TestStore.instantiateUniqueStore())
 
