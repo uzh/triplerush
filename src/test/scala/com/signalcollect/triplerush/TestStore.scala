@@ -35,17 +35,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 object TestStore {
-  
-  private[this] val uniquePrefixTracker = new AtomicInteger(0)
-
-  private[this] val uniqueNameTracker = new AtomicInteger(0)
-
-  def nextUniquePrefix = uniquePrefixTracker.incrementAndGet.toString
-
-  def nextUniqueName = uniqueNameTracker.incrementAndGet.toString
 
   def instantiateUniqueStore(): TripleRush = {
-    val uniquePrefix = nextUniquePrefix
     val graphBuilder = instantiateUniqueGraphBuilder
     TripleRush(graphBuilder = graphBuilder)
   }
@@ -67,7 +58,7 @@ object TestStore {
       loggingLevel = None,
       kryoRegistrations = defaultGraphConfig.kryoRegistrations,
       kryoInitializer = None)
-    val actorSystemName = nextUniqueName
+    val actorSystemName = "TripleRushTestSystem"
     val customAkkaConfig = customClusterConfig(actorSystemName = actorSystemName, seedPort = freePort)
       .withFallback(defaultAkkaConfig)
     ActorSystem(actorSystemName, customAkkaConfig)
@@ -75,7 +66,6 @@ object TestStore {
 
   def instantiateUniqueGraphBuilder(): GraphBuilder[Long, Any] = {
     new GraphBuilder[Long, Any]()
-      .withActorNamePrefix(nextUniquePrefix)
       .withActorSystem(instantiateUniqueActorSystem())
   }
 
