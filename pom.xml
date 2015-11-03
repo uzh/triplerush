@@ -9,7 +9,7 @@
 	</parent>
 	<artifactId>triplerush_2.11</artifactId>
 	<groupId>com.signalcollect</groupId>
-	<version>7.0.0-SNAPSHOT</version>
+	<version>8.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>triplerush</name>
 	<description>A distributed in-memory graph store.</description>
@@ -19,7 +19,7 @@
 		<triplerush.version>${project.version}</triplerush.version>
 		<team.group.id>uzh</team.group.id>
 		<scala.release>7</scala.release>
-		<signalcollect.version>7.0.0-SNAPSHOT</signalcollect.version>
+		<signalcollect.version>8.0.0-SNAPSHOT</signalcollect.version>
 		<mapdb.version>2.0-beta10</mapdb.version>
 		<apache.jena.version>3.0.0</apache.jena.version>
 		<nxparser.version>2.2</nxparser.version>
