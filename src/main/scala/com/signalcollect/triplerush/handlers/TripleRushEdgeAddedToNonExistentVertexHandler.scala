@@ -24,6 +24,7 @@ import com.signalcollect.interfaces.{ EdgeAddedToNonExistentVertexHandler, EdgeA
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush._
+import java.util.concurrent.atomic.AtomicInteger
 
 case object TripleRushEdgeAddedToNonExistentVertexHandlerFactory extends EdgeAddedToNonExistentVertexHandlerFactory[Long, Any] {
   def createInstance: EdgeAddedToNonExistentVertexHandler[Long, Any] = TripleRushEdgeAddedToNonExistentVertexHandler
@@ -36,16 +37,14 @@ case object TripleRushEdgeAddedToNonExistentVertexHandler extends EdgeAddedToNon
   def handleImpossibleEdgeAddition(edge: Edge[Long], vertexId: Long, graphEditor: GraphEditor[Long, Any]): Option[Vertex[Long, _, Long, Any]] = {
     edge match {
       case b: BlockingIndexVertexEdge =>
-        IndexStructure.parentIds(vertexId) foreach { parentId =>
+        val parentIds = IndexStructure.parentIds(vertexId)
+        parentIds foreach { parentId =>
           val idDelta = vertexId.parentIdDelta(parentId)
-          val tickets = IndexStructure.ticketsForIndexOperation(IndexType(parentId))
+          val indexType = IndexType(parentId)
+          val tickets = IndexStructure.ticketsForIndexOperation(indexType)
+          val oId = b.blockingOperationId
           b.tickets -= tickets
-          graphEditor.addEdge(parentId, new BlockingIndexVertexEdge(idDelta, tickets, b.blockingOperationId))
-        }
-      case other @ _ =>
-        IndexStructure.parentIds(vertexId) foreach { parentId =>
-          val idDelta = vertexId.parentIdDelta(parentId)
-          graphEditor.addEdge(parentId, new IndexVertexEdge(idDelta))
+          graphEditor.addEdge(parentId, new BlockingIndexVertexEdge(idDelta, tickets, oId))
         }
     }
     IndexType(vertexId) match {

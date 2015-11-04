@@ -57,10 +57,7 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
 
   def getStatistic(s: Node, p: Node, o: Node): Long = {
     val q = Seq(arqNodesToPattern(s, p, o))
-    val countOptionFuture = tr.executeCountingQuery(q)
-    val countOption = Await.result(countOptionFuture, 300.seconds)
-    val count = countOption.getOrElse(throw new Exception(s"Incomplete counting query execution for $q."))
-    count
+    tr.count(q)
   }
 
   override def createStatisticsHandler = this
@@ -73,12 +70,12 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
    * - If a string starts with `"` or "<", then it is interpreted as a general literal.
    */
   override def performAdd(triple: Triple): Unit = {
-    tr.addTriple(triple, blocking = true)
+    tr.addTriple(triple)
   }
 
   override def clear: Unit = {
     getEventManager.notifyEvent(this, GraphEvents.removeAll)
-    tr.clear
+    throw new UnsupportedOperationException("TripleRush implementation does not support the `clear` operation.")
   }
 
   override def close: Unit = {
@@ -126,9 +123,11 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
         case variable: Node_Variable =>
           throw new UnsupportedOperationException("Variables not supported.")
         case blank: Node_Blank =>
-          tr.dictionary(NodeConversion.nodeToString(blank))
-        case other@_ =>
-          tr.dictionary(NodeConversion.nodeToString(other))
+          val blankNodeString = NodeConversion.nodeToString(blank)
+          tr.dictionary(blankNodeString)
+        case other @ _ =>
+          val otherNodeString = NodeConversion.nodeToString(other)
+          tr.dictionary(otherNodeString)
       }
     }
     val sId = nodeToId(s)

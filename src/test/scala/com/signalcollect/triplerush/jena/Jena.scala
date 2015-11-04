@@ -1,28 +1,24 @@
 package com.signalcollect.triplerush.jena
 
-import org.apache.jena.rdf.model.ModelFactory
-import scala.collection.mutable.UnrolledBuffer
-import org.apache.jena.query.QueryFactory
-import org.apache.jena.query.QueryExecutionFactory
-import com.signalcollect.triplerush.QueryParticle._
-import collection.JavaConversions._
-import org.apache.jena.query.QuerySolution
-import org.apache.jena.rdf.model.RDFNode
-import com.signalcollect.triplerush.QueryEngine
-import com.signalcollect.triplerush.TriplePattern
 import scala.Option.option2Iterable
-import org.apache.jena.sparql.engine.ResultSetStream
-import org.apache.jena.sparql.core.ResultBinding
-import org.apache.jena.sparql.engine.binding.BindingProject
-import org.apache.jena.sparql.engine.binding.Binding
-import org.apache.jena.sparql.engine.binding.BindingProjectBase
-import org.apache.jena.sparql.engine.binding.BindingHashMap
+import scala.collection.JavaConversions.asScalaIterator
+import scala.collection.mutable.UnrolledBuffer
+import org.apache.jena.query.{ QueryExecutionFactory, QueryFactory, QuerySolution }
+import org.apache.jena.rdf.model.{ ModelFactory, RDFNode }
+import com.signalcollect.triplerush.{ QueryEngine, TriplePattern }
+import scala.concurrent.duration.Duration
 
 class Jena extends QueryEngine {
 
   val model = ModelFactory.createDefaultModel
 
-  def addEncodedTriple(s: Int, p: Int, o: Int, blocking: Boolean) {
+  // Ignores timeout.
+  def addTriplePatterns(i: Iterator[TriplePattern], timeout: Duration): Unit = {
+    i.foreach(t => addEncodedTriple(t.s, t.p, t.o, Duration.Inf))
+  }
+
+  // Ignores timeout.
+  def addEncodedTriple(s: Int, p: Int, o: Int, timeout: Duration) {
     val resource = model.createResource(intToInsertString(s))
     val prop = model.createProperty(intToInsertString(p))
     val obj = model.createResource(intToInsertString(o))

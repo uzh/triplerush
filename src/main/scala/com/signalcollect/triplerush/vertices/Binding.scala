@@ -26,29 +26,6 @@ import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 
 trait Binding extends IndexVertex[Any] {
 
-  // TODO: Ensure this happens before a blocking edge addition is finished.
-  def onEdgeAdded(ge: GraphEditor[Long, Any]): Unit
-
-  def incrementParentIndexCardinalities(ge: GraphEditor[Long, Any]): Unit = {
-    IndexStructure.parentIds(id).foreach { parentId =>
-      ge.sendSignal(1, parentId)
-    }
-  }
-
-  def decrementParentIndexCardinalities(ge: GraphEditor[Long, Any]): Unit = {
-    IndexStructure.parentIds(id).foreach { parentId =>
-      ge.sendSignal(-1, parentId)
-    }
-  }
-
-  override def addEdge(e: Edge[Long], ge: GraphEditor[Long, Any]): Boolean = {
-    val wasAdded = super.addEdge(e, ge)
-    if (wasAdded) {
-      onEdgeAdded(ge)
-    }
-    wasAdded
-  }
-
   def bindIndividualQuery(childDelta: Int, queryParticle: Array[Int]): Array[Int]
 
   def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]): Unit = {

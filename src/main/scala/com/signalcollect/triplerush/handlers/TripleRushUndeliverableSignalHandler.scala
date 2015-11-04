@@ -21,8 +21,8 @@ package com.signalcollect.triplerush.handlers
 
 import com.signalcollect.GraphEditor
 import com.signalcollect.interfaces.{ UndeliverableSignalHandler, UndeliverableSignalHandlerFactory }
-import com.signalcollect.triplerush.{ CardinalityReply, CardinalityRequest, ChildIdReply, ChildIdRequest }
-import com.signalcollect.triplerush.{ SubjectCountSignal, TriplePattern }
+import com.signalcollect.triplerush.{ ChildIdReply, ChildIdRequest }
+import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.vertices.PIndex
@@ -40,15 +40,8 @@ case object TripleRushUndeliverableSignalHandler extends UndeliverableSignalHand
       case queryParticle: Array[Int] =>
         val queryVertexId = OperationIds.embedInLong(queryParticle.queryId)
         graphEditor.sendSignal(queryParticle.tickets, queryVertexId)
-      case CardinalityRequest(forPattern: TriplePattern, requestor: Long) =>
-        graphEditor.sendSignal(CardinalityReply(forPattern, 0), requestor)
       case ChildIdRequest =>
         graphEditor.sendSignal(ChildIdReply(Array()), senderId.get, inexistentTargetId)
-      case s: SubjectCountSignal =>
-        // This count could potentially arrive before the vertex is created.
-        val predicateIndex = new PIndex(inexistentTargetId.asInstanceOf[Long])
-        graphEditor.addVertex(predicateIndex)
-        graphEditor.sendSignal(signal, inexistentTargetId)
       case other: Any =>
         if (inexistentTargetId.isOperationId) {
           println(s"Failed signal delivery of $other of type ${other.getClass} to " +

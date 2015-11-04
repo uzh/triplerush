@@ -30,14 +30,20 @@ abstract class IndexVertex[StateType](val id: Long)
     extends BaseVertex[StateType] {
 
   override def expose: Map[String, Any] = {
+    val dOption = TrGlobal.dictionary
+    def resolveWithDictionary(id: Int): String = {
+      dOption match {
+        case None    => "Dictionary is unavailable."
+        case Some(d) => d.get(id).getOrElse("*")
+      }
+    }
     val indexType = getClass.getSimpleName
-    val d = TrGlobal.dictionary
     val p = new EfficientIndexPattern(id)
     Map[String, Any](
       "Outgoing edges" -> targetIds.size,
-      "Subject" -> d.get(p.s),
-      "Predicate" -> d.get(p.p),
-      "Object" -> d.get(p.o),
+      "Subject" -> resolveWithDictionary(p.s),
+      "Predicate" -> resolveWithDictionary(p.p),
+      "Object" -> resolveWithDictionary(p.o),
       "TriplePattern" -> s"(sId=${p.s}, pId=${p.p}, oId=${p.o})")
   }
 
@@ -49,30 +55,17 @@ abstract class IndexVertex[StateType](val id: Long)
 
   def handleCardinalityIncrement(i: Int) = {}
 
-  def handleObjectCount(count: ObjectCountSignal) = {}
-
-  def handleSubjectCount(count: SubjectCountSignal) = {}
-
   def cardinality: Int
-
-  /**
-   * Default reply, is only overridden by SOIndex.
-   */
-  def handleCardinalityRequest(c: CardinalityRequest, graphEditor: GraphEditor[Long, Any]): Unit = {
-    graphEditor.sendSignal(CardinalityReply(
-      c.forPattern, cardinality), c.requestor)
-  }
 
   override def addEdge(e: Edge[Long], graphEditor: GraphEditor[Long, Any]): Boolean = {
     e match {
       case b: BlockingIndexVertexEdge =>
         val ticketsToReturn = b.tickets
-        val wasAdded = addChildDelta(b.childDelta)
-        val operationVertexId = OperationIds.embedInLong(b.blockingOperationId)
+        val childDelta = b.childDelta
+        val operationId = b.blockingOperationId
+        val wasAdded = addChildDelta(childDelta)
+        val operationVertexId = OperationIds.embedInLong(operationId)
         graphEditor.sendSignal(ticketsToReturn, operationVertexId)
-        wasAdded
-      case i: IndexVertexEdge =>
-        val wasAdded = addChildDelta(i.childDelta)
         wasAdded
       case other: Any =>
         val msg = s"IndexVertex does not support adding edge $e of type ${e.getClass.getSimpleName}."
@@ -91,16 +84,10 @@ abstract class IndexVertex[StateType](val id: Long)
     signal match {
       case query: Array[Int] =>
         processQuery(query, graphEditor)
-      case cr: CardinalityRequest =>
-        handleCardinalityRequest(cr, graphEditor)
       case ChildIdRequest(requestor) =>
         handleChildIdRequest(requestor, graphEditor)
       case cardinalityIncrement: Int =>
         handleCardinalityIncrement(cardinalityIncrement)
-      case count: ObjectCountSignal =>
-        handleObjectCount(count)
-      case count: SubjectCountSignal =>
-        handleSubjectCount(count)
       case other: Any => throw new Exception(s"Unexpected signal @ $id: $other")
     }
     true

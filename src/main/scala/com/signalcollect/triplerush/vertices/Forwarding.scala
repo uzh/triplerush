@@ -41,36 +41,24 @@ trait Forwarding[StateType] {
   def nextRoutingAddress(childDelta: Int): Long
 
   override def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]): Unit = {
-    if (!query.isBindingQuery &&
-      query.numberOfPatterns == 1 &&
-      query.isSimpleToBind &&
-      id != EfficientIndexPattern(0, 0, 0) // Cardinality stats for root node are not accurate.
-      ) {
-      // Take a shortcut and don't actually do the forwarding, just send the cardinality.
-      // The isSimpleToBind check excludes complicated cases, where a binding might fail.
-      val queryVertexId = OperationIds.embedInLong(query.queryId)
-      graphEditor.sendSignal(cardinality, queryVertexId)
-      graphEditor.sendSignal(query.tickets, queryVertexId)
-    } else {
-      val edges = edgeCount
-      val totalTickets = query.tickets
-      val absoluteValueOfTotalTickets = if (totalTickets < 0) -totalTickets else totalTickets // inlined math.abs
-      val avg = absoluteValueOfTotalTickets / edges
-      val complete = avg > 0 && totalTickets > 0
-      var extras = absoluteValueOfTotalTickets % edges
-      val averageTicketQuery = query.copyWithTickets(avg, complete)
-      val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
-      def sendTo(childDelta: Int): Unit = {
-        val routingAddress = nextRoutingAddress(childDelta)
-        if (extras > 0) {
-          extras -= 1
-          graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress)
-        } else if (avg > 0) {
-          graphEditor.sendSignal(averageTicketQuery, routingAddress)
-        }
+    val edges = edgeCount
+    val totalTickets = query.tickets
+    val absoluteValueOfTotalTickets = if (totalTickets < 0) -totalTickets else totalTickets // inlined math.abs
+    val avg = absoluteValueOfTotalTickets / edges
+    val complete = avg > 0 && totalTickets > 0
+    var extras = absoluteValueOfTotalTickets % edges
+    val averageTicketQuery = query.copyWithTickets(avg, complete)
+    val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
+    def sendTo(childDelta: Int): Unit = {
+      val routingAddress = nextRoutingAddress(childDelta)
+      if (extras > 0) {
+        extras -= 1
+        graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress)
+      } else if (avg > 0) {
+        graphEditor.sendSignal(averageTicketQuery, routingAddress)
       }
-      foreachChildDelta(sendTo)
     }
+    foreachChildDelta(sendTo)
   }
 
 }

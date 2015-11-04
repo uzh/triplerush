@@ -20,12 +20,11 @@
 
 package com.signalcollect.triplerush
 
-import org.scalatest.FlatSpec
-import com.signalcollect.util.TestAnnouncements
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 
-class IndexSpec extends FlatSpec with TestAnnouncements {
+class IndexSpec extends FlatSpec with UnitFixture {
 
-  "TripleRush" should "correctly answer all 1 pattern queries when there is only 1 triple in the store" in {
+  "TripleRush" should "correctly answer all 1 pattern queries when there is only 1 triple in the store" in new TestStore {
     val queries = {
       for {
         s <- Array(1, -1)
@@ -33,37 +32,30 @@ class IndexSpec extends FlatSpec with TestAnnouncements {
         o <- Array(3, -3)
       } yield TriplePattern(s, p, o)
     }
-    val tr = TripleRush(config = TestConfig.system())
-    try {
-      tr.addEncodedTriple(1, 2, 3)
-      tr.prepareExecution
-      for (query <- queries.par) {
-        val resultIterator = tr.resultIteratorForQuery(Seq(query))
-        val trResult: Option[Array[Int]] = if (resultIterator.hasNext) Some(resultIterator.next) else None
-        assert(!resultIterator.hasNext, "Query should have no more than 1 result.")
-        assert(query.isFullyBound || trResult.isDefined, s"query $query should lead to 1 set of bindings, but there are none.")
-        if (!query.isFullyBound) {
-          val bindings = TestHelper.resultsToBindings(trResult.iterator).head
-          assert(bindings.size == query.variables.size)
-          if (bindings.size > 0) {
-            if (query.s == -1) {
-              assert(bindings.contains(-1), s"query $query has an unbound subject, but the result $bindings does not contain a binding for it.")
-              assert(bindings(-1) == 1, s"query $query got bindings $bindings, which is wrong, the subject should have been bound to 1.")
-            }
-            if (query.p == -2) {
-              assert(bindings.contains(-2), s"query $query has an unbound predicate, but the result $bindings does not contain a binding for it.")
-              assert(bindings(-2) == 2, s"query $query got bindings $bindings, which is wrong, the predicate should have been bound to 2.")
-            }
-            if (query.o == -3) {
-              assert(bindings.contains(-3), s"query $query has an unbound object, but the result $bindings does not contain a binding for it.")
-              assert(bindings(-3) == 3, s"query $query got bindings $bindings, which is wrong, the object should have been bound to 3.")
-            }
+    tr.addEncodedTriple(1, 2, 3)
+    for (query <- queries.par) {
+      val resultIterator = tr.resultIteratorForQuery(Seq(query))
+      val trResult: Option[Array[Int]] = if (resultIterator.hasNext) Some(resultIterator.next) else None
+      assert(!resultIterator.hasNext, "Query should have no more than 1 result.")
+      assert(query.isFullyBound || trResult.isDefined, s"query $query should lead to 1 set of bindings, but there are none.")
+      if (!query.isFullyBound) {
+        val bindings = TestHelper.resultsToBindings(trResult.iterator).head
+        assert(bindings.size == query.variables.size)
+        if (bindings.size > 0) {
+          if (query.s == -1) {
+            assert(bindings.contains(-1), s"query $query has an unbound subject, but the result $bindings does not contain a binding for it.")
+            assert(bindings(-1) == 1, s"query $query got bindings $bindings, which is wrong, the subject should have been bound to 1.")
+          }
+          if (query.p == -2) {
+            assert(bindings.contains(-2), s"query $query has an unbound predicate, but the result $bindings does not contain a binding for it.")
+            assert(bindings(-2) == 2, s"query $query got bindings $bindings, which is wrong, the predicate should have been bound to 2.")
+          }
+          if (query.o == -3) {
+            assert(bindings.contains(-3), s"query $query has an unbound object, but the result $bindings does not contain a binding for it.")
+            assert(bindings(-3) == 3, s"query $query got bindings $bindings, which is wrong, the object should have been bound to 3.")
           }
         }
       }
-    } finally {
-      tr.shutdown
-      tr.system.shutdown()
     }
   }
 

@@ -4,11 +4,10 @@ import org.scalatest.prop.Checkers
 import org.scalacheck.Prop._
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import com.signalcollect.util.TestAnnouncements
 import com.signalcollect.triplerush.mapper.DistributedTripleMapper
 import com.signalcollect.triplerush.mapper.RelievedNodeZeroTripleMapper
 
-class TripleMapperSpec extends FlatSpec with Matchers with Checkers with TestAnnouncements {
+class TripleMapperSpec extends FlatSpec with Matchers with Checkers {
 
   val numberOfNodes = 8
   val workersPerNode = 24

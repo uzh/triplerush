@@ -1,7 +1,7 @@
 /*
  *  @author Philip Stutz
  *
- *  Copyright 2015 iHealth Technologies
+ *  Copyright 2015 Cotiviti
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,17 +17,18 @@
  *
  */
 
-package com.signalcollect.triplerush.vertices.query
+package com.signalcollect.triplerush.vertices.blocking
 
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush._
 import com.signalcollect.triplerush.vertices.BaseVertex
 import scala.concurrent.Promise
+import com.signalcollect.triplerush.vertices.query.TicketSynchronization
 
-class BlockingTripleAdditionsVertex(
-    val triples: Iterator[TriplePattern],
-    val operationCompletedPromise: Promise[Unit],
-    val batchSize: Int = 10000) extends BaseVertex[Option[TicketSynchronization]] {
+class TripleAdditionSynchronizationVertex(
+    triples: Iterator[TriplePattern],
+    operationCompletedPromise: Promise[Unit],
+    batchSize: Int = 10000) extends BaseVertex[Option[TicketSynchronization]] {
 
   val operationId = OperationIds.nextId
   val id = OperationIds.embedInLong(operationId)
@@ -58,6 +59,7 @@ class BlockingTripleAdditionsVertex(
       }
     }
     setState(Some(synchronization))
+    synchronization.receive(0) // Immediately complete synchronization if the iterator was empty.
   }
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
@@ -69,12 +71,13 @@ class BlockingTripleAdditionsVertex(
       case deliveredTickets: Long =>
         state match {
           case None =>
-            throw new Exception(
-              s"Blocking triple addition vertex received tickets when there was no ongoing synchronization.")
+            val msg = s"Blocking triple addition vertex received tickets when there was no ongoing synchronization."
+            println(msg)
+            throw new Exception(msg)
           case Some(s) =>
-            s.receivedTickets(deliveredTickets)
+            s.receive(deliveredTickets)
         }
-      case other@_ =>
+      case other @ _ =>
         throw new UnsupportedOperationException(
           s"Blocking triple addition vertex received an unsupported message $signal of type ${signal.getClass.getSimpleName}.")
     }

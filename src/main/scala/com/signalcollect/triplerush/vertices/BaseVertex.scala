@@ -35,7 +35,7 @@ abstract class BaseVertex[StateType]
   }
 
   def targetIds: Traversable[Long] = None
-
+  
   override def deliverSignalWithSourceId(
     signal: Any, sourceId: Long,
     graphEditor: GraphEditor[Long, Any]): Boolean =

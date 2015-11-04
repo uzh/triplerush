@@ -40,27 +40,24 @@ object TriplesLoading extends App {
   var triplesSoFar = 0
   val batchSize = 10000
   val dictionary = new HashDictionary()
-  //  val dictionary = MockDictionary
-  val config = TestConfig.system()
   val tr = TripleRush(
-    fastStart = true,
     dictionary = dictionary,
-    graphBuilder = new GraphBuilder[Long, Any](),
-    config = config)
-  val i = TripleIterator(args(0))
-  val start = System.currentTimeMillis
-  i.grouped(batchSize).foreach { triples =>
-    val batchStart = System.currentTimeMillis
-    tr.addTriples(triples.iterator, true)
-    triplesSoFar += batchSize
-    println(s"batch finished, took ${((System.currentTimeMillis - batchStart) / 100.0).round / 10.0} seconds")
-    println(s"total triples so far: $triplesSoFar")
-    println(s"dictionary stats = ${tr.dictionary}")
-    println(s"time so far: ${((System.currentTimeMillis - start) / 100.0).round / 10.0} seconds")
-    println(s"time per million triples so far: ${((System.currentTimeMillis - start) / 100.0 / (triplesSoFar / 1000000.0)).round / 10.0} seconds")
+    graphBuilder = new GraphBuilder[Long, Any]())
+  try {
+    val i = TripleIterator(args(0))
+    val start = System.currentTimeMillis
+    i.grouped(batchSize).foreach { triples =>
+      val batchStart = System.currentTimeMillis
+      tr.addTriples(triples.iterator)
+      triplesSoFar += batchSize
+      println(s"batch finished, took ${((System.currentTimeMillis - batchStart) / 100.0).round / 10.0} seconds")
+      println(s"total triples so far: $triplesSoFar")
+      println(s"dictionary stats = ${tr.dictionary}")
+      println(s"time so far: ${((System.currentTimeMillis - start) / 100.0).round / 10.0} seconds")
+      println(s"time per million triples so far: ${((System.currentTimeMillis - start) / 100.0 / (triplesSoFar / 1000000.0)).round / 10.0} seconds")
+    }
+  } finally {
+    tr.shutdown
   }
-  println(tr.dictionary)
-  tr.shutdown
-  tr.system.shutdown()
 
 }

@@ -73,9 +73,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
       (query, unbound) = createBoundQuery(
         dictionary, tripleRushQuery, parentBinding, variableNameToId, idToVariableName)
       decodedResults = if (unbound.isEmpty) {
-        val countOptionFuture = tr.executeCountingQuery(query)
-        val countOption = Await.result(countOptionFuture, 300.seconds)
-        val count = countOption.getOrElse(throw new Exception(s"Incomplete counting query execution for $query."))
+        val count = tr.count(query)
         if (count > 0) {
           QueryIterSingleton.create(parentBinding, execCxt)
         } else {
@@ -104,8 +102,10 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
     varToId: Map[String, Int]): Binding = {
     val binding = new BindingHashMap(parentBinding)
     for { variable <- unbound } {
-      val variableId = varToId(variable.getVarName)
-      val encoded = result(VariableEncoding.variableIdToDecodingIndex(variableId))
+      val variableName = variable.getVarName
+      val variableId = varToId(variableName)
+      val variableIndex = VariableEncoding.variableIdToDecodingIndex(variableId)
+      val encoded = result(variableIndex)
       val decoded = dictionary(encoded)
       val node = NodeConversion.stringToNode(decoded)
       binding.add(variable, node)
@@ -192,7 +192,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
             nextId -= 1
             id
           }
-        case other@_ =>
+        case other @ _ =>
           dictionary(NodeConversion.nodeToString(other))
       }
     }

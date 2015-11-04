@@ -31,24 +31,24 @@ import com.signalcollect.triplerush.QueryParticle._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import java.io.{FileInputStream, File}
+import java.io.{ FileInputStream, File }
 import com.signalcollect.triplerush.sparql.Sparql
-import com.signalcollect.util.TestAnnouncements
 import com.signalcollect.triplerush.sparql.TripleRushGraph
 import collection.JavaConversions._
 import com.signalcollect.triplerush.loading.TripleIterator
+import scala.concurrent.duration.Duration
 
 object Lubm {
 
-  def load(qe: TripleRush) {
+  def load(qe: TripleRush, toId: Int = 14) {
     println("Loading LUBM1 ... ")
-    for (fileNumber <- 0 to 14) {
-      val filePath = s".${File.separator}lubm${File.separator}university0_$fileNumber.nt"
-      println(s"Loading file $filePath ...")
-      qe.addTriples(TripleIterator(filePath), blocking = true)
-      println(s"Done loading $filePath.")
+    for (fileNumber <- (0 to toId).par) {
+      val resource = s"university0_$fileNumber.nt"
+      val tripleStream = getClass.getResourceAsStream(resource)
+      println(s"Loading file $resource ...")
+      qe.addTriples(TripleIterator(tripleStream))
+      println(s"Done loading $resource.")
     }
-    qe.prepareExecution
     println("Finished loading LUBM1.")
   }
 
@@ -194,7 +194,7 @@ WHERE {
 
 }
 
-class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
+class GroundTruthSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val enabledQueries = Set(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
 
@@ -254,15 +254,18 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
     runTest(14)
   }
 
-  val tr = TripleRush(fastStart = true, config = TestConfig.system())
-  val graph = TripleRushGraph(tr)
-  implicit val model = graph.getModel
-  Lubm.load(tr)
+  var tr: TripleRush = _
+  lazy val graph = TripleRushGraph(tr)
+  implicit lazy val model = graph.getModel
+
+  override def beforeAll {
+    tr = TestStore.instantiateUniqueStore()
+    Lubm.load(tr)
+  }
 
   override def afterAll {
     tr.shutdown
-    tr.system.shutdown()
-    super.afterAll
+    Await.result(tr.graph.system.terminate(), Duration.Inf)
   }
 
   def executeOnQueryEngine(q: String): List[Bindings] = {
@@ -289,13 +292,15 @@ class GroundTruthSpec extends FlatSpec with Matchers with TestAnnouncements {
     }
   }
 
-  val queryBaseName = s".${File.separator}answers${File.separator}answers_query"
-  val referenceFiles: Map[Int, String] = ((1 to 14) map (queryNumber => queryNumber -> (queryBaseName + queryNumber + ".txt"))).toMap
+  val queryBaseName = s"answers_query"
+  val answerResources = (1 to 14).map { queryNumber =>
+    queryNumber -> getClass.getResource(queryBaseName + queryNumber + ".txt")
+  }.toMap
   val referenceResults: Map[Int, QuerySolution] = {
-    referenceFiles map { entry =>
-      val fileName = entry._2
-      val file = Source.fromFile(fileName)
-      val lines = file.getLines
+    answerResources map { entry =>
+      val resource = entry._2
+      val source = Source.fromURL(resource)
+      val lines = source.getLines
       val bindings = getQueryBindings(lines)
       (entry._1, bindings)
     }

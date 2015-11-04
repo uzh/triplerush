@@ -39,18 +39,20 @@ import scala.concurrent.duration.Duration
  */
 class TicketSynchronization(
     name: String,
-    expectedTickets: Long = Long.MaxValue,
+    val expectedTickets: Long = Long.MaxValue,
     outOfTicketsCause: String = "Ran out of tickets: branching factor too high or ticket count too low.",
     onFailure: Option[Exception => Unit] = Some(e => throw e)) {
 
-  private[this] var receivedTickets: Long = 0L
+  def receivedTickets = _receivedTickets
+
+  private[this] var _receivedTickets: Long = 0L
   private[this] var ranOutOfTickets: Boolean = false
   private[this] var onSuccessHandlers: List[Function0[Unit]] = Nil
   private[this] var onFailureHandlers: List[Exception => Unit] = onFailure.toList
   private[this] var onCompleteHandlers: List[Boolean => Unit] = Nil
 
-  def receivedTickets(t: Long): Unit = {
-    receivedTickets += {
+  def receive(t: Long): Unit = {
+    _receivedTickets += {
       if (t < 0) {
         -t
       } else {
@@ -60,13 +62,13 @@ class TicketSynchronization(
     if (t < 0) {
       ranOutOfTickets = true
     }
-    if (receivedTickets == expectedTickets) {
+    if (_receivedTickets == expectedTickets) {
       if (ranOutOfTickets) {
         reportFailure(new OutOfTicketsException(outOfTicketsCause))
       } else {
         reportSuccess
       }
-    } else if (receivedTickets > expectedTickets) {
+    } else if (_receivedTickets > expectedTickets) {
       val e = new TooManyTicketsReceivedException
       reportFailure(e)
     }

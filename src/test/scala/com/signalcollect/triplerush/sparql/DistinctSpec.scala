@@ -21,57 +21,37 @@ package com.signalcollect.triplerush.sparql
 
 import scala.collection.JavaConversions.asScalaIterator
 
-import org.scalatest.{ Finders, FlatSpec, Matchers }
+import org.scalatest.{ Finders, Matchers }
+import org.scalatest.fixture.{ FlatSpec, UnitFixture }
 
-import com.signalcollect.triplerush.{TestConfig, TripleRush}
-import com.signalcollect.util.TestAnnouncements
+import com.signalcollect.triplerush.TestStore
 
-class DistinctSpec extends FlatSpec with Matchers with TestAnnouncements {
+class DistinctSpec extends FlatSpec with UnitFixture with Matchers {
 
-  "ARQ DISTINCT" should "eliminate results with same bindings" in {
+  "ARQ DISTINCT" should "eliminate results with same bindings" in new TestStore {
     val sparql = """
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }
-                 """
-    val tr = TripleRush(config = TestConfig.system())
-    val graph = TripleRushGraph(tr)
-    implicit val model = graph.getModel
-    try {
-      tr.addStringTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
-      tr.addStringTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
-      tr.addStringTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "\"Arthur\"")
-      tr.prepareExecution
-      val results = Sparql(sparql)
-      assert(results.size === 2)
-    } finally {
-      tr.shutdown
-      tr.system.shutdown()
-    }
+SELECT DISTINCT ?name WHERE { ?x foaf:name ?name }"""
+    tr.addStringTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+    tr.addStringTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+    tr.addStringTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "\"Arthur\"")
+    val results = Sparql(sparql)
+    assert(results.size === 2)
   }
 
-  it should "correctly count the number of results" in {
+  it should "correctly count the number of results" in new TestStore {
     val sparql = """
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
-SELECT (COUNT(DISTINCT ?name) as ?count) WHERE { ?x foaf:name ?name }
-                 """
-    val tr = TripleRush(config = TestConfig.system())
-    val graph = TripleRushGraph(tr)
-    implicit val model = graph.getModel
-    try {
-      tr.addStringTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
-      tr.addStringTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
-      tr.addStringTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "\"Arthur\"")
-      tr.prepareExecution
-      val results = Sparql(sparql)
-      assert(results.hasNext === true)
-      val bindings = results.next
-      val count = bindings.get("count").asLiteral.getInt
-      assert(count === 2)
-      assert(results.hasNext === false)
-    } finally {
-      tr.shutdown
-      tr.system.shutdown()
-    }
+SELECT (COUNT(DISTINCT ?name) as ?count) WHERE { ?x foaf:name ?name }"""
+    tr.addStringTriple("http://SomePerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+    tr.addStringTriple("http://SomeOtherPerson", "http://xmlns.com/foaf/0.1/name", "\"Harold\"")
+    tr.addStringTriple("http://ThatGuy", "http://xmlns.com/foaf/0.1/name", "\"Arthur\"")
+    val results = Sparql(sparql)
+    assert(results.hasNext === true)
+    val bindings = results.next
+    val count = bindings.get("count").asLiteral.getInt
+    assert(count === 2)
+    assert(results.hasNext === false)
   }
 
 }

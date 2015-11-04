@@ -25,8 +25,6 @@ project/plugins/project/
 
 .DS_Store
 
-*.nt
-
 .settings/org.scala-ide.sdt.core.prefs
 
 *.txt
@@ -52,3 +50,5 @@ lubm1*/
 *.iml
 
 *history.ntriples.gz
+
+*.prefs

@@ -21,9 +21,8 @@ package com.signalcollect.triplerush.dictionary
 
 import org.scalatest.FlatSpec
 
-import com.signalcollect.util.TestAnnouncements
 
-class DictionarySpec extends FlatSpec with TestAnnouncements {
+class DictionarySpec extends FlatSpec {
 
   "ModularDictionary" should "correctly encode and decode a simple string" in {
     val d = new ModularDictionary
