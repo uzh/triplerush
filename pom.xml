@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>io.cotiviti</groupId>
 		<artifactId>cotiviti-scala-parent</artifactId>
-		<version>0.2.2</version>
+		<version>0.2.4</version>
 	</parent>
 	<artifactId>triplerush_2.11</artifactId>
 	<groupId>com.signalcollect</groupId>
@@ -14,12 +14,10 @@
 	<name>triplerush</name>
 	<description>A distributed in-memory graph store.</description>
 	<properties>
-		<!-- TEMPORARY FIX -->
-		<proxy.url.base>http://ihealthtechnologies.artifactoryonline.com/ihealthtechnologies</proxy.url.base>
 		<triplerush.version>${project.version}</triplerush.version>
 		<team.group.id>uzh</team.group.id>
 		<scala.release>7</scala.release>
-		<signalcollect.version>8.0.0-SNAPSHOT</signalcollect.version>
+		<signalcollect.version>8.0.0</signalcollect.version>
 		<mapdb.version>2.0-beta10</mapdb.version>
 		<apache.jena.version>3.0.0</apache.jena.version>
 		<nxparser.version>2.2</nxparser.version>
@@ -33,29 +31,18 @@
 		<introjs.version>1.0.0</introjs.version>
 		<jquery.version>2.1.4</jquery.version>
 		<reconnecting-websocket.version>1.0.0</reconnecting-websocket.version>
+        <git.url>${git.url.base}/triplerush.git</git.url>
+        <git.http.url>${ghe.url.base}/triplerush</git.http.url>
+
 	</properties>
-	<url>${ghe.url.base}/${project.artifactId}</url>
+    <url>${git.http.url}</url>
 	<scm>
 		<connection>scm:git:${git.url}</connection>
-		<url>scm:git:${git.url}</url>
+        <url>${git.http.url}</url>
 		<developerConnection>scm:git:${git.url}</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 	<distributionManagement>
-		<repository>
-			<uniqueVersion>false</uniqueVersion>
-			<id>central</id>
-			<name>Proxy Releases</name>
-			<url>${proxy.url.base}/libs-releases-local</url>
-			<layout>default</layout>
-		</repository>
-
-		<snapshotRepository>
-			<uniqueVersion>false</uniqueVersion>
-			<id>snapshots</id>
-			<name>Proxy Snapshots</name>
-			<url>${proxy.url.base}/libs-snapshots-local</url>
-		</snapshotRepository>
 		<site>
 			<id>githubsite</id>
 			<name>GitHub Pages</name>
@@ -243,5 +230,17 @@
 			<name>Marko Kolar</name>
 			<url>https://github.com/kolarm</url>
 		</developer>
+        <developer>
+            <id>mykelalvis</id>
+            <name>Mykel Alvis</name>
+            <organization>Cotiviti</organization>
+            <organizationUrl>http://www.cotiviti.io</organizationUrl>
+            <url>https://github.com/mykelalvis</url>
+            <timezone>America/Chicago</timezone>
+            <roles>
+                <role>release management</role>
+            </roles>
+        </developer>
+
 	</developers>
 </project>
