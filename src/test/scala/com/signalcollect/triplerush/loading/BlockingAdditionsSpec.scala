@@ -19,27 +19,40 @@
 
 package com.signalcollect.triplerush.loading
 
-import org.apache.jena.riot.Lang
-import org.scalatest.FlatSpec
+import com.signalcollect.triplerush.{GroundTruthSpec, TestStore, TriplePattern}
 import org.scalatest.concurrent.ScalaFutures
-import com.signalcollect.triplerush.{ GroundTruthSpec, TestStore, TriplePattern }
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import org.scalatest.fixture.{FlatSpec, UnitFixture}
 
-class BlockingAdditionsSpec extends FlatSpec with ScalaFutures {
+import scala.util.Try
 
-  "Blocking additions" should "correctly load triples from a file" in  {
-    val tr = TestStore.instantiateUniqueStore()
-    try {
-      val resource = s"university0_0.nt"
-      val tripleStream = classOf[GroundTruthSpec].getResourceAsStream(resource)
-      tr.addTriples(TripleIterator(tripleStream))
-      val expectedCount = 25700
-      val count = tr.resultIteratorForQuery(Seq(TriplePattern(-1, -2, -3))).size
-      assert(count == expectedCount)
-    } finally {
-      tr.shutdown
-      Await.result(tr.graph.system.terminate(), Duration.Inf)
-    }
+class BlockingAdditionsSpec extends FlatSpec with ScalaFutures with UnitFixture {
+
+  "Blocking additions" should "correctly load triples from a file" in new TestStore {
+    val resource = s"university0_0.nt"
+    val tripleStream = classOf[GroundTruthSpec].getResourceAsStream(resource)
+    tr.addTriples(TripleIterator(tripleStream))
+    val expectedCount = 25700
+    val count = tr.resultIteratorForQuery(Seq(TriplePattern(-1, -2, -3))).size
+    assert(count == expectedCount)
+  }
+
+  it should "continue to work even after an error" in new TestStore {
+    val additionAttempt = Try(tr.addTriples(new ExplodingIterator()))
+    assert(additionAttempt.isFailure)
+  }
+
+}
+
+class ExplodingIterator extends Iterator[Nothing] {
+
+  private[this] var counter = 0
+
+  override def hasNext: Boolean = true
+
+  def exceptionCount() = counter
+
+  override def next(): Nothing = {
+    counter += 1
+    throw new Exception("This is expected")
   }
 }
