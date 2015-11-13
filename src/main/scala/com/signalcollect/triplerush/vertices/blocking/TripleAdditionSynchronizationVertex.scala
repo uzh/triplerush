@@ -20,10 +20,17 @@
 package com.signalcollect.triplerush.vertices.blocking
 
 import com.signalcollect.GraphEditor
-import com.signalcollect.triplerush._
+import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.vertices.BaseVertex
 import scala.concurrent.Promise
 import com.signalcollect.triplerush.vertices.query.TicketSynchronization
+import com.signalcollect.triplerush.BlockingIndexVertexEdge
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.IndexStructure
+import com.signalcollect.triplerush.OperationIds
+import scala.util.Try
+import scala.util.Failure
+import scala.util.Success
 
 class TripleAdditionSynchronizationVertex(
     triples: Iterator[TriplePattern],
@@ -32,6 +39,19 @@ class TripleAdditionSynchronizationVertex(
 
   val operationId = OperationIds.nextId
   val id = OperationIds.embedInLong(operationId)
+
+  /**
+   * Propagates an error in the passed code block to `operationCompletedPromise`.
+   */
+  private[this] def propagateError(graphEditor: GraphEditor[Long, Any])(f: => Unit): Unit = {
+    val operationAttempt = Try(f)
+    operationAttempt match {
+      case Failure(f) =>
+        operationCompletedPromise.failure(f)
+        graphEditor.removeVertex(id)
+      case Success(()) =>
+    }
+  }
 
   def dispatchTripleAdditionBatch(graphEditor: GraphEditor[Long, Any]): Unit = {
     var dispatchedTriples = 0L
@@ -50,12 +70,14 @@ class TripleAdditionSynchronizationVertex(
     }
     val expectedTickets = dispatchedTriples * IndexStructure.ticketsForTripleOperation
     val synchronization = new TicketSynchronization("BlockingTripleAdditionsVertex", expectedTickets)
-    synchronization.onSuccess { () =>
-      if (triples.hasNext) {
-        dispatchTripleAdditionBatch(graphEditor)
-      } else {
-        operationCompletedPromise.success(())
-        graphEditor.removeVertex(id)
+    synchronization.onSuccess {
+      propagateError(graphEditor) {
+        if (triples.hasNext) {
+          dispatchTripleAdditionBatch(graphEditor)
+        } else {
+          operationCompletedPromise.success(())
+          graphEditor.removeVertex(id)
+        }
       }
     }
     setState(Some(synchronization))
@@ -63,23 +85,26 @@ class TripleAdditionSynchronizationVertex(
   }
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
-    dispatchTripleAdditionBatch(graphEditor)
+    propagateError(graphEditor) {
+      dispatchTripleAdditionBatch(graphEditor)
+    }
   }
 
   override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]): Boolean = {
-    signal match {
-      case deliveredTickets: Long =>
-        state match {
-          case None =>
-            val msg = s"Blocking triple addition vertex received tickets when there was no ongoing synchronization."
-            println(msg)
-            throw new Exception(msg)
-          case Some(s) =>
-            s.receive(deliveredTickets)
-        }
-      case other @ _ =>
-        throw new UnsupportedOperationException(
-          s"Blocking triple addition vertex received an unsupported message $signal of type ${signal.getClass.getSimpleName}.")
+    propagateError(graphEditor) {
+      signal match {
+        case deliveredTickets: Long =>
+          state match {
+            case None =>
+              val msg = s"Blocking triple addition vertex received tickets when there was no ongoing synchronization."
+              throw new Error(msg)
+            case Some(s) =>
+              s.receive(deliveredTickets)
+          }
+        case other @ _ =>
+          throw new UnsupportedOperationException(
+            s"Blocking triple addition vertex received an unsupported message $signal of type ${signal.getClass.getSimpleName}.")
+      }
     }
     true
   }

@@ -94,8 +94,8 @@ class TicketSynchronization(
     onCompleteHandlers = Nil
   }
 
-  def onSuccess(f: () => Unit): Unit = {
-    onSuccessHandlers ::= f
+  def onSuccess(f: => Unit): Unit = {
+    onSuccessHandlers ::= f _
   }
 
   def onFailure(f: Exception => Unit): Unit = {
