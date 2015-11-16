@@ -87,9 +87,7 @@ object IndexStructure {
     val pIndexId = EfficientIndexPattern(0, p, 0)
     val oIndexId = EfficientIndexPattern(0, 0, o)
 
-    /**
-     * Based on the diagram of the index structure @ http://www.zora.uzh.ch/111243/1/TR_WWW.pdf
-     */
+    // Based on the diagram of the index structure @ http://www.zora.uzh.ch/111243/1/TR_WWW.pdf     
     IndexType(id) match {
       case P         => Set(rootId)
       case Po        => Set(oIndexId)
