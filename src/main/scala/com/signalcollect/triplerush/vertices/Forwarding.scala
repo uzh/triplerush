@@ -17,6 +17,7 @@
  *  limitations under the License.
  *
  */
+
 package com.signalcollect.triplerush.vertices
 
 import com.signalcollect.GraphEditor
