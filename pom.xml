@@ -34,7 +34,7 @@
 		<team.group.id>uzh</team.group.id>
 		<scala.release>7</scala.release>
 		<signalcollect.version>8.0.0</signalcollect.version>
-		<mapdb.version>2.0-beta10</mapdb.version>
+		<mapdb.version>2.0-beta11</mapdb.version>
 		<apache.jena.version>3.0.0</apache.jena.version>
 		<nxparser.version>2.2</nxparser.version>
 		<sesame.version>4.0.0-RC1</sesame.version>
