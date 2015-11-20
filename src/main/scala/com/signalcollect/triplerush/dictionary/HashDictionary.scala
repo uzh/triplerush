@@ -115,17 +115,23 @@ final class HashDictionary(
     }
   }
 
-  val allIdsTakenUpTo = new AtomicInteger(0)
+  private[this] var allIdsTakenUpTo = 0
 
-  def addEntryToExceptions(s: Array[Byte]): Int = {
+  def addEntryToExceptions(s: Array[Byte]): Int = synchronized {
     @tailrec def recursiveAddEntryToExceptions(s: Array[Byte]): Int = {
-      val attemptedId = allIdsTakenUpTo.incrementAndGet
+      allIdsTakenUpTo += 1
+      val attemptedId = allIdsTakenUpTo
       val existing = id2String.putIfAbsent(attemptedId, s)
       if (existing == null) attemptedId else recursiveAddEntryToExceptions(s)
     }
-    val id = recursiveAddEntryToExceptions(s)
-    string2Id.put(s, id)
-    id
+    val exceptionId = string2Id.get(s)
+    if (exceptionId != 0) {
+      exceptionId
+    } else {
+      val id = recursiveAddEntryToExceptions(s)
+      string2Id.put(s, id)
+      id
+    }
   }
 
   /**
@@ -154,21 +160,16 @@ final class HashDictionary(
     val idCandidate = HashDictionary.hash(stringBytes)
     val existing = id2String.get(idCandidate)
     if (existing == null) {
-      //      println(s"added $s with hash-id $idCandidate")
       addEntry(stringBytes, idCandidate)
     } else {
       if (Arrays.equals(stringBytes, existing)) {
-        //        println(s"$s existed already with hash-id $idCandidate")
         idCandidate
       } else {
         val exceptionId = string2Id.get(stringBytes)
         if (exceptionId != 0) {
-          //          println(s"$s existed already with exception-id $exceptionId")
           exceptionId
         } else {
-          val id = addEntryToExceptions(stringBytes)
-          //          println(s"$s added with exception-id $id")
-          id
+          addEntryToExceptions(stringBytes)
         }
       }
     }
