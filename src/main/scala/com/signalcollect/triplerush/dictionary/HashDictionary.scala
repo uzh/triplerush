@@ -165,12 +165,7 @@ final class HashDictionary(
       if (Arrays.equals(stringBytes, existing)) {
         idCandidate
       } else {
-        val exceptionId = string2Id.get(stringBytes)
-        if (exceptionId != 0) {
-          exceptionId
-        } else {
-          addEntryToExceptions(stringBytes)
-        }
+        addEntryToExceptions(stringBytes)
       }
     }
   }
