@@ -38,4 +38,21 @@ SELECT ?p WHERE {
     assert(resultBindings === List(urn))
   }
 
+  it should "support uncommon IRIs when added via Jena" in new TestStore {
+    val urn = "urn:uuid:123"
+    val resource = model.createResource(urn)
+    val property = model.createProperty(urn)
+    val literal = model.createLiteral("test")
+    model.add(resource, property, literal)
+    val sparql = """
+SELECT ?p WHERE {
+  {
+      <urn:uuid:123> ?p ?o .
+  }
+}"""
+    val results = Sparql(sparql)
+    val resultBindings = results.map(_.get("p").toString).toList
+    assert(resultBindings === List(urn))
+  }
+
 }
