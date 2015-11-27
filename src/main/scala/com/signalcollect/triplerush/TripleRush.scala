@@ -38,6 +38,7 @@ import com.typesafe.config._
 import akka.cluster.Cluster
 import scala.util.Success
 import scala.util.Failure
+import com.signalcollect.triplerush.sparql.TripleRushGraph
 
 /**
  * Global accessor for the console visualization.
@@ -114,6 +115,9 @@ class TripleRush(
   protected val tripleRushShutdown: Future[Nothing] = tripleRushShutdownPromise.future // Future is failed when TripleRush shuts down.
   graph.addVertex(new RootIndex)
   graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+
+  lazy val jenaGraph = TripleRushGraph(this)
+  lazy val jenaModel = jenaGraph.getModel
   // End initialization =============
 
   def isShutdown = _isShutdown
