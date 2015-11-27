@@ -150,7 +150,7 @@ final class CombiningMessageBus[Signal: ClassTag](
             if (oldResults.isFull) {
               val targetId = OperationIds.embedInLong(extractedOperationId)
               sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, oldResults.getResultArray), targetId)
-              oldResults.clear
+              aggregatedResults.remove(extractedOperationId)
             }
           } else {
             val newBulker = new ResultBulker(resultBulkerSize)
