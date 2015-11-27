@@ -39,6 +39,7 @@ import com.signalcollect.interfaces.BulkSignal
 import com.signalcollect.interfaces.BulkSignalNoSourceIds
 import com.signalcollect.interfaces.SignalMessageWithoutSourceId
 import com.signalcollect.triplerush.util.CompositeLongIntHashMap
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
 class SignalBulkerWithoutIds[@specialized(Long) Id: ClassTag, Signal: ClassTag](size: Int) {
   private[this] var itemCount = 0
@@ -126,7 +127,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   lazy val workerApi = workerApiFactory.createInstance(workerProxies, mapper)
 
   val aggregatedTickets = new IntLongHashMap(initialSize = 8)
-  val aggregatedResults = new IntHashMap[ResultBulker](initialSize = 8)
+  val aggregatedResults = new Int2ObjectOpenHashMap[ResultBulker](8)
   val aggregatedCardinalities = new CompositeLongIntHashMap(initialSize = 8)
   val aggregatedResultCounts = new IntIntHashMap(initialSize = 8)
 
@@ -143,7 +144,7 @@ final class CombiningMessageBus[Signal: ClassTag](
         case result: Array[Int] =>
           handleTickets(result.tickets, extractedOperationId)
           val bindings = result.bindings
-          val oldResults = aggregatedResults.activateKeyAndGetValue(extractedOperationId)
+          val oldResults = aggregatedResults.get(extractedOperationId)
           if (oldResults != null) {
             oldResults.addResult(bindings)
             if (oldResults.isFull) {
@@ -154,9 +155,9 @@ final class CombiningMessageBus[Signal: ClassTag](
           } else {
             val newBulker = new ResultBulker(resultBulkerSize)
             newBulker.addResult(bindings)
-            aggregatedResults(extractedOperationId) = newBulker
+            aggregatedResults.put(extractedOperationId, newBulker)
           }
-        case other@_ =>
+        case other @ _ =>
           bulkSend(signal, targetId)
       }
     } // If message is sent to an Index Vertex
@@ -215,13 +216,14 @@ final class CombiningMessageBus[Signal: ClassTag](
     // It is important that the results arrive before the tickets, because
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
-      aggregatedResults.process { (queryVertexId, results) =>
-        if (results.numberOfItems > 0) {
-          val targetId = OperationIds.embedInLong(queryVertexId)
-          sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, results.getResultArray), targetId)
-          results.clear
-        }
+      val i = aggregatedResults.keySet().iterator()
+      while (i.hasNext()) {
+        val queryVertexId = i.nextInt()
+        val results = aggregatedResults.get(queryVertexId)
+        val targetId = OperationIds.embedInLong(queryVertexId)
+        sendToWorkerForVertexId(SignalMessageWithoutSourceId(targetId, results.getResultArray), targetId)
       }
+      aggregatedResults.clear()
     }
     if (!aggregatedResultCounts.isEmpty) {
       aggregatedResultCounts.process { (queryVertexId, resultCount) =>
@@ -275,7 +277,7 @@ final class CombiningMessageBus[Signal: ClassTag](
   protected var pendingSignals = 0
 
   val outgoingMessages: Array[SignalBulkerWithoutIds[Long, Signal]] = new Array[SignalBulkerWithoutIds[Long, Signal]](numberOfWorkers)
-  for {i <- 0 until numberOfWorkers} {
+  for { i <- 0 until numberOfWorkers } {
     outgoingMessages(i) = new SignalBulkerWithoutIds[Long, Signal](flushThreshold)
   }
 
