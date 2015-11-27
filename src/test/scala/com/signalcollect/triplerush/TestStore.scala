@@ -32,8 +32,10 @@ import scala.concurrent.duration.Duration
 
 object TestStore {
 
+  val numberOfCoresInTests = 2
+
   def instantiateUniqueStore(): TripleRush = {
-    val graphBuilder = instantiateUniqueGraphBuilder
+    val graphBuilder = instantiateUniqueGraphBuilder()
     TripleRush(graphBuilder = graphBuilder)
   }
 
@@ -47,22 +49,23 @@ object TestStore {
         .stripMargin)
   }
 
-  def instantiateUniqueActorSystem(): ActorSystem = {
+  def instantiateUniqueActorSystem(cores: Int = numberOfCoresInTests): ActorSystem = {
     val defaultGraphConfig = GraphBuilder.config
     val defaultAkkaConfig = Akka.config(
       serializeMessages = None,
       loggingLevel = None,
       kryoRegistrations = defaultGraphConfig.kryoRegistrations,
-      kryoInitializer = None)
+      kryoInitializer = None,
+      numberOfCores = cores)
     val actorSystemName = "TripleRushTestSystem"
     val customAkkaConfig = customClusterConfig(actorSystemName = actorSystemName, seedPort = freePort)
       .withFallback(defaultAkkaConfig)
     ActorSystem(actorSystemName, customAkkaConfig)
   }
 
-  def instantiateUniqueGraphBuilder(): GraphBuilder[Long, Any] = {
+  def instantiateUniqueGraphBuilder(cores: Int = numberOfCoresInTests): GraphBuilder[Long, Any] = {
     new GraphBuilder[Long, Any]()
-      .withActorSystem(instantiateUniqueActorSystem())
+      .withActorSystem(instantiateUniqueActorSystem(cores))
   }
 
   private[this] val portUsageTracker = new AtomicInteger(2500)
