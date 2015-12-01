@@ -105,11 +105,7 @@ class TestStore(val tr: TripleRush) extends NoArg {
 
   override def apply(): Unit = {
     try {
-      import scala.sys.process._
-      val s = super.apply()
-      val ulimit = "ulimit -u".!!
-      println(ulimit)
-      s
+      super.apply()
     } finally {
       shutdown()
     }
