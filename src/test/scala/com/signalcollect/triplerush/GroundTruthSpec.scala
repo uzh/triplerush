@@ -33,7 +33,6 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import java.io.{ FileInputStream, File }
 import com.signalcollect.triplerush.sparql.Sparql
-import com.signalcollect.triplerush.sparql.TripleRushGraph
 import collection.JavaConversions._
 import com.signalcollect.triplerush.loading.TripleIterator
 import scala.concurrent.duration.Duration
@@ -254,17 +253,15 @@ class GroundTruthSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
     runTest(14)
   }
 
-  var tr: TripleRush = _
-  lazy val graph = TripleRushGraph(tr)
-  implicit lazy val model = graph.getModel
+  lazy val tr: TripleRush = TestStore.instantiateUniqueStore()
+  implicit lazy val model = tr.getModel
 
   override def beforeAll {
-    tr = TestStore.instantiateUniqueStore()
     Lubm.load(tr)
   }
 
   override def afterAll {
-    tr.shutdown
+    tr.close
     Await.result(tr.graph.system.terminate(), Duration.Inf)
   }
 

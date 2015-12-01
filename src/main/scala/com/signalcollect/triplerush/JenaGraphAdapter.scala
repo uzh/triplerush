@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-package com.signalcollect.triplerush.sparql
-
-import scala.collection.JavaConversions.asJavaIterator
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
+package com.signalcollect.triplerush
 
 import org.apache.jena.graph.{ Capabilities, GraphEvents, GraphStatisticsHandler, Node, Node_ANY, Node_Blank, Node_Variable, Triple }
 import org.apache.jena.graph.impl.GraphBase
@@ -26,20 +22,18 @@ import org.apache.jena.query.ARQ
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.sparql.engine.main.StageGenerator
 import org.apache.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
-
-import com.signalcollect.triplerush.{ TriplePattern, TripleRush }
-
-object TripleRushGraph {
-  def apply(tr: TripleRush = TripleRush()): TripleRushGraph = {
-    new TripleRushGraph(tr)
-  }
-}
+import com.signalcollect.triplerush.sparql.NodeConversion
+import com.signalcollect.triplerush.sparql.TripleRushIterator
+import com.signalcollect.triplerush.sparql.TripleRushStageGenerator
+import collection.JavaConversions._
 
 /**
  * A TripleRush implementation of the Jena Graph interface.
  */
-class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatisticsHandler {
-
+trait JenaGraphAdapter extends GraphBase with GraphStatisticsHandler {
+  
+  this: TripleRush =>
+  
   def getModel = ModelFactory.createModelForGraph(this)
 
   // Set TripleRushStageGenerator as default for all queries.
@@ -54,7 +48,7 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
 
   def getStatistic(s: Node, p: Node, o: Node): Long = {
     val q = Seq(arqNodesToPattern(s, p, o))
-    tr.count(q)
+    count(q)
   }
 
   override def createStatisticsHandler = this
@@ -67,7 +61,7 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
    * - If a string starts with `"` or "<", then it is interpreted as a general literal.
    */
   override def performAdd(triple: Triple): Unit = {
-    tr.addTriple(triple)
+    addTriple(triple)
   }
 
   override def clear: Unit = {
@@ -77,7 +71,6 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
 
   override def close: Unit = {
     super.close
-    tr.shutdown
   }
 
   def graphBaseFind(triplePattern: Triple): ExtendedIterator[Triple] = {
@@ -85,11 +78,11 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
     val p = triplePattern.getPredicate
     val o = triplePattern.getObject
     val pattern = arqNodesToPattern(s, p, o)
-    val resultIterator = tr.resultIteratorForQuery(Seq(pattern))
+    val resultIterator = resultIteratorForQuery(Seq(pattern))
     val concreteS = if (s.isConcrete) Some(NodeConversion.nodeToString(s)) else None
     val concreteP = if (p.isConcrete) Some(NodeConversion.nodeToString(p)) else None
     val concreteO = if (o.isConcrete) Some(NodeConversion.nodeToString(o)) else None
-    val convertedIterator = TripleRushIterator.convert(concreteS, concreteP, concreteO, tr.dictionary, resultIterator)
+    val convertedIterator = TripleRushIterator.convert(concreteS, concreteP, concreteO, dictionary, resultIterator)
     WrappedIterator.createNoRemove(convertedIterator)
   }
 
@@ -121,10 +114,10 @@ class TripleRushGraph(val tr: TripleRush) extends GraphBase with GraphStatistics
           throw new UnsupportedOperationException("Variables not supported.")
         case blank: Node_Blank =>
           val blankNodeString = NodeConversion.nodeToString(blank)
-          tr.dictionary(blankNodeString)
+          dictionary(blankNodeString)
         case other @ _ =>
           val otherNodeString = NodeConversion.nodeToString(other)
-          tr.dictionary(otherNodeString)
+          dictionary(otherNodeString)
       }
     }
     val sId = nodeToId(s)

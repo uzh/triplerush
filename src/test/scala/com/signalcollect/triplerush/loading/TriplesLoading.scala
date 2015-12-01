@@ -53,7 +53,7 @@ object TriplesLoading extends App {
       println(s"time per million triples so far: ${((System.currentTimeMillis - start) / 100.0 / (triplesSoFar / 1000000.0)).round / 10.0} seconds")
     }
   } finally {
-    tr.shutdown
+    tr.close
   }
 
 }

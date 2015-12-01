@@ -47,7 +47,7 @@ class ShutdownDuringBlocking extends FlatSpec {
       })
     }
     executedLatch.await()
-    tr.shutdown()
+    tr.close
     val shutdownFuture = tr.graph.system.terminate()
     intercept[Exception] { Await.result(blocking, Duration.Inf) }
     shutdownLatch.countDown()

@@ -58,7 +58,7 @@ object SplayIntSetDiagnostics extends App {
         }
     }
   } finally {
-    tr.shutdown
+    tr.close
     Await.result(tr.graph.system.terminate(), Duration.Inf)
   }
 

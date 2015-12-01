@@ -23,7 +23,7 @@ import org.scalatest.mock.EasyMockSugar
 import org.scalatest.prop.Checkers
 
 import com.signalcollect.triplerush.{ TestStore, TripleRush }
-import com.signalcollect.triplerush.sparql.{ Sparql, TripleRushGraph }
+import com.signalcollect.triplerush.sparql.Sparql
 
 class DictionaryErrorHandlingSpec extends FlatSpec with Checkers with EasyMockSugar {
 
@@ -31,8 +31,7 @@ class DictionaryErrorHandlingSpec extends FlatSpec with Checkers with EasyMockSu
     val mockDictionary = mock[RdfDictionary]
     val graphBuilder = TestStore.instantiateUniqueGraphBuilder()
     val tr = TripleRush(graphBuilder, mockDictionary)
-    val graph = TripleRushGraph(tr)
-    implicit val model = graph.getModel
+    implicit val model = tr.getModel
     val sparql = """
 PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 SELECT ?name WHERE {

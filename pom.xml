@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.signalcollect</groupId>
 		<artifactId>signal-collect-maven-parent</artifactId>
-		<version>8.0.0</version>
+		<version>8.0.1</version>
 	</parent>
 	<artifactId>triplerush_2.11</artifactId>
 	<groupId>com.signalcollect</groupId>
@@ -14,7 +15,7 @@
 	<description>A distributed in-memory graph store.</description>
 	<properties>
 		<triplerush.version>${project.version}</triplerush.version>
-		<signalcollect.version>8.0.3</signalcollect.version>
+		<signalcollect.version>8.0.4</signalcollect.version>
 		<mapdb.version>2.0-beta12</mapdb.version>
 		<fastutil.version>7.0.8</fastutil.version>
 		<apache.jena.version>3.0.0</apache.jena.version>
@@ -22,7 +23,6 @@
 		<sesame.version>4.0.0-RC1</sesame.version>
 		<scalatest.version>2.2.5</scalatest.version>
 		<scalacheck.version>1.12.5</scalacheck.version>
-		<easymock.version>3.3.1</easymock.version>
 		<akka.version>2.4.0</akka.version>
 		<akka.kryo.version>0.3.3</akka.kryo.version>
 		<d3js.version>3.5.6</d3js.version>
@@ -142,14 +142,14 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.easymock</groupId>
-			<artifactId>easymock</artifactId>
-			<version>${easymock.version}</version>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>org.easymock</groupId>
+			<artifactId>easymock</artifactId>
+			<version>${easymock.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -164,6 +164,11 @@
 			<plugin>
 				<groupId>org.scalatest</groupId>
 				<artifactId>scalatest-maven-plugin</artifactId>
+				<configuration>
+					<argLine>-XX:ThreadStackSize=512 -Xmx2048m -Xms2048m</argLine>
+					<parallel>false</parallel>
+					<debugArgLine>true</debugArgLine>
+				</configuration>
 				<executions>
 					<execution>
 						<id>test</id>
@@ -243,6 +248,5 @@
 				<role>release management</role>
 			</roles>
 		</developer>
-
 	</developers>
 </project>

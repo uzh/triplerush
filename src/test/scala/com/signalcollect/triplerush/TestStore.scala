@@ -24,7 +24,6 @@ import scala.util.{ Failure, Success, Try }
 import org.scalatest.fixture.NoArg
 import com.signalcollect.GraphBuilder
 import com.signalcollect.configuration.Akka
-import com.signalcollect.triplerush.sparql.TripleRushGraph
 import com.typesafe.config.{ Config, ConfigFactory }
 import akka.actor.ActorSystem
 import scala.concurrent.Await
@@ -93,22 +92,24 @@ object TestStore {
 
 class TestStore(val tr: TripleRush) extends NoArg {
 
-  lazy implicit val graph = TripleRushGraph(tr)
-  lazy implicit val model = graph.getModel
+  lazy implicit val model = tr.getModel
   lazy implicit val system = tr.graph.system
 
   def this() = this(TestStore.instantiateUniqueStore())
 
   def shutdown(): Unit = {
     model.close()
-    graph.close()
-    tr.shutdown()
+    tr.close()
     Await.result(tr.graph.system.terminate(), Duration.Inf)
   }
 
   override def apply(): Unit = {
     try {
-      super.apply()
+      import scala.sys.process._
+      val s = super.apply()
+      val ulimit = "ulimit -u".!!
+      println(ulimit)
+      s
     } finally {
       shutdown()
     }

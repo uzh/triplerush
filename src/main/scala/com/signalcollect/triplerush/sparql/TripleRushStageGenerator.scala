@@ -36,7 +36,7 @@ class TripleRushStageGenerator(val other: StageGenerator) extends StageGenerator
 
   def execute(pattern: BasicPattern, input: QueryIterator, execCxt: ExecutionContext): QueryIterator = {
     execCxt.getActiveGraph match {
-      case graph: TripleRushGraph => executeOnTripleRush(graph.tr, pattern, input, execCxt)
+      case tr: TripleRush => executeOnTripleRush(tr, pattern, input, execCxt)
       case _                      => other.execute(pattern, input, execCxt)
     }
   }

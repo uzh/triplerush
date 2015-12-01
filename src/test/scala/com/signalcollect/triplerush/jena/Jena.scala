@@ -125,11 +125,8 @@ WHERE {
     }
   }
 
-  def awaitIdle {}
-
-  def shutdown {
+  def close(): Unit = {
     model.close
   }
 
-  def prepareExecution {}
 }

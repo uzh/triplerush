@@ -27,6 +27,6 @@ trait QueryEngine {
   
   def resultIteratorForQuery(query: Seq[TriplePattern]): Iterator[Array[Int]]
 
-  def shutdown(): Unit
+  def close(): Unit
 
 }

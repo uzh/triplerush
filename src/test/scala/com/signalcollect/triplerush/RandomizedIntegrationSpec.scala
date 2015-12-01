@@ -43,8 +43,8 @@ class RandomizedIntegrationSpec extends FlatSpec with Checkers {
             assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
             jenaResults === trResults
           } finally {
-            jena.shutdown()
-            tr.shutdown()
+            jena.close
+            tr.close
             Await.result(tr.graph.system.terminate(), Duration.Inf)
           }
       }, minSuccessful(100))

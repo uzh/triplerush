@@ -67,7 +67,7 @@ class TripleRush(
     tripleMapperFactory: Option[MapperFactory[Long]],
     console: Boolean,
     config: Config,
-    kryoRegistrations: List[String]) extends QueryEngine with BlockingOperations with ConvenienceOperations {
+    kryoRegistrations: List[String]) extends JenaGraphAdapter with BlockingOperations with ConvenienceOperations with QueryEngine {
   import TripleRush._
 
   // Begin initialization ===========
@@ -107,7 +107,7 @@ class TripleRush(
       val msg = "Cluster unexpectedly lost a member, TripleRush can no longer operate and is shutting down."
       println(msg)
       log.error(new Exception(msg), msg)
-      shutdown()
+      close()
     }
   }
   private[this] val tripleRushShutdownPromise: Promise[Nothing] = Promise[Nothing]()
@@ -166,8 +166,9 @@ class TripleRush(
     resultIterator
   }
 
-  def shutdown(): Unit = {
+  override def close(): Unit = {
     if (!_isShutdown) {
+      super.close()
       _isShutdown = true
       dictionary.close()
       graph.shutdown()

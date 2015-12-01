@@ -38,7 +38,7 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
 
   def getGraph: Graph = {
     val tr = TestStore.instantiateUniqueStore()
-    TripleRushGraph(tr)
+    tr
     // TODO: Actor system not shut down.
   }
 
@@ -80,6 +80,10 @@ class TripleRushGraphTest(name: String) extends AbstractTestGraph(name) {
       m2.write(System.out, "N-TRIPLE")
     }
     assert(rslt, "Isomorphism test failed")
+    m1.close()
+    m2.close()
+    g1.close()
+    g2.close()
   }
 
   def getInputStream(n: Int, n2: Int, suffix: String): InputStream = {

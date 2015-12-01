@@ -29,6 +29,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.fixture.NoArg
+import org.apache.jena.graph.Graph
 
 class IntegrationSpec extends FlatSpec with UnitFixture with Checkers with ScalaFutures {
 
@@ -127,7 +128,7 @@ class IntegrationSpec extends FlatSpec with UnitFixture with Checkers with Scala
         query)
       assert(jenaResults === trResults, s"Jena results $jenaResults did not equal our results $trResults.")
     } finally {
-      jena.shutdown
+      jena.close
     }
   }
 

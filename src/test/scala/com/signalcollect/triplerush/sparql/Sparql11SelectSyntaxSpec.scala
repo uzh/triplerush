@@ -37,8 +37,7 @@ import org.apache.jena.riot.RDFDataMgr
 class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfter {
 
   val tr = TestStore.instantiateUniqueStore()
-  val graph = TripleRushGraph(tr)
-  implicit val model = graph.getModel
+  implicit val model = tr.getModel
   // Unzip test jar into a temporary directory and delete after the tests are run.
   val tmpDir = Files.createTempDirectory("sparql-syntax")
 
@@ -66,7 +65,7 @@ class Sparql11SelectSyntaxSpec extends FlatSpec with Matchers with BeforeAndAfte
 
   after {
     FileUtils.deleteDirectory(new File(tmpDir.toString))
-    tr.shutdown()
+    tr.close
     Await.result(tr.graph.system.terminate(), Duration.Inf)
   }
 

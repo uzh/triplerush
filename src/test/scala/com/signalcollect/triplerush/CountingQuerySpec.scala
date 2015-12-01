@@ -161,7 +161,7 @@ class CountingQuerySpec extends FlatSpec with UnitFixture with Checkers {
         triples,
         query)
     } finally {
-      jena.shutdown
+      jena.close
     }
   }
 
