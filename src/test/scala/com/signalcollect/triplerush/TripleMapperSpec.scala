@@ -24,6 +24,8 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import com.signalcollect.triplerush.mapper.DistributedTripleMapper
 import com.signalcollect.triplerush.mapper.RelievedNodeZeroTripleMapper
+import org.scalacheck.Gen
+import org.scalacheck.Prop
 
 class TripleMapperSpec extends FlatSpec with Matchers with Checkers {
 
@@ -48,34 +50,39 @@ class TripleMapperSpec extends FlatSpec with Matchers with Checkers {
   assert(workerId(1) == 1)
   assert(workerId(191) == 23)
 
+  val genPositiveInt = Gen.choose(1, Int.MaxValue)
+
   "TripleMapper" should "assign triples with the same subject to the same node" in {
-    check((subjectId: Int) => {
-      (subjectId > 0) ==> {
-        val node1 = nodeId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(subjectId, 2, 0)))
-        val node2 = nodeId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(subjectId, 0, 5)))
-        node1 == node2
+    check {
+      Prop.forAll(genPositiveInt) {
+        (subjectId: Int) =>
+          val node1 = nodeId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(subjectId, 2, 0)))
+          val node2 = nodeId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(subjectId, 0, 5)))
+          node1 == node2
       }
-    }, minSuccessful(10))
+    }
   }
 
   it should "assign triples that share subject/object to the same node, if the one with the object has no subject set" in {
-    check((id: Int) => {
-      (id > 0) ==> {
-        val node1 = nodeId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(id, 2, 0)))
-        val node2 = nodeId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(0, 5, id)))
-        node1 == node2
+    check {
+      Prop.forAll(genPositiveInt) {
+        (positiveId: Int) =>
+          val node1 = nodeId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(positiveId, 2, 0)))
+          val node2 = nodeId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(0, 5, positiveId)))
+          node1 == node2
       }
-    }, minSuccessful(100))
+    }
   }
 
   it should "usually assign triples that share subject/object to different workers on the same node, when their predicates are different" in {
-    check((id: Int) => {
-      (id > 0) ==> {
-        val w1 = workerId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(id, 2, 0)))
-        val w2 = workerId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(0, 5, id)))
-        w1 != w2
+    check {
+      Prop.forAll(genPositiveInt) {
+        (positiveId: Int) =>
+          val w1 = workerId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(positiveId, 2, 0)))
+          val w2 = workerId(distributedMapper.getWorkerIdForVertexId(EfficientIndexPattern(0, 5, positiveId)))
+          w1 != w2
       }
-    }, minSuccessful(100))
+    }
   }
 
   /**
