@@ -44,7 +44,7 @@ final class CompositeLongIntHashMap(
 
   private[this] var numberOfElements: Int = 0
 
-  def clear: Unit = {
+  def clear(): Unit = {
     keys = new Array[Long](maxSize)
     numberOfElements = 0
   }
@@ -53,7 +53,7 @@ final class CompositeLongIntHashMap(
     keys.zip(values).filter(_._1 != 0).toMap
   }
 
-  private[this] def tryDouble: Unit = {
+  private[this] def tryDouble(): Unit = {
     // 1073741824 is the largest size and cannot be doubled anymore.
     if (maxSize != 1073741824) {
       val oldValues = values
@@ -147,14 +147,14 @@ final class CompositeLongIntHashMap(
       }
       advance
     }
-    @inline def advance: Unit = {
+    @inline def advance(): Unit = {
       currentPosition = ((currentPosition + 1) & mask)
       keyAtPosition = keys(currentPosition)
     }
     @inline def isCurrentPositionOccupied: Boolean = {
       keyAtPosition != 0
     }
-    @inline def removeCurrentEntry: Unit = {
+    @inline def removeCurrentEntry(): Unit = {
       keys(currentPosition) = 0
       numberOfElements -= 1
     }

@@ -122,7 +122,7 @@ final class TripleRushVertexMap(
 
   def updateStateOfVertex(vertex: Vertex[Long, _, Long, Any]): Unit = Unit
 
-  def clear: Unit = {
+  def clear(): Unit = {
     values = new Array[Vertex[Long, _, Long, Any]](maxSize)
     keys = new Array[Long](maxSize)
     numberOfElements = 0
@@ -246,14 +246,14 @@ final class TripleRushVertexMap(
       }
       advance
     }
-    @inline def advance: Unit = {
+    @inline def advance(): Unit = {
       currentPosition = ((currentPosition + 1) & mask)
       keyAtPosition = keys(currentPosition)
     }
     @inline def isCurrentPositionOccupied: Boolean = {
       keyAtPosition != 0
     }
-    @inline def removeCurrentEntry: Unit = {
+    @inline def removeCurrentEntry(): Unit = {
       keys(currentPosition) = 0
       values(currentPosition) = null
       numberOfElements -= 1

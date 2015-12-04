@@ -83,7 +83,7 @@ class TripleIterator(
 
   def next(): jena.Triple = tripleIterator.next
 
-  def hasNext(): Boolean = tripleIterator.hasNext
+  def hasNext: Boolean = tripleIterator.hasNext
 
   private[this] abstract class AutoClosingIterator[T](iterator: Iterator[T]) extends Iterator[T] {
     private[this] var isClosed = false
