@@ -23,7 +23,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Try
 
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.fixture.{ FlatSpec, UnitFixture }
+import org.scalatest.fixture.{ FlatSpec, NoArg, UnitFixture }
 
 import com.signalcollect.triplerush.{ GroundTruthSpec, TestStore, TriplePattern }
 
@@ -39,28 +39,38 @@ class BlockingAdditionsSpec extends FlatSpec with ScalaFutures with UnitFixture 
     assert(count == expectedCount)
   }
 
-  it should "continue to work even after an error" in new TestStore {
-    val additionAttempt = Try(tr.addTriples(new ExplodingIterator()))
-    assert(additionAttempt.isFailure)
+  it should "continue to work even after an error" in new NoArg {
+    val tr = TestStore.instantiateUniqueStore
+    try {
+      val additionAttempt = Try(tr.addTriples(new ExplodingIterator()))
+      assert(additionAttempt.isFailure)
+    } finally {
+      tr.close
+    }
   }
 
-  it should "be able to load a lot of redundant triples into limited memory" in new TestStore {
-    val batches = 10
-    val parallelAdditions = 10
-    (1 to batches) foreach { i =>
-      val f = Future.sequence {
-        (1 to parallelAdditions) map { i =>
-          Future {
-            tr.addTriples(TripleIterator(tripleStream))
+  it should "be able to load a lot of redundant triples into limited memory" in new NoArg {
+    val tr = TestStore.instantiateUniqueStore
+    try {
+      val batches = 10
+      val parallelAdditions = 10
+      (1 to batches) foreach { i =>
+        val f = Future.sequence {
+          (1 to parallelAdditions) map { i =>
+            Future {
+              tr.addTriples(TripleIterator(tripleStream))
+            }
           }
         }
+        Await.result(f, 300.seconds)
+        //      println(s"$i/$batches batches")
+        val expectedCount = 25700
+        val count = tr.resultIteratorForQuery(Seq(TriplePattern(-1, -2, -3))).size
+        //      println(tr.dictionary)
+        assert(count == expectedCount)
       }
-      Await.result(f, 300.seconds)
-//      println(s"$i/$batches batches")
-      val expectedCount = 25700
-      val count = tr.resultIteratorForQuery(Seq(TriplePattern(-1, -2, -3))).size
-//      println(tr.dictionary)
-      assert(count == expectedCount)
+    } finally {
+      tr.close
     }
   }
 

@@ -18,16 +18,20 @@ package com.signalcollect.triplerush
 
 import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.annotation.tailrec
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.reflect.runtime.universe
 import scala.util.{ Failure, Success, Try }
+
 import org.scalatest.fixture.NoArg
+
 import com.signalcollect.GraphBuilder
 import com.signalcollect.configuration.Akka
 import com.typesafe.config.{ Config, ConfigFactory }
+
 import akka.actor.ActorSystem
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 
 object TestStore {
 
@@ -90,14 +94,15 @@ object TestStore {
 
 }
 
-class TestStore(val tr: TripleRush) extends NoArg {
+class TestStore(storeInitializer: => TripleRush) extends NoArg {
 
+  lazy val tr: TripleRush = storeInitializer
   lazy implicit val model = tr.getModel
   lazy implicit val system = tr.graph.system
 
-  def this() = this(TestStore.instantiateUniqueStore())
+  def this() = this(TestStore.instantiateUniqueStore)
 
-  def shutdown(): Unit = {
+  def close(): Unit = {
     model.close()
     tr.close()
     Await.result(tr.graph.system.terminate(), Duration.Inf)
@@ -107,7 +112,7 @@ class TestStore(val tr: TripleRush) extends NoArg {
     try {
       super.apply()
     } finally {
-      shutdown()
+      close()
     }
   }
 
