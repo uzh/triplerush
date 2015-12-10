@@ -44,9 +44,11 @@ case class TripleRushEdgeAddedToNonExistentVertexHandler(is: IndexStructure) ext
           val idDelta = vertexId.parentIdDelta(parentId)
           val indexType = IndexType(parentId)
           val tickets = is.ticketsForIndexOperation(indexType)
-          val oId = b.blockingOperationId
-          b.tickets -= tickets
-          graphEditor.addEdge(parentId, new BlockingIndexVertexEdge(idDelta, tickets, oId))
+          if (tickets > 0) {
+            val oId = b.blockingOperationId
+            b.tickets -= tickets
+            graphEditor.addEdge(parentId, new BlockingIndexVertexEdge(idDelta, tickets, oId))
+          }
         }
     }
     IndexType(vertexId) match {
