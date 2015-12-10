@@ -53,13 +53,30 @@ object So extends IndexType
 
 object Po extends IndexType
 
-object IndexStructure {
+trait IndexStructure {
 
   val rootId = EfficientIndexPattern(0, 0, 0)
 
   /**
    * Map from index type to required tickets for an
-   * index operation. Number of required tickets corresponds to
+   * index operation.
+   */
+  def ticketsForIndexOperation: Map[IndexType, Long]
+
+  def ticketsForIndexOperation(id: Long): Long
+
+  lazy val ticketsForTripleOperation: Long = {
+    ticketsForIndexOperation(Sp) + ticketsForIndexOperation(Po) + ticketsForIndexOperation(So)
+  }
+
+  def parentIds(id: Long): Set[Long]
+
+}
+
+object FullIndex extends IndexStructure {
+
+  /**
+   * Number of required tickets corresponds to
    * number of index parents + 1 based on the diagram of the index structure
    * @ http://www.zora.uzh.ch/111243/1/TR_WWW.pdf
    */
@@ -70,10 +87,6 @@ object IndexStructure {
   def ticketsForIndexOperation(id: Long): Long = {
     val indexType = IndexType(id)
     ticketsForIndexOperation(indexType)
-  }
-
-  val ticketsForTripleOperation: Long = {
-    ticketsForIndexOperation(Sp) + ticketsForIndexOperation(Po) + ticketsForIndexOperation(So)
   }
 
   def parentIds(id: Long): Set[Long] = {

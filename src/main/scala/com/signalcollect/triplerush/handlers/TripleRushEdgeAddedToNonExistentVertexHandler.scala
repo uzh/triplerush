@@ -26,22 +26,24 @@ import com.signalcollect.triplerush.vertices._
 import com.signalcollect.triplerush._
 import java.util.concurrent.atomic.AtomicInteger
 
-case object TripleRushEdgeAddedToNonExistentVertexHandlerFactory extends EdgeAddedToNonExistentVertexHandlerFactory[Long, Any] {
-  def createInstance: EdgeAddedToNonExistentVertexHandler[Long, Any] = TripleRushEdgeAddedToNonExistentVertexHandler
+case class TripleRushEdgeAddedToNonExistentVertexHandlerFactory(is: IndexStructure) extends EdgeAddedToNonExistentVertexHandlerFactory[Long, Any] {
+
+  def createInstance: EdgeAddedToNonExistentVertexHandler[Long, Any] = new TripleRushEdgeAddedToNonExistentVertexHandler(is)
 
   override def toString = "TripleRushEdgeAddedToNonExistentVertexHandlerFactory"
+
 }
 
-case object TripleRushEdgeAddedToNonExistentVertexHandler extends EdgeAddedToNonExistentVertexHandler[Long, Any] {
+case class TripleRushEdgeAddedToNonExistentVertexHandler(is: IndexStructure) extends EdgeAddedToNonExistentVertexHandler[Long, Any] {
 
   def handleImpossibleEdgeAddition(edge: Edge[Long], vertexId: Long, graphEditor: GraphEditor[Long, Any]): Option[Vertex[Long, _, Long, Any]] = {
     edge match {
       case b: BlockingIndexVertexEdge =>
-        val parentIds = IndexStructure.parentIds(vertexId)
+        val parentIds = is.parentIds(vertexId)
         parentIds foreach { parentId =>
           val idDelta = vertexId.parentIdDelta(parentId)
           val indexType = IndexType(parentId)
-          val tickets = IndexStructure.ticketsForIndexOperation(indexType)
+          val tickets = is.ticketsForIndexOperation(indexType)
           val oId = b.blockingOperationId
           b.tickets -= tickets
           graphEditor.addEdge(parentId, new BlockingIndexVertexEdge(idDelta, tickets, oId))

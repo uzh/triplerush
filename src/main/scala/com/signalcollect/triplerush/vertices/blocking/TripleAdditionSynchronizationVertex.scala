@@ -30,6 +30,7 @@ import scala.util.Failure
 import scala.util.Success
 
 class TripleAdditionSynchronizationVertex(
+    is: IndexStructure,
     triples: Iterator[TriplePattern],
     operationCompletedPromise: Promise[Unit],
     batchSize: Int = 10000) extends BaseVertex[Option[TicketSynchronization]] {
@@ -59,13 +60,22 @@ class TripleAdditionSynchronizationVertex(
       val p = t.p
       val o = t.o
       val po = EfficientIndexPattern(0, p, o)
+      val poTickets = is.ticketsForIndexOperation(po)
+      if (poTickets > 0) {
+        graphEditor.addEdge(po, new BlockingIndexVertexEdge(s, poTickets, operationId))
+      }
       val so = EfficientIndexPattern(s, 0, o)
+      val soTickets = is.ticketsForIndexOperation(so)
+      if (soTickets > 0) {
+        graphEditor.addEdge(so, new BlockingIndexVertexEdge(p, soTickets, operationId))
+      }
       val sp = EfficientIndexPattern(s, p, 0)
-      graphEditor.addEdge(po, new BlockingIndexVertexEdge(s, IndexStructure.ticketsForIndexOperation(po), operationId))
-      graphEditor.addEdge(so, new BlockingIndexVertexEdge(p, IndexStructure.ticketsForIndexOperation(so), operationId))
-      graphEditor.addEdge(sp, new BlockingIndexVertexEdge(o, IndexStructure.ticketsForIndexOperation(sp), operationId))
+      val spTickets = is.ticketsForIndexOperation(sp)
+      if (spTickets > 0) {
+        graphEditor.addEdge(sp, new BlockingIndexVertexEdge(o, spTickets, operationId))
+      }
     }
-    val expectedTickets = dispatchedTriples * IndexStructure.ticketsForTripleOperation
+    val expectedTickets = dispatchedTriples * is.ticketsForTripleOperation
     val synchronization = new TicketSynchronization("BlockingTripleAdditionsVertex", expectedTickets)
     synchronization.onSuccess {
       propagateError(graphEditor) {

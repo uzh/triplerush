@@ -53,11 +53,12 @@ object TripleRush {
   def apply(graphBuilder: GraphBuilder[Long, Any] = new GraphBuilder[Long, Any](),
             dictionary: RdfDictionary = new HashDictionary(),
             tripleMapperFactory: Option[MapperFactory[Long]] = None,
+            indexStructure: IndexStructure = FullIndex,
             console: Boolean = false,
             config: Config = ConfigFactory.load().getConfig("signalcollect"),
             kryoRegistrations: List[String] = Kryo.defaultRegistrations): TripleRush = {
     new TripleRush(
-      graphBuilder, dictionary, tripleMapperFactory, console, config, kryoRegistrations)
+      graphBuilder, dictionary, tripleMapperFactory, indexStructure, console, config, kryoRegistrations)
   }
 }
 
@@ -65,6 +66,7 @@ class TripleRush(
     val graphBuilder: GraphBuilder[Long, Any],
     val dictionary: RdfDictionary,
     tripleMapperFactory: Option[MapperFactory[Long]],
+    indexStructure: IndexStructure,
     console: Boolean,
     config: Config,
     kryoRegistrations: List[String]) extends JenaGraphAdapter with BlockingOperations with ConvenienceOperations with QueryEngine {
@@ -83,7 +85,7 @@ class TripleRush(
     withKryoRegistrations(kryoRegistrations).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, 1024)).
     withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
-    withEdgeAddedToNonExistentVertexHandlerFactory(TripleRushEdgeAddedToNonExistentVertexHandlerFactory).
+    withEdgeAddedToNonExistentVertexHandlerFactory(new TripleRushEdgeAddedToNonExistentVertexHandlerFactory(indexStructure)).
     withMapperFactory(
       if (numberOfNodes > 1) {
         DistributedTripleMapperFactory
@@ -121,7 +123,7 @@ class TripleRush(
   def asyncAddTriplePatterns(i: Iterator[TriplePattern]): Future[Unit] = {
     assert(!_isShutdown, noOperationsWhenShutdownMessage)
     val promise = Promise[Unit]()
-    val vertex = new TripleAdditionSynchronizationVertex(i, promise)
+    val vertex = new TripleAdditionSynchronizationVertex(indexStructure, i, promise)
     graph.addVertex(vertex)
     promise.future
   }
@@ -130,7 +132,7 @@ class TripleRush(
     assert(!_isShutdown, noOperationsWhenShutdownMessage)
     assert(sId > 0 && pId > 0 && oId > 0)
     val promise = Promise[Unit]()
-    val vertex = new TripleAdditionSynchronizationVertex(Some(TriplePattern(sId, pId, oId)).iterator, promise)
+    val vertex = new TripleAdditionSynchronizationVertex(indexStructure, Some(TriplePattern(sId, pId, oId)).iterator, promise)
     graph.addVertex(vertex)
     promise.future
   }
