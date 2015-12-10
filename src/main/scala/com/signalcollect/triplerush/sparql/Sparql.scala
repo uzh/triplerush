@@ -16,7 +16,6 @@
 
 package com.signalcollect.triplerush.sparql
 
-import org.apache.jena.sparql.engine.QueryIterator
 import com.signalcollect.triplerush.TripleRush
 import org.apache.jena.query._
 import org.apache.jena.rdf.model.ModelFactory
