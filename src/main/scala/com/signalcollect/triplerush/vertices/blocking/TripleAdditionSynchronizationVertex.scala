@@ -28,6 +28,7 @@ import com.signalcollect.triplerush.OperationIds
 import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
+import com.signalcollect.triplerush.IndexType
 
 class TripleAdditionSynchronizationVertex(
     is: IndexStructure,
@@ -56,23 +57,12 @@ class TripleAdditionSynchronizationVertex(
     while (triples.hasNext && dispatchedTriples < batchSize) {
       dispatchedTriples += 1
       val t = triples.next
-      val s = t.s
-      val p = t.p
-      val o = t.o
-      val po = EfficientIndexPattern(0, p, o)
-      val poTickets = is.ticketsForIndexOperation(po)
-      if (poTickets > 0) {
-        graphEditor.addEdge(po, new BlockingIndexVertexEdge(s, poTickets, operationId))
-      }
-      val so = EfficientIndexPattern(s, 0, o)
-      val soTickets = is.ticketsForIndexOperation(so)
-      if (soTickets > 0) {
-        graphEditor.addEdge(so, new BlockingIndexVertexEdge(p, soTickets, operationId))
-      }
-      val sp = EfficientIndexPattern(s, p, 0)
-      val spTickets = is.ticketsForIndexOperation(sp)
-      if (spTickets > 0) {
-        graphEditor.addEdge(sp, new BlockingIndexVertexEdge(o, spTickets, operationId))
+      val parentIds = is.parentIds(t)
+      for (parentId <- parentIds) {
+        val indexId = parentId.toEfficientIndexPattern
+        val indexType = IndexType(indexId)
+        val delta = t.parentIdDelta(parentId)
+        graphEditor.addEdge(indexId, new BlockingIndexVertexEdge(delta, is.ticketsForIndexOperation(indexType), operationId))
       }
     }
     val expectedTickets = dispatchedTriples * is.ticketsForTripleOperation

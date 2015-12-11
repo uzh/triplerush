@@ -35,78 +35,98 @@ object IndexType {
     }
   }
 
+  def apply(indexPattern: TriplePattern): IndexType = {
+    this(indexPattern.toEfficientIndexPattern)
+  }
+
 }
 
 sealed trait IndexType {
 
-  def exampleId: Long
+  def examplePattern: TriplePattern
+
+  lazy val exampleId: Long = examplePattern.toEfficientIndexPattern
 
 }
 
 object Root extends IndexType {
 
-  val exampleId = TriplePattern(0, 0, 0).toEfficientIndexPattern
+  val examplePattern = TriplePattern(0, 0, 0)
 
 }
 
 object S extends IndexType {
 
-  val exampleId = TriplePattern(1, 0, 0).toEfficientIndexPattern
+  val examplePattern = TriplePattern(1, 0, 0)
 
 }
 
 object P extends IndexType {
 
-  val exampleId = TriplePattern(0, 1, 0).toEfficientIndexPattern
+  val examplePattern = TriplePattern(0, 1, 0)
 
 }
 
 object O extends IndexType {
 
-  val exampleId = TriplePattern(0, 0, 1).toEfficientIndexPattern
+  val examplePattern = TriplePattern(0, 0, 1)
 
 }
 
 object Sp extends IndexType {
 
-  val exampleId = TriplePattern(1, 1, 0).toEfficientIndexPattern
+  val examplePattern = TriplePattern(1, 1, 0)
 
 }
 
 object So extends IndexType {
 
-  val exampleId = TriplePattern(1, 0, 1).toEfficientIndexPattern
+  val examplePattern = TriplePattern(1, 0, 1)
 
 }
 
 object Po extends IndexType {
 
-  val exampleId = TriplePattern(0, 1, 1).toEfficientIndexPattern
+  val examplePattern = TriplePattern(0, 1, 1)
 
 }
 
 trait IndexStructure {
 
-  val rootId = EfficientIndexPattern(0, 0, 0)
+  val rootPattern = TriplePattern(0, 0, 0)
+  val rootId = rootPattern.toEfficientIndexPattern
 
   /**
    * Map from index type to required tickets for an
    * index operation. Return 0 tickets if the index is not supported.
    */
-  def ticketsForIndexOperation: Map[IndexType, Long]
+  def ticketsForIndexOperation: Map[IndexType, Long] = {
+    IndexType.list.map { indexType =>
+      indexType -> (ancestorIds(indexType.examplePattern).size + 1L)
+    }.toMap
+  }
 
-  def ticketsForIndexOperation(id: Long): Long = {
-    val indexType = IndexType(id)
-    ticketsForIndexOperation(indexType)
+  def ticketsForOperation(pattern: TriplePattern): Long = {
+    if (pattern.isFullyBound) {
+      ticketsForTripleOperation
+    } else {
+      val indexType = IndexType(pattern)
+      ticketsForIndexOperation(indexType)
+    }
   }
 
   lazy val ticketsForTripleOperation: Long = {
-    ticketsForIndexOperation(Sp) + ticketsForIndexOperation(Po) + ticketsForIndexOperation(So)
+    val exampleTriple = TriplePattern(1, 1, 1)
+    ancestorIds(exampleTriple).size
   }
 
-  def parentIds(id: Long): Set[Long]
+  def parentIds(id: Long): Set[Long] = {
+    parentIds(id.toTriplePattern).map(_.toEfficientIndexPattern)
+  }
 
-  def ancestorIds(id: Long): Set[Long] = {
+  def parentIds(pattern: TriplePattern): Set[TriplePattern]
+
+  def ancestorIds(id: TriplePattern): Set[TriplePattern] = {
     val parents = parentIds(id)
     parents.union(parents.flatMap(ancestorIds(_)))
   }
@@ -115,25 +135,17 @@ trait IndexStructure {
 
 object FullIndex extends IndexStructure {
 
-  def ticketsForIndexOperation: Map[IndexType, Long] = {
-    IndexType.list.map { indexType =>
-      indexType -> (ancestorIds(indexType.exampleId).size + 1L)
-    }.toMap
-  }
-
-  def parentIds(id: Long): Set[Long] = {
-    val s = id.s
-    val p = id.p
-    val o = id.o
-    val sIndexId = EfficientIndexPattern(s, 0, 0)
-    val pIndexId = EfficientIndexPattern(0, p, 0)
-    val oIndexId = EfficientIndexPattern(0, 0, o)
-    // Based on the diagram of the index structure @ http://www.zora.uzh.ch/111243/1/TR_WWW.pdf
-    IndexType(id) match {
-      case P         => Set(rootId)
-      case Po        => Set(oIndexId)
-      case Sp        => Set(sIndexId, pIndexId)
-      case other @ _ => Set()
+  // Based on the diagram of the index structure @ http://www.zora.uzh.ch/111243/1/TR_WWW.pdf
+  def parentIds(pattern: TriplePattern): Set[TriplePattern] = {
+    pattern match {
+      case TriplePattern(0, 0, 0) => Set()
+      case TriplePattern(_, 0, 0) => Set()
+      case TriplePattern(0, _, 0) => Set(rootPattern)
+      case TriplePattern(0, 0, _) => Set()
+      case TriplePattern(_, _, 0) => Set(pattern.copy(s = 0), pattern.copy(p = 0))
+      case TriplePattern(_, 0, _) => Set()
+      case TriplePattern(0, _, _) => Set(pattern.copy(p = 0))
+      case TriplePattern(_, _, _) => Set(pattern.copy(s = 0), pattern.copy(p = 0), pattern.copy(o = 0))
     }
   }
 
