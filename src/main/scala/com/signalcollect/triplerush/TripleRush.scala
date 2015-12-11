@@ -84,7 +84,7 @@ class TripleRush(
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withKryoRegistrations(kryoRegistrations).
     withMessageBusFactory(new CombiningMessageBusFactory(8096, 1024)).
-    withUndeliverableSignalHandlerFactory(TripleRushUndeliverableSignalHandlerFactory).
+    withUndeliverableSignalHandlerFactory(new TripleRushUndeliverableSignalHandlerFactory(indexStructure)).
     withEdgeAddedToNonExistentVertexHandlerFactory(new TripleRushEdgeAddedToNonExistentVertexHandlerFactory(indexStructure)).
     withMapperFactory(
       if (numberOfNodes > 1) {
@@ -114,7 +114,9 @@ class TripleRush(
   }
   private[this] val tripleRushShutdownPromise: Promise[Nothing] = Promise[Nothing]()
   protected val tripleRushShutdown: Future[Nothing] = tripleRushShutdownPromise.future // Future is failed when TripleRush shuts down.
-  graph.addVertex(new RootIndex)
+  if (indexStructure.isSupported(Root)) {
+    graph.addVertex(new RootIndex)
+  }
   graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
   // End initialization =============
 

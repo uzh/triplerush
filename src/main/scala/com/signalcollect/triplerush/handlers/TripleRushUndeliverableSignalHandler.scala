@@ -23,33 +23,48 @@ import com.signalcollect.GraphEditor
 import com.signalcollect.interfaces.{ UndeliverableSignalHandler, UndeliverableSignalHandlerFactory }
 import com.signalcollect.triplerush.{ ChildIdReply, ChildIdRequest }
 import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern._
+import com.signalcollect.triplerush.EfficientIndexPattern
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
 import com.signalcollect.triplerush.vertices.PIndex
 import com.signalcollect.triplerush.OperationIds
+import com.signalcollect.triplerush.IndexStructure
+import com.signalcollect.triplerush.ParticleDebug
+import com.signalcollect.triplerush.IndexType
 
-case object TripleRushUndeliverableSignalHandlerFactory extends UndeliverableSignalHandlerFactory[Long, Any] {
-  def createInstance: UndeliverableSignalHandler[Long, Any] = TripleRushUndeliverableSignalHandler
+case class TripleRushUndeliverableSignalHandlerFactory(indexStructure: IndexStructure) extends UndeliverableSignalHandlerFactory[Long, Any] {
+
+  def createInstance: UndeliverableSignalHandler[Long, Any] = new TripleRushUndeliverableSignalHandler(indexStructure)
 
   override def toString = "TripleRushUndeliverableSignalHandlerFactory"
+
 }
 
-case object TripleRushUndeliverableSignalHandler extends UndeliverableSignalHandler[Long, Any] {
+case class TripleRushUndeliverableSignalHandler(indexStructure: IndexStructure) extends UndeliverableSignalHandler[Long, Any] {
+
   def vertexForSignalNotFound(signal: Any, inexistentTargetId: Long, senderId: Option[Long], graphEditor: GraphEditor[Long, Any]): Unit = {
     signal match {
       case queryParticle: Array[Int] =>
+        if (!indexStructure.isSupported(inexistentTargetId)) {
+          val errorMsg = s"Failed signal delivery of particle ${ParticleDebug(queryParticle).toString} " +
+            s"to index with ID ${inexistentTargetId.toTriplePattern} of type ${IndexType(inexistentTargetId)}. This index type is not supported by the used index structure $indexStructure."
+          graphEditor.log.error(new UnsupportedOperationException(errorMsg), errorMsg)
+        }
         val queryVertexId = OperationIds.embedInLong(queryParticle.queryId)
         graphEditor.sendSignal(queryParticle.tickets, queryVertexId)
       case ChildIdRequest =>
         graphEditor.sendSignal(ChildIdReply(Array()), senderId.get, inexistentTargetId)
       case other: Any =>
-        if (inexistentTargetId.isOperationId) {
-          println(s"Failed signal delivery of $other of type ${other.getClass} to " +
-            s"the query vertex with query id ${OperationIds.extractFromLong(inexistentTargetId)} and sender id $senderId.")
+        val errorMsg = if (inexistentTargetId.isOperationId) {
+          s"Failed signal delivery of $other of type ${other.getClass} to " +
+            s"the query vertex with query id ${OperationIds.extractFromLong(inexistentTargetId)} from sender id $senderId."
         } else {
-          println(s"Failed signal delivery of $other of type ${other.getClass} to the " +
-            s"index vertex ${inexistentTargetId.toTriplePattern} and sender id $senderId.")
+          s"Failed signal delivery of $other of type ${other.getClass} to the " +
+            s"index vertex ${inexistentTargetId.toTriplePattern} from sender id $senderId."
         }
+        println(errorMsg)
+        graphEditor.log.error(new UnsupportedOperationException(errorMsg), errorMsg)
     }
   }
+
 }

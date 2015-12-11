@@ -223,6 +223,10 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     s < 0 && p < 0 && o < 0
   }
 
+  def hasNoVariables: Boolean = {
+    s >= 0 && p >= 0 && o >= 0
+  }
+
   def withVariablesAsWildcards: TriplePattern = {
     TriplePattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
   }

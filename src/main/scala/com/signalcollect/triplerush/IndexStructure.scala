@@ -106,6 +106,17 @@ trait IndexStructure {
     }.toMap
   }
 
+  def isSupported(indexId: Long): Boolean = {
+    val indexType = IndexType(indexId)
+    isSupported(indexType)
+  }
+
+  lazy val isSupported: Map[IndexType, Boolean] = {
+    IndexType.list.map { indexType =>
+      indexType -> (ancestorIds(TriplePattern(1, 1, 1)).contains(indexType.examplePattern))
+    }.toMap
+  }
+
   def ticketsForOperation(pattern: TriplePattern): Long = {
     if (pattern.isFullyBound) {
       ticketsForTripleOperation
@@ -137,6 +148,7 @@ object FullIndex extends IndexStructure {
 
   // Based on the diagram of the index structure @ http://www.zora.uzh.ch/111243/1/TR_WWW.pdf
   def parentIds(pattern: TriplePattern): Set[TriplePattern] = {
+    assert(pattern.hasNoVariables, s"Pattern $pattern contains at least one variable, which means it cannot be part of the index.")
     pattern match {
       case TriplePattern(0, 0, 0) => Set()
       case TriplePattern(_, 0, 0) => Set()
@@ -145,7 +157,7 @@ object FullIndex extends IndexStructure {
       case TriplePattern(_, _, 0) => Set(pattern.copy(s = 0), pattern.copy(p = 0))
       case TriplePattern(_, 0, _) => Set()
       case TriplePattern(0, _, _) => Set(pattern.copy(p = 0))
-      case TriplePattern(_, _, _) => Set(pattern.copy(s = 0), pattern.copy(p = 0), pattern.copy(o = 0))
+      case fullyBound @ _         => Set(pattern.copy(s = 0), pattern.copy(p = 0), pattern.copy(o = 0))
     }
   }
 
