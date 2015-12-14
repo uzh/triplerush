@@ -106,4 +106,56 @@ class IndexSpec extends FlatSpec with UnitFixture {
     }
   }
 
+  it should "be able to load a million entries into a Splay-tree based index vertex" in new NoArg {
+    val graphBuilder = TestStore.instantiateUniqueGraphBuilder()
+    val indexStructure = new IndexStructure {
+      def parentIds(pattern: TriplePattern): Set[TriplePattern] = {
+        pattern match {
+          case fullyBound if fullyBound.isFullyBound => Set(fullyBound.copy(o = 0))
+          case other @ _                             => Set.empty
+        }
+      }
+    }
+    val tr = TripleRush(graphBuilder = graphBuilder, indexStructure = indexStructure)
+    implicit val system = tr.graph.system
+    try {
+      val numTriples = 1000000
+      // Reverse ordering to test a less conventional case.
+      for (i <- numTriples to 1 by -1) {
+        tr.addEncodedTriple(1, 2, i)
+      }
+      val results = tr.resultIteratorForQuery(Seq(TriplePattern(1, 2, -1))).size
+      assert(results == numTriples)
+    } finally {
+      tr.close
+      Await.result(system.terminate, Duration.Inf)
+    }
+  }
+
+  it should "be able to load ten thousand entries into an array based index vertex" in new NoArg {
+    val graphBuilder = TestStore.instantiateUniqueGraphBuilder()
+    val indexStructure = new IndexStructure {
+      def parentIds(pattern: TriplePattern): Set[TriplePattern] = {
+        pattern match {
+          case fullyBound if fullyBound.isFullyBound => Set(fullyBound.copy(p = 0))
+          case other @ _                             => Set.empty
+        }
+      }
+    }
+    val tr = TripleRush(graphBuilder = graphBuilder, indexStructure = indexStructure)
+    implicit val system = tr.graph.system
+    try {
+      val numTriples = 10000
+      // Reverse ordering to test a less conventional case.
+      for (i <- numTriples to 1 by -1) {
+        tr.addEncodedTriple(1, i, 2)
+      }
+      val results = tr.resultIteratorForQuery(Seq(TriplePattern(1, -1, 2))).size
+      assert(results == numTriples)
+    } finally {
+      tr.close
+      Await.result(system.terminate, Duration.Inf)
+    }
+  }
+
 }
