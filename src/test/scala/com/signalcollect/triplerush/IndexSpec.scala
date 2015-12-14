@@ -20,7 +20,14 @@
 
 package com.signalcollect.triplerush
 
-import org.scalatest.fixture.{ FlatSpec, UnitFixture }
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
+import org.scalatest.fixture.FlatSpec
+import org.scalatest.fixture.NoArg
+import org.scalatest.fixture.UnitFixture
+
+import akka.testkit.EventFilter
 
 class IndexSpec extends FlatSpec with UnitFixture {
 
@@ -56,6 +63,46 @@ class IndexSpec extends FlatSpec with UnitFixture {
           }
         }
       }
+    }
+  }
+
+  it should "throw a helpful error when a required index is missing" in new NoArg {
+    val graphBuilder = TestStore.instantiateUniqueGraphBuilder()
+    val indexStructure = new IndexStructure {
+      def parentIds(pattern: TriplePattern): Set[TriplePattern] = Set.empty
+    }
+    val tr = TripleRush(graphBuilder = graphBuilder, indexStructure = indexStructure)
+    implicit val system = tr.graph.system
+    try {
+      tr.addEncodedTriple(1, 2, 3)
+      EventFilter[UnsupportedOperationException](occurrences = 1) intercept {
+        tr.resultIteratorForQuery(Seq(TriplePattern(-1, -2, -3))).size
+      }
+    } finally {
+      tr.close
+      Await.result(system.terminate, Duration.Inf)
+    }
+  }
+
+  it should "be able to answer a simple query with a partial index" in new NoArg {
+    val graphBuilder = TestStore.instantiateUniqueGraphBuilder()
+    val indexStructure = new IndexStructure {
+      def parentIds(pattern: TriplePattern): Set[TriplePattern] = {
+        pattern match {
+          case fullyBound if fullyBound.isFullyBound => Set(fullyBound.copy(o = 0))
+          case other @ _                             => Set.empty
+        }
+      }
+    }
+    val tr = TripleRush(graphBuilder = graphBuilder, indexStructure = indexStructure)
+    implicit val system = tr.graph.system
+    try {
+      tr.addEncodedTriple(1, 2, 3)
+      val results = tr.resultIteratorForQuery(Seq(TriplePattern(1, 2, -1))).size
+      assert(results == 1)
+    } finally {
+      tr.close
+      Await.result(system.terminate, Duration.Inf)
     }
   }
 
