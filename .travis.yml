@@ -4,4 +4,4 @@ jdk:
 scala:
    - 2.11.7
 before_script:
-  - "export JAVA_OPTS=-Xmx2024m"
+  - "export JAVA_OPTS=-Xmx3000m"
