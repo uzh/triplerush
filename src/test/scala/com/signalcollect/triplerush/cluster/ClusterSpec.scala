@@ -17,7 +17,6 @@
 package com.signalcollect.triplerush.cluster
 
 import scala.concurrent.duration.DurationInt
-
 import org.scalatest.Finders
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -25,19 +24,19 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.Millis
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
-
 import com.signalcollect.GraphBuilder
 import com.signalcollect.nodeprovisioning.cluster.ClusterNodeProvisionerActor
 import com.signalcollect.nodeprovisioning.cluster.RetrieveNodeActors
 import com.signalcollect.triplerush.TestStore
 import com.signalcollect.triplerush.TripleRush
 import com.signalcollect.triplerush.mapper.DistributedTripleMapperFactory
-
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.pattern.ask
 import akka.util.Timeout
+import com.signalcollect.triplerush.sparql.Sparql
+import collection.JavaConversions._
 
 class ClusterSpec extends FlatSpec with Matchers with ScalaFutures {
 
@@ -51,23 +50,40 @@ class ClusterSpec extends FlatSpec with Matchers with ScalaFutures {
   implicit override val patienceConfig =
     PatienceConfig(timeout = scaled(Span(300, Seconds)), interval = scaled(Span(1000, Millis)))
 
-  "DistributedTripleRush" should "load triples" in {
+  "DistributedTripleRush" should "load a triple and execute a simple SPARQL query" in {
     val numberOfNodes = 2
     implicit val timeout = Timeout(30.seconds)
     val (master, slave) = instantiateMasterAndSlaveActorSystems()
-    val mapperFactory = DistributedTripleMapperFactory
-    val masterActor = master.actorOf(Props(classOf[ClusterNodeProvisionerActor], 1000,
-      "", numberOfNodes), "ClusterMasterBootstrap")
-    val nodeActorsFuture = (masterActor ? RetrieveNodeActors).mapTo[Array[ActorRef]]
-    whenReady(nodeActorsFuture) { nodeActors =>
-      assert(nodeActors.length == numberOfNodes)
-      val graphBuilder = new GraphBuilder[Long, Any]().
-        withActorSystem(master).
-        withPreallocatedNodes(nodeActors)
-      val trInstance = TripleRush(
-        graphBuilder = graphBuilder,
-        tripleMapperFactory = Some(mapperFactory))
-      master.log.info(s"TripleRush has been initialized.")
+    try {
+      val mapperFactory = DistributedTripleMapperFactory
+      val masterActor = master.actorOf(Props(classOf[ClusterNodeProvisionerActor], 1000,
+        "", numberOfNodes), "ClusterMasterBootstrap")
+      val nodeActorsFuture = (masterActor ? RetrieveNodeActors).mapTo[Array[ActorRef]]
+      whenReady(nodeActorsFuture) { nodeActors =>
+        assert(nodeActors.length == numberOfNodes)
+        val graphBuilder = new GraphBuilder[Long, Any]().
+          withActorSystem(master).
+          withPreallocatedNodes(nodeActors)
+        val tr = TripleRush(
+          graphBuilder = graphBuilder,
+          tripleMapperFactory = Some(mapperFactory))
+        try {
+          master.log.info(s"TripleRush has been initialized.")
+          implicit val model = tr.getModel
+          tr.addStringTriple("http://s", "http://p", "http://o")
+          val result = Sparql("SELECT ?s { ?s <http://p> <http://o> }")
+          assert(result.hasNext, "There was no query result, but there should be one.")
+          val next = result.next
+          assert(!result.hasNext, "There should be exactly one result, but found more.")
+          assert(next.get("s").toString == "http://s")
+        } finally {
+          tr.close
+        }
+      }
+    } finally {
+      slave.terminate
+      master.terminate
     }
   }
+
 }
