@@ -21,13 +21,14 @@ package com.signalcollect.triplerush.serialization
 
 import org.scalatest.{ Finders, Matchers }
 import org.scalatest.fixture.{ FlatSpec, UnitFixture }
-
 import com.signalcollect.triplerush.{ TestStore, TriplePattern }
+import com.signalcollect.triplerush.sparql.Sparql
+import collection.JavaConversions._
 
 class TripleRushSerializationSpec extends FlatSpec with UnitFixture with Matchers {
 
   "TripleRush serialization" should "support full message serialization during loading" in new TestStore {
-    val sparql = """
+    val query = """
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?product ?label
 WHERE {
@@ -36,8 +37,7 @@ WHERE {
 ORDER BY ?label
 LIMIT 3"""
     tr.addTriplePattern(TriplePattern(1, 2, 3))
-    tr.addTriplePattern(TriplePattern(3, 2, 5))
-    tr.addTriplePattern(TriplePattern(3, 2, 7))
+    assert(Sparql(query).size == 0)
   }
 
 }

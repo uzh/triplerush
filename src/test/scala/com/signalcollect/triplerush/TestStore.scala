@@ -42,26 +42,25 @@ object TestStore {
     TripleRush(graphBuilder = graphBuilder)
   }
 
-  def customClusterConfig(actorSystemName: String, seedPort: Int, seedIp: String = "127.0.0.1"): Config = {
+  def customClusterConfig(actorSystemName: String, port: Int, seedPort: Int, seedIp: String = "127.0.0.1"): Config = {
     ConfigFactory.parseString(
       s"""|akka.clustering.name=$actorSystemName
           |akka.clustering.seed-ip=$seedIp
           |akka.clustering.seed-port=$seedPort
-          |akka.remote.netty.tcp.port=$seedPort
+          |akka.remote.netty.tcp.port=$port
           |akka.cluster.seed-nodes=["akka.tcp://"${actorSystemName}"@"${seedIp}":"${seedPort}]"""
         .stripMargin)
   }
 
-  def instantiateUniqueActorSystem(cores: Int = numberOfCoresInTests): ActorSystem = {
-    val defaultGraphConfig = GraphBuilder.config
+  def instantiateUniqueActorSystem(cores: Int = numberOfCoresInTests, port: Int = freePort, seedPortOption: Option[Int] = None, actorSystemName: String = "TripleRushTestSystem"): ActorSystem = {
     val defaultAkkaConfig = Akka.config(
       serializeMessages = None,
       loggingLevel = None,
-      kryoRegistrations = defaultGraphConfig.kryoRegistrations,
-      kryoInitializer = None,
+      kryoRegistrations = Kryo.defaultRegistrations,
+      kryoInitializer = Some("com.signalcollect.triplerush.serialization.TripleRushKryoInit"),
       numberOfCores = cores)
-    val actorSystemName = "TripleRushTestSystem"
-    val customAkkaConfig = customClusterConfig(actorSystemName = actorSystemName, seedPort = freePort)
+    val seedPort = seedPortOption.getOrElse(port)
+    val customAkkaConfig = customClusterConfig(actorSystemName = actorSystemName, port = port, seedPort = seedPort)
       .withFallback(defaultAkkaConfig)
     ActorSystem(actorSystemName, customAkkaConfig)
   }
