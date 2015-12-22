@@ -37,6 +37,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.signalcollect.triplerush.sparql.Sparql
 import collection.JavaConversions._
+import scala.concurrent.Await
 
 class ClusterSpec extends FlatSpec with Matchers with ScalaFutures {
 
@@ -81,8 +82,8 @@ class ClusterSpec extends FlatSpec with Matchers with ScalaFutures {
         }
       }
     } finally {
-      slave.terminate
-      master.terminate
+      Await.ready(slave.terminate, 30.seconds)
+      Await.ready(master.terminate, 30.seconds)
     }
   }
 
