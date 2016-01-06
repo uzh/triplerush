@@ -53,4 +53,30 @@ SELECT ?name ?project ?friend WHERE {
     assert(resultBindings.toSet === Set(List("Carol", "", ""), List("Arnie", "http://Gardening", "http://PersonB"), List("Bob", "http://Volleyball", "")))
   }
 
+  /**
+   * The outer optional is intentionally redundant so they binding is projected outwards.
+   */
+  it should "support bound variables from an external scope within nested optionals" in new TestStore {
+    val sparql =
+      """
+        |SELECT ?x ?y ?z WHERE {
+        |  <http://A> <http://has> ?x
+        |  OPTIONAL {
+        |    <http://A> <http://has> ?x .
+        |    <http://B> <http://has> ?y .
+        |    OPTIONAL {
+        |      <http://C> <http://has> ?z .
+        |      FILTER (bound(?x)) .
+        |    }
+        |  } .
+        |  FILTER (bound(?z))
+        |}
+      """.stripMargin
+    tr.addStringTriple("http://A", "http://has", "http://X")
+    tr.addStringTriple("http://B", "http://has", "http://Y")
+    tr.addStringTriple("http://C", "http://has", "http://Z")
+    val results = Sparql(sparql)
+    assert(results.size == 1)
+  }
+
 }
