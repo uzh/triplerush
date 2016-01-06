@@ -150,6 +150,11 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     s"TriplePattern(${s.toString},${p.toString},${o.toString})"
   }
 
+  def toDecodedString(d: RdfDictionary): String = {
+    def decoded(id: Int): String = if (id < 0) s"var${id.abs.toLong}" else d.get(id).getOrElse(s"blank$id")
+    s"TriplePattern(${decoded(s)},${decoded(p)},${decoded(o)})"
+  }
+
   def lookup(d: RdfDictionary) = s"(${d(s)},${d(p)},${d(o)})"
 
   def variables: List[Int] = {
