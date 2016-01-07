@@ -119,15 +119,17 @@ class TripleRush(
     graph.addVertex(new RootIndex)
   }
   graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
-  private[this] val startupMessage = s"""
+  if (log.isDebugEnabled) {
+    log.debug(s"""
 | TripleRush has finished initialization. Config:
-|   - number of nodes: ${graph.numberOfNodes}
-|   - number of workers: ${graph.numberOfWorkers}
-|   - mapper factory: ${signalCollectGraphBuilder.config.mapperFactory.getClass.getSimpleName}
-|   - dictionary: ${dictionary.getClass.getSimpleName}
-|   - indexStructure: ${indexStructure.getClass.getSimpleName}
-""".stripMargin
-  log.debug(startupMessage)
+|   number of nodes = ${graph.numberOfNodes}
+|   number of workers = ${graph.numberOfWorkers}
+|   mapper factory = ${signalCollectGraphBuilder.config.mapperFactory.getClass.getSimpleName}
+|   dictionary = ${dictionary.getClass.getSimpleName}
+|   indexStructure = ${indexStructure.getClass.getSimpleName}
+""".stripMargin)
+  }
+
   // End initialization =============
 
   def isShutdown = _isShutdown
