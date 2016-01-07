@@ -77,7 +77,7 @@ class TripleRush(
     scConfig.preallocatedNodes.map(_.size).getOrElse(scConfig.nodeProvisioner.numberOfNodes)
   }
   val actorNamePrefix = scConfig.actorNamePrefix
-  val graph = graphBuilder.
+  private[this] val signalCollectGraphBuilder = graphBuilder.
     withConsole(console).
     withKryoInitializer("com.signalcollect.triplerush.serialization.TripleRushKryoInit").
     withKryoRegistrations(kryoRegistrations).
@@ -98,7 +98,8 @@ class TripleRush(
       withWorkerFactory(new TripleRushWorkerFactory[Any]).
       withBlockingGraphModificationsSupport(false).
       withStatsReportingInterval(500).
-      withEagerIdleDetection(false).build
+      withEagerIdleDetection(false)
+  val graph = signalCollectGraphBuilder.build
   private[this] val system = graph.system
   private[this] val cluster = Cluster(system)
   val log = system.log
@@ -118,6 +119,15 @@ class TripleRush(
     graph.addVertex(new RootIndex)
   }
   graph.execute(ExecutionConfiguration().withExecutionMode(ExecutionMode.ContinuousAsynchronous))
+  private[this] val startupMessage = s"""
+| TripleRush has finished initialization. Config:
+|   - number of nodes: ${graph.numberOfNodes}
+|   - number of workers: ${graph.numberOfWorkers}
+|   - mapper factory: ${signalCollectGraphBuilder.config.mapperFactory.getClass.getSimpleName}
+|   - dictionary: ${dictionary.getClass.getSimpleName}
+|   - indexStructure: ${indexStructure.getClass.getSimpleName}
+""".stripMargin
+  log.debug(startupMessage)
   // End initialization =============
 
   def isShutdown = _isShutdown
