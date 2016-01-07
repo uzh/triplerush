@@ -43,4 +43,5 @@ class SingleNodeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) ex
 
 object SingleNodeTripleMapperFactory extends MapperFactory[Long] {
   def createInstance(numberOfNodes: Int, workersPerNode: Int) = new SingleNodeTripleMapper(numberOfNodes, workersPerNode)
+  override def toString = "SingleNodeTripleMapperFactory"
 }
