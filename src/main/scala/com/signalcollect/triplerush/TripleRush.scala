@@ -55,10 +55,9 @@ object TripleRush {
             tripleMapperFactory: Option[MapperFactory[Long]] = None,
             indexStructure: IndexStructure = FullIndex,
             console: Boolean = false,
-            config: Config = ConfigFactory.load().getConfig("signalcollect"),
             kryoRegistrations: List[String] = Kryo.defaultRegistrations): TripleRush = {
     new TripleRush(
-      graphBuilder, dictionary, tripleMapperFactory, indexStructure, console, config, kryoRegistrations)
+      graphBuilder, dictionary, tripleMapperFactory, indexStructure, console, kryoRegistrations)
   }
 }
 
@@ -68,7 +67,6 @@ class TripleRush(
     tripleMapperFactory: Option[MapperFactory[Long]],
     indexStructure: IndexStructure,
     console: Boolean,
-    config: Config,
     kryoRegistrations: List[String]) extends JenaGraphAdapter with BlockingOperations with ConvenienceOperations with QueryEngine {
   import TripleRush._
 
