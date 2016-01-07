@@ -124,9 +124,9 @@ class TripleRush(
 | TripleRush has finished initialization. Config:
 |   number of nodes = ${graph.numberOfNodes}
 |   number of workers = ${graph.numberOfWorkers}
-|   mapper factory = ${signalCollectGraphBuilder.config.mapperFactory.getClass.getSimpleName}
-|   dictionary = ${dictionary.getClass.getSimpleName}
-|   indexStructure = ${indexStructure.getClass.getSimpleName}
+|   mapper factory = ${signalCollectGraphBuilder.config.mapperFactory}
+|   dictionary = $dictionary
+|   indexStructure = $indexStructure
 """.stripMargin)
   }
 
@@ -177,7 +177,7 @@ class TripleRush(
     val selectVariables = numberOfSelectVariables.getOrElse(
       VariableEncoding.requiredVariableBindingsSlots(query))
     val resultIterator = new ResultIterator
-    val queryVertex = new ResultIteratorQueryVertex(query, selectVariables, tickets, resultIterator)
+    val queryVertex = new ResultIteratorQueryVertex(query, selectVariables, tickets, resultIterator, dictionary, log)
     graph.addVertex(queryVertex)
     resultIterator
   }
