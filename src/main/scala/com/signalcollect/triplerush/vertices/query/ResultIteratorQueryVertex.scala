@@ -21,16 +21,24 @@ package com.signalcollect.triplerush.vertices.query
 
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.{ OperationIds, TriplePattern }
+import com.signalcollect.triplerush.dictionary.RdfDictionary
 import com.signalcollect.triplerush.util.ResultIterator
+
+import akka.event.LoggingAdapter
 
 class ResultIteratorQueryVertex(
   query: Seq[TriplePattern],
   numberOfSelectVariables: Int,
   tickets: Long,
-  resultIterator: ResultIterator)
+  resultIterator: ResultIterator,
+  dictionary: RdfDictionary,
+  log: LoggingAdapter)
     extends AbstractQueryVertex[ResultIterator](query, tickets, numberOfSelectVariables) {
 
   final val id = OperationIds.embedInLong(OperationIds.nextId)
+
+  val startTime = System.nanoTime
+  var resultCount = 0
 
   override final def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     state = resultIterator
@@ -39,6 +47,7 @@ class ResultIteratorQueryVertex(
 
   def handleBindings(bindings: Array[Array[Int]]): Unit = {
     state.add(bindings)
+    resultCount += 1
   }
 
   def handleResultCount(resultCount: Long): Unit = {
@@ -48,6 +57,17 @@ class ResultIteratorQueryVertex(
   override final def reportResults(complete: Boolean): Unit = {
     // Empty array implicitly signals that there are no more results.
     state.add(Array[Array[Int]]())
+    if (log.isDebugEnabled) {
+      val endTime = System.nanoTime
+      val deltaNanoseconds = endTime - startTime
+      val deltaMilliseconds = (deltaNanoseconds / 100000.0).round / 10.0
+      log.debug(s"""
+| Query execution report:
+|   query = ${query.map(_.toDecodedString(dictionary)).mkString("[", ",\n", "]")}
+|   execution time = $deltaMilliseconds milliseconds
+|   number of results = $resultCount
+""".stripMargin)
+    }
   }
 
 }

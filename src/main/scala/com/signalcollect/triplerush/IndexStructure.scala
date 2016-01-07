@@ -161,4 +161,6 @@ object FullIndex extends IndexStructure {
     }
   }
 
+  override def toString: String = "FullIndex"
+
 }

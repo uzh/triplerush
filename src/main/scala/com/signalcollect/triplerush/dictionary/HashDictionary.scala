@@ -213,6 +213,6 @@ final class HashDictionary(
     id2String.close()
   }
 
-  override def toString = s"HashDictionary(id2String=${id2String.size}, string2Id=${string2Id.size})"
+  override def toString = s"HashDictionary(id2String entries = ${id2String.size}, string2Id entries = ${string2Id.size})"
 
 }
