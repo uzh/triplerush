@@ -87,10 +87,12 @@ class TripleRush(
     withUndeliverableSignalHandlerFactory(new TripleRushUndeliverableSignalHandlerFactory(indexStructure)).
     withEdgeAddedToNonExistentVertexHandlerFactory(new TripleRushEdgeAddedToNonExistentVertexHandlerFactory(indexStructure)).
     withMapperFactory(
-      if (numberOfNodes > 1) {
-        DistributedTripleMapperFactory
-      } else {
-        SingleNodeTripleMapperFactory
+      tripleMapperFactory.getOrElse {
+        if (numberOfNodes > 1) {
+          DistributedTripleMapperFactory
+        } else {
+          SingleNodeTripleMapperFactory
+        }
       }).
       withStorageFactory(TripleRushStorage).
       withThrottlingEnabled(false).
