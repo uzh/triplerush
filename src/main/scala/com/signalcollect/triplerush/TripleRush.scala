@@ -188,8 +188,7 @@ class TripleRush(
       _isShutdown = true
       dictionary.close()
       graph.shutdown()
-      tripleRushShutdownPromise.complete(Failure(
-        new Exception("Operation was not completed, because TripleRush has shut down, possibly due to a cluster node failure.")))
+      tripleRushShutdownPromise.complete(Failure(new StoreShutDownBeforeCompletionException))
     }
   }
 
@@ -204,3 +203,6 @@ class TripleRush(
   }
 
 }
+
+class StoreShutDownBeforeCompletionException extends Exception(
+  "Operation was not completed, because TripleRush has shut down, possibly due to a cluster node failure.")
