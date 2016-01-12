@@ -44,7 +44,7 @@ case class CountVerticesByType() extends AggregationOperation[Map[String, Int]] 
   }
 
   def reduce(elements: Stream[Map[String, Int]]): Map[String, Int] = {
-    val result: Map[String, Int] = elements.reduce { (m1: Map[String, Int], m2: Map[String, Int]) =>
+    val result: Map[String, Int] = elements.foldLeft(Map.empty[String, Int].withDefaultValue(0)) { (m1: Map[String, Int], m2: Map[String, Int]) =>
       val keys = m1.keys ++ m2.keys
       val merged = keys.map(k => (k, m1(k) + m2(k)))
       merged.toMap.withDefaultValue(0)
