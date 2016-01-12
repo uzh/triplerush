@@ -46,7 +46,7 @@ class TripleAdditionSynchronizationVertex(
     val operationAttempt = Try(f)
     operationAttempt match {
       case Failure(f) =>
-        operationCompletedPromise.failure(f)
+        operationCompletedPromise.tryFailure(f)
         graphEditor.removeVertex(id)
       case Success(()) =>
     }
@@ -72,7 +72,7 @@ class TripleAdditionSynchronizationVertex(
         if (triples.hasNext) {
           dispatchTripleAdditionBatch(graphEditor)
         } else {
-          operationCompletedPromise.success(())
+          operationCompletedPromise.trySuccess(())
           graphEditor.removeVertex(id)
         }
       }

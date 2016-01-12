@@ -146,7 +146,7 @@ class TripleRush(
     assert(!_isShutdown, noOperationsWhenShutdownMessage)
     assert(sId > 0 && pId > 0 && oId > 0)
     val promise = Promise[Unit]()
-    val vertex = new TripleAdditionSynchronizationVertex(indexStructure, Some(TriplePattern(sId, pId, oId)).iterator, promise)
+    val vertex = new TripleAdditionSynchronizationVertex(indexStructure, Iterator.single(TriplePattern(sId, pId, oId)), promise)
     graph.addVertex(vertex)
     promise.future
   }

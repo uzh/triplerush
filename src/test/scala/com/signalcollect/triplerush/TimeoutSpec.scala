@@ -60,4 +60,41 @@ class TimeoutSpec extends FlatSpec with UnitFixture with Matchers with Futures {
     }
   }
 
+  it should "propagate the appropriate errors and keep working correctly" in new TestStore {
+    val iri = "http://abc"
+    def customIterator = new Iterator[(String, String, String)] {
+      def hasNext = true
+      def next = throw OperationFailure()
+    }
+    val d = tr.dictionary // Instantiate lazy `tr` (instantiating from Future causes strange issues)
+    intercept[TimeoutException] {
+      tr.addStringTriples(i = customIterator, timeout = Duration.Zero)
+    }
+    intercept[OperationFailure] {
+      tr.addStringTriples(i = customIterator, timeout = Duration.Inf)
+    }
+    tr.addStringTriples(Iterator.single((iri, iri, iri)), Duration.Inf)
+    val vertexTypeMap = tr.countVerticesByType
+    assert(vertexTypeMap.size == IndexType.list.size, "Each index vertex type should have one map entry.")
+    assert(vertexTypeMap.values.forall(_ == 1), "There should be exactly one instance of each vertex type.")
+  }
+
+  // Still open, issue https://github.com/uzh/triplerush/issues/44
+  //  it should "remove an operation vertex that takes too long" in new TestStore {
+  //    val iri = "http://abc"
+  //    def infiniteIterator = new Iterator[(String, String, String)] {
+  //      def hasNext = true
+  //      def next = (iri, iri, iri)
+  //    }
+  //    val d = tr.dictionary // Instantiate lazy `tr` (instantiating from Future causes strange issues)
+  //    intercept[TimeoutException] {
+  //      tr.addStringTriples(i = infiniteIterator, timeout = Duration.Zero)
+  //    }
+  //    val vertexTypeMap = tr.countVerticesByType
+  //    assert(vertexTypeMap.size == IndexType.list.size, "Each index vertex type should have one map entry.")
+  //    assert(vertexTypeMap.values.forall(_ == 1), "There should be exactly one instance of each vertex type.")
+  //  }
+
 }
+
+case class OperationFailure() extends Exception
