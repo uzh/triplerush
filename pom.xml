@@ -7,7 +7,7 @@
 		<version>8.0.1</version>
 	</parent>
 	<artifactId>triplerush_2.11</artifactId>
-	<version>8.0.17-SNAPSHOT</version>
+	<version>8.0.17</version>
 	<packaging>jar</packaging>
 	<name>triplerush</name>
 	<description>A distributed in-memory graph store.</description>
@@ -35,7 +35,7 @@
 		<connection>scm:git:${git.url}</connection>
 		<url>${git.http.url}</url>
 		<developerConnection>scm:git:${git.url}</developerConnection>
-		<tag>HEAD</tag>
+		<tag>triplerush_2.11-8.0.17</tag>
 	</scm>
 	<distributionManagement>
 		<site>
