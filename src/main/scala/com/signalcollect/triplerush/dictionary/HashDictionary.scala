@@ -16,20 +16,20 @@
 
 package com.signalcollect.triplerush.dictionary
 
+import java.io.ByteArrayOutputStream
+import java.io.DataInput
+import java.io.DataOutput
+import java.io.DataOutputStream
 import java.nio.charset.Charset
 import java.util.Arrays
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.annotation.tailrec
-import scala.util.hashing.MurmurHash3
-import org.mapdb.{ BTreeKeySerializer, DBMaker }
+
+import org.mapdb.DBMaker
 import org.mapdb.DBMaker.Maker
-import org.mapdb.Serializer
 import org.mapdb.DataIO
-import java.io.DataOutput
-import java.io.DataInput
-import java.io.DataOutputStream
-import java.io.ByteArrayOutputStream
+import org.mapdb.Serializer
 
 final object HashDictionary {
 
@@ -115,12 +115,27 @@ final class HashDictionary(
     }
   }
 
-  private[this] var allIdsTakenUpTo = 0
+  protected val allIdsTakenUpTo = new AtomicInteger(0)
+
+  /**
+   * Returns true iff `id` represents a blank node.
+   */
+  override def isBlankNodeId(id: Int): Boolean = {
+    id > 0 && id <= allIdsTakenUpTo.get && !id2String.containsKey(id)
+  }
+
+  /**
+   * Get an unused ID that will stay reserved and is not associated with a string.
+   */
+  @tailrec override def getBlankNodeId(): Int = {
+    val attemptedId = allIdsTakenUpTo.incrementAndGet
+    val isIdAvailable = !id2String.containsKey(attemptedId)
+    if (isIdAvailable) attemptedId else getBlankNodeId
+  }
 
   def addEntryToExceptions(s: Array[Byte]): Int = synchronized {
     @tailrec def recursiveAddEntryToExceptions(s: Array[Byte]): Int = {
-      allIdsTakenUpTo += 1
-      val attemptedId = allIdsTakenUpTo
+      val attemptedId = allIdsTakenUpTo.incrementAndGet
       val existing = id2String.putIfAbsent(attemptedId, s)
       if (existing == null) attemptedId else recursiveAddEntryToExceptions(s)
     }
@@ -172,19 +187,29 @@ final class HashDictionary(
 
   def apply(id: Int): String = {
     val bytes = id2String.get(id)
-    new String(bytes, utf8)
+    if (bytes == null && id > 0 && id <= allIdsTakenUpTo.get) {
+      s"_:$id"
+    } else {
+      new String(bytes, utf8)
+    }
   }
 
   def get(id: Int): Option[String] = {
     val bytes = id2String.get(id)
-    Option(bytes).map(new String(_, utf8))
+    // Blank node definition.
+    if (bytes == null && id > 0 && id <= allIdsTakenUpTo.get) {
+      Some(s"_:$id")
+    } else {
+      Option(bytes).map(new String(_, utf8))
+    }
   }
 
-  def contains(i: Int): Boolean = {
-    if (i == 0) {
+  def contains(id: Int): Boolean = {
+    if (id == 0) {
       true
     } else {
-      id2String.containsKey(i)
+      // Or part is a cheaper `isBlankNodeId` check.
+      id2String.containsKey(id) || (id > 0 && id <= allIdsTakenUpTo.get)
     }
   }
 

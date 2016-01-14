@@ -21,121 +21,7 @@ package com.signalcollect.triplerush.dictionary
 
 import org.scalatest.FlatSpec
 
-
 class DictionarySpec extends FlatSpec {
-
-  "ModularDictionary" should "correctly encode and decode a simple string" in {
-    val d = new ModularDictionary
-    try {
-      val id = d("simple")
-      assert(id == 1)
-      val contained = d.contains("simple")
-      assert(contained == true)
-      val decoded = d(id)
-      assert(decoded == "simple")
-    } finally {
-      d.close()
-    }
-  }
-
-  it should "correctly encode and decode an encoded string literal" in {
-    val d = new ModularDictionary
-    try {
-      val id = d("\"Bob\"")
-      assert(id == 1)
-      val contained = d.contains("\"Bob\"")
-      assert(contained == true)
-      val decoded = d(id)
-      assert(decoded == "\"Bob\"")
-    } finally {
-      d.close()
-    }
-  }
-
-  it should "correctly encode a compressable string" in {
-    val d = new ModularDictionary
-    try {
-      val id = d("prefix#remainder")
-      assert(id == 1)
-      val contained = d.contains("prefix#remainder")
-      assert(contained == true)
-    } finally {
-      d.close()
-    }
-  }
-
-  it should "correctly decode a compressable string" in {
-    val d = new ModularDictionary
-    try {
-      val id = d("prefix#remainder")
-      val decoded = d(id)
-      assert(decoded == "prefix#remainder")
-    } finally {
-      d.close()
-    }
-  }
-
-  it should "correctly encode and decode a string with a hash at the end" in {
-    val d = new ModularDictionary
-    try {
-      val id = d("simple#")
-      assert(id == 1)
-      val contained = d.contains("simple#")
-      assert(contained == true)
-      val decoded = d(id)
-      assert(decoded == "simple#")
-    } finally {
-      d.close()
-    }
-  }
-
-  it should "correctly encode and decode a string with a hash at the beginning" in {
-    val d = new ModularDictionary
-    try {
-      val id = d("#simple")
-      assert(id == 1)
-      val contained = d.contains("#simple")
-      assert(contained == true)
-      val decoded = d(id)
-      assert(decoded == "#simple")
-    } finally {
-      d.close()
-    }
-  }
-
-  it should "support adding entries in parallel" in {
-    val d = new ModularDictionary
-    try {
-      val stringEntries = (1 to 1000).map(s => s + "#" + s)
-      val ids = stringEntries.par.map(d(_)).toSet
-      val reverseMapped = ids.map(d(_))
-      assert(reverseMapped.size == 1000)
-      assert(stringEntries.toSet == reverseMapped.seq.toSet)
-    } finally {
-      d.close()
-    }
-  }
-
-  it should "support clear" in {
-    val d = new ModularDictionary
-    try {
-      val lowStringEntries = (1 to 1000).map(_.toString)
-      for (entry <- lowStringEntries.par) {
-        d(entry)
-      }
-      d.clear
-      val highStringEntries = (1001 to 2000).map(_.toString)
-      for (entry <- highStringEntries.par) {
-        d(entry)
-      }
-      val reverseMapped = (1 to 1000).map(d(_)).toSet
-      assert(reverseMapped.size == 1000)
-      assert(reverseMapped.map(_.toInt).min == 1001)
-      assert(highStringEntries.toSet == reverseMapped.toSet)
-    } finally {
-      d.close()
-    }
-  }
 
   "HashDictionary" should "correctly encode and decode a simple string" in {
     val d = new HashDictionary
@@ -232,6 +118,33 @@ class DictionarySpec extends FlatSpec {
     } finally {
       d.close()
     }
+  }
+
+  it should "support blank nodes" in {
+    val d = new HashDictionary
+    assert(!d.isBlankNodeId(0))
+    assert(!d.isBlankNodeId(-1))
+    assert(!d.isBlankNodeId(Int.MaxValue))
+    assert(!d.isBlankNodeId(Int.MinValue))
+    assert(!d.isBlankNodeId(1))
+    val b1 = d.getBlankNodeId
+    assert(d.isBlankNodeId(b1))
+    assert(d.contains(b1))
+    assert(d(b1) == "_:1")
+    assert(d.get(b1) == Some("_:1"))
+    val b2 = d.getBlankNodeId
+    assert(b1 != b2)
+    assert(d.isBlankNodeId(b2))
+    assert(d.contains(b2))
+    assert(d(b2) == "_:2")
+    assert(d.get(b2) == Some("_:2"))
+    val invalid = b2 + 1
+    assert(!d.isBlankNodeId(invalid))
+    assert(!d.contains(invalid))
+    intercept[NullPointerException] {
+      d(invalid)
+    }
+    assert(d.get(invalid) == None)
   }
 
 }

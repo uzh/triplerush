@@ -38,6 +38,16 @@ trait RdfDictionary {
   def apply(s: String): Int
   def get(s: String): Option[Int]
 
+  /**
+   * Get an unused ID that will stay reserved and is not associated with a string.
+   */
+  def getBlankNodeId: Int
+  
+  /**
+   * Returns true iff `id` represents a blank node.
+   */
+  def isBlankNodeId(id: Int): Boolean
+  
   def contains(i: Int): Boolean
   def apply(i: Int): String
   def get(i: Int): Option[String]

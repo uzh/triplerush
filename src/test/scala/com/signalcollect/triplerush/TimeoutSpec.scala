@@ -74,6 +74,7 @@ class TimeoutSpec extends FlatSpec with UnitFixture with Matchers with Futures {
       tr.addStringTriples(i = customIterator, timeout = Duration.Inf)
     }
     tr.addStringTriples(Iterator.single((iri, iri, iri)), Duration.Inf)
+    tr.graph.awaitIdle() // Ensure blocking addition vertex removal has finished processing.
     val vertexTypeMap = tr.countVerticesByType
     assert(vertexTypeMap.size == IndexType.list.size, "Each index vertex type should have one map entry.")
     assert(vertexTypeMap.values.forall(_ == 1), "There should be exactly one instance of each vertex type.")
@@ -90,6 +91,7 @@ class TimeoutSpec extends FlatSpec with UnitFixture with Matchers with Futures {
   //    intercept[TimeoutException] {
   //      tr.addStringTriples(i = infiniteIterator, timeout = Duration.Zero)
   //    }
+  //    tr.graph.awaitIdle() // Ensure blocking addition vertex removal has finished processing.
   //    val vertexTypeMap = tr.countVerticesByType
   //    assert(vertexTypeMap.size == IndexType.list.size, "Each index vertex type should have one map entry.")
   //    assert(vertexTypeMap.values.forall(_ == 1), "There should be exactly one instance of each vertex type.")

@@ -29,6 +29,7 @@ class CountVerticesByTypeSpec extends FlatSpec with UnitFixture {
   it should "return each index once after one triple was added" in new TestStore {
     val iri = "http://abc"
     tr.addStringTriples(Iterator.single((iri, iri, iri)))
+    tr.graph.awaitIdle() // Ensure blocking addition vertex removal has finished processing.
     val vertexTypeMap = tr.countVerticesByType
     assert(vertexTypeMap.size == IndexType.list.size, "Each index vertex type should have one map entry.")
     assert(vertexTypeMap.values.forall(_ == 1), "There should be exactly one instance of each vertex type.")
