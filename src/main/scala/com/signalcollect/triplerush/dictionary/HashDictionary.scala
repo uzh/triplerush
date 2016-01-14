@@ -133,7 +133,7 @@ final class HashDictionary(
     if (isIdAvailable) attemptedId else getBlankNodeId
   }
 
-  def addEntryToExceptions(s: Array[Byte]): Int = {
+  def addEntryToExceptions(s: Array[Byte]): Int = synchronized {
     @tailrec def recursiveAddEntryToExceptions(s: Array[Byte]): Int = {
       val attemptedId = allIdsTakenUpTo.incrementAndGet
       val existing = id2String.putIfAbsent(attemptedId, s)
