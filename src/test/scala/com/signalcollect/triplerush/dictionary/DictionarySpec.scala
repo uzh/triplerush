@@ -120,4 +120,26 @@ class DictionarySpec extends FlatSpec {
     }
   }
 
+  it should "support blank nodes" in {
+    val d = new HashDictionary
+    assert(!d.isBlankNodeId(0))
+    assert(!d.isBlankNodeId(-1))
+    assert(!d.isBlankNodeId(Int.MaxValue))
+    assert(!d.isBlankNodeId(Int.MinValue))
+    assert(!d.isBlankNodeId(1))
+    val b1 = d.getBlankNodeId
+    assert(d.isBlankNodeId(b1))
+    assert(d.get(b1) == None)
+    assert(d.contains(b1))
+    val b2 = d.getBlankNodeId
+    assert(b1 != b2)
+    assert(d.isBlankNodeId(b2))
+    assert(d.get(b2) == None)
+    assert(d.contains(b2))
+    val invalid = b2 + 1
+    assert(!d.isBlankNodeId(invalid))
+    assert(d.get(invalid) == None)
+    assert(!d.contains(invalid))
+  }
+
 }

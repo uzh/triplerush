@@ -121,7 +121,7 @@ final class HashDictionary(
    * Returns true iff `id` represents a blank node.
    */
   override def isBlankNodeId(id: Int): Boolean = {
-    id > 0 && id < allIdsTakenUpTo.get && !id2String.containsKey(id)
+    id > 0 && id <= allIdsTakenUpTo.get && !id2String.containsKey(id)
   }
 
   /**
@@ -200,7 +200,7 @@ final class HashDictionary(
       true
     } else {
       // Or part is a cheaper `isBlankNodeId` check.
-      id2String.containsKey(id) || (id > 0 && id < allIdsTakenUpTo.get)
+      id2String.containsKey(id) || (id > 0 && id <= allIdsTakenUpTo.get)
     }
   }
 
