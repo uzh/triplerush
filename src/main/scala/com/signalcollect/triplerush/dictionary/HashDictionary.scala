@@ -187,12 +187,21 @@ final class HashDictionary(
 
   def apply(id: Int): String = {
     val bytes = id2String.get(id)
-    new String(bytes, utf8)
+    if (bytes == null && id > 0 && id <= allIdsTakenUpTo.get) {
+      s"_:$id"
+    } else {
+      new String(bytes, utf8)
+    }
   }
 
   def get(id: Int): Option[String] = {
     val bytes = id2String.get(id)
-    Option(bytes).map(new String(_, utf8))
+    // Blank node definition.
+    if (bytes == null && id > 0 && id <= allIdsTakenUpTo.get) {
+      Some(s"_:$id")
+    } else {
+      Option(bytes).map(new String(_, utf8))
+    }
   }
 
   def contains(id: Int): Boolean = {

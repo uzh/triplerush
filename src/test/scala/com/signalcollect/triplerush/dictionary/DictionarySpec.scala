@@ -129,17 +129,22 @@ class DictionarySpec extends FlatSpec {
     assert(!d.isBlankNodeId(1))
     val b1 = d.getBlankNodeId
     assert(d.isBlankNodeId(b1))
-    assert(d.get(b1) == None)
     assert(d.contains(b1))
+    assert(d(b1) == "_:1")
+    assert(d.get(b1) == Some("_:1"))
     val b2 = d.getBlankNodeId
     assert(b1 != b2)
     assert(d.isBlankNodeId(b2))
-    assert(d.get(b2) == None)
     assert(d.contains(b2))
+    assert(d(b2) == "_:2")
+    assert(d.get(b2) == Some("_:2"))
     val invalid = b2 + 1
     assert(!d.isBlankNodeId(invalid))
-    assert(d.get(invalid) == None)
     assert(!d.contains(invalid))
+    intercept[NullPointerException] {
+      d(invalid)
+    }
+    assert(d.get(invalid) == None)
   }
 
 }
