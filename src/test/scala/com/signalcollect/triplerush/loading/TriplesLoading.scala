@@ -20,6 +20,7 @@ import com.signalcollect.triplerush._
 import com.signalcollect.triplerush.dictionary.HashDictionary
 import com.signalcollect.GraphBuilder
 import com.signalcollect.triplerush.dictionary.RdfDictionary
+import scala.util.Random
 
 object MockDictionary extends RdfDictionary {
   def contains(s: String): Boolean = false
@@ -28,6 +29,8 @@ object MockDictionary extends RdfDictionary {
   def contains(i: Int): Boolean = false
   def apply(i: Int): String = "hello!"
   def get(i: Int): Option[String] = Some(apply(i))
+  def getBlankNodeId: Int = Random.nextInt
+  def isBlankNodeId(id: Int): Boolean = true
   def clear(): Unit = Unit
   def close(): Unit = Unit
 }
