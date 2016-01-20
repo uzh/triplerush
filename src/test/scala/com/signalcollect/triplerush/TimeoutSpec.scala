@@ -36,7 +36,7 @@ class TimeoutSpec extends FlatSpec with UnitFixture with Matchers with Futures {
     def next = throw OperationFailure()
   }
   
-  def repeatingIterator(items: Int = 10) = new Iterator[(String, String, String)] {
+  def repeatingIterator(items: Int) = new Iterator[(String, String, String)] {
     var deliveredItems = 0
     def hasNext = deliveredItems < items
     def next = (iri, iri, iri)
@@ -44,7 +44,8 @@ class TimeoutSpec extends FlatSpec with UnitFixture with Matchers with Futures {
 
   "TripleRush" should "throw a timeout exception when a blocking operation fails to complete in time" in new TestStore {
     intercept[TimeoutException] {
-      tr.addStringTriples(repeatingIterator(), Duration.Zero)
+      tr.addStringTriples(repeatingIterator(0), Duration.Zero)
+      Thread.sleep(10)
     }
   }
 
