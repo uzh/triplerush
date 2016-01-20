@@ -28,16 +28,29 @@ import org.apache.jena.graph.{ Triple => JenaTriple }
 class BlankNodeSpec extends FlatSpec with UnitFixture {
 
   "Blank nodes" should "have small assigned TR blank node IDs when using a blank node namespace"  in new TestStore {
-    val ns = new BlankNodeNamespace
+    val ns1 = new BlankNodeNamespace
     val bn1 = NodeFactory.createBlankNode()
     val bn2 = NodeFactory.createBlankNode()
     val bn3 = NodeFactory.createBlankNode()
-    val triple = new JenaTriple(bn1, bn2, bn3)
-    tr.addTriples(Iterator.single(triple), Some(ns))
-    assert(ns.mappings.values.toSet == Set(1, 2, 3))
+    val triple1 = new JenaTriple(bn1, bn2, bn3)
+    tr.addTriples(Iterator.single(triple1), Some(ns1))
+    assert(ns1.mappings.values.toSet == Set(1, 2, 3))
     assert(tr.dictionary.isBlankNodeId(1))
     assert(tr.dictionary.isBlankNodeId(2))
     assert(tr.dictionary.isBlankNodeId(3))
+    assert(!tr.dictionary.isBlankNodeId(4))
+    assert(!tr.dictionary.isBlankNodeId(5))
+    assert(!tr.dictionary.isBlankNodeId(6))
+    val ns2 = new BlankNodeNamespace
+    val bn4 = NodeFactory.createBlankNode()
+    val bn5 = NodeFactory.createBlankNode()
+    val bn6 = NodeFactory.createBlankNode()
+    val triple2 = new JenaTriple(bn4, bn5, bn6)
+    tr.addTriples(Iterator.single(triple2), Some(ns2))
+    assert(ns2.mappings.values.toSet == Set(4, 5, 6))
+    assert(tr.dictionary.isBlankNodeId(4))
+    assert(tr.dictionary.isBlankNodeId(5))
+    assert(tr.dictionary.isBlankNodeId(6))
   }
 
 }
