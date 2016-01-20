@@ -24,6 +24,8 @@ import scala.concurrent.Promise
 import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush.OperationIds
 import com.signalcollect.triplerush.TriplePattern
+import akka.event.LoggingAdapter
+import com.signalcollect.triplerush.dictionary.RdfDictionary
 
 /**
  * If execution is complete returns Some(numberOfResults), else returns None.
@@ -31,8 +33,10 @@ import com.signalcollect.triplerush.TriplePattern
 final class ResultCountingQueryVertex(
   query: Seq[TriplePattern],
   tickets: Long,
-  resultPromise: Promise[Option[Long]])
-    extends AbstractQueryVertex[Long](query, tickets, numberOfSelectVariables = 0) {
+  resultPromise: Promise[Option[Long]],
+  dictionary: RdfDictionary,
+  log: LoggingAdapter)
+    extends AbstractQueryVertex[Long](query, tickets, numberOfSelectVariables = 0, dictionary, log) {
 
   val id = OperationIds.embedInLong(OperationIds.nextCountQueryId)
 

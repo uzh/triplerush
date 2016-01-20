@@ -157,7 +157,7 @@ class TripleRush(
     assert(!_isShutdown, noOperationsWhenShutdownMessage)
     // Efficient counting query.
     val resultCountPromise = Promise[Option[Long]]()
-    val v = new ResultCountingQueryVertex(q, tickets, resultCountPromise)
+    val v = new ResultCountingQueryVertex(q, tickets, resultCountPromise, dictionary, log)
     graph.addVertex(v)
     resultCountPromise.future
   }

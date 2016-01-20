@@ -24,16 +24,25 @@ import com.signalcollect.GraphEditor
 import com.signalcollect.triplerush._
 import com.signalcollect.triplerush.vertices.BaseVertex
 import com.signalcollect.triplerush.QueryParticle.arrayToParticle
+import akka.event.LoggingAdapter
+import com.signalcollect.triplerush.dictionary.RdfDictionary
 
 abstract class AbstractQueryVertex[StateType](
-    val query: Seq[TriplePattern],
-    val tickets: Long,
-    val numberOfSelectVariables: Int) extends BaseVertex[StateType] {
+    query: Seq[TriplePattern],
+    tickets: Long,
+    numberOfSelectVariables: Int,
+    dictionary: RdfDictionary,
+    log: LoggingAdapter) extends BaseVertex[StateType] {
 
   lazy val queryTicketsReceived = new TicketSynchronization(s"queryTicketsReceived[${query.mkString}]", tickets, onFailure = None)
 
-  var approximationOfExploredNonResultSearchSpace = 0
   var resultCount = 0
+  val startTime = System.nanoTime
+  val largeSearchSpaceSizeThreshold = 1000000
+  var isLargeSearchSpaceReported = false
+
+  // This value is only maintained if debug logging is enabled.
+  var approximationOfExploredSearchSpace = 0
 
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     if (query.length > 0) {
@@ -53,9 +62,25 @@ abstract class AbstractQueryVertex[StateType](
   }
 
   override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]): Boolean = {
+    // `deliverSignalWithoutSourceId` is called a lot, we really want to be careful to not usually do anything expensive in here.
+    if (log.isDebugEnabled) {
+      approximationOfExploredSearchSpace += 1
+      if (!isLargeSearchSpaceReported && approximationOfExploredSearchSpace > largeSearchSpaceSizeThreshold) {
+        isLargeSearchSpaceReported = true
+        val currentTime = System.nanoTime
+        val deltaNanoseconds = currentTime - startTime
+        val deltaMilliseconds = (deltaNanoseconds / 100000.0).round / 10.0
+        log.debug(s"""
+| Query has large search space and is still executing:
+|   query = ${query.map(_.toDecodedString(dictionary)).mkString("[", ",\n", "]")}
+|   current execution time = $deltaMilliseconds milliseconds
+|   current results = $resultCount
+|   current approximated size of explored search space = $approximationOfExploredSearchSpace
+""".stripMargin)
+      }
+    }
     signal match {
       case deliveredTickets: Long =>
-        approximationOfExploredNonResultSearchSpace += 1
         queryTicketsReceived.receive(deliveredTickets)
       case bindings: Array[_] =>
         resultCount += 1

@@ -33,11 +33,9 @@ class ResultIteratorQueryVertex(
   resultIterator: ResultIterator,
   dictionary: RdfDictionary,
   log: LoggingAdapter)
-    extends AbstractQueryVertex[ResultIterator](query, tickets, numberOfSelectVariables) {
+    extends AbstractQueryVertex[ResultIterator](query, tickets, numberOfSelectVariables, dictionary, log) {
 
   final val id = OperationIds.embedInLong(OperationIds.nextId)
-
-  val startTime = System.nanoTime
 
   override final def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     state = resultIterator
@@ -64,7 +62,7 @@ class ResultIteratorQueryVertex(
 |   query = ${query.map(_.toDecodedString(dictionary)).mkString("[", ",\n", "]")}
 |   execution time = $deltaMilliseconds milliseconds
 |   number of results = $resultCount
-|   approximated size of explored search space = ${resultCount + approximationOfExploredNonResultSearchSpace}
+|   approximated size of explored search space = $approximationOfExploredSearchSpace
 """.stripMargin)
     }
   }
