@@ -53,8 +53,9 @@ trait BlockingOperations {
 
   def loadFromStream(
     inputStream: InputStream,
+    blankNodeNamespace: Option[BlankNodeNamespace],
     timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(combineWithShutdownFuture(asyncLoadFromStream(inputStream)), timeout)
+    Await.result(combineWithShutdownFuture(asyncLoadFromStream(inputStream, blankNodeNamespace)), timeout)
   }
 
   /**
@@ -83,12 +84,12 @@ trait BlockingOperations {
     Await.result(combineWithShutdownFuture(asyncAddStringTriples(i)), timeout)
   }
 
-  def addTriple(triple: JenaTriple, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(combineWithShutdownFuture(asyncAddTriple(triple)), timeout)
+  def addTriple(triple: JenaTriple, blankNodeNamespace: Option[BlankNodeNamespace] = None, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
+    Await.result(combineWithShutdownFuture(asyncAddTriple(triple, blankNodeNamespace)), timeout)
   }
 
-  def addTriples(i: Iterator[JenaTriple], timeout: Duration = defaultBlockingOperationTimeout): Unit = {
-    Await.result(combineWithShutdownFuture(asyncAddTriples(i)), timeout)
+  def addTriples(i: Iterator[JenaTriple], blankNodeNamespace: Option[BlankNodeNamespace] = None, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
+    Await.result(combineWithShutdownFuture(asyncAddTriples(i, blankNodeNamespace)), timeout)
   }
 
   def addTriplePattern(tp: TriplePattern, timeout: Duration = defaultBlockingOperationTimeout): Unit = {

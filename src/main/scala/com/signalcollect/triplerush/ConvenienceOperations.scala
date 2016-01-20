@@ -29,13 +29,10 @@ import scala.concurrent.duration.Duration
 
 object ConvenienceOperations {
 
-  def toTriplePattern(triple: JenaTriple, dictionary: RdfDictionary): TriplePattern = {
-    val subjectString = NodeConversion.nodeToString(triple.getSubject)
-    val predicateString = NodeConversion.nodeToString(triple.getPredicate)
-    val objectString = NodeConversion.nodeToString(triple.getObject)
-    val sId = dictionary(subjectString)
-    val pId = dictionary(predicateString)
-    val oId = dictionary(objectString)
+  def toTriplePattern(triple: JenaTriple, dictionary: RdfDictionary, blankNodeNamespace: Option[BlankNodeNamespace]): TriplePattern = {
+    val sId = NodeConversion.nodeToId(triple.getSubject, dictionary, blankNodeNamespace)
+    val pId = NodeConversion.nodeToId(triple.getPredicate, dictionary, blankNodeNamespace)
+    val oId = NodeConversion.nodeToId(triple.getObject, dictionary, blankNodeNamespace)
     TriplePattern(sId, pId, oId)
   }
 
@@ -46,9 +43,9 @@ trait ConvenienceOperations {
 
   import ConvenienceOperations._
 
-  def asyncLoadFromStream(inputStream: InputStream): Future[Unit] = {
+  def asyncLoadFromStream(inputStream: InputStream, blankNodeNamespace: Option[BlankNodeNamespace]): Future[Unit] = {
     val iterator = TripleIterator(inputStream)
-    asyncAddTriples(iterator)
+    asyncAddTriples(iterator, blankNodeNamespace)
   }
 
   /**
@@ -87,12 +84,12 @@ trait ConvenienceOperations {
     asyncAddTriplePatterns(mappedIterator)
   }
 
-  def asyncAddTriple(triple: JenaTriple): Future[Unit] = {
-    asyncAddTriplePattern(toTriplePattern(triple, dictionary))
+  def asyncAddTriple(triple: JenaTriple, blankNodeNamespace: Option[BlankNodeNamespace] = None): Future[Unit] = {
+    asyncAddTriplePattern(toTriplePattern(triple, dictionary, blankNodeNamespace))
   }
 
-  def asyncAddTriples(i: Iterator[JenaTriple]): Future[Unit] = {
-    val mappedIterator = i.map(toTriplePattern(_, dictionary))
+  def asyncAddTriples(i: Iterator[JenaTriple], blankNodeNamespace: Option[BlankNodeNamespace] = None): Future[Unit] = {
+    val mappedIterator = i.map(toTriplePattern(_, dictionary, blankNodeNamespace))
     asyncAddTriplePatterns(mappedIterator)
   }
 

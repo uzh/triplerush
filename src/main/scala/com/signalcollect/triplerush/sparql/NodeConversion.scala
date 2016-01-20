@@ -22,8 +22,21 @@ import org.apache.jena.graph.NodeFactory
 import org.apache.jena.rdf.model.AnonId
 import org.apache.jena.datatypes.TypeMapper
 import org.apache.jena.graph.BlankNodeId
+import com.signalcollect.triplerush.BlankNodeNamespace
+import org.apache.jena.graph.Node_Blank
+import com.signalcollect.triplerush.dictionary.RdfDictionary
 
 object NodeConversion {
+
+  def nodeToId(n: Node, dictionary: RdfDictionary, blankNodeNamespace: Option[BlankNodeNamespace]): Int = {
+    n match {
+      case bn: Node_Blank =>
+        blankNodeNamespace.map(_.getBlankNodeId(bn, dictionary)).getOrElse(
+          dictionary(nodeToString(n)))
+      case otherNode =>
+        dictionary(nodeToString(otherNode))
+    }
+  }
 
   // TODO: Test combination of tag with explicit string type, ensure type is dropped.
   def nodeToString(n: Node): String = {
@@ -39,7 +52,7 @@ object NodeConversion {
           } else {
             n.toString
           }
-        case other@_ =>
+        case other @ _ =>
           throw new UnsupportedOperationException(s"Literal $n not supported.")
       }
     } else if (n.isBlank) {
