@@ -60,7 +60,7 @@ SELECT ?name ?project WHERE {
     tr.addStringTriple("http://PersonB", "http://xmlns.com/foaf/0.1/currentProject", "\"Volleyball\"")
     val results = Sparql(sparql)
     val resultBindings = results.map(_.get("name").asLiteral.getString).toSet
-    assert(resultBindings === Set("Caroline"))
+    assert(resultBindings == Set("Caroline"))
   }
 
   it should "support a nested query with GROUP BY and FILTER" in new TestStore {

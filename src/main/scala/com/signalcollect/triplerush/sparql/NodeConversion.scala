@@ -28,11 +28,10 @@ import com.signalcollect.triplerush.dictionary.RdfDictionary
 
 object NodeConversion {
 
-  def nodeToId(n: Node, dictionary: RdfDictionary, blankNodeNamespace: Option[BlankNodeNamespace]): Int = {
+  def nodeToId(n: Node, dictionary: RdfDictionary, blankNodeNamespace: BlankNodeNamespace): Int = {
     n match {
       case bn: Node_Blank =>
-        blankNodeNamespace.map(_.getBlankNodeId(bn, dictionary)).getOrElse(
-          dictionary(nodeToString(n)))
+        blankNodeNamespace.getBlankNodeId(bn, dictionary)
       case otherNode =>
         dictionary(nodeToString(otherNode))
     }
@@ -56,7 +55,7 @@ object NodeConversion {
           throw new UnsupportedOperationException(s"Literal $n not supported.")
       }
     } else if (n.isBlank) {
-      s"_${n.getBlankNodeLabel}"
+      s"_:${n.getBlankNodeLabel}"
     } else {
       throw new UnsupportedOperationException(s"TripleRush does not support node $n of type ${n.getClass.getSimpleName}.")
     }

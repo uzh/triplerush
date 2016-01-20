@@ -53,7 +53,7 @@ trait BlockingOperations {
 
   def loadFromStream(
     inputStream: InputStream,
-    blankNodeNamespace: Option[BlankNodeNamespace],
+    blankNodeNamespace: BlankNodeNamespace = GlobalUuidBlankNodeNamespace,
     timeout: Duration = defaultBlockingOperationTimeout): Unit = {
     Await.result(combineWithShutdownFuture(asyncLoadFromStream(inputStream, blankNodeNamespace)), timeout)
   }
@@ -84,11 +84,11 @@ trait BlockingOperations {
     Await.result(combineWithShutdownFuture(asyncAddStringTriples(i)), timeout)
   }
 
-  def addTriple(triple: JenaTriple, blankNodeNamespace: Option[BlankNodeNamespace] = None, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
+  def addTriple(triple: JenaTriple, blankNodeNamespace: BlankNodeNamespace = GlobalUuidBlankNodeNamespace, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
     Await.result(combineWithShutdownFuture(asyncAddTriple(triple, blankNodeNamespace)), timeout)
   }
 
-  def addTriples(i: Iterator[JenaTriple], blankNodeNamespace: Option[BlankNodeNamespace] = None, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
+  def addTriples(i: Iterator[JenaTriple], blankNodeNamespace: BlankNodeNamespace = GlobalUuidBlankNodeNamespace, timeout: Duration = defaultBlockingOperationTimeout): Unit = {
     Await.result(combineWithShutdownFuture(asyncAddTriples(i, blankNodeNamespace)), timeout)
   }
 

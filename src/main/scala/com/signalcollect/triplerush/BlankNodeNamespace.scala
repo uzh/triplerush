@@ -19,14 +19,29 @@ package com.signalcollect.triplerush
 import org.apache.jena.graph.Node_Blank
 import com.signalcollect.triplerush.dictionary.RdfDictionary
 import org.apache.jena.graph.BlankNodeId
+import com.signalcollect.triplerush.sparql.NodeConversion
 
-class BlankNodeNamespace {
+trait BlankNodeNamespace {
+
+  def getBlankNodeId(bn: Node_Blank, dictionary: RdfDictionary): Int
+
+}
+
+object GlobalUuidBlankNodeNamespace extends BlankNodeNamespace {
+
+  override def getBlankNodeId(bn: Node_Blank, dictionary: RdfDictionary): Int = {
+    dictionary(NodeConversion.nodeToString(bn))
+  }
+
+}
+
+class OptimizedBlankNodeNamespace extends BlankNodeNamespace {
 
   def mappings: Map[BlankNodeId, Int] = _mappings
 
   protected var _mappings = Map.empty[BlankNodeId, Int]
 
-  def getBlankNodeId(bn: Node_Blank, dictionary: RdfDictionary): Int = {
+  override def getBlankNodeId(bn: Node_Blank, dictionary: RdfDictionary): Int = {
     val jenaId = bn.getBlankNodeId
     val existingIdOption = _mappings.get(jenaId)
     existingIdOption match {

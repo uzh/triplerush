@@ -29,7 +29,7 @@ import scala.concurrent.duration.Duration
 
 object ConvenienceOperations {
 
-  def toTriplePattern(triple: JenaTriple, dictionary: RdfDictionary, blankNodeNamespace: Option[BlankNodeNamespace]): TriplePattern = {
+  def toTriplePattern(triple: JenaTriple, dictionary: RdfDictionary, blankNodeNamespace: BlankNodeNamespace): TriplePattern = {
     val sId = NodeConversion.nodeToId(triple.getSubject, dictionary, blankNodeNamespace)
     val pId = NodeConversion.nodeToId(triple.getPredicate, dictionary, blankNodeNamespace)
     val oId = NodeConversion.nodeToId(triple.getObject, dictionary, blankNodeNamespace)
@@ -43,7 +43,7 @@ trait ConvenienceOperations {
 
   import ConvenienceOperations._
 
-  def asyncLoadFromStream(inputStream: InputStream, blankNodeNamespace: Option[BlankNodeNamespace]): Future[Unit] = {
+  def asyncLoadFromStream(inputStream: InputStream, blankNodeNamespace: BlankNodeNamespace = GlobalUuidBlankNodeNamespace): Future[Unit] = {
     val iterator = TripleIterator(inputStream)
     asyncAddTriples(iterator, blankNodeNamespace)
   }
@@ -84,11 +84,11 @@ trait ConvenienceOperations {
     asyncAddTriplePatterns(mappedIterator)
   }
 
-  def asyncAddTriple(triple: JenaTriple, blankNodeNamespace: Option[BlankNodeNamespace] = None): Future[Unit] = {
+  def asyncAddTriple(triple: JenaTriple, blankNodeNamespace: BlankNodeNamespace = GlobalUuidBlankNodeNamespace): Future[Unit] = {
     asyncAddTriplePattern(toTriplePattern(triple, dictionary, blankNodeNamespace))
   }
 
-  def asyncAddTriples(i: Iterator[JenaTriple], blankNodeNamespace: Option[BlankNodeNamespace] = None): Future[Unit] = {
+  def asyncAddTriples(i: Iterator[JenaTriple], blankNodeNamespace: BlankNodeNamespace = GlobalUuidBlankNodeNamespace): Future[Unit] = {
     val mappedIterator = i.map(toTriplePattern(_, dictionary, blankNodeNamespace))
     asyncAddTriplePatterns(mappedIterator)
   }
