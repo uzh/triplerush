@@ -32,6 +32,9 @@ abstract class AbstractQueryVertex[StateType](
 
   lazy val queryTicketsReceived = new TicketSynchronization(s"queryTicketsReceived[${query.mkString}]", tickets, onFailure = None)
 
+  var approximationOfExploredNonResultSearchSpace = 0
+  var resultCount = 0
+
   override def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     if (query.length > 0) {
       queryTicketsReceived.onComplete { complete =>
@@ -52,10 +55,13 @@ abstract class AbstractQueryVertex[StateType](
   override def deliverSignalWithoutSourceId(signal: Any, graphEditor: GraphEditor[Long, Any]): Boolean = {
     signal match {
       case deliveredTickets: Long =>
+        approximationOfExploredNonResultSearchSpace += 1
         queryTicketsReceived.receive(deliveredTickets)
       case bindings: Array[_] =>
+        resultCount += 1
         handleBindings(bindings.asInstanceOf[Array[Array[Int]]])
       case resultCount: Int =>
+        this.resultCount += resultCount
         handleResultCount(resultCount)
       case _ => false
     }

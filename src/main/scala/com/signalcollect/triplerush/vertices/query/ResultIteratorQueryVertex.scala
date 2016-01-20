@@ -38,7 +38,6 @@ class ResultIteratorQueryVertex(
   final val id = OperationIds.embedInLong(OperationIds.nextId)
 
   val startTime = System.nanoTime
-  var resultCount = 0
 
   override final def afterInitialization(graphEditor: GraphEditor[Long, Any]): Unit = {
     state = resultIterator
@@ -47,7 +46,6 @@ class ResultIteratorQueryVertex(
 
   def handleBindings(bindings: Array[Array[Int]]): Unit = {
     state.add(bindings)
-    resultCount += 1
   }
 
   def handleResultCount(resultCount: Long): Unit = {
@@ -66,6 +64,7 @@ class ResultIteratorQueryVertex(
 |   query = ${query.map(_.toDecodedString(dictionary)).mkString("[", ",\n", "]")}
 |   execution time = $deltaMilliseconds milliseconds
 |   number of results = $resultCount
+|   approximated size of explored search space = ${resultCount + approximationOfExploredNonResultSearchSpace}
 """.stripMargin)
     }
   }
