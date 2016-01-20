@@ -212,7 +212,7 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
-  override def flush: Unit = {
+  override def flush(): Unit = {
     // It is important that the results arrive before the tickets, because
     // result tickets were separated from their respective results.
     if (!aggregatedResults.isEmpty) {
@@ -263,7 +263,7 @@ final class CombiningMessageBus[Signal: ClassTag](
     }
   }
 
-  override def reset: Unit = {
+  override def reset(): Unit = {
     super.reset
     pendingSignals = 0
     var i = 0
