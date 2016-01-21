@@ -23,13 +23,13 @@ import java.io.DataOutputStream
 import java.nio.charset.Charset
 import java.util.Arrays
 import java.util.concurrent.atomic.AtomicInteger
-
 import scala.annotation.tailrec
-
 import org.mapdb.DBMaker
 import org.mapdb.DBMaker.Maker
 import org.mapdb.DataIO
 import org.mapdb.Serializer
+import org.mapdb.DataInput2
+import org.mapdb.DataOutput2
 
 final object HashDictionary {
 
@@ -63,39 +63,34 @@ final object HashDictionary {
 
 final class HashDictionary(
     dbMaker: Maker = DBMaker
-      .memoryUnsafeDB
-      .closeOnJvmShutdown
-      .transactionDisable //      .metricsEnable(10000)
-      //      .metricsExecutorEnable
-      ) extends RdfDictionary {
+      .memoryDB()) extends RdfDictionary {
 
   private[this] val utf8 = Charset.forName("UTF-8")
 
   private[this] val db = dbMaker.make
 
   class PrintCompressionRate(s: Serializer[Array[Byte]]) extends Serializer[Array[Byte]] {
-    def serialize(out: DataOutput, a: Array[Byte]): Unit = {
-      val bos = new ByteArrayOutputStream()
-      val dos = new DataOutputStream(bos)
+    def serialize(out: DataOutput2, a: Array[Byte]): Unit = {
+      val dos = new DataOutput2()
       s.serialize(dos, a)
-      val compressed = bos.toByteArray
+      val compressed = dos.copyBytes
       out.write(compressed)
       println(s"${((compressed.length.toDouble / a.length) * 1000.0).round / 10.0}%")
     }
-    def deserialize(in: DataInput, available: Int): Array[Byte] = {
+    def deserialize(in: DataInput2, available: Int): Array[Byte] = {
       s.deserialize(in, available)
     }
   }
 
-  private[this] val id2String = db.hashMapCreate("int2String")
+  private[this] val id2String = db.hashMap("int2String")
     .keySerializer(Serializer.INTEGER_PACKED)
     .valueSerializer(Serializer.BYTE_ARRAY)
-    .makeOrGet[Int, Array[Byte]]()
+    .create()
 
-  private[this] val string2Id = db.hashMapCreate("string2Int")
+  private[this] val string2Id = db.hashMap("string2Int")
     .keySerializer(Serializer.BYTE_ARRAY)
     .valueSerializer(Serializer.INTEGER_PACKED)
-    .makeOrGet[Array[Byte], Int]()
+    .create()
 
   def initialize(): Unit = {
     id2String.put(0, "*".getBytes(utf8))
@@ -140,7 +135,7 @@ final class HashDictionary(
       if (existing == null) attemptedId else recursiveAddEntryToExceptions(s)
     }
     val exceptionId = string2Id.get(s)
-    if (exceptionId != 0) {
+    if (exceptionId != null) {
       exceptionId
     } else {
       val id = recursiveAddEntryToExceptions(s)

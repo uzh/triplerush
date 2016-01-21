@@ -14,7 +14,7 @@
 	<properties>
 		<triplerush.version>${project.version}</triplerush.version>
 		<signalcollect.version>8.0.4</signalcollect.version>
-		<mapdb.version>2.0-beta12</mapdb.version>
+		<mapdb.version>3.0.0-M1</mapdb.version>
 		<fastutil.version>7.0.8</fastutil.version>
 		<apache.jena.version>3.0.0</apache.jena.version>
 		<nxparser.version>2.2</nxparser.version>
