@@ -83,13 +83,13 @@ final class HashDictionary(
   }
 
   private[this] val id2String = db.hashMap("int2String")
-    .keySerializer(Serializer.INTEGER_PACKED)
+    .keySerializer(VarIntSerializer)
     .valueSerializer(Serializer.BYTE_ARRAY)
     .create()
 
   private[this] val string2Id = db.hashMap("string2Int")
     .keySerializer(Serializer.BYTE_ARRAY)
-    .valueSerializer(Serializer.INTEGER_PACKED)
+    .valueSerializer(VarIntSerializer)
     .create()
 
   def initialize(): Unit = {
@@ -135,7 +135,7 @@ final class HashDictionary(
       if (existing == null) attemptedId else recursiveAddEntryToExceptions(s)
     }
     val exceptionId = string2Id.get(s)
-    if (exceptionId != null) {
+    if (exceptionId != 0) {
       exceptionId
     } else {
       val id = recursiveAddEntryToExceptions(s)
@@ -234,5 +234,41 @@ final class HashDictionary(
   }
 
   override def toString = s"HashDictionary(id2String entries = ${id2String.size}, string2Id entries = ${string2Id.size})"
+
+}
+
+/**
+ * Standard MapDB `INTEGER_PACKED` serializer is not usable with Scala Int.
+ */
+object VarIntSerializer extends Serializer[Int] {
+
+  val hasAnotherByteMask = Integer.parseInt("10000000", 2)
+  val leastSignificant7BitsMask = Integer.parseInt("01111111", 2)
+  val everythingButLeastSignificant7Bits = ~leastSignificant7BitsMask
+
+  def deserialize(in: DataInput2, available: Int): Int = {
+    var readByte = in.readByte
+    var decodedInt = readByte & leastSignificant7BitsMask
+    var shift = 7
+    while ((readByte & hasAnotherByteMask) != 0) {
+      readByte = in.readByte
+      decodedInt |= (readByte & leastSignificant7BitsMask) << shift
+      shift += 7
+    }
+    decodedInt
+  }
+
+  def serialize(out: DataOutput2, value: Int): Unit = {
+    var remainder = value
+    // While this is not the last byte, write one bit to indicate if the
+    // next byte is part of this number and 7 bytes of the number itself.
+    while ((remainder & everythingButLeastSignificant7Bits) != 0) {
+      // First bit of byte indicates that the next byte is still part of this number, if set.
+      out.writeByte((remainder & leastSignificant7BitsMask) | hasAnotherByteMask)
+      remainder >>>= 7
+    }
+    // Final byte.
+    out.writeByte(remainder)
+  }
 
 }
