@@ -247,28 +247,11 @@ object VarIntSerializer extends Serializer[Int] {
   val everythingButLeastSignificant7Bits = ~leastSignificant7BitsMask
 
   def deserialize(in: DataInput2, available: Int): Int = {
-    var readByte = in.readByte
-    var decodedInt = readByte & leastSignificant7BitsMask
-    var shift = 7
-    while ((readByte & hasAnotherByteMask) != 0) {
-      readByte = in.readByte
-      decodedInt |= (readByte & leastSignificant7BitsMask) << shift
-      shift += 7
-    }
-    decodedInt
+    in.unpackInt()
   }
 
   def serialize(out: DataOutput2, value: Int): Unit = {
-    var remainder = value
-    // While this is not the last byte, write one bit to indicate if the
-    // next byte is part of this number and 7 bytes of the number itself.
-    while ((remainder & everythingButLeastSignificant7Bits) != 0) {
-      // First bit of byte indicates that the next byte is still part of this number, if set.
-      out.writeByte((remainder & leastSignificant7BitsMask) | hasAnotherByteMask)
-      remainder >>>= 7
-    }
-    // Final byte.
-    out.writeByte(remainder)
+    out.packInt(value)
   }
 
 }
