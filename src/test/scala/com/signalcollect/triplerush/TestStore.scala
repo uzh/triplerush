@@ -18,28 +18,33 @@ package com.signalcollect.triplerush
 
 import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.annotation.tailrec
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import scala.concurrent.duration.DurationInt
 import scala.reflect.runtime.universe
-import scala.util.{ Failure, Success, Try }
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
 import org.scalatest.fixture.NoArg
+
 import com.signalcollect.GraphBuilder
 import com.signalcollect.configuration.Akka
-import com.typesafe.config.{ Config, ConfigFactory }
-import org.scalatest.concurrent.ScalaFutures
-import akka.actor.ActorSystem
-import scala.concurrent.duration.DurationInt
-import akka.actor.Props
-import com.signalcollect.triplerush.mapper.DistributedTripleMapperFactory
 import com.signalcollect.nodeprovisioning.cluster.ClusterNodeProvisionerActor
-import akka.actor.ActorRef
-import akka.util.Timeout
 import com.signalcollect.nodeprovisioning.cluster.RetrieveNodeActors
-import org.scalatest.concurrent.ScalaFutures._
+import com.signalcollect.triplerush.mapper.DistributedTripleMapperFactory
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
+import akka.actor.ActorRef
+import akka.actor.ActorSystem
+import akka.actor.Props
 import akka.pattern.ask
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import akka.util.Timeout
 
 object TestStore {
 
@@ -52,8 +57,8 @@ object TestStore {
 
   def instantiateDistributedStore(masterPort: Int, numberOfNodes: Int)(): (TripleRush, Seq[ActorSystem]) = {
     val masterPort = TestStore.freePort
-    val masterSystem = TestStore.instantiateUniqueActorSystem(port = masterPort, seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem")
-    val slaveSystems = for (slaveId <- 1 to numberOfNodes) yield instantiateUniqueActorSystem(seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem")
+    val masterSystem = TestStore.instantiateUniqueActorSystem(port = masterPort, seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem", cluster = true)
+    val slaveSystems = for (slaveId <- 1 to numberOfNodes - 1) yield instantiateUniqueActorSystem(seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem", cluster = true)
     implicit val timeout = Timeout(30.seconds)
     val mapperFactory = DistributedTripleMapperFactory
     val masterActor = masterSystem.actorOf(Props(classOf[ClusterNodeProvisionerActor], 1000,
@@ -80,7 +85,11 @@ object TestStore {
         .stripMargin)
   }
 
-  def instantiateUniqueActorSystem(cores: Int = numberOfCoresInTests, port: Int = freePort, seedPortOption: Option[Int] = None, actorSystemName: String = "TripleRushTestSystem"): ActorSystem = {
+  def instantiateUniqueActorSystem(
+    cores: Int = numberOfCoresInTests,
+    port: Int = freePort, seedPortOption: Option[Int] = None,
+    actorSystemName: String = "TripleRushTestSystem",
+    cluster: Boolean = false): ActorSystem = {
     val defaultAkkaConfig = Akka.config(
       serializeMessages = None,
       loggingLevel = None,
@@ -88,7 +97,8 @@ object TestStore {
       kryoInitializer = Some("com.signalcollect.triplerush.serialization.TripleRushKryoInit"),
       numberOfCores = cores)
     val seedPort = seedPortOption.getOrElse(port)
-    val customAkkaConfig = customClusterConfig(actorSystemName = actorSystemName, port = port, seedPort = seedPort)
+    val customAkkaConfig = { if (cluster) ConfigFactory.parseString("""akka.actor.provider = "akka.cluster.ClusterActorRefProvider"""") else ConfigFactory.empty }
+      .withFallback(customClusterConfig(actorSystemName = actorSystemName, port = port, seedPort = seedPort))
       .withFallback(defaultAkkaConfig)
     ActorSystem(actorSystemName, customAkkaConfig)
   }
@@ -152,7 +162,7 @@ class DistributedTestStore(storeInitializer: => (TripleRush, Seq[ActorSystem])) 
   lazy implicit val system = tr.graph.system
 
   def this() = {
-    this(TestStore.instantiateDistributedStore(TestStore.freePort, 5))
+    this(TestStore.instantiateDistributedStore(TestStore.freePort, 10))
   }
 
   def close(): Unit = {

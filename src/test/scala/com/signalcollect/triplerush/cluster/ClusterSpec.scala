@@ -16,10 +16,15 @@
 
 package com.signalcollect.triplerush.cluster
 
+import scala.collection.JavaConversions.asScalaIterator
+
+import org.scalatest.Finders
 import org.scalatest.fixture.FlatSpec
-import com.signalcollect.triplerush.DistributedTestStore
-import com.signalcollect.triplerush.sparql.Sparql
 import org.scalatest.fixture.UnitFixture
+
+import com.signalcollect.triplerush.DistributedTestStore
+import com.signalcollect.triplerush.Lubm
+import com.signalcollect.triplerush.sparql.Sparql
 
 class ClusterSpec extends FlatSpec with UnitFixture {
 
@@ -30,6 +35,10 @@ class ClusterSpec extends FlatSpec with UnitFixture {
     val next = result.next
     assert(!result.hasNext, "There should be exactly one result, but found more.")
     assert(next.get("s").toString == "http://s")
+    Lubm.load(tr, 0)
+    for { query <- Lubm.sparqlQueries } {
+      val numberOfResults = Sparql(query).size
+    }
   }
 
 }
