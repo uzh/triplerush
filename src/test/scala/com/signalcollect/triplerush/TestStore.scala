@@ -38,6 +38,8 @@ import akka.util.Timeout
 import com.signalcollect.nodeprovisioning.cluster.RetrieveNodeActors
 import org.scalatest.concurrent.ScalaFutures._
 import akka.pattern.ask
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object TestStore {
 
@@ -48,11 +50,10 @@ object TestStore {
     TripleRush(graphBuilder = graphBuilder)
   }
 
-  def instantiateDistributedStore(masterPort: Int)(): (TripleRush, ActorSystem) = {
+  def instantiateDistributedStore(masterPort: Int, numberOfNodes: Int)(): (TripleRush, Seq[ActorSystem]) = {
     val masterPort = TestStore.freePort
     val masterSystem = TestStore.instantiateUniqueActorSystem(port = masterPort, seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem")
-    val slaveSystem = TestStore.instantiateUniqueActorSystem(seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem")
-    val numberOfNodes = 2
+    val slaveSystems = for (slaveId <- 1 to numberOfNodes) yield instantiateUniqueActorSystem(seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem")
     implicit val timeout = Timeout(30.seconds)
     val mapperFactory = DistributedTripleMapperFactory
     val masterActor = masterSystem.actorOf(Props(classOf[ClusterNodeProvisionerActor], 1000,
@@ -66,7 +67,7 @@ object TestStore {
     val tr = TripleRush(
       graphBuilder = graphBuilder,
       tripleMapperFactory = Some(mapperFactory))
-    (tr, slaveSystem)
+    (tr, slaveSystems)
   }
 
   def customClusterConfig(actorSystemName: String, port: Int, seedPort: Int, seedIp: String = "127.0.0.1"): Config = {
@@ -144,21 +145,21 @@ class TestStore(storeInitializer: => TripleRush) extends NoArg {
 
 }
 
-class DistributedTestStore(storeInitializer: => (TripleRush, ActorSystem)) extends NoArg {
+class DistributedTestStore(storeInitializer: => (TripleRush, Seq[ActorSystem])) extends NoArg {
 
-  lazy val (tr, slave): (TripleRush, ActorSystem) = storeInitializer
+  lazy val (tr, slaves): (TripleRush, Seq[ActorSystem]) = storeInitializer
   lazy implicit val model = tr.getModel
   lazy implicit val system = tr.graph.system
 
   def this() = {
-    this(TestStore.instantiateDistributedStore(TestStore.freePort))
+    this(TestStore.instantiateDistributedStore(TestStore.freePort, 5))
   }
 
   def close(): Unit = {
     model.close()
     tr.close()
     Await.ready(tr.graph.system.terminate(), Duration.Inf)
-    Await.ready(slave.terminate, 30.seconds)
+    Await.ready(Future.sequence(slaves.map(_.terminate)), 30.seconds)
   }
 
   override def apply(): Unit = {
