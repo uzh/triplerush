@@ -56,7 +56,6 @@ object TestStore {
   }
 
   def instantiateDistributedStore(masterPort: Int, numberOfNodes: Int)(): (TripleRush, Seq[ActorSystem]) = {
-    val masterPort = TestStore.freePort
     val masterSystem = TestStore.instantiateUniqueActorSystem(port = masterPort, seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem", cluster = true)
     val slaveSystems = for (slaveId <- 1 to numberOfNodes - 1) yield instantiateUniqueActorSystem(seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem", cluster = true)
     implicit val timeout = Timeout(30.seconds)
@@ -87,9 +86,11 @@ object TestStore {
 
   def instantiateUniqueActorSystem(
     cores: Int = numberOfCoresInTests,
-    port: Int = freePort, seedPortOption: Option[Int] = None,
+    port: Int = freePort,
+    seedPortOption: Option[Int] = None,
     actorSystemName: String = "TripleRushTestSystem",
-    cluster: Boolean = false): ActorSystem = {
+    cluster: Boolean = false,
+    testEventLogger: Boolean = false): ActorSystem = {
     val defaultAkkaConfig = Akka.config(
       serializeMessages = None,
       loggingLevel = None,
@@ -97,15 +98,16 @@ object TestStore {
       kryoInitializer = Some("com.signalcollect.triplerush.serialization.TripleRushKryoInit"),
       numberOfCores = cores)
     val seedPort = seedPortOption.getOrElse(port)
-    val customAkkaConfig = { if (cluster) ConfigFactory.parseString("""akka.actor.provider = "akka.cluster.ClusterActorRefProvider"""") else ConfigFactory.empty }
+    val customAkkaConfig = { if (testEventLogger) ConfigFactory.parseString("""akka.loggers = ["akka.testkit.TestEventListener"]""") else ConfigFactory.empty }
+      .withFallback(if (cluster) ConfigFactory.parseString("""akka.actor.provider = "akka.cluster.ClusterActorRefProvider"""") else ConfigFactory.empty)
       .withFallback(customClusterConfig(actorSystemName = actorSystemName, port = port, seedPort = seedPort))
       .withFallback(defaultAkkaConfig)
     ActorSystem(actorSystemName, customAkkaConfig)
   }
 
-  def instantiateUniqueGraphBuilder(cores: Int = numberOfCoresInTests): GraphBuilder[Long, Any] = {
+  def instantiateUniqueGraphBuilder(cores: Int = numberOfCoresInTests, testEventLogger: Boolean = false): GraphBuilder[Long, Any] = {
     new GraphBuilder[Long, Any]()
-      .withActorSystem(instantiateUniqueActorSystem(cores))
+      .withActorSystem(instantiateUniqueActorSystem(cores, testEventLogger = testEventLogger))
   }
 
   private[this] val portUsageTracker = new AtomicInteger(2500)
@@ -168,8 +170,8 @@ class DistributedTestStore(storeInitializer: => (TripleRush, Seq[ActorSystem])) 
   def close(): Unit = {
     model.close()
     tr.close()
+    Await.ready(Future.sequence(slaves.map(_.terminate())), 30.seconds)
     Await.ready(tr.graph.system.terminate(), Duration.Inf)
-    Await.ready(Future.sequence(slaves.map(_.terminate)), 30.seconds)
   }
 
   override def apply(): Unit = {
