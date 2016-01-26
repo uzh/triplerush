@@ -113,7 +113,7 @@ trait IndexStructure {
 
   lazy val isSupported: Map[IndexType, Boolean] = {
     IndexType.list.map { indexType =>
-      indexType -> (ancestorIds(TriplePattern(1, 1, 1)).contains(indexType.examplePattern))
+      indexType -> (ancestorIds(TriplePattern(1, 1, 1)).contains(indexType.examplePattern.toEfficientIndexPattern))
     }.toMap
   }
 
@@ -131,15 +131,15 @@ trait IndexStructure {
     ancestorIds(exampleTriple).size
   }
 
-  def parentIds(id: Long): Set[Long] = {
-    parentIds(id.toTriplePattern).map(_.toEfficientIndexPattern)
+  def parentIds(id: Long): Array[Long] = {
+    parentIds(id.toTriplePattern)
   }
 
-  def parentIds(pattern: TriplePattern): Set[TriplePattern]
+  def parentIds(pattern: TriplePattern): Array[Long]
 
-  def ancestorIds(id: TriplePattern): Set[TriplePattern] = {
-    val parents = parentIds(id)
-    parents.union(parents.flatMap(ancestorIds(_)))
+  def ancestorIds(id: TriplePattern): Set[Long] = {
+    val parents = parentIds(id).toSet
+    parents.union(parents.flatMap(id => ancestorIds(id.toTriplePattern)))
   }
 
 }
@@ -147,17 +147,17 @@ trait IndexStructure {
 object FullIndex extends IndexStructure {
 
   // Based on the diagram of the index structure @ http://www.zora.uzh.ch/111243/1/TR_WWW.pdf
-  def parentIds(pattern: TriplePattern): Set[TriplePattern] = {
+  def parentIds(pattern: TriplePattern): Array[Long] = {
     assert(pattern.hasNoVariables, s"Pattern $pattern contains at least one variable, which means it cannot be part of the index.")
     pattern match {
-      case TriplePattern(0, 0, 0) => Set()
-      case TriplePattern(_, 0, 0) => Set()
-      case TriplePattern(0, _, 0) => Set(rootPattern)
-      case TriplePattern(0, 0, _) => Set()
-      case TriplePattern(_, _, 0) => Set(pattern.copy(s = 0), pattern.copy(p = 0))
-      case TriplePattern(_, 0, _) => Set()
-      case TriplePattern(0, _, _) => Set(pattern.copy(p = 0))
-      case fullyBound @ _         => Set(pattern.copy(s = 0), pattern.copy(p = 0), pattern.copy(o = 0))
+      case TriplePattern(0, 0, 0) => Array()
+      case TriplePattern(_, 0, 0) => Array()
+      case TriplePattern(0, _, 0) => Array(rootPattern.toEfficientIndexPattern)
+      case TriplePattern(0, 0, _) => Array()
+      case TriplePattern(_, _, 0) => Array(pattern.copy(s = 0).toEfficientIndexPattern, pattern.copy(p = 0).toEfficientIndexPattern)
+      case TriplePattern(_, 0, _) => Array()
+      case TriplePattern(0, _, _) => Array(pattern.copy(p = 0).toEfficientIndexPattern)
+      case fullyBound @ _         => Array(pattern.copy(s = 0).toEfficientIndexPattern, pattern.copy(p = 0).toEfficientIndexPattern, pattern.copy(o = 0).toEfficientIndexPattern)
     }
   }
 

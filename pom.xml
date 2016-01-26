@@ -7,13 +7,13 @@
 		<version>8.0.2</version>
 	</parent>
 	<artifactId>triplerush_2.11</artifactId>
-	<version>8.0.21-SNAPSHOT</version>
+	<version>9.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>triplerush</name>
 	<description>A distributed in-memory graph store.</description>
 	<properties>
 		<signalcollect.version>8.0.6</signalcollect.version>
-		<mapdb.version>2.0-beta12</mapdb.version>
+		<mapdb.version>3.0.0-M1</mapdb.version>
 		<fastutil.version>7.0.8</fastutil.version>
 		<apache.jena.version>3.0.0</apache.jena.version>
 		<sesame.version>4.0.1</sesame.version>

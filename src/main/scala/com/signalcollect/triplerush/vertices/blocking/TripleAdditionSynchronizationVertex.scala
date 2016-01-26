@@ -29,6 +29,7 @@ import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
 import com.signalcollect.triplerush.IndexType
+import com.signalcollect.triplerush.EfficientIndexPattern._
 
 class TripleAdditionSynchronizationVertex(
     is: IndexStructure,
@@ -58,10 +59,9 @@ class TripleAdditionSynchronizationVertex(
       dispatchedTriples += 1
       val t = triples.next
       val parentIds = is.parentIds(t)
-      for (parentId <- parentIds) {
-        val indexId = parentId.toEfficientIndexPattern
+      for (indexId <- parentIds) {
         val indexType = IndexType(indexId)
-        val delta = t.parentIdDelta(parentId)
+        val delta = t.parentIdDelta(indexId.toTriplePattern)
         graphEditor.addEdge(indexId, new BlockingIndexVertexEdge(delta, is.ticketsForIndexOperation(indexType), operationId))
       }
     }

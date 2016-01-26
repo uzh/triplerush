@@ -23,13 +23,13 @@ import java.io.DataOutputStream
 import java.nio.charset.Charset
 import java.util.Arrays
 import java.util.concurrent.atomic.AtomicInteger
-
 import scala.annotation.tailrec
-
 import org.mapdb.DBMaker
 import org.mapdb.DBMaker.Maker
 import org.mapdb.DataIO
 import org.mapdb.Serializer
+import org.mapdb.DataInput2
+import org.mapdb.DataOutput2
 
 final object HashDictionary {
 
@@ -63,39 +63,34 @@ final object HashDictionary {
 
 final class HashDictionary(
     dbMaker: Maker = DBMaker
-      .memoryUnsafeDB
-      .closeOnJvmShutdown
-      .transactionDisable //      .metricsEnable(10000)
-      //      .metricsExecutorEnable
-      ) extends RdfDictionary {
+      .memoryDB()) extends RdfDictionary {
 
   private[this] val utf8 = Charset.forName("UTF-8")
 
   private[this] val db = dbMaker.make
 
   class PrintCompressionRate(s: Serializer[Array[Byte]]) extends Serializer[Array[Byte]] {
-    def serialize(out: DataOutput, a: Array[Byte]): Unit = {
-      val bos = new ByteArrayOutputStream()
-      val dos = new DataOutputStream(bos)
+    def serialize(out: DataOutput2, a: Array[Byte]): Unit = {
+      val dos = new DataOutput2()
       s.serialize(dos, a)
-      val compressed = bos.toByteArray
+      val compressed = dos.copyBytes
       out.write(compressed)
       println(s"${((compressed.length.toDouble / a.length) * 1000.0).round / 10.0}%")
     }
-    def deserialize(in: DataInput, available: Int): Array[Byte] = {
+    def deserialize(in: DataInput2, available: Int): Array[Byte] = {
       s.deserialize(in, available)
     }
   }
 
-  private[this] val id2String = db.hashMapCreate("int2String")
-    .keySerializer(Serializer.INTEGER_PACKED)
+  private[this] val id2String = db.hashMap("int2String")
+    .keySerializer(VarIntSerializer)
     .valueSerializer(Serializer.BYTE_ARRAY)
-    .makeOrGet[Int, Array[Byte]]()
+    .create()
 
-  private[this] val string2Id = db.hashMapCreate("string2Int")
+  private[this] val string2Id = db.hashMap("string2Int")
     .keySerializer(Serializer.BYTE_ARRAY)
-    .valueSerializer(Serializer.INTEGER_PACKED)
-    .makeOrGet[Array[Byte], Int]()
+    .valueSerializer(VarIntSerializer)
+    .create()
 
   def initialize(): Unit = {
     id2String.put(0, "*".getBytes(utf8))
@@ -239,5 +234,24 @@ final class HashDictionary(
   }
 
   override def toString = s"HashDictionary(id2String entries = ${id2String.size}, string2Id entries = ${string2Id.size})"
+
+}
+
+/**
+ * Standard MapDB `INTEGER_PACKED` serializer is not usable with Scala Int.
+ */
+object VarIntSerializer extends Serializer[Int] {
+
+  val hasAnotherByteMask = Integer.parseInt("10000000", 2)
+  val leastSignificant7BitsMask = Integer.parseInt("01111111", 2)
+  val everythingButLeastSignificant7Bits = ~leastSignificant7BitsMask
+
+  def deserialize(in: DataInput2, available: Int): Int = {
+    in.unpackInt()
+  }
+
+  def serialize(out: DataOutput2, value: Int): Unit = {
+    out.packInt(value)
+  }
 
 }
