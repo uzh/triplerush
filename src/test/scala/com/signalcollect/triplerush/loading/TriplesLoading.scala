@@ -16,47 +16,43 @@
 
 package com.signalcollect.triplerush.loading
 
-import com.signalcollect.triplerush._
-import com.signalcollect.triplerush.dictionary.HashDictionary
-import com.signalcollect.GraphBuilder
-import com.signalcollect.triplerush.dictionary.RdfDictionary
-import scala.util.Random
+import scala.collection.JavaConversions.asScalaIterator
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.DurationInt
+import scala.io.StdIn
 
-object MockDictionary extends RdfDictionary {
-  def contains(s: String): Boolean = false
-  def apply(s: String): Int = s.hashCode & Int.MaxValue
-  def get(s: String): Option[Int] = None
-  def contains(i: Int): Boolean = false
-  def apply(i: Int): String = "hello!"
-  def get(i: Int): Option[String] = Some(apply(i))
-  def getBlankNodeId: Int = Random.nextInt
-  def isBlankNodeId(id: Int): Boolean = true
-  def clear(): Unit = Unit
-  def close(): Unit = Unit
-}
+import com.signalcollect.triplerush.Lubm
+import com.signalcollect.triplerush.TestStore
+import com.signalcollect.triplerush.TripleRush
+import com.signalcollect.triplerush.sparql.Sparql
+
+import akka.actor.ActorSystem
 
 object TriplesLoading extends App {
-  var triplesSoFar = 0
-  val batchSize = 10000
-  val dictionary = new HashDictionary()
-  val tr = TripleRush(
-    dictionary = dictionary,
-    graphBuilder = new GraphBuilder[Long, Any]())
-  try {
-    val i = TripleIterator(args(0))
-    val start = System.currentTimeMillis
-    i.grouped(batchSize).foreach { triples =>
-      val batchStart = System.currentTimeMillis
-      tr.addTriples(triples.iterator)
-      triplesSoFar += batchSize
-      println(s"batch finished, took ${((System.currentTimeMillis - batchStart) / 100.0).round / 10.0} seconds")
-      println(s"total triples so far: $triplesSoFar")
-      println(s"dictionary stats = ${tr.dictionary}")
-      println(s"time so far: ${((System.currentTimeMillis - start) / 100.0).round / 10.0} seconds")
-      println(s"time per million triples so far: ${((System.currentTimeMillis - start) / 100.0 / (triplesSoFar / 1000000.0)).round / 10.0} seconds")
+
+  println("Press any key to run.")
+  StdIn.readLine()
+  execute()
+
+  def execute(): Unit = {
+    val (tr, slaves): (TripleRush, Seq[ActorSystem]) = TestStore.instantiateDistributedStore(TestStore.freePort, 10)
+    implicit val model = tr.getModel
+    implicit val system = tr.graph.system
+
+    try {
+      Lubm.load(tr, 14)
+      for { query <- Lubm.sparqlQueries } {
+        val numberOfResults = Sparql(query).size
+      }
+    } finally {
+      model.close()
+      tr.close()
+      Await.ready(Future.sequence(slaves.map(_.terminate())), 30.seconds)
+      Await.ready(tr.graph.system.terminate(), Duration.Inf)
     }
-  } finally {
-    tr.close
   }
 
 }
