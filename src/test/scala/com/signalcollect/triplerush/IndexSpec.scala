@@ -67,7 +67,7 @@ class IndexSpec extends FlatSpec with UnitFixture {
   }
 
   it should "throw a helpful error when a required index is missing" in new NoArg {
-    val graphBuilder = TestStore.instantiateUniqueGraphBuilder()
+    val graphBuilder = TestStore.instantiateUniqueGraphBuilder(testEventLogger = true)
     val indexStructure = new IndexStructure {
       def parentIds(pattern: TriplePattern): Set[TriplePattern] = Set.empty
     }
