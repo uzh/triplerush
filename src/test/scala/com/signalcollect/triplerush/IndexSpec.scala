@@ -69,7 +69,7 @@ class IndexSpec extends FlatSpec with UnitFixture {
   it should "throw a helpful error when a required index is missing" in new NoArg {
     val graphBuilder = TestStore.instantiateUniqueGraphBuilder(testEventLogger = true)
     val indexStructure = new IndexStructure {
-      def parentIds(pattern: TriplePattern): Set[TriplePattern] = Set.empty
+      def parentIds(pattern: TriplePattern): Array[Long] = Array()
     }
     val tr = TripleRush(graphBuilder = graphBuilder, indexStructure = indexStructure)
     implicit val system = tr.graph.system
@@ -87,10 +87,10 @@ class IndexSpec extends FlatSpec with UnitFixture {
   it should "be able to answer a simple query with a partial index" in new NoArg {
     val graphBuilder = TestStore.instantiateUniqueGraphBuilder()
     val indexStructure = new IndexStructure {
-      def parentIds(pattern: TriplePattern): Set[TriplePattern] = {
+      def parentIds(pattern: TriplePattern): Array[Long] = {
         pattern match {
-          case fullyBound if fullyBound.isFullyBound => Set(fullyBound.copy(o = 0))
-          case other @ _                             => Set.empty
+          case fullyBound if fullyBound.isFullyBound => Array(fullyBound.copy(o = 0).toEfficientIndexPattern)
+          case other @ _                             => Array()
         }
       }
     }
@@ -109,10 +109,10 @@ class IndexSpec extends FlatSpec with UnitFixture {
   it should "be able to load a million entries into a Splay-tree based index vertex" in new NoArg {
     val graphBuilder = TestStore.instantiateUniqueGraphBuilder()
     val indexStructure = new IndexStructure {
-      def parentIds(pattern: TriplePattern): Set[TriplePattern] = {
+      def parentIds(pattern: TriplePattern): Array[Long] = {
         pattern match {
-          case fullyBound if fullyBound.isFullyBound => Set(fullyBound.copy(o = 0))
-          case other @ _                             => Set.empty
+          case fullyBound if fullyBound.isFullyBound => Array(fullyBound.copy(o = 0).toEfficientIndexPattern)
+          case other @ _                             => Array()
         }
       }
     }
@@ -135,10 +135,10 @@ class IndexSpec extends FlatSpec with UnitFixture {
   it should "be able to load ten thousand entries into an array based index vertex" in new NoArg {
     val graphBuilder = TestStore.instantiateUniqueGraphBuilder()
     val indexStructure = new IndexStructure {
-      def parentIds(pattern: TriplePattern): Set[TriplePattern] = {
+      def parentIds(pattern: TriplePattern): Array[Long] = {
         pattern match {
-          case fullyBound if fullyBound.isFullyBound => Set(fullyBound.copy(p = 0))
-          case other @ _                             => Set.empty
+          case fullyBound if fullyBound.isFullyBound => Array(fullyBound.copy(p = 0).toEfficientIndexPattern)
+          case other @ _                             => Array()
         }
       }
     }
