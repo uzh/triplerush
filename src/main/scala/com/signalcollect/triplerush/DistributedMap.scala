@@ -14,19 +14,8 @@
  * limitations under the License.
  */
 
-package com.signalcollect.triplerush.sparql
+package com.signalcollect.triplerush
 
-import com.signalcollect.triplerush.TripleRush
-import org.apache.jena.query._
-import org.apache.jena.rdf.model.ModelFactory
-import org.apache.jena.rdf.model.Model
-
-object Sparql {
-
-  def apply(queryString: String)(implicit trModel: Model): ResultSet = {
-    val query = QueryFactory.create(queryString)
-    val execution = QueryExecutionFactory.create(query, trModel)
-    execution.execSelect
-  }
-
+class DistributedMap {
+  
 }

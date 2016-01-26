@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.signalcollect</groupId>
@@ -7,12 +8,11 @@
 		<version>8.0.2</version>
 	</parent>
 	<artifactId>triplerush_2.11</artifactId>
-	<version>9.0.0-SNAPSHOT</version>
+	<version>10.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>triplerush</name>
 	<description>A distributed in-memory graph store.</description>
 	<properties>
-		<signalcollect.version>8.0.6</signalcollect.version>
 		<mapdb.version>3.0.0-M1</mapdb.version>
 		<fastutil.version>7.0.8</fastutil.version>
 		<apache.jena.version>3.0.0</apache.jena.version>
@@ -43,9 +43,8 @@
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.signalcollect</groupId>
-			<artifactId>signal-collect_${scala.minor.version}</artifactId>
-			<version>${signalcollect.version}</version>
+			<groupId>com.typesafe.akka</groupId>
+			<artifactId>akka-cluster_${scala.minor.version}</artifactId>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -60,67 +59,8 @@
 			<version>${fastutil.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.jena</groupId>
-			<artifactId>jena-arq</artifactId>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.jena</groupId>
-			<artifactId>jena-core</artifactId>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.semanticweb.yars</groupId>
-			<artifactId>nxparser-parsers</artifactId>
-			<version>${nxparser.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>com.typesafe.akka</groupId>
 			<artifactId>akka-testkit_${scala.minor.version}</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.jena</groupId>
-			<artifactId>jena-core</artifactId>
-			<version>${apache.jena.version}</version>
-			<classifier>tests</classifier>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.openrdf.sesame</groupId>
-			<artifactId>sesame-sparql-testsuite</artifactId>
-			<version>${sesame.version}</version>
-			<scope>test</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.openrdf.sesame</groupId>
-					<artifactId>sesame-queryparser-sparql</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.openrdf.sesame</groupId>
-					<artifactId>sesame-queryresultio-sparqljson</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.openrdf.sesame</groupId>
-					<artifactId>sesame-queryresultio-sparqlxml</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.openrdf.sesame</groupId>
-					<artifactId>sesame-queryresultio-text</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.openrdf.sesame</groupId>
-					<artifactId>sesame-rio-rdfxml</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.openrdf.sesame</groupId>
-					<artifactId>sesame-rio-trig</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -130,14 +70,6 @@
 		<dependency>
 			<groupId>org.scalacheck</groupId>
 			<artifactId>scalacheck_${scala.minor.version}</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.easymock</groupId>
-			<artifactId>easymock</artifactId>
 		</dependency>
 	</dependencies>
 	<build>
