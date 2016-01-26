@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>com.signalcollect</groupId>
 		<artifactId>signal-collect-maven-parent</artifactId>
-		<version>8.0.2-SNAPSHOT</version>
+		<version>8.0.2</version>
 	</parent>
 	<artifactId>triplerush_2.11</artifactId>
 	<version>8.0.19-SNAPSHOT</version>
@@ -13,7 +13,7 @@
 	<name>triplerush</name>
 	<description>A distributed in-memory graph store.</description>
 	<properties>
-		<signalcollect.version>8.0.5-SNAPSHOT</signalcollect.version>
+		<signalcollect.version>8.0.5</signalcollect.version>
 		<mapdb.version>2.0-beta12</mapdb.version>
 		<fastutil.version>7.0.8</fastutil.version>
 		<apache.jena.version>3.0.0</apache.jena.version>
