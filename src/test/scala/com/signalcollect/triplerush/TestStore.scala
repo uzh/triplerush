@@ -21,17 +21,30 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import scala.annotation.tailrec
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import scala.concurrent.duration.DurationInt
 import scala.reflect.runtime.universe
-import scala.util.{ Failure, Success, Try }
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 import org.scalatest.fixture.NoArg
 
 import com.signalcollect.GraphBuilder
 import com.signalcollect.configuration.Akka
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.signalcollect.nodeprovisioning.cluster.ClusterNodeProvisionerActor
+import com.signalcollect.nodeprovisioning.cluster.RetrieveNodeActors
+import com.signalcollect.triplerush.mapper.DistributedTripleMapperFactory
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
+import akka.actor.ActorRef
 import akka.actor.ActorSystem
+import akka.actor.Props
+import akka.pattern.ask
+import akka.util.Timeout
 
 object TestStore {
 
@@ -40,6 +53,25 @@ object TestStore {
   def instantiateUniqueStore(): TripleRush = {
     val graphBuilder = instantiateUniqueGraphBuilder()
     TripleRush(graphBuilder = graphBuilder)
+  }
+
+  def instantiateDistributedStore(masterPort: Int, numberOfNodes: Int)(): (TripleRush, Seq[ActorSystem]) = {
+    val masterSystem = TestStore.instantiateUniqueActorSystem(port = masterPort, seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem", cluster = true)
+    val slaveSystems = for (slaveId <- 1 to numberOfNodes - 1) yield instantiateUniqueActorSystem(seedPortOption = Some(masterPort), actorSystemName = "ClusterSystem", cluster = true)
+    implicit val timeout = Timeout(30.seconds)
+    val mapperFactory = DistributedTripleMapperFactory
+    val masterActor = masterSystem.actorOf(Props(classOf[ClusterNodeProvisionerActor], 1000,
+      "", numberOfNodes), "ClusterMasterBootstrap")
+    val nodeActorsFuture = (masterActor ? RetrieveNodeActors).mapTo[Array[ActorRef]]
+    val nodeActors = Await.result(nodeActorsFuture, 30.seconds)
+    assert(nodeActors.length == numberOfNodes)
+    val graphBuilder = new GraphBuilder[Long, Any]().
+      withActorSystem(masterSystem).
+      withPreallocatedNodes(nodeActors)
+    val tr = TripleRush(
+      graphBuilder = graphBuilder,
+      tripleMapperFactory = Some(mapperFactory))
+    (tr, slaveSystems)
   }
 
   def customClusterConfig(actorSystemName: String, port: Int, seedPort: Int, seedIp: String = "127.0.0.1"): Config = {
@@ -52,7 +84,13 @@ object TestStore {
         .stripMargin)
   }
 
-  def instantiateUniqueActorSystem(cores: Int = numberOfCoresInTests, port: Int = freePort, seedPortOption: Option[Int] = None, actorSystemName: String = "TripleRushTestSystem"): ActorSystem = {
+  def instantiateUniqueActorSystem(
+    cores: Int = numberOfCoresInTests,
+    port: Int = freePort,
+    seedPortOption: Option[Int] = None,
+    actorSystemName: String = "TripleRushTestSystem",
+    cluster: Boolean = false,
+    testEventLogger: Boolean = false): ActorSystem = {
     val defaultAkkaConfig = Akka.config(
       serializeMessages = None,
       loggingLevel = None,
@@ -60,14 +98,16 @@ object TestStore {
       kryoInitializer = Some("com.signalcollect.triplerush.serialization.TripleRushKryoInit"),
       numberOfCores = cores)
     val seedPort = seedPortOption.getOrElse(port)
-    val customAkkaConfig = customClusterConfig(actorSystemName = actorSystemName, port = port, seedPort = seedPort)
+    val customAkkaConfig = { if (testEventLogger) ConfigFactory.parseString("""akka.loggers = ["akka.testkit.TestEventListener"]""") else ConfigFactory.empty }
+      .withFallback(if (cluster) ConfigFactory.parseString("""akka.actor.provider = "akka.cluster.ClusterActorRefProvider"""") else ConfigFactory.empty)
+      .withFallback(customClusterConfig(actorSystemName = actorSystemName, port = port, seedPort = seedPort))
       .withFallback(defaultAkkaConfig)
     ActorSystem(actorSystemName, customAkkaConfig)
   }
 
-  def instantiateUniqueGraphBuilder(cores: Int = numberOfCoresInTests): GraphBuilder[Long, Any] = {
+  def instantiateUniqueGraphBuilder(cores: Int = numberOfCoresInTests, testEventLogger: Boolean = false): GraphBuilder[Long, Any] = {
     new GraphBuilder[Long, Any]()
-      .withActorSystem(instantiateUniqueActorSystem(cores))
+      .withActorSystem(instantiateUniqueActorSystem(cores, testEventLogger = testEventLogger))
   }
 
   private[this] val portUsageTracker = new AtomicInteger(2500)
@@ -104,7 +144,34 @@ class TestStore(storeInitializer: => TripleRush) extends NoArg {
   def close(): Unit = {
     model.close()
     tr.close()
-    Await.result(tr.graph.system.terminate(), Duration.Inf)
+    Await.ready(tr.graph.system.terminate(), Duration.Inf)
+  }
+
+  override def apply(): Unit = {
+    try {
+      super.apply()
+    } finally {
+      close()
+    }
+  }
+
+}
+
+class DistributedTestStore(storeInitializer: => (TripleRush, Seq[ActorSystem])) extends NoArg {
+
+  lazy val (tr, slaves): (TripleRush, Seq[ActorSystem]) = storeInitializer
+  lazy implicit val model = tr.getModel
+  lazy implicit val system = tr.graph.system
+
+  def this() = {
+    this(TestStore.instantiateDistributedStore(TestStore.freePort, 10))
+  }
+
+  def close(): Unit = {
+    model.close()
+    tr.close()
+    Await.ready(Future.sequence(slaves.map(_.terminate())), 30.seconds)
+    Await.ready(tr.graph.system.terminate(), Duration.Inf)
   }
 
   override def apply(): Unit = {
