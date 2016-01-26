@@ -63,7 +63,7 @@ object TestStore {
     val masterActor = masterSystem.actorOf(Props(classOf[ClusterNodeProvisionerActor], 1000,
       "", numberOfNodes), "ClusterMasterBootstrap")
     val nodeActorsFuture = (masterActor ? RetrieveNodeActors).mapTo[Array[ActorRef]]
-    val nodeActors = Await.result(nodeActorsFuture, 30.seconds)
+    val nodeActors = Await.result(nodeActorsFuture, 300.seconds)
     assert(nodeActors.length == numberOfNodes)
     val graphBuilder = new GraphBuilder[Long, Any]().
       withActorSystem(masterSystem).
