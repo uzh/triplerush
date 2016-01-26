@@ -1,7 +1,7 @@
 TripleRush: A Distributed In-Memory Graph Store
 ===============================================
 
-TripleRush is a distributed in-memory graph store that supports SPARQL select queries. Its [architecture](http://www.zora.uzh.ch/111243/1/TR_WWW.pdf) is designed to take full advantage of cluster resources by distributing and parallelizing the query processing.
+The rocky experiment attempts to take advantage of MapDB and Akka clustering features to simplify the TripleRush implementation.
 
 How to develop in Eclipse
 -------------------------
