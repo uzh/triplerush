@@ -49,21 +49,21 @@ object TripleRush {
 
 class TripleRush(system: ActorSystem,
                  indexStructure: IndexStructure,
-                 implicit val timeout: Timeout) extends TripleStore {
+                 implicit protected val timeout: Timeout) extends TripleStore {
+  Index.registerWithSystem(system)
+  import Index._
+  import system.dispatcher
 
   protected val indexRegion = ClusterSharding(system).shardRegion(Index.shardName)
-  import Index._
 
   def addTriplePattern(triplePattern: TriplePattern): Future[Unit] = {
     val parentIds = indexStructure.parentIds(triplePattern)
-    val additionFutures = for {
+    val additionFutures: Array[Future[Unit]] = for {
       parentId <- parentIds
       parentIndexType = IndexType(parentId)
       delta = triplePattern.parentIdDelta(parentId.toTriplePattern)
-      completion = indexRegion ? AddChildId(parentId.toString, delta)
-    } yield completion
-    //
-    ???
+    } yield indexRegion ? AddChildId(parentId.toString, delta)
+    Future.sequence(additionFutures.toSeq)
   }
 
 }

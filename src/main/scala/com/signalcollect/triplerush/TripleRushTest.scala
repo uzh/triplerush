@@ -26,25 +26,30 @@ import akka.util.Timeout
 import com.signalcollect.triplerush.index.Index
 
 object TripleRushTest extends App {
-  val cluster = ClusterCreator.create(2)
-  cluster.foreach(Index.registerWithSystem(_))
-
-  val indexRegions = cluster.map { system =>
-    ClusterSharding(system).shardRegion(Index.shardName)
-  }
-
-  val indexId = UUID.randomUUID().toString
-  indexRegions.head ! Index.AddChildId(indexId, 1)
-  indexRegions.last ! Index.AddChildId(indexId, 2)
-
-  implicit val timeout = new Timeout(30.seconds)
-
-  Thread.sleep(5000)
-
-  val childIdsFuture = indexRegions.last ? Index.GetChildIds(indexId)
-
-  childIdsFuture.onComplete { result =>
-    println(s"result = $result")
-  }
+  
+  val tr = TripleRush()
+  
+  tr.addTriplePattern(TriplePattern(1, 2, 3))
+  
+//  val cluster = ClusterCreator.create(2)
+//  cluster.foreach(Index.registerWithSystem(_))
+//
+//  val indexRegions = cluster.map { system =>
+//    ClusterSharding(system).shardRegion(Index.shardName)
+//  }
+//
+//  val indexId = UUID.randomUUID().toString
+//  indexRegions.head ! Index.AddChildId(indexId, 1)
+//  indexRegions.last ! Index.AddChildId(indexId, 2)
+//
+//  implicit val timeout = new Timeout(30.seconds)
+//
+//  Thread.sleep(5000)
+//
+//  val childIdsFuture = indexRegions.last ? Index.GetChildIds(indexId)
+//
+//  childIdsFuture.onComplete { result =>
+//    println(s"result = $result")
+//  }
 
 }
