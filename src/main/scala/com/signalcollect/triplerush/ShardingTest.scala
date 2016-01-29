@@ -16,29 +16,36 @@
 
 package com.signalcollect.triplerush
 
+import java.util.UUID
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
 import com.typesafe.config.ConfigFactory
 import akka.actor.{ Actor, ActorSystem, Props }
+import akka.cluster.ddata.{ DistributedData, ORSet, ORSetKey }
+import akka.cluster.ddata.Replicator.{ Subscribe, _ }
 import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings, ShardRegion }
-import java.util.UUID
 import akka.pattern.ask
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration.DurationInt
 import akka.util.Timeout
-import scala.concurrent.ExecutionContext.Implicits.global
+import akka.cluster.ddata.Replicator
+import akka.cluster.Cluster
+import akka.actor.ActorLogging
+import akka.cluster.ddata.GSetKey
+import akka.cluster.ddata.GSet
 
 object Index {
 
   val shardName = "index"
   def props: Props = Props(new Index)
 
-  case class IndexContent(childIds: List[String]) {
-    def +(child: String) = copy(childIds :+ child)
+  case class IndexContent(childIds: Set[String]) {
+    def +(child: String) = copy(childIds + child)
   }
 
   sealed trait Command {
     def indexId: String
   }
-  case class AddIndex(indexId: String, content: IndexContent) extends Command
+  case class CreateIndex(indexId: String, content: IndexContent) extends Command
   case class AddChildId(indexId: String, childId: String) extends Command
   case class GetChildIds(indexId: String) extends Command
 
@@ -63,21 +70,27 @@ object Index {
   }
 }
 
-class Index extends Actor {
-  var contentOption: Option[Index.IndexContent] = None
+class Index extends Actor with ActorLogging {
+
+  var content: Index.IndexContent = Index.IndexContent(Set.empty)
+
   def receive = {
     case g @ Index.GetChildIds(_) =>
-      println(s"Index actor running on system ${context.self} received message $g, content is ${contentOption}")
-      sender() ! contentOption
-    case a @ Index.AddIndex(testIndexId, content) =>
-      contentOption = Some(content)
-      println(s"Index actor running on system ${context.self} received message $a, content is now ${contentOption}")
+      log.info(s"Index actor running on system ${context.self} received message $g, content is ${content}")
+      sender() ! content
+    case a @ Index.CreateIndex(indexId, indexContent) =>
+      content = indexContent
+      println(s"Index actor running on system ${context.self} received message $a, content is now ${content}")
+    case a @ Index.AddChildId(indexId, childId) =>
+      content = Index.IndexContent(content.childIds + childId)
+      log.info(s"Index actor running on system ${context.self} received message $a, content is now ${content}")
     case other =>
-      println(s"Index actor running on system ${context.self} received message $other")
+      log.info(s"Index actor running on system ${context.self} received message $other")
   }
+
 }
 
-object Cluster {
+object ClusterCreator {
   def create(numberOfNodes: Int): Seq[ActorSystem] = {
     for {
       nodeId <- 0 until numberOfNodes
@@ -90,7 +103,7 @@ object Cluster {
 
 object ShardingTest extends App {
 
-  val cluster = Cluster.create(2)
+  val cluster = ClusterCreator.create(2)
 
   val shardActors = cluster.map { actorSystem =>
     ClusterSharding(actorSystem).start(
@@ -105,17 +118,13 @@ object ShardingTest extends App {
     ClusterSharding(actorSystem).shardRegion(Index.shardName)
   }
 
-  println(s"shardActors=$shardActors")
-  println(s"indexRegions=$indexRegions")
-
   val indexId = UUID.randomUUID().toString
-  indexRegions.head ! Index.AddIndex(indexId, Index.IndexContent(List("a", "b")))
+  indexRegions.head ! Index.CreateIndex(indexId, Index.IndexContent(Set("a", "b")))
 
-  //val listingRegion = ClusterSharding(cluster.head).shardRegion(Index.shardName)
+  implicit val timeout = new Timeout(30.seconds)
 
   Thread.sleep(5000)
-  implicit val timeout = new Timeout(10.seconds)
-
+  
   val childIdsFuture = indexRegions.last ? Index.GetChildIds(indexId)
 
   childIdsFuture.onComplete { result =>
