@@ -1,54 +1,15 @@
-*.class
-*.log
+/bin/
 
-# sbt specific
-dist/*
-target/
-lib_managed/
-src_managed/
-project/boot/
-project/plugins/project/
+project/target/**
 
-# Scala-IDE specific
-.scala_dependencies
-.cache
+project/project/**
 
-*.owl
-
-.classpath
-
-.project
-
-.classpath
-
-.project
-
-.DS_Store
-
-.settings/org.scala-ide.sdt.core.prefs
-
-*.txt
-
-*.zip
-
-*.snapshot
-
-*.config
-
-*.split
-
-lubm1*/
-
-*.filtered-split
+target/**
 
 .cache-main
 
-.cache-tests
+.classpath
 
-.idea/*
+.project
 
-*.iml
-
-*history.ntriples.gz
-
-*.prefs
+.signed

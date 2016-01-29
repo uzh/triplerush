@@ -17,88 +17,115 @@
 package com.signalcollect.triplerush
 
 import java.util.UUID
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import com.typesafe.config.ConfigFactory
-import akka.actor.{ Actor, ActorSystem, Props }
-import akka.cluster.ddata.{ DistributedData, ORSet, ORSetKey }
-import akka.cluster.ddata.Replicator.{ Subscribe, _ }
+import akka.actor.{ ActorLogging, ActorSystem, Props, actorRef2Scala }
 import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings, ShardRegion }
 import akka.pattern.ask
+import akka.persistence.PersistentActor
 import akka.util.Timeout
-import akka.cluster.ddata.Replicator
-import akka.cluster.Cluster
-import akka.actor.ActorLogging
-import akka.cluster.ddata.GSetKey
-import akka.cluster.ddata.GSet
+import akka.actor.ActorPath
+import akka.persistence.journal.leveldb.SharedLeveldbStore
+import akka.actor.Identify
+import akka.actor.ActorIdentity
+import akka.persistence.journal.leveldb.SharedLeveldbJournal
+
+trait IntSet {
+  def add(i: Int): IntSet
+  def foreach(f: Int => Unit): Unit
+}
+
+case class SimpleIntSet(items: Set[Int] = Set.empty[Int]) extends IntSet {
+  def add(i: Int) = SimpleIntSet(items + i)
+  def foreach(f: Int => Unit): Unit = items.foreach(f)
+  override def toString = items.toString
+}
 
 object Index {
 
   val shardName = "index"
-  def props: Props = Props(new Index)
-
-  case class IndexContent(childIds: Set[String]) {
-    def +(child: String) = copy(childIds + child)
-  }
+  val props: Props = Props(new Index())
 
   sealed trait Command {
     def indexId: String
   }
-  case class CreateIndex(indexId: String, content: IndexContent) extends Command
-  case class AddChildId(indexId: String, childId: String) extends Command
+  case class AddChildId(indexId: String, childId: Int) extends Command
   case class GetChildIds(indexId: String) extends Command
 
-  sealed trait Event
-  case class IndexAdded(content: IndexContent) extends Event
-  case class ChildAdded(child: String) extends Event
-
   val idExtractor: ShardRegion.ExtractEntityId = {
-    case command: Command => (command.indexId.toString, command)
+    case AddChildId(indexId, childId) => (indexId.toString, childId)
+    case GetChildIds(indexId)         => (indexId.toString, Unit)
   }
 
   val shardResolver: ShardRegion.ExtractShardId = {
     case command: Command => ((command.indexId.hashCode & Int.MaxValue) % 100).toString
   }
 
-  private case class State(childIds: IndexContent) {
-
-    def updated(event: Event): State = event match {
-      case IndexAdded(c) => copy(childIds = c)
-      case ChildAdded(c) => copy(childIds = childIds + c)
-    }
-  }
 }
 
-class Index extends Actor with ActorLogging {
+class Index extends PersistentActor with ActorLogging {
+  import Index._
 
-  var content: Index.IndexContent = Index.IndexContent(Set.empty)
+  override def persistenceId: String = self.path.parent.name + "-" + self.path.name
 
-  def receive = {
-    case g @ Index.GetChildIds(_) =>
-      log.info(s"Index actor running on system ${context.self} received message $g, content is ${content}")
-      sender() ! content
-    case a @ Index.CreateIndex(indexId, indexContent) =>
-      content = indexContent
-      println(s"Index actor running on system ${context.self} received message $a, content is now ${content}")
-    case a @ Index.AddChildId(indexId, childId) =>
-      content = Index.IndexContent(content.childIds + childId)
-      log.info(s"Index actor running on system ${context.self} received message $a, content is now ${content}")
+  var childIds: IntSet = new SimpleIntSet
+
+  def receiveCommand = {
+    case Unit =>
+      log.info(s"Index actor running on system ${context.self} received message GetChildIds, content is ${childIds}")
+      sender() ! childIds
+    case childId: Int =>
+      persist(childId) { id =>
+        childIds = childIds.add(id)
+        log.info(s"Index actor running on system ${context.self} received message $childId, content is now ${childIds}")
+      }
     case other =>
       log.info(s"Index actor running on system ${context.self} received message $other")
+  }
+
+  override def receiveRecover: Receive = {
+    case childId: Int => childIds.add(childId)
   }
 
 }
 
 object ClusterCreator {
+
   def create(numberOfNodes: Int): Seq[ActorSystem] = {
-    for {
+    val nodeZeroPort = 2551
+    val systems = for {
       nodeId <- 0 until numberOfNodes
-      portConfig = if (nodeId == 0) ConfigFactory.parseString("akka.remote.netty.tcp.port = 2551") else ConfigFactory.empty
+      portConfig = if (nodeId == 0) ConfigFactory.parseString(s"akka.remote.netty.tcp.port = $nodeZeroPort") else ConfigFactory.empty
     } yield ActorSystem(
       "ClusterSystem",
       portConfig.withFallback(ConfigFactory.load().getConfig("triplerush")))
+    systems.zipWithIndex.foreach {
+      case (system, index) => startupSharedJournal(system, startStore = index == 0, path =
+        ActorPath.fromString(s"akka.tcp://ClusterSystem@127.0.0.1:$nodeZeroPort/user/store"))
+    }
+    systems
   }
+
+  def startupSharedJournal(system: ActorSystem, startStore: Boolean, path: ActorPath): Unit = {
+    if (startStore) {
+      system.actorOf(Props[SharedLeveldbStore], "store")
+    }
+    implicit val timeout = Timeout(15.seconds)
+    val f = (system.actorSelection(path) ? Identify(None))
+    f.onSuccess {
+      case ActorIdentity(_, Some(ref)) => SharedLeveldbJournal.setStore(ref, system)
+      case _ =>
+        system.log.error("Shared journal not started at {}", path)
+        system.terminate()
+    }
+    f.onFailure {
+      case _ =>
+        system.log.error("Lookup of shared journal at {} timed out", path)
+        system.terminate()
+    }
+  }
+
 }
 
 object ShardingTest extends App {
@@ -119,12 +146,13 @@ object ShardingTest extends App {
   }
 
   val indexId = UUID.randomUUID().toString
-  indexRegions.head ! Index.CreateIndex(indexId, Index.IndexContent(Set("a", "b")))
+  indexRegions.head ! Index.AddChildId(indexId, 1)
+  indexRegions.last ! Index.AddChildId(indexId, 2)
 
   implicit val timeout = new Timeout(30.seconds)
 
   Thread.sleep(5000)
-  
+
   val childIdsFuture = indexRegions.last ? Index.GetChildIds(indexId)
 
   childIdsFuture.onComplete { result =>
