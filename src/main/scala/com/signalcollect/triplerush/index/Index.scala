@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.index
 
 import akka.actor.{ ActorLogging, ActorSystem, Props }
 import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings, ShardRegion }
 import akka.persistence.PersistentActor
+import akka.actor.actorRef2Scala
+import com.signalcollect.triplerush.IntSet
+import com.signalcollect.triplerush.SimpleIntSet
 
 object Index {
 

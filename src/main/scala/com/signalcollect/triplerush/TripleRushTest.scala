@@ -17,17 +17,15 @@
 package com.signalcollect.triplerush
 
 import java.util.UUID
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
-
 import akka.actor.actorRef2Scala
-import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings }
+import akka.cluster.sharding.ClusterSharding
 import akka.pattern.ask
 import akka.util.Timeout
+import com.signalcollect.triplerush.index.Index
 
-object ShardingTest extends App {
-
+object TripleRushTest extends App {
   val cluster = ClusterCreator.create(2)
   cluster.foreach(Index.registerWithSystem(_))
 

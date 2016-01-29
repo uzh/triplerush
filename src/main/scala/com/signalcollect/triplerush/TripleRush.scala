@@ -1,0 +1,69 @@
+/*
+ * Copyright (C) 2015 Cotiviti Labs (nexgen.admin@cotiviti.io)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.signalcollect.triplerush
+
+import scala.concurrent.Future
+import akka.actor.ActorSystem
+import akka.cluster.sharding.ClusterSharding
+import java.util.UUID
+import com.signalcollect.triplerush.index.IndexStructure
+import com.signalcollect.triplerush.index.FullIndex
+import com.signalcollect.triplerush.index.Index
+import com.signalcollect.triplerush.index.IndexType
+import com.signalcollect.triplerush.EfficientIndexPattern._
+import akka.pattern.ask
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.DurationInt
+import akka.util.Timeout
+
+trait TripleStore {
+
+  def addTriplePattern(triplePattern: TriplePattern): Future[Unit]
+
+}
+
+object TripleRush {
+
+  def apply(
+    system: ActorSystem = ClusterCreator.create(1).head,
+    indexStructure: IndexStructure = FullIndex,
+    timeout: FiniteDuration = 300.seconds): TripleRush = {
+    new TripleRush(system, indexStructure, Timeout(timeout))
+  }
+
+}
+
+class TripleRush(system: ActorSystem,
+                 indexStructure: IndexStructure,
+                 implicit val timeout: Timeout) extends TripleStore {
+
+  protected val indexRegion = ClusterSharding(system).shardRegion(Index.shardName)
+  import Index._
+
+  def addTriplePattern(triplePattern: TriplePattern): Future[Unit] = {
+    val parentIds = indexStructure.parentIds(triplePattern)
+    val additionFutures = for {
+      parentId <- parentIds
+      parentIndexType = IndexType(parentId)
+      delta = triplePattern.parentIdDelta(parentId.toTriplePattern)
+      completion = indexRegion ? AddChildId(parentId.toString, delta)
+    } yield completion
+    //
+    ???
+  }
+
+}

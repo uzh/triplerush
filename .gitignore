@@ -13,3 +13,7 @@ target/**
 .project
 
 .signed
+
+.settings/*
+
+.settings/org.eclipse.core.resources.prefs
