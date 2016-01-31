@@ -17,22 +17,26 @@
 package com.signalcollect.triplerush
 
 import scala.concurrent.Future
+import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.index.{ FullIndex, Index }
+import com.signalcollect.triplerush.index.{ IndexStructure, IndexType }
+import com.signalcollect.triplerush.index.Index.AddChildId
+
 import akka.actor.ActorSystem
 import akka.cluster.sharding.ClusterSharding
-import java.util.UUID
-import com.signalcollect.triplerush.index.IndexStructure
-import com.signalcollect.triplerush.index.FullIndex
-import com.signalcollect.triplerush.index.Index
-import com.signalcollect.triplerush.index.IndexType
-import com.signalcollect.triplerush.EfficientIndexPattern._
 import akka.pattern.ask
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.duration.DurationInt
 import akka.util.Timeout
 
 trait TripleStore {
 
   def addTriplePattern(triplePattern: TriplePattern): Future[Unit]
+
+  def resultIteratorForQuery(
+    query: Seq[TriplePattern],
+    numberOfSelectVariables: Int,
+    tickets: Long = Long.MaxValue): Iterator[Array[Int]]
 
 }
 
@@ -65,6 +69,16 @@ class TripleRush(system: ActorSystem,
     } yield (indexRegion ? AddChildId(parentId.toString, delta))
     val future = Future.sequence(additionFutures.toSeq)
     future.map(_ => Unit)
+  }
+
+  def resultIteratorForQuery(
+    query: Seq[TriplePattern],
+    numberOfSelectVariables: Int,
+    tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
+    val resultIterator = new ResultIterator
+    //    val queryVertex = new ResultIteratorQueryVertex(query, selectVariables, tickets, resultIterator, dictionary, log)
+    //    graph.addVertex(queryVertex)
+    resultIterator
   }
 
 }
