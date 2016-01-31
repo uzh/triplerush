@@ -30,6 +30,9 @@ object TripleRushTest extends App {
   val tr = TripleRush()
   
   tr.addTriplePattern(TriplePattern(1, 2, 3))
+  tr.addTriplePattern(TriplePattern(1, 2, 4))
+  tr.addTriplePattern(TriplePattern(1, 5, 3))
+  tr.addTriplePattern(TriplePattern(6, 2, 3))
   
 //  val cluster = ClusterCreator.create(2)
 //  cluster.foreach(Index.registerWithSystem(_))

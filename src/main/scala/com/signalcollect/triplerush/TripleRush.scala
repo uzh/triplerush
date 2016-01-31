@@ -57,9 +57,9 @@ class TripleRush(system: ActorSystem,
   protected val indexRegion = ClusterSharding(system).shardRegion(Index.shardName)
 
   def addTriplePattern(triplePattern: TriplePattern): Future[Unit] = {
-    val parentIds = indexStructure.parentIds(triplePattern)
-    val additionFutures: Array[Future[Any]] = for {
-      parentId <- parentIds
+    val ancestorIds = indexStructure.ancestorIds(triplePattern)
+    val additionFutures: Set[Future[Any]] = for {
+      parentId <- ancestorIds
       parentIndexType = IndexType(parentId)
       delta = triplePattern.parentIdDelta(parentId.toTriplePattern)
     } yield (indexRegion ? AddChildId(parentId.toString, delta))
