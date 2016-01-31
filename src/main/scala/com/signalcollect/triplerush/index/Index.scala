@@ -22,6 +22,7 @@ import akka.persistence.PersistentActor
 import akka.actor.actorRef2Scala
 import com.signalcollect.triplerush.IntSet
 import com.signalcollect.triplerush.SimpleIntSet
+import com.signalcollect.triplerush.EfficientIndexPattern._
 
 object Index {
 
@@ -57,8 +58,8 @@ object Index {
 class Index extends PersistentActor with ActorLogging {
   import Index._
 
-  override def persistenceId: String = self.path.parent.name + "-" + self.path.name
-
+  override def persistenceId: String = self.path.name
+  
   var childIds: IntSet = new SimpleIntSet
 
   def receiveCommand = {
