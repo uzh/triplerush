@@ -16,14 +16,9 @@
 
 package com.signalcollect.triplerush
 
-import scala.concurrent.duration.DurationInt
-
 import com.typesafe.config.ConfigFactory
 
-import akka.actor.{ ActorIdentity, ActorPath, ActorSystem, Identify, Props }
-import akka.pattern.ask
-import akka.persistence.journal.leveldb.{ SharedLeveldbJournal, SharedLeveldbStore }
-import akka.util.Timeout
+import akka.actor.ActorSystem
 
 object ClusterCreator {
 
@@ -35,31 +30,7 @@ object ClusterCreator {
     } yield ActorSystem(
       "ClusterSystem",
       portConfig.withFallback(ConfigFactory.load().getConfig("triplerush")))
-    systems.zipWithIndex.foreach {
-      case (system, index) => startupSharedJournal(system, startStore = index == 0, path =
-        ActorPath.fromString(s"akka.tcp://ClusterSystem@127.0.0.1:$nodeZeroPort/user/store"))
-    }
     systems
-  }
-
-  def startupSharedJournal(system: ActorSystem, startStore: Boolean, path: ActorPath): Unit = {
-    if (startStore) {
-      system.actorOf(Props[SharedLeveldbStore], "store")
-    }
-    implicit val timeout = Timeout(15.seconds)
-    import system.dispatcher
-    val f = (system.actorSelection(path) ? Identify(None))
-    f.onSuccess {
-      case ActorIdentity(_, Some(ref)) => SharedLeveldbJournal.setStore(ref, system)
-      case _ =>
-        system.log.error("Shared journal not started at {}", path)
-        system.terminate()
-    }
-    f.onFailure {
-      case _ =>
-        system.log.error("Lookup of shared journal at {} timed out", path)
-        system.terminate()
-    }
   }
 
 }

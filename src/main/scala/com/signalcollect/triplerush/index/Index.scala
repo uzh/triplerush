@@ -18,7 +18,6 @@ package com.signalcollect.triplerush.index
 
 import akka.actor.{ ActorLogging, ActorSystem, Props }
 import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings, ShardRegion }
-import akka.persistence.PersistentActor
 import akka.actor.actorRef2Scala
 import com.signalcollect.triplerush.IntSet
 import com.signalcollect.triplerush.SimpleIntSet
@@ -27,6 +26,7 @@ import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.query.QueryParticle
 import com.signalcollect.triplerush.query.QueryParticle._
 import com.signalcollect.triplerush.query.ParticleDebug
+import akka.actor.Actor
 
 object Index {
 
@@ -74,34 +74,27 @@ object Index {
 
 }
 
-class Index extends PersistentActor with ActorLogging {
-  import Index._
+class Index extends Actor with ActorLogging {
 
-  override def persistenceId: String = self.path.name
+  def indexId: String = self.path.name
   override def toString(): String = {
-    persistenceId.toLong.toTriplePattern.toString
+    indexId.toLong.toTriplePattern.toString
   }
 
   var childIds: IntSet = new SimpleIntSet
 
-  def receiveCommand = {
+  def receive = {
     case Unit =>
       log.info(s"Index actor $toString with path ${context.self} received message GetChildIds, content is ${childIds}")
       sender() ! childIds
     case childId: Int =>
-      persist(childId) { id =>
-        childIds = childIds.add(id)
-        sender() ! ChildIdAdded
-        log.info(s"Index actor $toString with path ${context.self} received message $childId, content is now ${childIds}")
-      }
+      childIds = childIds.add(childId)
+      sender() ! Index.ChildIdAdded
+      log.info(s"Index actor $toString with path ${context.self} received message $childId, content is now ${childIds}")
     case queryParticle: Array[Int] =>
       log.info(s"Index actor $toString with path ${context.self} received query ${ParticleDebug(queryParticle).toString}, content is ${childIds}")
     case other =>
       log.info(s"Index actor $toString with path ${context.self} received message $other")
-  }
-
-  override def receiveRecover: Receive = {
-    case childId: Int => childIds.add(childId)
   }
 
 }

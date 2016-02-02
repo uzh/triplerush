@@ -16,27 +16,20 @@
 
 package com.signalcollect.triplerush.query
 
-import akka.actor.{ ActorLogging, ActorSystem, Props }
-import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings, ShardRegion }
-import akka.persistence.PersistentActor
-import akka.actor.actorRef2Scala
-import com.signalcollect.triplerush.IntSet
-import com.signalcollect.triplerush.SimpleIntSet
-import com.signalcollect.triplerush.EfficientIndexPattern._
-import akka.actor.Actor
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.ResultIterator
-import akka.stream.actor.ActorPublisher
-import scala.collection.mutable.Buffer
-import akka.event.LoggingReceive
+import scala.annotation.tailrec
 import scala.collection.immutable.Queue
+
+import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.index.Index
+import com.signalcollect.triplerush.query.QueryParticle.arrayToParticle
+
+import akka.actor.Actor
+import akka.actor.ActorLogging
+import akka.cluster.sharding.ClusterSharding
+import akka.event.LoggingReceive
+import akka.stream.actor.ActorPublisher
 import akka.stream.actor.ActorPublisherMessage.Cancel
 import akka.stream.actor.ActorPublisherMessage.Request
-import akka.stream.actor.ActorSubscriberMessage.OnNext
-import scala.annotation.tailrec
-import java.util.UUID
-import com.signalcollect.triplerush.index.Index
-import com.signalcollect.triplerush.query.QueryParticle._
 
 object Query {
 
