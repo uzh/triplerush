@@ -78,6 +78,7 @@ class TripleRush(system: ActorSystem,
     future.map(_ => Unit)
   }
 
+  // TODO: `ActorPublisher` does not support failure handling for distributed use cases yet.
   def query(
     query: Seq[TriplePattern],
     numberOfSelectVariables: Int,
