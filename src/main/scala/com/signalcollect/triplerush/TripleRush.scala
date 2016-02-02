@@ -40,7 +40,7 @@ trait TripleStore {
 
   def addTriplePattern(triplePattern: TriplePattern): Future[Unit]
 
-  def resultIteratorForQuery(
+  def query(
     query: Seq[TriplePattern],
     numberOfSelectVariables: Int,
     tickets: Long = Long.MaxValue): Source[Array[Int], Unit]
@@ -78,7 +78,7 @@ class TripleRush(system: ActorSystem,
     future.map(_ => Unit)
   }
 
-  def resultIteratorForQuery(
+  def query(
     query: Seq[TriplePattern],
     numberOfSelectVariables: Int,
     tickets: Long = Long.MaxValue): Source[Array[Int], Unit] = {
