@@ -63,7 +63,6 @@ class TripleRush(system: ActorSystem,
                  indexStructure: IndexStructure,
                  implicit protected val timeout: Timeout) extends TripleStore {
   Index.registerWithSystem(system)
-  import Index._
   import system.dispatcher
 
   protected val indexRegion = ClusterSharding(system).shardRegion(Index.shardName)
