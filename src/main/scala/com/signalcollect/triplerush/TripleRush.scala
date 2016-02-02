@@ -40,6 +40,7 @@ import scala.concurrent.duration.Duration
 import akka.actor.ActorRef
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
+import akka.cluster.Cluster
 
 trait TripleStore {
 
@@ -50,22 +51,25 @@ trait TripleStore {
     numberOfSelectVariables: Int,
     tickets: Long = Long.MaxValue): Source[Array[Int], Unit]
 
+  def close(): Unit
+
 }
 
 object TripleRush {
 
   def apply(
-    system: ActorSystem = ClusterCreator.create(1).head,
+    systems: Seq[ActorSystem] = ClusterCreator.create(2),
     indexStructure: IndexStructure = FullIndex,
     timeout: FiniteDuration = 300.seconds): TripleRush = {
-    new TripleRush(system, indexStructure, Timeout(timeout))
+    new TripleRush(systems, indexStructure, Timeout(timeout))
   }
 
 }
 
-class TripleRush(system: ActorSystem,
+class TripleRush(systems: Seq[ActorSystem],
                  indexStructure: IndexStructure,
                  implicit protected val timeout: Timeout) extends TripleStore {
+  val system = systems.head
   import system.dispatcher
 
   protected val indexRegion = Index.shard(system)
@@ -90,22 +94,16 @@ class TripleRush(system: ActorSystem,
     numberOfSelectVariables: Int,
     tickets: Long = Long.MaxValue): Source[Array[Int], Unit] = {
     val queryId = OperationIds.nextId()
-    println("Calling out to a query actor")
     val queryActorFuture = queryRegion ?
       Initialize(queryId, query: Seq[TriplePattern], tickets, numberOfSelectVariables)
-    println("Waiting for query actor to reply")
     val queryActor = Await.result(queryActorFuture, timeout.duration).asInstanceOf[ActorRef]
-    println(s"Got an answer from the query actor ${queryActor}")
-    //queryActor ! "NONSENSE!"
     val publisher = ActorPublisher(queryActor)
-//    val subscriber = new Subscriber[Any] {
-//      def onSubscribe(s: Subscription): Unit = println(s"onSubscribe($s)"); Unit
-//      def onNext(t: Any): Unit = println(s"onNext($t)"); Unit
-//      def onError(t: Throwable): Unit = println(s"onError($t)"); Unit
-//      def onComplete(): Unit = println(s"onComplete"); Unit
-//    }
-//    publisher.subscribe(subscriber)
     Source.fromPublisher(publisher)
+  }
+
+  def close(): Unit = {
+    Cluster.get(system)
+    systems.foreach(_.terminate())
   }
 
 }

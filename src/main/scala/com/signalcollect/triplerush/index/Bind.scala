@@ -64,17 +64,14 @@ object Bind {
     indexId: Long,
     childDelta: Int,
     query: Array[Int]): Unit = {
-    println(s"Bind.handleQueryBinding($system, $indexId, $childDelta, ${ParticleDebug(query)}).")
     val boundParticle = bindIndividualQuery(indexId, childDelta, query)
     if (boundParticle != null) {
       if (boundParticle.isResult) {
-        println(s"${ParticleDebug(boundParticle)} is a result, sending to query.")
         // Query successful, send to query vertex.
         val query = Query.shard(system)
         query ! Query.BindingsForQuery(boundParticle.queryId, boundParticle.bindings)
         query ! Query.Tickets(boundParticle.queryId, boundParticle.tickets)
       } else {
-        println(s"${ParticleDebug(boundParticle)} is not a result, forwarding to next index.")
         // TODO: Handle existence checks.
         assert(!boundParticle.lastPattern.isFullyBound,
           s"Triple existence checks required for ${ParticleDebug(boundParticle)}, but not implemented yet.")

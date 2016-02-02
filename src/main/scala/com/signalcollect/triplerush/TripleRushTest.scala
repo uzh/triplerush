@@ -43,20 +43,14 @@ object TripleRushTest extends App {
     tr.addTriplePattern(TriplePattern(6, 2, 3)))
   Await.ready(Future.sequence(futures), 30.seconds)
 
-  println("Index creation successful")
-  
   val results = tr.query(List(TriplePattern(-1, 2, 3)), 1, Int.MaxValue)
-  
-  println("Query was dispatched")
 
   implicit val system = ActorSystem("test")
   implicit val materializer = ActorMaterializer()
-  
-  Thread.sleep(5000)
-  
-  val printingSink = Sink.foreach[Array[Int]](println)
-    //Sink.fold[Vector[Array[Int], Array[Int]]](Vector.empty[Array[Int]])(_ + _)
-  results.runWith(printingSink)
-      //f)(result => println(s"result = $result"))
- 
+  val printingSink = Sink.foreach[Array[Int]](a => println(a.mkString(", ")))
+  val printing = results.runWith(printingSink)
+
+  Await.ready(printing, 30.seconds)
+  tr.close()
+
 }

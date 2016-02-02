@@ -76,14 +76,9 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
     Index.shard(context.system) ! message
   }
 
-  override def preStart(): Unit = {
-    log.info(s"Query actor $toString was started with path ${context.self}.")
-  }
-
   def receive: Actor.Receive = LoggingReceive {
     case Initialize(queryId, query, tickets, numberOfSelectVariables) =>
       assert(numberOfSelectVariables > 0)
-      log.info(s"Query actor $queryId `preStart`")
       if (query.length > 0) {
         val particle = QueryParticle(
           patterns = query,
@@ -92,14 +87,11 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
           tickets = tickets)
         sendToIndex(particle.routingAddress, particle)
         sender() ! self
-        log.info(s"Query actor $queryId sent out ${ParticleDebug(particle).toString}")
         context.become(resultStreaming(emptyQueue, tickets))
       } else {
         // No patterns, no results, complete stream immediately.
         deliverFromQueue(emptyQueue, completed = true)
       }
-    case other: Any =>
-      println(s"OOOOPS, query actor got $other when awaiting initialization")
   }
 
   /**
@@ -107,7 +99,6 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
    */
   def resultStreaming(queued: Queue[Array[Int]], missingTickets: Long): Actor.Receive = LoggingReceive {
     case bindings: Array[Int] =>
-      log.info(s"Query actor $toString with path ${context.self} received bindings ${bindings.mkString("[", ")", "]")}.")
       if (queued.isEmpty && totalDemand > 0) {
         onNext(bindings)
         context.become(resultStreaming(emptyQueue, missingTickets))
@@ -120,11 +111,8 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
       val remaining = deliverFromQueue(queued, missingTickets == tickets)
       context.become(resultStreaming(remaining, missingTickets - tickets))
     case Request(count) =>
-      println(s"Received request for $count")
       val remaining = deliverFromQueue(queued, missingTickets == 0)
       context.become(resultStreaming(remaining, missingTickets))
-    case other: Any =>
-      println(s"OOOOPS, query actor got $other when in streaming")
   }
 
   /**
@@ -133,29 +121,24 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
    */
   @tailrec private[this] def deliverFromQueue(queued: Queue[Array[Int]], completed: Boolean): Queue[Array[Int]] = {
     if (completed && queued == emptyQueue) {
-      println(s"Completing stream!")
       onCompleteThenStop()
       emptyQueue
     } else if (totalDemand >= queued.size) {
-      println(s"Streaming ${math.min(totalDemand, queued.size)} items!")
       queued.foreach(onNext)
       if (completed) {
         onCompleteThenStop()
       }
       emptyQueue
     } else if (totalDemand == 0) {
-      println(s"No demand, waiting! Queued = $queued.")
       queued
     } else if (totalDemand <= Int.MaxValue) {
       val (toDeliver, remaining) = queued.splitAt(totalDemand.toInt)
-      println(s"Streaming ${toDeliver.size} items!")
       toDeliver.foreach(onNext)
       remaining
     } else {
       // TODO: Catch this case by ensuring that we deliver if total demand > queue.size.
       // afterwards check if we need to deliver again.
       val (toDeliver, remaining) = queued.splitAt(Int.MaxValue)
-      println(s"Streaming ${toDeliver.size} items!")
       toDeliver.foreach(onNext)
       deliverFromQueue(remaining, completed)
     }

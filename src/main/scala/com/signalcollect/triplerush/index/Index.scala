@@ -80,24 +80,18 @@ final class Index extends Actor with ActorLogging {
 
   def receive = {
     case Unit =>
-      log.info(s"Index actor $toString with path ${context.self} received message GetChildIds, content is ${childIds}")
       sender() ! childIds
     case childId: Int =>
       childIds = childIds.add(childId)
       sender() ! Index.ChildIdAdded
-      log.info(s"Index actor $toString with path ${context.self} received message $childId, content is now ${childIds}")
     case queryParticle: Array[Int] =>
-      log.info(s"Index actor $toString with path ${context.self} received query ${ParticleDebug(queryParticle).toString}, content is ${childIds}")
       val indexIdAsLong = indexId.toLong
       IndexType(indexIdAsLong) match {
         case f: Forwarding =>
           Forward.forwardQuery(context.system, indexId.toLong, queryParticle, childIds.size, childIds)
         case b: Binding =>
           Bind.bindQuery(context.system, indexId.toLong, queryParticle, childIds.size, childIds)
-
       }
-    case other =>
-      log.info(s"Index actor $toString with path ${context.self} received message $other")
   }
 
 }
