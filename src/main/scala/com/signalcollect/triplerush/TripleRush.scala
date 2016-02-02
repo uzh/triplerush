@@ -26,6 +26,7 @@ import com.signalcollect.triplerush.index.Index
 import com.signalcollect.triplerush.index.Index.AddChildId
 import com.signalcollect.triplerush.index.IndexStructure
 import com.signalcollect.triplerush.index.IndexType
+import com.signalcollect.triplerush.query.OperationIds
 import com.signalcollect.triplerush.query.Query
 
 import akka.actor.ActorSystem
@@ -73,7 +74,7 @@ class TripleRush(system: ActorSystem,
       parentId <- ancestorIds
       parentIndexType = IndexType(parentId)
       delta = triplePattern.parentIdDelta(parentId.toTriplePattern)
-    } yield (indexRegion ? AddChildId(parentId.toString, delta))
+    } yield (indexRegion ? AddChildId(parentId, delta))
     val future = Future.sequence(additionFutures.toSeq)
     future.map(_ => Unit)
   }
@@ -82,8 +83,9 @@ class TripleRush(system: ActorSystem,
     query: Seq[TriplePattern],
     numberOfSelectVariables: Int,
     tickets: Long = Long.MaxValue): Source[Array[Int], Unit] = {
+    val queryId = OperationIds.nextId()
     val queryActor = system.actorOf(Props(
-      new Query(query: Seq[TriplePattern], tickets: Long, numberOfSelectVariables: Int)))
+      new Query(queryId, query: Seq[TriplePattern], tickets: Long, numberOfSelectVariables: Int)))
     Source.fromPublisher(ActorPublisher(queryActor))
   }
 

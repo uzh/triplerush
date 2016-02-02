@@ -23,6 +23,8 @@ import akka.actor.actorRef2Scala
 import com.signalcollect.triplerush.IntSet
 import com.signalcollect.triplerush.SimpleIntSet
 import com.signalcollect.triplerush.EfficientIndexPattern._
+import com.signalcollect.triplerush.query.QueryParticle
+import com.signalcollect.triplerush.query.QueryParticle._
 
 object Index {
 
@@ -38,19 +40,33 @@ object Index {
   val shardName = "index"
   val props: Props = Props(new Index())
 
-  sealed trait Command {
-    def indexId: String
-  }
-  case class AddChildId(indexId: String, childId: Int) extends Command
-  case class GetChildIds(indexId: String) extends Command
+  case class AddChildId(indexId: Long, childId: Int)
+  case class GetChildIds(indexId: Long)
 
   val idExtractor: ShardRegion.ExtractEntityId = {
-    case AddChildId(indexId, childId) => (indexId.toString, childId)
-    case GetChildIds(indexId)         => (indexId.toString, Unit)
+    case AddChildId(indexId, childId) =>
+      (indexId.toString, childId)
+    case GetChildIds(indexId) =>
+      (indexId.toString, Unit)
+    case queryParticleArray: Array[Int] =>
+      val particle = new QueryParticle(queryParticleArray)
+      val indexId = particle.routingAddress
+      (indexId.toString, queryParticleArray)
+  }
+
+  def indexIdToShardId(indexId: Long): String = {
+    ((indexId.hashCode & Int.MaxValue) % 100).toString
   }
 
   val shardResolver: ShardRegion.ExtractShardId = {
-    case command: Command => ((command.indexId.hashCode & Int.MaxValue) % 100).toString
+    case AddChildId(indexId, childId) =>
+      indexIdToShardId(indexId)
+    case GetChildIds(indexId) =>
+      indexIdToShardId(indexId)
+    case queryParticleArray: Array[Int] =>
+      val particle = new QueryParticle(queryParticleArray)
+      val indexId = particle.routingAddress
+      indexIdToShardId(indexId)
   }
 
 }
@@ -59,7 +75,7 @@ class Index extends PersistentActor with ActorLogging {
   import Index._
 
   override def persistenceId: String = self.path.name
-  
+
   var childIds: IntSet = new SimpleIntSet
 
   def receiveCommand = {

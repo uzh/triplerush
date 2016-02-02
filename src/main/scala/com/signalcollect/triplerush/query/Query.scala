@@ -34,14 +34,18 @@ import akka.stream.actor.ActorPublisherMessage.Cancel
 import akka.stream.actor.ActorPublisherMessage.Request
 import akka.stream.actor.ActorSubscriberMessage.OnNext
 import scala.annotation.tailrec
+import java.util.UUID
+import com.signalcollect.triplerush.index.Index
+import com.signalcollect.triplerush.query.QueryParticle._
 
 object Query {
- 
+
   val emptyQueue = Queue.empty[Array[Int]]
 
 }
 
 class Query(
+    queryId: Int,
     query: Seq[TriplePattern],
     tickets: Long,
     numberOfSelectVariables: Int) extends ActorPublisher[Array[Int]] with ActorLogging {
@@ -49,6 +53,25 @@ class Query(
   assert(numberOfSelectVariables > 0)
 
   private[this] var receivedTickets: Long = 0
+
+  def sendToIndex(indexId: Long, message: Any): Unit = {
+    val indexShard = ClusterSharding(context.system).shardRegion(Index.shardName)
+    indexShard ! message
+  }
+
+  override def preStart() {
+    if (query.length > 0) {
+      val particle = QueryParticle(
+        patterns = query,
+        queryId = queryId,
+        numberOfSelectVariables = numberOfSelectVariables,
+        tickets = tickets)
+      sendToIndex(particle.routingAddress, particle)
+    } else {
+      // No patterns, no results, send all tickets to ourself immediately.
+      self ! tickets
+    }
+  }
 
   def receive: Actor.Receive = queuing(Query.emptyQueue, 0)
 
