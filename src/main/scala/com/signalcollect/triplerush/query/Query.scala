@@ -66,6 +66,7 @@ object Query {
     case BindingsForQuery(queryId, bindings)       => (queryId.toString, bindings)
   }
 
+  // TODO: Choose query ID such that this will resolve to a shard that is located on the same node.
   def queryIdToShardId(indexId: Long): String = {
     ((indexId.hashCode & Int.MaxValue) % 100).toString
   }

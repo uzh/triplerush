@@ -78,7 +78,7 @@ class TripleRush(system: ActorSystem,
       parentIndexType = IndexType(parentId)
       delta = triplePattern.parentIdDelta(parentId.toTriplePattern)
     } yield (indexRegion ? AddChildId(parentId, delta))
-    val future = Future.sequence(additionFutures.toSeq)
+    val future = Future.sequence(additionFutures)
     future.map(_ => Unit)
   }
 

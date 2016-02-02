@@ -57,6 +57,7 @@ object Index {
       (indexId.toString, queryParticleArray)
   }
 
+  // TODO: Use locality-optimized sharding function for TR index.
   def indexIdToShardId(indexId: Long): String = {
     ((indexId.hashCode & Int.MaxValue) % 100).toString
   }
@@ -92,6 +93,7 @@ final class Index extends Actor with ActorLogging {
       sender() ! Index.ChildIdAdded
       log.info(s"Index actor $toString with path ${context.self} received message $childId, content is now ${childIds}")
     case queryParticle: Array[Int] =>
+      // TODO: Handle query forwarding/binding.
       log.info(s"Index actor $toString with path ${context.self} received query ${ParticleDebug(queryParticle).toString}, content is ${childIds}")
     case other =>
       log.info(s"Index actor $toString with path ${context.self} received message $other")
