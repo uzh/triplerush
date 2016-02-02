@@ -38,6 +38,8 @@ import com.signalcollect.triplerush.query.Query.Initialize
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import akka.actor.ActorRef
+import org.reactivestreams.Subscriber
+import org.reactivestreams.Subscription
 
 trait TripleStore {
 
@@ -93,8 +95,18 @@ class TripleRush(system: ActorSystem,
       Initialize(queryId, query: Seq[TriplePattern], tickets, numberOfSelectVariables)
     println("Waiting for query actor to reply")
     val queryActor = Await.result(queryActorFuture, timeout.duration).asInstanceOf[ActorRef]
-    println("Got an answer from the query actor")
-    Source.fromPublisher(ActorPublisher(queryActor))
+    println(s"Got an answer from the query actor ${queryActor}")
+    //queryActor ! "NONSENSE!"
+    val publisher = ActorPublisher(queryActor)
+//    val subscriber = new Subscriber[Any] {
+//      def onSubscribe(s: Subscription): Unit = println(s"onSubscribe($s)"); Unit
+//      def onNext(t: Any): Unit = println(s"onNext($t)"); Unit
+//      def onError(t: Throwable): Unit = println(s"onError($t)"); Unit
+//      def onComplete(): Unit = println(s"onComplete"); Unit
+//    }
+//    publisher.subscribe(subscriber)
+    Source.fromPublisher(publisher)
   }
 
 }
+

@@ -117,8 +117,8 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
         context.become(resultStreaming(remainingQueue, missingTickets))
       }
     case tickets: Long =>
-      context.become(resultStreaming(queued, missingTickets - tickets))
-      onCompleteThenStop()
+      val remaining = deliverFromQueue(queued, missingTickets == tickets)
+      context.become(resultStreaming(remaining, missingTickets - tickets))
     case Request(count) =>
       println(s"Received request for $count")
       val remaining = deliverFromQueue(queued, missingTickets == 0)
