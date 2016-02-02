@@ -60,6 +60,7 @@ class Query(
   }
 
   override def preStart() {
+    log.info(s"Query actor $queryId `preStart`")
     if (query.length > 0) {
       val particle = QueryParticle(
         patterns = query,
@@ -67,6 +68,7 @@ class Query(
         numberOfSelectVariables = numberOfSelectVariables,
         tickets = tickets)
       sendToIndex(particle.routingAddress, particle)
+      log.info(s"Query actor $queryId sent out ${ParticleDebug(particle).toString}")
     } else {
       // No patterns, no results, send all tickets to ourself immediately.
       self ! tickets

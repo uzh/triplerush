@@ -23,8 +23,10 @@ import akka.actor.actorRef2Scala
 import com.signalcollect.triplerush.IntSet
 import com.signalcollect.triplerush.SimpleIntSet
 import com.signalcollect.triplerush.EfficientIndexPattern._
+import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.query.QueryParticle
 import com.signalcollect.triplerush.query.QueryParticle._
+import com.signalcollect.triplerush.query.ParticleDebug
 
 object Index {
 
@@ -42,6 +44,7 @@ object Index {
 
   case class AddChildId(indexId: Long, childId: Int)
   case class GetChildIds(indexId: Long)
+  case object ChildIdAdded
 
   val idExtractor: ShardRegion.ExtractEntityId = {
     case AddChildId(indexId, childId) =>
@@ -75,20 +78,26 @@ class Index extends PersistentActor with ActorLogging {
   import Index._
 
   override def persistenceId: String = self.path.name
+  override def toString(): String = {
+    persistenceId.toLong.toTriplePattern.toString
+  }
 
   var childIds: IntSet = new SimpleIntSet
 
   def receiveCommand = {
     case Unit =>
-      log.info(s"Index actor running on system ${context.self} received message GetChildIds, content is ${childIds}")
+      log.info(s"Index actor $toString with path ${context.self} received message GetChildIds, content is ${childIds}")
       sender() ! childIds
     case childId: Int =>
       persist(childId) { id =>
         childIds = childIds.add(id)
-        log.info(s"Index actor running on system ${context.self} received message $childId, content is now ${childIds}")
+        sender() ! ChildIdAdded
+        log.info(s"Index actor $toString with path ${context.self} received message $childId, content is now ${childIds}")
       }
+    case queryParticle: Array[Int] =>
+      log.info(s"Index actor $toString with path ${context.self} received query ${ParticleDebug(queryParticle).toString}, content is ${childIds}")
     case other =>
-      log.info(s"Index actor running on system ${context.self} received message $other")
+      log.info(s"Index actor $toString with path ${context.self} received message $other")
   }
 
   override def receiveRecover: Receive = {
