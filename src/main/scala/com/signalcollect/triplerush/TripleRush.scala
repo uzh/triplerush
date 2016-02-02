@@ -82,7 +82,8 @@ class TripleRush(system: ActorSystem,
     query: Seq[TriplePattern],
     numberOfSelectVariables: Int,
     tickets: Long = Long.MaxValue): Source[Array[Int], Unit] = {
-    val queryActor = system.actorOf(Props(new Query(query: Seq[TriplePattern], tickets: Long, numberOfSelectVariables: Int)))
+    val queryActor = system.actorOf(Props(
+      new Query(query: Seq[TriplePattern], tickets: Long, numberOfSelectVariables: Int)))
     Source.fromPublisher(ActorPublisher(queryActor))
   }
 

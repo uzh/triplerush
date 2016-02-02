@@ -53,7 +53,7 @@ class Query(
   def receive: Actor.Receive = queuing(Query.emptyQueue, 0)
 
   /**
-   * Queuing mode that stores both the queued elements and how many tickets have been received.
+   * Stores both the queued result bindings and how many tickets have been received.
    */
   def queuing(queued: Queue[Array[Int]], receivedTickets: Long): Actor.Receive = LoggingReceive {
     case bindings: Array[Int] =>
