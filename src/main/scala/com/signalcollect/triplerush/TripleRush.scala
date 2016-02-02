@@ -101,9 +101,8 @@ class TripleRush(systems: Seq[ActorSystem],
     Source.fromPublisher(publisher)
   }
 
+  // TODO: Shut down the whole cluster
   def close(): Unit = {
-    Cluster.get(system)
-    systems.foreach(_.terminate())
   }
 
 }
