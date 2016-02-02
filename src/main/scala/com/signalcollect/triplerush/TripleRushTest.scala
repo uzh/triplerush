@@ -38,6 +38,10 @@ object TripleRushTest extends App {
     tr.addTriplePattern(TriplePattern(6, 2, 3)))
   Await.ready(Future.sequence(futures), 30.seconds)
 
+  println("Index creation successful")
+  
   val results = tr.query(List(TriplePattern(-1, 2, 3)), 1, Int.MaxValue)
+  
+  println("Query was dispatched")
 
 }

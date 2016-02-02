@@ -17,8 +17,9 @@
 package com.signalcollect.triplerush
 
 import com.typesafe.config.ConfigFactory
-
 import akka.actor.ActorSystem
+import com.signalcollect.triplerush.index.Index
+import com.signalcollect.triplerush.query.Query
 
 object ClusterCreator {
 
@@ -30,6 +31,10 @@ object ClusterCreator {
     } yield ActorSystem(
       "ClusterSystem",
       portConfig.withFallback(ConfigFactory.load().getConfig("triplerush")))
+    systems.foreach { system =>
+      Index.registerWithSystem(system)
+      Query.registerWithSystem(system)
+    }
     systems
   }
 

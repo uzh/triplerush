@@ -35,8 +35,8 @@ object Index {
       typeName = shardName,
       entityProps = props,
       settings = ClusterShardingSettings(system),
-      extractEntityId = Index.idExtractor,
-      extractShardId = Index.shardResolver)
+      extractEntityId = idExtractor,
+      extractShardId = shardResolver)
   }
 
   val shardName = "index"
@@ -74,7 +74,7 @@ object Index {
 
 }
 
-class Index extends Actor with ActorLogging {
+final class Index extends Actor with ActorLogging {
 
   def indexId: String = self.path.name
   override def toString(): String = {

@@ -19,7 +19,6 @@ package com.signalcollect.triplerush
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
-
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.index.FullIndex
 import com.signalcollect.triplerush.index.Index
@@ -28,7 +27,6 @@ import com.signalcollect.triplerush.index.IndexStructure
 import com.signalcollect.triplerush.index.IndexType
 import com.signalcollect.triplerush.query.OperationIds
 import com.signalcollect.triplerush.query.Query
-
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.cluster.sharding.ClusterSharding
@@ -36,6 +34,10 @@ import akka.pattern.ask
 import akka.stream.actor.ActorPublisher
 import akka.stream.scaladsl.Source
 import akka.util.Timeout
+import com.signalcollect.triplerush.query.Query.Initialize
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import akka.actor.ActorRef
 
 trait TripleStore {
 
@@ -62,11 +64,13 @@ object TripleRush {
 class TripleRush(system: ActorSystem,
                  indexStructure: IndexStructure,
                  implicit protected val timeout: Timeout) extends TripleStore {
-  Index.registerWithSystem(system)
   import system.dispatcher
 
-  protected val indexRegion = ClusterSharding(system).shardRegion(Index.shardName)
+  protected val sharding = ClusterSharding(system)
+  protected val indexRegion = sharding.shardRegion(Index.shardName)
+  protected val queryRegion = sharding.shardRegion(Query.shardName)
 
+  // TODO: Make efficient by building the index structure recursively.
   def addTriplePattern(triplePattern: TriplePattern): Future[Unit] = {
     val ancestorIds = indexStructure.ancestorIds(triplePattern)
     val additionFutures = for {
@@ -79,13 +83,18 @@ class TripleRush(system: ActorSystem,
   }
 
   // TODO: `ActorPublisher` does not support failure handling for distributed use cases yet.
+  // TODO: Clean up when a timeout is encountered.
   def query(
     query: Seq[TriplePattern],
     numberOfSelectVariables: Int,
     tickets: Long = Long.MaxValue): Source[Array[Int], Unit] = {
     val queryId = OperationIds.nextId()
-    val queryActor = system.actorOf(Props(
-      new Query(queryId, query: Seq[TriplePattern], tickets: Long, numberOfSelectVariables: Int)))
+    println("Calling out to a query actor")
+    val queryActorFuture = queryRegion ?
+      Initialize(queryId, query: Seq[TriplePattern], tickets, numberOfSelectVariables)
+    println("Waiting for query actor to reply")
+    val queryActor = Await.result(queryActorFuture, timeout.duration).asInstanceOf[ActorRef]
+    println("Got an answer from the query actor")
     Source.fromPublisher(ActorPublisher(queryActor))
   }
 
