@@ -31,6 +31,8 @@ import com.signalcollect.triplerush.query.Query
 import akka.actor.ActorRef
 import com.signalcollect.triplerush.query.ParticleDebug
 
+class NotABindingIndex(message: String) extends Exception(message)
+
 object Bind {
 
   def bindQuery(
@@ -90,7 +92,7 @@ object Bind {
       case Sp => query.bind(indexPattern.s, indexPattern.p, childDelta)
       case So => query.bind(indexPattern.s, childDelta, indexPattern.o)
       case Po => query.bind(childDelta, indexPattern.p, indexPattern.o)
-      case other: Any => throw new NotAForwardingIndex(
+      case other: Any => throw new NotABindingIndex(
         s"`Bind.bindIndividualQuery` was called from ${indexPattern}, but can only be called from a binding index vertex.")
     }
   }
