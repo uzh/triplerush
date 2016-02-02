@@ -26,6 +26,11 @@ import akka.util.Timeout
 import com.signalcollect.triplerush.index.Index
 import scala.concurrent.Await
 import scala.concurrent.Future
+import akka.stream.scaladsl.Sink
+import akka.stream.ActorMaterializerSettings
+import akka.stream.ActorMaterializer
+import akka.actor.ActorSystem
+import akka.stream.Supervision
 
 object TripleRushTest extends App {
 
@@ -44,4 +49,14 @@ object TripleRushTest extends App {
   
   println("Query was dispatched")
 
+  implicit val system = ActorSystem("test")
+  implicit val materializer = ActorMaterializer()
+  
+  Thread.sleep(5000)
+  
+  val printingSink = Sink.foreach[Array[Int]](println)
+    //Sink.fold[Vector[Array[Int], Array[Int]]](Vector.empty[Array[Int]])(_ + _)
+  results.runWith(printingSink)
+      //f)(result => println(s"result = $result"))
+ 
 }

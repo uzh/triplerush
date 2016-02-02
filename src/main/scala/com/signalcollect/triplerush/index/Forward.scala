@@ -21,18 +21,37 @@
 package com.signalcollect.triplerush.index
 
 import com.signalcollect.triplerush.EfficientIndexPattern._
+import com.signalcollect.triplerush.query.ParticleDebug
 import com.signalcollect.triplerush.query.QueryParticle
 import com.signalcollect.triplerush.query.QueryParticle._
+import akka.actor.ActorSystem
+import com.signalcollect.triplerush.query.ParticleDebug
+import com.signalcollect.triplerush.IntSet
+
+class NotAForwardingIndex(message: String) extends Exception(message)
 
 object Forward {
 
-  def nextRoutingAddress(indexId: Long, childDelta: Int): Long = ???
+  // TODO: Allow for alternative index structures. 
+  def nextRoutingAddress(indexId: Long, childDelta: Int): Long = {
+    // TODO: Make more efficient.
+    val indexPattern = indexId.toTriplePattern
+    IndexType(indexId) match {
+      case Root => (indexPattern.copy(p = childDelta)).toEfficientIndexPattern
+      case S    => indexPattern.copy(p = childDelta).toEfficientIndexPattern
+      case P    => indexPattern.copy(s = childDelta).toEfficientIndexPattern
+      case O    => indexPattern.copy(p = childDelta).toEfficientIndexPattern
+      case other: Any => throw new NotAForwardingIndex(
+        s"`Forward.nextRoutingAddress` was called from ${indexId.toTriplePattern}, but can only be called from a forwarding index vertex.")
+    }
+  }
 
   def forwardQuery(
+    system: ActorSystem,
     indexId: Long,
     query: Array[Int],
     numberOfChildDeltas: Int,
-    childDeltas: Traversable[Int]): Unit = {
+    childDeltas: IntSet): Unit = {
     val edges = numberOfChildDeltas
     val totalTickets = query.tickets
     val absoluteValueOfTotalTickets = if (totalTickets < 0) -totalTickets else totalTickets // inlined math.abs
@@ -41,15 +60,18 @@ object Forward {
     var extras = absoluteValueOfTotalTickets % edges
     val averageTicketQuery = query.copyWithTickets(avg, complete)
     val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
+    val indexShard = Index.shard(system)
     def sendTo(childDelta: Int): Unit = {
       val routingAddress = nextRoutingAddress(indexId, childDelta)
       if (extras > 0) {
         extras -= 1
-        //graphEditor.sendSignal(aboveAverageTicketQuery, routingAddress)
-        //TODO: Replace with code that sends to index actor.
+        indexShard ! aboveAverageTicketQuery
       } else if (avg > 0) {
-        //graphEditor.sendSignal(averageTicketQuery, routingAddress)
-        //TODO: Replace with code that sends to index actor.
+        indexShard ! averageTicketQuery
+      } else {
+        // TODO: Send to query and optionally continue with more tickets.
+        throw new OutOfTicketsException(
+          s"Ran out of tickets for particle ${ParticleDebug(query).toString} at index ${indexId.toTriplePattern}.")
       }
     }
     childDeltas.foreach(sendTo)

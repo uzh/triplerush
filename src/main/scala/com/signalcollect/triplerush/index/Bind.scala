@@ -20,67 +20,79 @@
 
 package com.signalcollect.triplerush.index
 
+import akka.actor.ActorSystem
+import com.signalcollect.triplerush.query.OperationIds
+import com.signalcollect.triplerush.IntSet
+import com.signalcollect.triplerush.query.QueryParticle
+import com.signalcollect.triplerush.query.QueryParticle._
+import com.signalcollect.triplerush.EfficientIndexPattern._
+import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.query.Query
+import akka.actor.ActorRef
+import com.signalcollect.triplerush.query.ParticleDebug
+
 object Bind {
 
-//  def bindQueryToAllTriples(query: Array[Int], graphEditor: GraphEditor[Long, Any]): Unit = {
-//    if (!query.isBindingQuery &&
-//      query.numberOfPatterns == 1 &&
-//      query.isSimpleToBind) {
-//      // Take a shortcut and don't actually do the binding, just send the result count.
-//      // The isSimpleToBind check excludes complicated cases, where a binding might fail.
-//      val queryVertexId = OperationIds.embedInLong(query.queryId)
-//      graphEditor.sendSignal(edgeCount, queryVertexId)
-//      graphEditor.sendSignal(query.tickets, queryVertexId)
-//    } else {
-//      val edges = edgeCount
-//      val totalTickets = query.tickets
-//      val absoluteValueOfTotalTickets = if (totalTickets < 0) -totalTickets else totalTickets // inlined math.abs
-//      val avg = absoluteValueOfTotalTickets / edges
-//      val complete = avg > 0 && totalTickets > 0
-//      var extras = absoluteValueOfTotalTickets % edges
-//      val averageTicketQuery = query.copyWithTickets(avg, complete)
-//      val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
-//      def bind(childDelta: Int): Unit = {
-//        if (extras > 0) {
-//          extras -= 1
-//          handleQueryBinding(childDelta, aboveAverageTicketQuery, graphEditor)
-//        } else if (avg > 0) {
-//          handleQueryBinding(childDelta, averageTicketQuery, graphEditor)
-//        }
-//      }
-//      foreachChildDelta(bind)
-//    }
-//  }
-//
-//  def handleQueryBinding(
-//    childDelta: Int,
-//    query: Array[Int],
-//    graphEditor: GraphEditor[Long, Any]): Unit = {
-//    val boundParticle = bindIndividualQuery(childDelta, query)
-//    if (boundParticle != null) {
-//      routeSuccessfullyBound(boundParticle, graphEditor)
-//    } else {
-//      // Failed to bind, send to query vertex.
-//      val queryVertexId = OperationIds.embedInLong(query.queryId)
-//      graphEditor.sendSignal(query.tickets, queryVertexId)
-//    }
-//  }
-//
-//  def routeSuccessfullyBound(
-//    boundParticle: Array[Int],
-//    graphEditor: GraphEditor[Long, Any]): Unit = {
-//    if (boundParticle.isResult) {
-//      // Query successful, send to query vertex.
-//      val queryVertexId = OperationIds.embedInLong(boundParticle.queryId)
-//      if (boundParticle.isBindingQuery) {
-//        graphEditor.sendSignal(boundParticle, queryVertexId)
-//      } else {
-//        graphEditor.sendSignal(1, queryVertexId)
-//        graphEditor.sendSignal(boundParticle.tickets, queryVertexId)
-//      }
-//    } else {
-//      graphEditor.sendSignal(boundParticle, boundParticle.routingAddress)
-//    }
-//  }
+  def bindQuery(
+    system: ActorSystem,
+    indexId: Long,
+    query: Array[Int],
+    numberOfChildDeltas: Int,
+    childDeltas: IntSet): Unit = {
+    val totalTickets = query.tickets
+    val absoluteValueOfTotalTickets = if (totalTickets < 0) -totalTickets else totalTickets // inlined math.abs
+    val avg = absoluteValueOfTotalTickets / numberOfChildDeltas
+    val complete = avg > 0 && totalTickets > 0
+    var extras = absoluteValueOfTotalTickets % numberOfChildDeltas
+    val averageTicketQuery = query.copyWithTickets(avg, complete)
+    val aboveAverageTicketQuery = query.copyWithTickets(avg + 1, complete)
+    def bind(childDelta: Int): Unit = {
+      if (extras > 0) {
+        extras -= 1
+        handleQueryBinding(system, indexId, childDelta, aboveAverageTicketQuery)
+      } else if (avg > 0) {
+        handleQueryBinding(system, indexId, childDelta, averageTicketQuery)
+      }
+    }
+    childDeltas.foreach(bind)
+  }
+
+  def handleQueryBinding(
+    system: ActorSystem,
+    indexId: Long,
+    childDelta: Int,
+    query: Array[Int]): Unit = {
+    println(s"Bind.handleQueryBinding($system, $indexId, $childDelta, ${ParticleDebug(query)}).")
+    val boundParticle = bindIndividualQuery(indexId, childDelta, query)
+    if (boundParticle != null) {
+      if (boundParticle.isResult) {
+        println(s"${ParticleDebug(boundParticle)} is a result, sending to query.")
+        // Query successful, send to query vertex.
+        val query = Query.shard(system)
+        query ! Query.BindingsForQuery(boundParticle.queryId, boundParticle.bindings)
+        query ! Query.Tickets(boundParticle.queryId, boundParticle.tickets)
+      } else {
+        println(s"${ParticleDebug(boundParticle)} is not a result, forwarding to next index.")
+        // TODO: Handle existence checks.
+        assert(!boundParticle.lastPattern.isFullyBound,
+          s"Triple existence checks required for ${ParticleDebug(boundParticle)}, but not implemented yet.")
+        Index.shard(system) ! boundParticle
+      }
+    } else {
+      // Failed to bind, send to query vertex.
+      Query.shard(system) ! query.tickets
+    }
+  }
+
+  def bindIndividualQuery(indexId: Long, childDelta: Int, query: Array[Int]): Array[Int] = {
+    val indexPattern = indexId.toTriplePattern
+    IndexType(indexId) match {
+      case Sp => query.bind(indexPattern.s, indexPattern.p, childDelta)
+      case So => query.bind(indexPattern.s, childDelta, indexPattern.o)
+      case Po => query.bind(childDelta, indexPattern.p, indexPattern.o)
+      case other: Any => throw new NotAForwardingIndex(
+        s"`Bind.bindIndividualQuery` was called from ${indexPattern}, but can only be called from a binding index vertex.")
+    }
+  }
 
 }

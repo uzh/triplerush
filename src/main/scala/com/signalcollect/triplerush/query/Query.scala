@@ -19,39 +19,22 @@ package com.signalcollect.triplerush.query
 import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 
-import com.signalcollect.triplerush.TriplePattern
+import com.signalcollect.triplerush.{ Shard, TriplePattern }
 import com.signalcollect.triplerush.index.Index
-import com.signalcollect.triplerush.query.Query.Initialize
-import com.signalcollect.triplerush.query.Query.emptyQueue
+import com.signalcollect.triplerush.query.Query.{ Initialize, emptyQueue }
 import com.signalcollect.triplerush.query.QueryParticle.arrayToParticle
 
-import akka.actor.Actor
-import akka.actor.ActorLogging
-import akka.actor.ActorSystem
-import akka.actor.Props
-import akka.actor.actorRef2Scala
-import akka.cluster.sharding.ClusterSharding
-import akka.cluster.sharding.ClusterShardingSettings
-import akka.cluster.sharding.ShardRegion
+import akka.actor.{ Actor, ActorLogging, Props, actorRef2Scala }
+import akka.cluster.sharding.{ ClusterSharding, ShardRegion }
 import akka.event.LoggingReceive
 import akka.stream.actor.ActorPublisher
 import akka.stream.actor.ActorPublisherMessage.Request
 
-object Query {
+object Query extends Shard {
+
+  def apply(): Actor = new Query
 
   val emptyQueue = Queue.empty[Array[Int]]
-
-  def registerWithSystem(system: ActorSystem): Unit = {
-    ClusterSharding(system).start(
-      typeName = shardName,
-      entityProps = props,
-      settings = ClusterShardingSettings(system),
-      extractEntityId = idExtractor,
-      extractShardId = shardResolver)
-  }
-
-  val shardName = "query"
-  val props: Props = Props(new Query())
 
   case class Initialize(
     queryId: Int,
@@ -61,9 +44,12 @@ object Query {
 
   case class BindingsForQuery(queryid: Int, resultBindings: Array[Int])
 
+  case class Tickets(queryid: Int, numberOfTickets: Long)
+
   val idExtractor: ShardRegion.ExtractEntityId = {
     case initialize @ Initialize(queryId, _, _, _) => (queryId.toString, initialize)
     case BindingsForQuery(queryId, bindings)       => (queryId.toString, bindings)
+    case Tickets(quryId, tickets)                  => (quryId.toString, tickets)
   }
 
   // TODO: Choose query ID such that this will resolve to a shard that is located on the same node.
@@ -74,6 +60,7 @@ object Query {
   val shardResolver: ShardRegion.ExtractShardId = {
     case initialize @ Initialize(queryId, _, _, _) => queryIdToShardId(queryId)
     case BindingsForQuery(queryId, _)              => queryIdToShardId(queryId)
+    case Tickets(quryId, tickets)                  => queryIdToShardId(quryId)
   }
 
 }
@@ -86,8 +73,7 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
   }
 
   def sendToIndex(indexId: Long, message: Any): Unit = {
-    val indexShard = ClusterSharding(context.system).shardRegion(Index.shardName)
-    indexShard ! message
+    Index.shard(context.system) ! message
   }
 
   override def preStart(): Unit = {
@@ -112,6 +98,8 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
         // No patterns, no results, complete stream immediately.
         deliverFromQueue(emptyQueue, completed = true)
       }
+    case other: Any =>
+      println(s"OOOOPS, query actor got $other when awaiting initialization")
   }
 
   /**
@@ -119,7 +107,8 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
    */
   def resultStreaming(queued: Queue[Array[Int]], missingTickets: Long): Actor.Receive = LoggingReceive {
     case bindings: Array[Int] =>
-      if (queued.isEmpty) {
+      log.info(s"Query actor $toString with path ${context.self} received bindings ${bindings.mkString("[", ")", "]")}.")
+      if (queued.isEmpty && totalDemand > 0) {
         onNext(bindings)
         context.become(resultStreaming(emptyQueue, missingTickets))
       } else {
@@ -130,9 +119,12 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
     case tickets: Long =>
       context.become(resultStreaming(queued, missingTickets - tickets))
       onCompleteThenStop()
-    case Request(cnt) =>
+    case Request(count) =>
+      println(s"Received request for $count")
       val remaining = deliverFromQueue(queued, missingTickets == 0)
       context.become(resultStreaming(remaining, missingTickets))
+    case other: Any =>
+      println(s"OOOOPS, query actor got $other when in streaming")
   }
 
   /**
@@ -141,22 +133,29 @@ final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
    */
   @tailrec private[this] def deliverFromQueue(queued: Queue[Array[Int]], completed: Boolean): Queue[Array[Int]] = {
     if (completed && queued == emptyQueue) {
+      println(s"Completing stream!")
       onCompleteThenStop()
       emptyQueue
     } else if (totalDemand >= queued.size) {
+      println(s"Streaming ${math.min(totalDemand, queued.size)} items!")
       queued.foreach(onNext)
       if (completed) {
         onCompleteThenStop()
       }
       emptyQueue
     } else if (totalDemand == 0) {
+      println(s"No demand, waiting! Queued = $queued.")
       queued
     } else if (totalDemand <= Int.MaxValue) {
       val (toDeliver, remaining) = queued.splitAt(totalDemand.toInt)
+      println(s"Streaming ${toDeliver.size} items!")
       toDeliver.foreach(onNext)
       remaining
     } else {
+      // TODO: Catch this case by ensuring that we deliver if total demand > queue.size.
+      // afterwards check if we need to deliver again.
       val (toDeliver, remaining) = queued.splitAt(Int.MaxValue)
+      println(s"Streaming ${toDeliver.size} items!")
       toDeliver.foreach(onNext)
       deliverFromQueue(remaining, completed)
     }

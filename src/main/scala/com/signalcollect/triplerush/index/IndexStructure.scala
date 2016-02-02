@@ -50,43 +50,47 @@ sealed trait IndexType {
 
 }
 
-object Root extends IndexType {
+sealed trait Forwarding
+
+sealed trait Binding
+
+object Root extends IndexType with Forwarding {
 
   val examplePattern = TriplePattern(0, 0, 0)
 
 }
 
-object S extends IndexType {
+object S extends IndexType with Forwarding {
 
   val examplePattern = TriplePattern(1, 0, 0)
 
 }
 
-object P extends IndexType {
+object P extends IndexType with Forwarding {
 
   val examplePattern = TriplePattern(0, 1, 0)
 
 }
 
-object O extends IndexType {
+object O extends IndexType with Forwarding {
 
   val examplePattern = TriplePattern(0, 0, 1)
 
 }
 
-object Sp extends IndexType {
+object Sp extends IndexType with Binding {
 
   val examplePattern = TriplePattern(1, 1, 0)
 
 }
 
-object So extends IndexType {
+object So extends IndexType with Binding {
 
   val examplePattern = TriplePattern(1, 0, 1)
 
 }
 
-object Po extends IndexType {
+object Po extends IndexType with Binding {
 
   val examplePattern = TriplePattern(0, 1, 1)
 

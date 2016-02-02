@@ -27,20 +27,14 @@ import com.signalcollect.triplerush.query.QueryParticle
 import com.signalcollect.triplerush.query.QueryParticle._
 import com.signalcollect.triplerush.query.ParticleDebug
 import akka.actor.Actor
+import akka.actor.ActorRef
+import com.signalcollect.triplerush.Shard
 
-object Index {
+case class OutOfTicketsException(msg: String) extends Exception(msg)
 
-  def registerWithSystem(system: ActorSystem): Unit = {
-    ClusterSharding(system).start(
-      typeName = shardName,
-      entityProps = props,
-      settings = ClusterShardingSettings(system),
-      extractEntityId = idExtractor,
-      extractShardId = shardResolver)
-  }
+object Index extends Shard {
 
-  val shardName = "index"
-  val props: Props = Props(new Index())
+  def apply(): Actor = new Index
 
   case class AddChildId(indexId: Long, childId: Int)
   case class GetChildIds(indexId: Long)
@@ -93,8 +87,15 @@ final class Index extends Actor with ActorLogging {
       sender() ! Index.ChildIdAdded
       log.info(s"Index actor $toString with path ${context.self} received message $childId, content is now ${childIds}")
     case queryParticle: Array[Int] =>
-      // TODO: Handle query forwarding/binding.
       log.info(s"Index actor $toString with path ${context.self} received query ${ParticleDebug(queryParticle).toString}, content is ${childIds}")
+      val indexIdAsLong = indexId.toLong
+      IndexType(indexIdAsLong) match {
+        case f: Forwarding =>
+          Forward.forwardQuery(context.system, indexId.toLong, queryParticle, childIds.size, childIds)
+        case b: Binding =>
+          Bind.bindQuery(context.system, indexId.toLong, queryParticle, childIds.size, childIds)
+
+      }
     case other =>
       log.info(s"Index actor $toString with path ${context.self} received message $other")
   }

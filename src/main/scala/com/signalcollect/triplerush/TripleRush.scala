@@ -66,9 +66,8 @@ class TripleRush(system: ActorSystem,
                  implicit protected val timeout: Timeout) extends TripleStore {
   import system.dispatcher
 
-  protected val sharding = ClusterSharding(system)
-  protected val indexRegion = sharding.shardRegion(Index.shardName)
-  protected val queryRegion = sharding.shardRegion(Query.shardName)
+  protected val indexRegion = Index.shard(system)
+  protected val queryRegion = Query.shard(system)
 
   // TODO: Make efficient by building the index structure recursively.
   def addTriplePattern(triplePattern: TriplePattern): Future[Unit] = {
