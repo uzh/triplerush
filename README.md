@@ -9,7 +9,9 @@ Install the [Typesafe IDE for Scala 2.11](http://scala-ide.org/download/sdk.html
 
 Ensure that Eclipse uses a Java 8 library and JVM: Preferences → Java → Installed JREs → JRE/JDK 8 should be installed and selected.
 
-Import the project into Eclipse: File → Import... → Maven → Existing Maven Projects → select "triplerush" folder
+Run `sbt eclipse` in the project folder from the command line.
+
+Then import the project into Eclipse: File → Import... → General → Existing Projects into Workspace → select "triplerush" folder
 
 Thanks a lot to
 ---------------
