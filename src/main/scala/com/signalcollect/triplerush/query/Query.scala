@@ -36,7 +36,7 @@ import akka.stream.actor.ActorSubscriberMessage.OnNext
 import scala.annotation.tailrec
 
 object Query {
-
+ 
   val emptyQueue = Queue.empty[Array[Int]]
 
 }
@@ -50,158 +50,55 @@ class Query(
 
   private[this] var receivedTickets: Long = 0
 
-  private[this] val MaxQueueSize = 1000000
-
-  def receive: Actor.Receive = queuing(Query.emptyQueue, false)
+  def receive: Actor.Receive = queuing(Query.emptyQueue, 0)
 
   /**
-   * Queuing mode that stores both the queued elements and if the stream has been completed.
+   * Queuing mode that stores both the queued elements and how many tickets have been received.
    */
-  def queuing(queued: Queue[Array[Int]], receivedTickets: Long, completed: Boolean): Actor.Receive = LoggingReceive {
+  def queuing(queued: Queue[Array[Int]], receivedTickets: Long): Actor.Receive = LoggingReceive {
     case bindings: Array[Int] =>
       if (queued.isEmpty) {
         onNext(bindings)
-        context.become(queuing(Query.emptyQueue, receivedTickets, completed))
+        context.become(queuing(Query.emptyQueue, receivedTickets))
       } else {
         val updatedQueue = queued.enqueue(bindings)
-        val remainingQueue = deliverFromQueue(updatedQueue, completed)
-        context.become(queuing(remainingQueue, receivedTickets, completed))
+        val remainingQueue = deliverFromQueue(updatedQueue, receivedTickets == tickets)
+        context.become(queuing(remainingQueue, receivedTickets))
       }
     case tickets: Long =>
-      receivedTickets += deliveredTickets
-      if (buffer.isEmpty && tickets == receivedTickets) {
-        onCompleteThenStop()
-      }
+      context.become(queuing(queued, receivedTickets + tickets))
+      onCompleteThenStop()
     case Request(cnt) =>
-      val remaining = deliverFromQueue(queued, completed)
-      context.become(queuing(remaining, completed))
+      val remaining = deliverFromQueue(queued, receivedTickets == tickets)
+      context.become(queuing(remaining, receivedTickets))
     case Cancel =>
       context.stop(self)
   }
 
   /**
-   * Delivers from `q' whatever it can, then returns a queue with the remaining items.
-   * Completes if all items were delivered and the stream has completed.
+   * Delivers from `queued' whatever it can, then returns a queue with the remaining items.
+   * Completes the stream if all results were delivered and the query execution has completed.
    */
-  @tailrec private[this] def deliverFromQueue(q: Queue[Array[Int]], completed: Boolean): Queue[Array[Int]] = {
-    if (totalDemand >= q.size) {
-      q.foreach(onNext)
+  @tailrec private[this] def deliverFromQueue(queued: Queue[Array[Int]], completed: Boolean): Queue[Array[Int]] = {
+    if (totalDemand >= queued.size) {
+      queued.foreach(onNext)
       if (completed) {
         onCompleteThenStop()
       }
       Query.emptyQueue
     } else if (totalDemand == 0) {
-      q
+      queued
     } else {
       if (totalDemand <= Int.MaxValue) {
-        val (toDeliver, remaining) = q.splitAt(totalDemand.toInt)
+        val (toDeliver, remaining) = queued.splitAt(totalDemand.toInt)
         toDeliver.foreach(onNext)
         remaining
       } else {
-        val (toDeliver, remaining) = q.splitAt(Int.MaxValue)
+        val (toDeliver, remaining) = queued.splitAt(Int.MaxValue)
         toDeliver.foreach(onNext)
         deliverFromQueue(remaining, completed)
       }
     }
   }
-
-  //  val MaxBufferSize = 1000000
-  //  val buffer = new collection.mutable.Queue[Array[Int]]
-  //
-  //  def receive = {
-  //    case deliveredTickets: Long =>
-  //      receivedTickets += deliveredTickets
-  //      if (buffer.isEmpty && tickets == receivedTickets) {
-  //        onCompleteThenStop()
-  //      }
-  //    case bindings: Array[Int] =>
-  //      if (buffer.isEmpty && totalDemand > 0) {
-  //        onNext(bindings)
-  //      } else {
-  //        buffer += bindings
-  //      }
-  //  }
-
-  //  def receive = {
-  //    case job: Job if buf.size == MaxBufferSize =>
-  //      sender() ! JobDenied
-  //    case job: Job =>
-  //      sender() ! JobAccepted
-  //      if (buf.isEmpty && totalDemand > 0)
-  //        onNext(job)
-  //      else {
-  //        buf :+= job
-  //        deliverBuf()
-  //      }
-  //    case Request(_) =>
-  //      deliverBuf()
-  //    case Cancel =>
-  //      context.stop(self)
-  //  }
-  // 
-  //  @tailrec final def deliverBuf(): Unit =
-  //    if (totalDemand > 0) {
-  //      /*
-  //       * totalDemand is a Long and could be larger than
-  //       * what buf.splitAt can accept
-  //       */
-  //      if (totalDemand <= Int.MaxValue) {
-  //        val (use, keep) = buf.splitAt(totalDemand.toInt)
-  //        buf = keep
-  //        use foreach onNext
-  //      } else {
-  //        val (use, keep) = buf.splitAt(Int.MaxValue)
-  //        buf = keep
-  //        use foreach onNext
-  //        deliverBuf()
-  //      }
-  //    }
-
-  //  private[this] val emptyQueue = Queue.empty[C]
-  //
-  //  /**
-  //   * Queuing mode that stores both the queued elements and if the stream has been completed.
-  //   */
-  //  def queuing(queued: Queue[C], completed: Boolean): Actor.Receive = LoggingReceive {
-  //    case OnNext(e: C) =>
-  //      val updatedQueue = queued.enqueue(e)
-  //      val remainingQueue = deliverFromQueue(updatedQueue, completed)
-  //      context.become(queuing(remainingQueue, completed))
-  //    case q: Queue[C] =>
-  //      val updatedQueue = queued.enqueue(q)
-  //      val remainingQueue = deliverFromQueue(updatedQueue, completed)
-  //      context.become(queuing(remainingQueue, completed))
-  //    case Request(cnt) =>
-  //      val remaining = deliverFromQueue(queued, completed)
-  //      context.become(queuing(remaining, completed))
-  //    case Complete =>
-  //      val remaining = deliverFromQueue(queued, true)
-  //      context.become(queuing(remaining, true))
-  //    case Cancel =>
-  //      context.stop(self)
-  //  }
-  //
-  //  def receive: Actor.Receive = queuing(emptyQueue, false)
-  //
-  //  /**
-  //   * Delivers from `q' whatever it can, then returns a queue with the remaining items.
-  //   * Completes if all items were delivered and the stream has completed.
-  //   */
-  //  def deliverFromQueue(q: Queue[C], completed: Boolean): Queue[C] = {
-  //    if (totalDemand >= q.size) {
-  //      q.foreach(onNext(_))
-  //      if (completed) {
-  //        onComplete()
-  //        context.stop(self)
-  //      }
-  //      emptyQueue
-  //    } else if (totalDemand == 0) {
-  //      q
-  //    } else {
-  //      val (toDeliver, remaining) = q.splitAt(totalDemand.toInt)
-  //      toDeliver.foreach(onNext(_))
-  //      remaining
-  //    }
-  //  }
 
 }

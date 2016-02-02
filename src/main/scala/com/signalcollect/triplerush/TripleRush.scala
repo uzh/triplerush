@@ -17,16 +17,23 @@
 package com.signalcollect.triplerush
 
 import scala.concurrent.Future
-import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
 
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.index.{ FullIndex, Index }
-import com.signalcollect.triplerush.index.{ IndexStructure, IndexType }
+import com.signalcollect.triplerush.index.FullIndex
+import com.signalcollect.triplerush.index.Index
 import com.signalcollect.triplerush.index.Index.AddChildId
+import com.signalcollect.triplerush.index.IndexStructure
+import com.signalcollect.triplerush.index.IndexType
+import com.signalcollect.triplerush.query.Query
 
 import akka.actor.ActorSystem
+import akka.actor.Props
 import akka.cluster.sharding.ClusterSharding
 import akka.pattern.ask
+import akka.stream.actor.ActorPublisher
+import akka.stream.scaladsl.Source
 import akka.util.Timeout
 
 trait TripleStore {
@@ -36,7 +43,7 @@ trait TripleStore {
   def resultIteratorForQuery(
     query: Seq[TriplePattern],
     numberOfSelectVariables: Int,
-    tickets: Long = Long.MaxValue): Iterator[Array[Int]]
+    tickets: Long = Long.MaxValue): Source[Array[Int], Unit]
 
 }
 
@@ -62,7 +69,7 @@ class TripleRush(system: ActorSystem,
 
   def addTriplePattern(triplePattern: TriplePattern): Future[Unit] = {
     val ancestorIds = indexStructure.ancestorIds(triplePattern)
-    val additionFutures: Set[Future[Any]] = for {
+    val additionFutures = for {
       parentId <- ancestorIds
       parentIndexType = IndexType(parentId)
       delta = triplePattern.parentIdDelta(parentId.toTriplePattern)
@@ -74,11 +81,9 @@ class TripleRush(system: ActorSystem,
   def resultIteratorForQuery(
     query: Seq[TriplePattern],
     numberOfSelectVariables: Int,
-    tickets: Long = Long.MaxValue): Iterator[Array[Int]] = {
-    val resultIterator = new ResultIterator
-    //    val queryVertex = new ResultIteratorQueryVertex(query, selectVariables, tickets, resultIterator, dictionary, log)
-    //    graph.addVertex(queryVertex)
-    resultIterator
+    tickets: Long = Long.MaxValue): Source[Array[Int], Unit] = {
+    val queryActor = system.actorOf(Props(new Query(query: Seq[TriplePattern], tickets: Long, numberOfSelectVariables: Int)))
+    Source.fromPublisher(ActorPublisher(queryActor))
   }
 
 }
