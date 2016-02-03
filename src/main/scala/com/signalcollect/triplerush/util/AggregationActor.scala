@@ -17,26 +17,24 @@
 package com.signalcollect.triplerush.util
 
 import scala.reflect.ClassTag
-
 import akka.actor.{ Actor, ActorLogging, ActorRef }
 import akka.actor.util.FlushWhenIdle
+import akka.actor.util.Flush
 
 abstract class AggregationActor[A, N: ClassTag](
-  destination: ActorRef)
+  destination: ActorRef,
+  initial: A)
     extends Actor with FlushWhenIdle with ActorLogging {
 
-  protected var currentAggregate: A = zero
+  def aggregateNext(aggregate: A, nextItem: N): A
 
-  def flush(): Unit = {
-    destination ! currentAggregate
-  }
+  def receive: Receive = aggregating(initial)
 
-  val zero: A
-  def aggregateNext(aggregate: A, next: N): A
-
-  def receive: Receive = {
-    case next: N =>
-      currentAggregate = aggregateNext(currentAggregate, next)
+  def aggregating(currentAggregate: A): Receive = {
+    case nextItem: N =>
+      context.become(aggregating(aggregateNext(currentAggregate, nextItem)))
+    case Flush =>
+      destination ! currentAggregate
   }
 
 }

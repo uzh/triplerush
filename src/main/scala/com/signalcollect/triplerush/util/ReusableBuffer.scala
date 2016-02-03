@@ -27,6 +27,7 @@ final class ReusableBuffer[I: ClassTag](maxSize: Int) {
   def numberOfItems: Int = itemCount
   def isFull: Boolean = itemCount == maxSize
   def add(item: I): Unit = {
+    assert(!isFull, "Cannot add an item when the buffer is full.")
     items(itemCount) = item
     itemCount += 1
   }
