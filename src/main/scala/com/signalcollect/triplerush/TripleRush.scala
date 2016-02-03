@@ -16,60 +16,37 @@
 
 package com.signalcollect.triplerush
 
-import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ Await, Future }
+import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.index.FullIndex
-import com.signalcollect.triplerush.index.Index
+import com.signalcollect.triplerush.index.{ FullIndex, Index }
+import com.signalcollect.triplerush.index.{ IndexStructure, IndexType }
 import com.signalcollect.triplerush.index.Index.AddChildId
-import com.signalcollect.triplerush.index.IndexStructure
-import com.signalcollect.triplerush.index.IndexType
-import com.signalcollect.triplerush.query.OperationIds
-import com.signalcollect.triplerush.query.Query
-import akka.actor.ActorSystem
-import akka.actor.Props
-import akka.cluster.sharding.ClusterSharding
+import com.signalcollect.triplerush.query.{ OperationIds, Query }
+import com.signalcollect.triplerush.query.Query.Initialize
+import akka.actor.{ ActorRef, ActorSystem }
 import akka.pattern.ask
 import akka.stream.actor.ActorPublisher
 import akka.stream.scaladsl.Source
 import akka.util.Timeout
-import com.signalcollect.triplerush.query.Query.Initialize
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import akka.actor.ActorRef
+import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
-import akka.cluster.Cluster
-
-trait TripleStore {
-
-  def addTriplePattern(triplePattern: TriplePattern): Future[Unit]
-
-  def query(
-    query: Seq[TriplePattern],
-    numberOfSelectVariables: Int,
-    tickets: Long = Long.MaxValue): Source[Array[Int], Unit]
-
-  def close(): Unit
-
-}
+import akka.stream.actor.AbstractActorPublisher
 
 object TripleRush {
 
   def apply(
-    systems: Seq[ActorSystem] = ClusterCreator.create(2),
+    system: ActorSystem,
     indexStructure: IndexStructure = FullIndex,
     timeout: FiniteDuration = 300.seconds): TripleRush = {
-    new TripleRush(systems, indexStructure, Timeout(timeout))
+    new TripleRush(system, indexStructure, Timeout(timeout))
   }
 
 }
 
-class TripleRush(systems: Seq[ActorSystem],
+class TripleRush(system: ActorSystem,
                  indexStructure: IndexStructure,
                  implicit protected val timeout: Timeout) extends TripleStore {
-  val system = systems.head
   import system.dispatcher
 
   protected val indexRegion = Index.shard(system)
@@ -90,7 +67,7 @@ class TripleRush(systems: Seq[ActorSystem],
   // TODO: `ActorPublisher` does not support failure handling for distributed use cases yet.
   // TODO: Clean up when a timeout is encountered.
   def query(
-    query: Seq[TriplePattern],
+    query: Vector[TriplePattern],
     numberOfSelectVariables: Int,
     tickets: Long = Long.MaxValue): Source[Array[Int], Unit] = {
     val queryId = OperationIds.nextId()
@@ -101,9 +78,10 @@ class TripleRush(systems: Seq[ActorSystem],
     Source.fromPublisher(publisher)
   }
 
-  // TODO: Shut down the whole cluster
-  def close(): Unit = {
-  }
+  def close(): Unit = {}
 
 }
 
+class Test extends AbstractActorPublisher {
+  
+}

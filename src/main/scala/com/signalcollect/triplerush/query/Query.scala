@@ -65,6 +65,7 @@ object Query extends Shard {
 
 }
 
+// TODO: Define timeout and terminate when it is reached.
 final class Query() extends ActorPublisher[Array[Int]] with ActorLogging {
 
   def queryId: String = self.path.name

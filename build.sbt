@@ -21,6 +21,7 @@ val project = Project(
       "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaVersion,
       "com.typesafe.akka" %% "akka-stream-experimental" % akkaStreamVersion,
       "org.mapdb" % "mapdb" % mapDbVersion,
+      "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.0",
       "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion % "test",
       "org.scalatest" %% "scalatest" % "2.1.6" % "test",
       "commons-io" % "commons-io" % "2.4" % "test"),

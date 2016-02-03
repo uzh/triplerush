@@ -31,10 +31,13 @@ import akka.stream.ActorMaterializerSettings
 import akka.stream.ActorMaterializer
 import akka.actor.ActorSystem
 import akka.stream.Supervision
+import scala.util.Random
+import akka.stream.impl.fusing.ActorGraphInterpreter
 
 object TripleRushTest extends App {
-
-  val tr = TripleRush()
+  
+  val cluster = ClusterCreator.create(6)
+  val tr = TripleRush(Random.shuffle(cluster).head)
 
   val futures = List(
     tr.addTriplePattern(TriplePattern(1, 2, 3)),
@@ -43,7 +46,7 @@ object TripleRushTest extends App {
     tr.addTriplePattern(TriplePattern(6, 2, 3)))
   Await.ready(Future.sequence(futures), 30.seconds)
 
-  val results = tr.query(List(TriplePattern(-1, 2, 3)), 1, Int.MaxValue)
+  val results = tr.query(Vector(TriplePattern(-1, 2, 3)), 1, Int.MaxValue)
 
   implicit val system = ActorSystem("test")
   implicit val materializer = ActorMaterializer()
@@ -52,5 +55,7 @@ object TripleRushTest extends App {
 
   Await.ready(printing, 30.seconds)
   tr.close()
+
+  cluster.foreach(_.terminate())
 
 }
