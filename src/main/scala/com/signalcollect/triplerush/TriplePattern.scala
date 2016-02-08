@@ -103,15 +103,15 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
     }
   }
 
-  @inline def extractFirst = id.toInt
+  @inline def extractFirst: Int = id.toInt
 
-  @inline def extractSecond = (id >> 32).toInt
+  @inline def extractSecond: Int = (id >> 32).toInt
 
-  @inline def s = math.max(0, extractFirst)
+  @inline def s: Int = math.max(0, extractFirst)
 
-  @inline def o = math.max(0, extractSecond)
+  @inline def o: Int = math.max(0, extractSecond)
 
-  @inline def p = {
+  @inline def p: Int = {
     val first = extractFirst
     if (first < 0) {
       first & Int.MaxValue
@@ -133,7 +133,7 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
  */
 case class TriplePattern(s: Int, p: Int, o: Int) {
 
-  def toEfficientIndexPattern = EfficientIndexPattern(s, p, o)
+  def toEfficientIndexPattern: Long = EfficientIndexPattern(s, p, o)
 
   override def hashCode: Int = {
     finalizeHash(mixLast(mix(s, p), o), 3)
@@ -146,7 +146,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     }
   }
 
-  override def toString = {
+  override def toString: String = {
     s"TriplePattern(${s.toString},${p.toString},${o.toString})"
   }
 
@@ -155,7 +155,7 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     s"TriplePattern(${decoded(s)},${decoded(p)},${decoded(o)})"
   }
 
-  def lookup(d: RdfDictionary) = s"(${d(s)},${d(p)},${d(o)})"
+  def lookup(d: RdfDictionary): String = s"(${d(s)},${d(p)},${d(o)})"
 
   def variables: List[Int] = {
     val sOpt = if (s < 0) Some(s) else None

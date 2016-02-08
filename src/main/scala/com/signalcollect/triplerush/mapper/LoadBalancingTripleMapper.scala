@@ -71,6 +71,6 @@ class LoadBalancingTripleMapper(val numberOfNodes: Int, val workersPerNode: Int)
 }
 
 object LoadBalancingTripleMapperFactory extends MapperFactory[Long] {
-  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new LoadBalancingTripleMapper(numberOfNodes, workersPerNode)
-  override def toString = "LoadBalancingTripleMapperFactory"
+  def createInstance(numberOfNodes: Int, workersPerNode: Int): LoadBalancingTripleMapper = new LoadBalancingTripleMapper(numberOfNodes, workersPerNode)
+  override def toString: String = "LoadBalancingTripleMapperFactory"
 }

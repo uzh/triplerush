@@ -23,7 +23,7 @@ import com.signalcollect.triplerush.TriplePattern
 
 object VariableEncoding {
 
-  @inline def variableIdToDecodingIndex(variableId: Int) = -(variableId + 1)
+  @inline def variableIdToDecodingIndex(variableId: Int): Int = -(variableId + 1)
 
   @inline def requiredVariableBindingsSlots(query: Seq[TriplePattern]): Int = {
     var minId = 0

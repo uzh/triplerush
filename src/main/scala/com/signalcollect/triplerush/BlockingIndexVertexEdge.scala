@@ -37,7 +37,7 @@ class BlockingIndexVertexEdge(
 
   override def sourceId: Any = throw new UnsupportedOperationException
 
-  override def targetId = childDelta
+  override def targetId: Long = childDelta
 
   override def source: Source = throw new UnsupportedOperationException
 
@@ -45,9 +45,9 @@ class BlockingIndexVertexEdge(
 
   override def weight: Double = 1
 
-  override def toString = s"${this.getClass.getSimpleName}(childDelta=$childDelta)"
+  override def toString: String = s"${this.getClass.getSimpleName}(childDelta=$childDelta)"
 
-  override def hashCode = throw new UnsupportedOperationException
+  override def hashCode: Int = throw new UnsupportedOperationException
 
   override def equals(other: Any): Boolean = throw new UnsupportedOperationException
 

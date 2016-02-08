@@ -72,6 +72,6 @@ class DistributedTripleMapper(val numberOfNodes: Int, val workersPerNode: Int) e
 }
 
 object DistributedTripleMapperFactory extends MapperFactory[Long] {
-  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new DistributedTripleMapper(numberOfNodes, workersPerNode)
-  override def toString = "DistributedTripleMapperFactory"
+  def createInstance(numberOfNodes: Int, workersPerNode: Int): DistributedTripleMapper = new DistributedTripleMapper(numberOfNodes, workersPerNode)
+  override def toString: String = "DistributedTripleMapperFactory"
 }

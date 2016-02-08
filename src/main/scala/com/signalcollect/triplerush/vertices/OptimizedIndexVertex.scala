@@ -49,13 +49,13 @@ abstract class OptimizedIndexVertex(
     graphEditor.sendSignal(ChildIdReply(childIds), requestor)
   }
 
-  override def edgeCount = {
+  override def edgeCount: Int = {
     if (state != null) numberOfStoredChildDeltas else 0
   }
 
-  def cardinality = numberOfStoredChildDeltas
+  def cardinality: Int = numberOfStoredChildDeltas
 
-  @inline final def numberOfStoredChildDeltas = {
+  @inline final def numberOfStoredChildDeltas: Int = {
     state match {
       case i: Int =>
         if (i != 0) 1 else 0
@@ -69,7 +69,7 @@ abstract class OptimizedIndexVertex(
     }
   }
 
-  @inline def foreachChildDelta(f: Int => Unit) = {
+  @inline def foreachChildDelta(f: Int => Unit): Unit = {
     state match {
       case i: Int =>
         f(i) // No check for 0, as an index vertex always needs to have at elast one child delta set at this point.
