@@ -40,7 +40,7 @@ class TicketSynchronization(
     outOfTicketsCause: String = "Ran out of tickets: branching factor too high or ticket count too low.",
     onFailure: Option[Exception => Unit] = Some(e => throw e)) {
 
-  def receivedTickets = _receivedTickets
+  def receivedTickets: Long = _receivedTickets
 
   private[this] var _receivedTickets: Long = 0L
   private[this] var ranOutOfTickets: Boolean = false

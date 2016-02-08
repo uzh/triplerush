@@ -53,7 +53,7 @@ abstract class IndexVertex[StateType](val id: Long)
 
   def processQuery(query: Array[Int], graphEditor: GraphEditor[Long, Any]): Unit
 
-  def handleCardinalityIncrement(i: Int) = {}
+  def handleCardinalityIncrement(i: Int): Unit = {}
 
   def cardinality: Int
 

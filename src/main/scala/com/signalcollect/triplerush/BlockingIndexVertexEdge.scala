@@ -51,6 +51,6 @@ class BlockingIndexVertexEdge(
 
   override def equals(other: Any): Boolean = throw new UnsupportedOperationException
 
-  override def executeSignalOperation(sourceVertex: Vertex[_, _, _, _], graphEditor: GraphEditor[Any, Any]) = throw new UnsupportedOperationException
+  override def executeSignalOperation(sourceVertex: Vertex[_, _, _, _], graphEditor: GraphEditor[Any, Any]): Unit = throw new UnsupportedOperationException
 
 }

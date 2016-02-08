@@ -36,7 +36,7 @@ case class TripleRushUndeliverableSignalHandlerFactory(indexStructure: IndexStru
 
   def createInstance: UndeliverableSignalHandler[Long, Any] = new TripleRushUndeliverableSignalHandler(indexStructure)
 
-  override def toString = "TripleRushUndeliverableSignalHandlerFactory"
+  override def toString: String = "TripleRushUndeliverableSignalHandlerFactory"
 
 }
 
