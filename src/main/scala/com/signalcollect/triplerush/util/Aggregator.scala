@@ -21,7 +21,7 @@ import akka.actor.{ Actor, ActorLogging, ActorRef }
 import akka.actor.util.FlushWhenIdle
 import akka.actor.util.Flush
 
-abstract class AggregationActor[A, N: ClassTag](
+abstract class Aggregator[A, N: ClassTag](
   destination: ActorRef,
   initial: A)
     extends Actor with FlushWhenIdle with ActorLogging {

@@ -21,7 +21,7 @@ import akka.actor.{ Actor, ActorLogging, ActorRef }
 import akka.actor.util.FlushWhenIdle
 import akka.actor.util.Flush
 
-final class BufferActor[I: ClassTag](
+final class Buffer[I: ClassTag](
   destination: ActorRef,
   maxBufferSize: Int = 10000)
     extends Actor with FlushWhenIdle with ActorLogging {

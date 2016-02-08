@@ -32,6 +32,8 @@ import akka.util.Timeout
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import akka.stream.actor.AbstractActorPublisher
+import akka.cluster.Cluster
+import java.util.concurrent.CountDownLatch
 
 object TripleRush {
 
@@ -39,11 +41,19 @@ object TripleRush {
     system: ActorSystem,
     indexStructure: IndexStructure = FullIndex,
     timeout: FiniteDuration = 300.seconds): TripleRush = {
+    val latch = new CountDownLatch(1)
+    Cluster(system).registerOnMemberUp {
+      latch.countDown()
+    }
+    latch.await()
     new TripleRush(system, indexStructure, Timeout(timeout))
   }
 
 }
 
+/**
+ * Assumes that the whole cluster has already started.
+ */
 class TripleRush(system: ActorSystem,
                  indexStructure: IndexStructure,
                  implicit protected val timeout: Timeout) extends TripleStore {
@@ -80,8 +90,4 @@ class TripleRush(system: ActorSystem,
 
   def close(): Unit = {}
 
-}
-
-class Test extends AbstractActorPublisher {
-  
 }

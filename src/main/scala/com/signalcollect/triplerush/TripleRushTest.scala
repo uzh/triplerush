@@ -33,10 +33,13 @@ import akka.actor.ActorSystem
 import akka.stream.Supervision
 import scala.util.Random
 import akka.stream.impl.fusing.ActorGraphInterpreter
+import com.typesafe.config.ConfigFactory
 
 object TripleRushTest extends App {
   
-  val cluster = ClusterCreator.create(6)
+  val config = ConfigFactory.load()
+  val numberOfNodes =  config.getInt("triplerush.number-of-nodes")
+  val cluster = ClusterCreator.create(numberOfNodes)
   val tr = TripleRush(Random.shuffle(cluster).head)
 
   val futures = List(
