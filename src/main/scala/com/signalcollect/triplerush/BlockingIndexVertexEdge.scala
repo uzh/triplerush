@@ -41,7 +41,7 @@ class BlockingIndexVertexEdge(
 
   override def source: Source = throw new UnsupportedOperationException
 
-  override def onAttach(source: Vertex[_, _, _, _], graphEditor: GraphEditor[Any, Any]) = throw new UnsupportedOperationException
+  override def onAttach(source: Vertex[_, _, _, _], graphEditor: GraphEditor[Any, Any]): Unit = throw new UnsupportedOperationException
 
   override def weight: Double = 1
 

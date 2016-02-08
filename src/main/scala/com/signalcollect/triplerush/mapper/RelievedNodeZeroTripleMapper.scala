@@ -39,6 +39,6 @@ final class RelievedNodeZeroTripleMapper(numberOfNodes: Int, workersPerNode: Int
 }
 
 object RelievedNodeZeroTripleMapperFactory extends MapperFactory[Long] {
-  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new RelievedNodeZeroTripleMapper(numberOfNodes, workersPerNode)
-  override def toString = "RelievedNodeZeroTripleMapperFactory"
+  def createInstance(numberOfNodes: Int, workersPerNode: Int): RelievedNodeZeroTripleMapper = new RelievedNodeZeroTripleMapper(numberOfNodes, workersPerNode)
+  override def toString: String = "RelievedNodeZeroTripleMapperFactory"
 }

@@ -30,7 +30,7 @@ case class TripleRushEdgeAddedToNonExistentVertexHandlerFactory(is: IndexStructu
 
   def createInstance: EdgeAddedToNonExistentVertexHandler[Long, Any] = new TripleRushEdgeAddedToNonExistentVertexHandler(is)
 
-  override def toString = "TripleRushEdgeAddedToNonExistentVertexHandlerFactory"
+  override def toString: String = "TripleRushEdgeAddedToNonExistentVertexHandlerFactory"
 
 }
 

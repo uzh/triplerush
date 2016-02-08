@@ -25,8 +25,8 @@ abstract class CardinalityCountingIndex(
 
   @transient var cardinalityCounter = 0
 
-  override def cardinality = cardinalityCounter
+  override def cardinality: Int = cardinalityCounter
 
-  override def handleCardinalityIncrement(i: Int) = cardinalityCounter += i
+  override def handleCardinalityIncrement(i: Int): Unit = cardinalityCounter += i
 
 }

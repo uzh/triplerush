@@ -16,10 +16,11 @@
 
 package com.signalcollect.triplerush
 
-import org.apache.jena.graph.{ Capabilities, GraphEvents, GraphStatisticsHandler, Node, Node_ANY, Node_Blank, Node_Variable, Triple }
+import org.apache.jena.graph.{ Capabilities, GraphEvents, GraphStatisticsHandler, Node, Node_ANY, Node_Blank, Node_Variable, Triple}
 import org.apache.jena.graph.impl.GraphBase
 import org.apache.jena.query.ARQ
 import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.rdf.model.Model
 import org.apache.jena.sparql.engine.main.StageGenerator
 import org.apache.jena.util.iterator.{ ExtendedIterator, WrappedIterator }
 import com.signalcollect.triplerush.sparql.NodeConversion
@@ -34,7 +35,7 @@ trait JenaGraphAdapter extends GraphBase with GraphStatisticsHandler {
   
   this: TripleRush =>
   
-  def getModel = ModelFactory.createModelForGraph(this)
+  def getModel: Model = ModelFactory.createModelForGraph(this)
 
   // Set TripleRushStageGenerator as default for all queries.
   val tripleRushStageGen = ARQ.getContext.get(ARQ.stageGenerator) match {
@@ -51,7 +52,7 @@ trait JenaGraphAdapter extends GraphBase with GraphStatisticsHandler {
     count(q)
   }
 
-  override def createStatisticsHandler = this
+  override def createStatisticsHandler: JenaGraphAdapter = this
 
   /**
    * Meaning of prefixes in the encoded string:

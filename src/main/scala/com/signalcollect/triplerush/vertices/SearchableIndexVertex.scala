@@ -67,7 +67,7 @@ abstract class SearchableIndexVertex[SignalType, State](
     }
   }
 
-  override def edgeCount = {
+  override def edgeCount: Int = {
     state match {
       case i: Int =>
         1
@@ -77,7 +77,7 @@ abstract class SearchableIndexVertex[SignalType, State](
     }
   }
 
-  def cardinality = edgeCount
+  def cardinality: Int = edgeCount
 
   def addChildDelta(delta: Int): Boolean = {
     if (state == null) {

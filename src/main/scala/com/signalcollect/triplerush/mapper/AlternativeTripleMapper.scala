@@ -56,6 +56,6 @@ class AlternativeTripleMapper(val numberOfNodes: Int, val workersPerNode: Int, p
 }
 
 class AlternativeTripleMapperFactory(predicateNodesOnNode0: Boolean) extends MapperFactory[Long] {
-  def createInstance(numberOfNodes: Int, workersPerNode: Int) = new AlternativeTripleMapper(numberOfNodes, workersPerNode, predicateNodesOnNode0)
-  override def toString = s"AlternativeTripleMapperFactory(predicateNodesOnNode0 = $predicateNodesOnNode0)"
+  def createInstance(numberOfNodes: Int, workersPerNode: Int): AlternativeTripleMapper = new AlternativeTripleMapper(numberOfNodes, workersPerNode, predicateNodesOnNode0)
+  override def toString: String = s"AlternativeTripleMapperFactory(predicateNodesOnNode0 = $predicateNodesOnNode0)"
 }

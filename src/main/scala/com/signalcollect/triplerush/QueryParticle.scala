@@ -265,7 +265,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     ((r(1) | 0L) << 32) | (r(2) & 0x00000000FFFFFFFFL)
   }
 
-  def writeTickets(t: Long) = {
+  def writeTickets(t: Long): Unit = {
     r(1) = (t >> 32).toInt
     r(2) = t.toInt
   }
