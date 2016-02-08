@@ -52,7 +52,7 @@ abstract class SearchableIndexVertex[SignalType, State](
     }
   }
 
-  @inline def foreachChildDelta(f: Int => Unit) = {
+  @inline def foreachChildDelta(f: Int => Unit): Unit = {
     // state is not allowed to be null at this point.
     state match {
       case i: Int =>

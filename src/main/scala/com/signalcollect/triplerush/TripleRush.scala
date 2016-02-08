@@ -132,7 +132,7 @@ class TripleRush(
 
   // End initialization =============
 
-  def isShutdown = _isShutdown
+  def isShutdown: Boolean = _isShutdown
 
   def asyncAddTriplePatterns(i: Iterator[TriplePattern]): Future[Unit] = {
     assert(!_isShutdown, noOperationsWhenShutdownMessage)

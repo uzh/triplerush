@@ -51,7 +51,7 @@ trait TripleParser {
 }
 
 object NTriples extends TripleParser {
-  def parse(is: InputStream) = {
+  def parse(is: InputStream): Iterator[Array[nx.Node]] = {
     val parser = new NxParser
     parser.parse(is)
   }

@@ -44,7 +44,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 class SignalBulkerWithoutIds[@specialized(Long) Id: ClassTag, Signal: ClassTag](size: Int) {
   private[this] var itemCount = 0
 
-  def numberOfItems = itemCount
+  def numberOfItems: Int = itemCount
 
   def isFull: Boolean = itemCount == size
 
@@ -65,7 +65,7 @@ class SignalBulkerWithoutIds[@specialized(Long) Id: ClassTag, Signal: ClassTag](
 class ResultBulker(val size: Int) {
   private[this] var itemCount = 0
 
-  def numberOfItems = itemCount
+  def numberOfItems: Int = itemCount
 
   def isFull: Boolean = itemCount == size
 
@@ -107,7 +107,7 @@ class CombiningMessageBusFactory[Signal: ClassTag](flushThreshold: Int, resultBu
       workerApiFactory)
   }
 
-  override def toString = "CombiningMessageBusFactory"
+  override def toString: String = "CombiningMessageBusFactory"
 }
 
 /**
