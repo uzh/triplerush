@@ -22,8 +22,7 @@ import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.index.{ FullIndex, Index }
 import com.signalcollect.triplerush.index.{ IndexStructure, IndexType }
 import com.signalcollect.triplerush.index.Index.AddChildId
-import com.signalcollect.triplerush.query.{ OperationIds, Query }
-import com.signalcollect.triplerush.query.Query.Initialize
+import com.signalcollect.triplerush.query.{ OperationIds }
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.pattern.ask
 import akka.stream.actor.ActorPublisher
@@ -34,6 +33,7 @@ import org.reactivestreams.Subscriber
 import akka.stream.actor.AbstractActorPublisher
 import akka.cluster.Cluster
 import java.util.concurrent.CountDownLatch
+import com.signalcollect.triplerush.result.QueryExecutionHandler
 
 object TripleRush {
 
@@ -60,7 +60,7 @@ class TripleRush(system: ActorSystem,
   import system.dispatcher
 
   protected val indexRegion = Index.shard(system)
-  protected val queryRegion = Query.shard(system)
+  protected val queryRegion = QueryExecutionHandler.shard(system)
 
   // TODO: Make efficient by building the index structure recursively.
   def addTriplePattern(triplePattern: TriplePattern): Future[Unit] = {
@@ -81,11 +81,12 @@ class TripleRush(system: ActorSystem,
     numberOfSelectVariables: Int,
     tickets: Long = Long.MaxValue): Source[Array[Int], Unit] = {
     val queryId = OperationIds.nextId()
-    val queryActorFuture = queryRegion ?
-      Initialize(queryId, query: Seq[TriplePattern], tickets, numberOfSelectVariables)
-    val queryActor = Await.result(queryActorFuture, timeout.duration).asInstanceOf[ActorRef]
-    val publisher = ActorPublisher(queryActor)
-    Source.fromPublisher(publisher)
+//    val queryActorFuture = queryRegion ?
+//      Initialize(queryId, query: Seq[TriplePattern], tickets, numberOfSelectVariables)
+//    val queryActor = Await.result(queryActorFuture, timeout.duration).asInstanceOf[ActorRef]
+//    val publisher = ActorPublisher(queryActor)
+//    Source.fromPublisher(publisher)
+    ???
   }
 
   def close(): Unit = {}

@@ -1,0 +1,120 @@
+/*
+ * Copyright (C) 2015 Cotiviti Labs (nexgen.admin@cotiviti.io)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.signalcollect.triplerush.result
+
+import scala.annotation.tailrec
+import scala.collection.immutable.Queue
+import com.signalcollect.triplerush.{ Shard, TriplePattern }
+import com.signalcollect.triplerush.index.Index
+import com.signalcollect.triplerush.query.QueryParticle.arrayToParticle
+import akka.actor.{Actor, ActorLogging, actorRef2Scala}
+import akka.cluster.sharding.ShardRegion
+import akka.event.LoggingReceive
+import akka.stream.actor.ActorPublisher
+import akka.stream.actor.ActorPublisherMessage.Request
+
+object QueryExecutionHandler extends Shard {
+
+  def apply(): Actor = new QueryExecutionHandler
+
+  case class BindingsForQuery(queryid: Int, resultBindings: Array[Int])
+
+  case class Tickets(queryid: Int, numberOfTickets: Long)
+
+  val idExtractor: ShardRegion.ExtractEntityId = {
+    case BindingsForQuery(queryId, bindings)       => (queryId.toString, bindings)
+    case Tickets(quryId, tickets)                  => (quryId.toString, tickets)
+  }
+
+  // TODO: Choose query ID such that this will resolve to a shard that is located on the same node.
+  def queryIdToShardId(indexId: Long): String = {
+    ((indexId.hashCode & Int.MaxValue) % 100).toString
+  }
+
+  val shardResolver: ShardRegion.ExtractShardId = {
+    case BindingsForQuery(queryId, _)              => queryIdToShardId(queryId)
+    case Tickets(quryId, tickets)                  => queryIdToShardId(quryId)
+  }
+
+}
+
+// TODO: Define timeout and terminate when it is reached.
+final class QueryExecutionHandler() extends Actor with ActorLogging {
+
+  def queryId: String = self.path.name
+  override def toString(): String = {
+    queryId.toInt.toString
+  }
+
+  def sendToIndex(indexId: Long, message: Any): Unit = {
+    Index.shard(context.system) ! message
+  }
+
+  def receive: Actor.Receive = ???
+
+
+//  /**
+//   * Stores both the queued result bindings and how many tickets have been received.
+//   */
+//  def resultStreaming(queued: Queue[Array[Int]], missingTickets: Long): Actor.Receive = LoggingReceive {
+//    case bindings: Array[Int] =>
+//      if (queued.isEmpty && totalDemand > 0) {
+//        onNext(bindings)
+//        context.become(resultStreaming(emptyQueue, missingTickets))
+//      } else {
+//        val updatedQueue = queued.enqueue(bindings)
+//        val remainingQueue = deliverFromQueue(updatedQueue, missingTickets == 0)
+//        context.become(resultStreaming(remainingQueue, missingTickets))
+//      }
+//    case tickets: Long =>
+//      val remaining = deliverFromQueue(queued, missingTickets == tickets)
+//      context.become(resultStreaming(remaining, missingTickets - tickets))
+//    case Request(count) =>
+//      val remaining = deliverFromQueue(queued, missingTickets == 0)
+//      context.become(resultStreaming(remaining, missingTickets))
+//  }
+//
+//  /**
+//   * Delivers from `queued' whatever it can, then returns a queue with the remaining items.
+//   * Completes the stream if all results were delivered and the query execution has completed.
+//   */
+//  @tailrec private[this] def deliverFromQueue(queued: Queue[Array[Int]], completed: Boolean): Queue[Array[Int]] = {
+//    if (completed && queued == emptyQueue) {
+//      onCompleteThenStop()
+//      emptyQueue
+//    } else if (totalDemand >= queued.size) {
+//      queued.foreach(onNext)
+//      if (completed) {
+//        onCompleteThenStop()
+//      }
+//      emptyQueue
+//    } else if (totalDemand == 0) {
+//      queued
+//    } else if (totalDemand <= Int.MaxValue) {
+//      val (toDeliver, remaining) = queued.splitAt(totalDemand.toInt)
+//      toDeliver.foreach(onNext)
+//      remaining
+//    } else {
+//      // TODO: Catch this case by ensuring that we deliver if total demand > queue.size.
+//      // afterwards check if we need to deliver again.
+//      val (toDeliver, remaining) = queued.splitAt(Int.MaxValue)
+//      toDeliver.foreach(onNext)
+//      deliverFromQueue(remaining, completed)
+//    }
+//  }
+
+}

@@ -27,7 +27,7 @@ import com.signalcollect.triplerush.query.QueryParticle
 import com.signalcollect.triplerush.query.QueryParticle._
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import com.signalcollect.triplerush.EfficientIndexPattern
-import com.signalcollect.triplerush.query.Query
+import com.signalcollect.triplerush.result.QueryExecutionHandler
 import akka.actor.ActorRef
 import com.signalcollect.triplerush.query.ParticleDebug
 
@@ -68,9 +68,9 @@ object Bind {
     if (boundParticle != null) {
       if (boundParticle.isResult) {
         // Query successful, send to query vertex.
-        val query = Query.shard(system)
-        query ! Query.BindingsForQuery(boundParticle.queryId, boundParticle.bindings)
-        query ! Query.Tickets(boundParticle.queryId, boundParticle.tickets)
+        val query = QueryExecutionHandler.shard(system)
+        query ! QueryExecutionHandler.BindingsForQuery(boundParticle.queryId, boundParticle.bindings)
+        query ! QueryExecutionHandler.Tickets(boundParticle.queryId, boundParticle.tickets)
       } else {
         // TODO: Handle existence checks.
         assert(!boundParticle.lastPattern.isFullyBound,
@@ -79,7 +79,7 @@ object Bind {
       }
     } else {
       // Failed to bind, send to query vertex.
-      Query.shard(system) ! query.tickets
+      QueryExecutionHandler.shard(system) ! query.tickets
     }
   }
 
