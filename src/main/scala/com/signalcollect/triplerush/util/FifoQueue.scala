@@ -22,7 +22,6 @@ import scala.reflect.ClassTag
  * FIFO queue implemented with a circular buffer.
  *
  * There needs to exist an Int that is >= `minCapacity` and that is a power of two.
- * TODO: Test with counters > Int.MaxValue
  */
 final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
   assert(minCapacity > 1,
