@@ -167,10 +167,10 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
   }
 
   it should "support specialization for primitive arrays" in {
-    val queue = new FifoQueue[Int](maxQueueCapacity)
-    (1 to maxQueueCapacity).foreach(queue.put)
-    val copy = queue.takeAll()
-    queue.getClass.getSimpleName should equal("FifoQueue$mcI$sp")
+    val intArray = new FifoQueue[Int](maxQueueCapacity).takeAll()
+    intArray.getClass should equal(classOf[Array[Int]])
+    val longArray = new FifoQueue[Long](maxQueueCapacity).takeAll()
+    longArray.getClass should equal(classOf[Array[Long]])
   }
 
 }
