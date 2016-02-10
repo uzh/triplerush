@@ -119,9 +119,9 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     val result = new Array[I](items)
     val rightLength = capacity - fromIndex
     if (rightLength >= items) {
-      System.arraycopy(impl, takeIndex, result, 0, items)
+      System.arraycopy(impl, fromIndex, result, 0, items)
     } else {
-      System.arraycopy(impl, takeIndex, result, 0, rightLength)
+      System.arraycopy(impl, fromIndex, result, 0, rightLength)
       System.arraycopy(impl, putIndex, result, rightLength, items - rightLength)
     }
     result

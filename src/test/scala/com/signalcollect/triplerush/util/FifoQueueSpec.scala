@@ -25,6 +25,8 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
   val minQueueCapacity = 2
   val maxQueueCapacity = 32 // Needs to be a power of 2.
 
+  val someString = "someString"
+
   val emptyQueueGen = for {
     capacity <- Gen.choose(minQueueCapacity, maxQueueCapacity)
   } yield new FifoQueue[String](capacity)
@@ -141,6 +143,8 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
         val recoveredBatchPutItems = taken.drop(queueSize - strings.size).toList
         recoveredBatchPutItems should equal(strings)
       }
+      queue.put(someString)
+      queue.take() should equal(someString)
     }
   }
 
@@ -149,6 +153,8 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
       queue.clear()
       queue.size should equal(0)
       queue.freeCapacity should equal(queue.capacity)
+      queue.put(someString)
+      queue.take() should equal(someString)
     }
   }
 
