@@ -45,7 +45,15 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
   val batchAccessFailed: Array[I] = null.asInstanceOf[Array[I]]
 
   override def toString(): String = {
-    s"FifoQueue(takeIndex=$takeIndex, size/capacity=$size/$capacity, array=${circularBuffer.mkString("[", ",", "]")}"
+    s"""FifoQueue(
+  takeIndex = $takeIndex,
+  size/capacity = $size/$capacity,
+  peek = $peek
+  buffer (first 16 items, up to 8 characters) = ${
+      circularBuffer.take(16).map(_.toString().take(8)).mkString("\n  [\n    ", ",\n    ", "\n  ]")
+    }
+)
+"""
   }
 
   def put(item: I): Boolean = {
@@ -64,10 +72,20 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
       val capacityOnRight = capacity - putIndex
       if (itemCount > 0) {
         if (capacityOnRight >= itemCount) {
-          System.arraycopy(items, 0, circularBuffer, putIndex, itemCount)
+          System.arraycopy(
+            items, 0,
+            circularBuffer, putIndex,
+            itemCount)
         } else {
-          System.arraycopy(items, 0, circularBuffer, putIndex, capacityOnRight)
-          System.arraycopy(items, capacityOnRight, circularBuffer, 0, itemCount - capacityOnRight)
+          val requiredCapacityFromLeft = itemCount - capacityOnRight
+          System.arraycopy(
+            items, 0,
+            circularBuffer, putIndex,
+            capacityOnRight)
+          System.arraycopy(
+            items, capacityOnRight,
+            circularBuffer, 0,
+            requiredCapacityFromLeft)
         }
         _size += itemCount
       }
@@ -105,7 +123,8 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     if (_size == 0) {
       emptyTakeAll
     } else {
-      val copy = copyFromCircularBuffer(circularBuffer, startIndex = takeIndex, length = _size)
+      val copy = copyFromCircularBuffer(
+        circularBuffer, startIndex = takeIndex, length = _size)
       clear()
       copy
     }
@@ -115,7 +134,8 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     if (batchSize > _size) {
       batchAccessFailed
     } else {
-      val copy = copyFromCircularBuffer(circularBuffer, startIndex = takeIndex, length = batchSize)
+      val copy = copyFromCircularBuffer(
+        circularBuffer, startIndex = takeIndex, length = batchSize)
       if (_size == batchSize) {
         clear()
       } else {
@@ -126,14 +146,27 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     }
   }
 
-  @inline private[this] def copyFromCircularBuffer(buffer: Array[I], startIndex: Int, length: Int): Array[I] = {
+  @inline private[this] def copyFromCircularBuffer(
+    buffer: Array[I], startIndex: Int, length: Int): Array[I] = {
     val result = new Array[I](length)
     val rightFragmentLength = capacity - startIndex
-    if (rightFragmentLength >= length) { // Only need one copy, fragment is long enough.
-      System.arraycopy(buffer, startIndex, result, 0, length)
+    if (rightFragmentLength >= length) {
+      // Only need one copy, right fragment is long enough.
+      System.arraycopy(
+        buffer, startIndex,
+        result, 0,
+        length)
     } else {
-      System.arraycopy(buffer, startIndex, result, 0, rightFragmentLength)
-      System.arraycopy(buffer, putIndex, result, rightFragmentLength, length - rightFragmentLength)
+      // Need 2 copies for the 2 fragments.
+      val remainingLengthFromLeft = length - rightFragmentLength
+      System.arraycopy(
+        buffer, startIndex,
+        result, 0,
+        rightFragmentLength)
+      System.arraycopy(
+        buffer, putIndex,
+        result, rightFragmentLength,
+        remainingLengthFromLeft)
     }
     result
   }
