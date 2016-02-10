@@ -31,7 +31,7 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     "There is no power of two in Int range that is larger than or equal to the min capacity.")
   private[this] val mask = capacity - 1
 
-  private[this] val impl = new Array[I](capacity)
+  private[this] val circularBuffer = new Array[I](capacity)
   private[this] var takeIndex = 0
   private[this] var _size = 0
   private[this] val emptyTakeAll = Array[I]()
@@ -45,14 +45,14 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
   val batchAccessFailed: Array[I] = null.asInstanceOf[Array[I]]
 
   override def toString(): String = {
-    s"FifoQueue(takeIndex=$takeIndex, size/capacity=$size/$capacity, array=${impl.mkString("[", ",", "]")}"
+    s"FifoQueue(takeIndex=$takeIndex, size/capacity=$size/$capacity, array=${circularBuffer.mkString("[", ",", "]")}"
   }
 
   def put(item: I): Boolean = {
     if (isFull) {
       false
     } else {
-      impl(putIndex) = item
+      circularBuffer(putIndex) = item
       _size += 1
       true
     }
@@ -64,10 +64,10 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
       val capacityOnRight = capacity - putIndex
       if (itemCount > 0) {
         if (capacityOnRight >= itemCount) {
-          System.arraycopy(items, 0, impl, putIndex, itemCount)
+          System.arraycopy(items, 0, circularBuffer, putIndex, itemCount)
         } else {
-          System.arraycopy(items, 0, impl, putIndex, capacityOnRight)
-          System.arraycopy(items, capacityOnRight, impl, 0, itemCount - capacityOnRight)
+          System.arraycopy(items, 0, circularBuffer, putIndex, capacityOnRight)
+          System.arraycopy(items, capacityOnRight, circularBuffer, 0, itemCount - capacityOnRight)
         }
         _size += itemCount
       }
@@ -81,7 +81,7 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     if (size == 0) {
       itemAccessFailed
     } else {
-      impl(takeIndex)
+      circularBuffer(takeIndex)
     }
   }
 
@@ -89,7 +89,7 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     if (isEmpty) {
       itemAccessFailed
     } else {
-      val item = impl(takeIndex)
+      val item = circularBuffer(takeIndex)
       takeIndex = (takeIndex + 1) & mask
       _size -= 1
       item
@@ -105,9 +105,9 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     if (_size == 0) {
       emptyTakeAll
     } else {
-      val result = circularBufferCopy(takeIndex, _size)
+      val copy = copyFromCircularBuffer(circularBuffer, startIndex = takeIndex, length = _size)
       clear()
-      result
+      copy
     }
   }
 
@@ -115,21 +115,25 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     if (batchSize > _size) {
       batchAccessFailed
     } else {
-      val result = circularBufferCopy(takeIndex, batchSize)
-      takeIndex = (takeIndex + batchSize) & mask
-      _size -= batchSize
-      result
+      val copy = copyFromCircularBuffer(circularBuffer, startIndex = takeIndex, length = batchSize)
+      if (_size == batchSize) {
+        clear()
+      } else {
+        _size -= batchSize
+        takeIndex = (takeIndex + batchSize) & mask
+      }
+      copy
     }
   }
 
-  @inline private[this] def circularBufferCopy(startIndex: Int, length: Int): Array[I] = {
+  @inline private[this] def copyFromCircularBuffer(buffer: Array[I], startIndex: Int, length: Int): Array[I] = {
     val result = new Array[I](length)
     val rightFragmentLength = capacity - startIndex
     if (rightFragmentLength >= length) { // Only need one copy, fragment is long enough.
-      System.arraycopy(impl, startIndex, result, 0, length)
+      System.arraycopy(buffer, startIndex, result, 0, length)
     } else {
-      System.arraycopy(impl, startIndex, result, 0, rightFragmentLength)
-      System.arraycopy(impl, putIndex, result, rightFragmentLength, length - rightFragmentLength)
+      System.arraycopy(buffer, startIndex, result, 0, rightFragmentLength)
+      System.arraycopy(buffer, putIndex, result, rightFragmentLength, length - rightFragmentLength)
     }
     result
   }
