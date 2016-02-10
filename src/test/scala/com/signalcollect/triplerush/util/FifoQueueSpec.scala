@@ -83,7 +83,7 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
   it should "fail a take from an empty queue" in {
     forAll(emptyQueueGen) { (queue: FifoQueue[String]) =>
       val item = queue.take()
-      item should equal(queue.takeFailed)
+      item should equal(queue.itemAccessFailed)
     }
   }
 
@@ -111,7 +111,7 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
       if (takeIsPossible) {
         taken.length should equal(batchSize)
       } else {
-        taken should equal(queue.batchTakeFailed)
+        taken should equal(queue.batchAccessFailed)
       }
     }
   }
@@ -155,6 +155,14 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
       queue.freeCapacity should equal(queue.capacity)
       queue.put(someString)
       queue.take() should equal(someString)
+    }
+  }
+
+  it should "support peeking at items in arbitrary queues" in {
+    forAll(arbitraryQueueGen) { (queue: FifoQueue[String]) =>
+      val peeked = queue.peek()
+      val item = queue.take()
+      peeked should equal(item)
     }
   }
 

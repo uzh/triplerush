@@ -41,8 +41,8 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
   @inline def isFull: Boolean = _size == capacity
   @inline def freeCapacity: Int = capacity - _size
 
-  val takeFailed: I = null.asInstanceOf[I]
-  val batchTakeFailed: Array[I] = null.asInstanceOf[Array[I]]
+  val itemAccessFailed: I = null.asInstanceOf[I]
+  val batchAccessFailed: Array[I] = null.asInstanceOf[Array[I]]
 
   override def toString(): String = {
     s"FifoQueue(takeIndex=$takeIndex, size/capacity=$size/$capacity, array=${impl.mkString("[", ",", "]")}"
@@ -77,9 +77,17 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     }
   }
 
+  def peek(): I = {
+    if (size == 0) {
+      itemAccessFailed
+    } else {
+      impl(takeIndex)
+    }
+  }
+
   def take(): I = {
     if (isEmpty) {
-      takeFailed
+      itemAccessFailed
     } else {
       val item = impl(takeIndex)
       takeIndex = (takeIndex + 1) & mask
@@ -105,7 +113,7 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
 
   def batchTake(batchSize: Int): Array[I] = {
     if (batchSize > _size) {
-      batchTakeFailed
+      batchAccessFailed
     } else {
       val result = circularBufferCopy(takeIndex, batchSize)
       takeIndex = (takeIndex + batchSize) & mask
