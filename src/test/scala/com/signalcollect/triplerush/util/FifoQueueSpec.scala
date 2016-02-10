@@ -119,12 +119,44 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
       val putIsPossible = queue.freeCapacity >= strings.size
       val wasPut = queue.batchPut(strings.toArray)
       wasPut should equal(putIsPossible)
+      val queueSize = queue.size
+      val taken = queue.batchTake(queueSize)
+      taken.size should equal(queueSize)
       if (wasPut) {
-        val queueSize = queue.size
-        val taken = queue.batchTake(queueSize).toList.drop(queueSize - strings.size)
-        taken should equal(strings)
+        val recoveredBatchPutItems = taken.drop(queueSize - strings.size).toList
+        recoveredBatchPutItems should equal(strings)
       }
     }
+  }
+
+  it should "support take all after a batch put on an arbitray queue" in {
+    forAll(arbitraryQueueGen, listOfStringsGen) { (queue: FifoQueue[String], strings: List[String]) =>
+      val putIsPossible = queue.freeCapacity >= strings.size
+      val wasPut = queue.batchPut(strings.toArray)
+      wasPut should equal(putIsPossible)
+      val queueSize = queue.size
+      val taken = queue.takeAll()
+      taken.size should equal(queueSize)
+      if (wasPut) {
+        val recoveredBatchPutItems = taken.drop(queueSize - strings.size).toList
+        recoveredBatchPutItems should equal(strings)
+      }
+    }
+  }
+
+  it should "support clearing an arbitrary queue" in {
+    forAll(arbitraryQueueGen) { (queue: FifoQueue[String]) =>
+      queue.clear()
+      queue.size should equal(0)
+      queue.freeCapacity should equal(queue.capacity)
+    }
+  }
+
+  it should "support specialization for primitive arrays" in {
+    val queue = new FifoQueue[Int](maxQueueCapacity)
+    (1 to maxQueueCapacity).foreach(queue.put)
+    val copy = queue.takeAll()
+    queue.getClass.getSimpleName should equal("FifoQueue$mcI$sp")
   }
 
 }

@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
  * There needs to exist an Int that is >= `minCapacity` and that is a power of two.
  * TODO: Test with counters > Int.MaxValue
  */
-class FifoQueue[I: ClassTag](minCapacity: Int) {
+final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
   assert(minCapacity > 1,
     "The minimum capacity needs to be larger than 1.")
   val capacity = nextPowerOfTwo(minCapacity)
@@ -35,11 +35,12 @@ class FifoQueue[I: ClassTag](minCapacity: Int) {
   private[this] val impl = new Array[I](capacity)
   private[this] var takeIndex = 0
   private[this] var _size = 0
-  private[this] def putIndex: Int = (takeIndex + size) & mask
-  def size: Int = _size
-  def isEmpty: Boolean = _size == 0
-  def isFull: Boolean = _size == capacity
-  def freeCapacity: Int = capacity - _size
+  private[this] val emptyTakeAll = Array[I]()
+  @inline private[this] def putIndex = (takeIndex + size) & mask
+  @inline def size: Int = _size
+  @inline def isEmpty: Boolean = _size == 0
+  @inline def isFull: Boolean = _size == capacity
+  @inline def freeCapacity: Int = capacity - _size
 
   val takeFailed: I = null.asInstanceOf[I]
   val batchTakeFailed: Array[I] = null.asInstanceOf[Array[I]]
@@ -88,22 +89,42 @@ class FifoQueue[I: ClassTag](minCapacity: Int) {
     }
   }
 
+  @inline def clear(): Unit = {
+    takeIndex = 0
+    _size = 0
+  }
+
+  def takeAll(): Array[I] = {
+    if (_size == 0) {
+      emptyTakeAll
+    } else {
+      val result = circularBufferCopy(takeIndex, _size)
+      clear()
+      result
+    }
+  }
+
   def batchTake(batchSize: Int): Array[I] = {
     if (batchSize > _size) {
       batchTakeFailed
     } else {
-      val result = new Array[I](batchSize)
-      val rightLength = capacity - takeIndex
-      if (rightLength >= batchSize) {
-        System.arraycopy(impl, takeIndex, result, 0, batchSize)
-      } else {
-        System.arraycopy(impl, takeIndex, result, 0, rightLength)
-        System.arraycopy(impl, putIndex, result, rightLength, batchSize - rightLength)
-      }
+      val result = circularBufferCopy(takeIndex, batchSize)
       takeIndex = (takeIndex + batchSize) & mask
       _size -= batchSize
       result
     }
+  }
+
+  @inline private[this] def circularBufferCopy(fromIndex: Int, items: Int): Array[I] = {
+    val result = new Array[I](items)
+    val rightLength = capacity - fromIndex
+    if (rightLength >= items) {
+      System.arraycopy(impl, takeIndex, result, 0, items)
+    } else {
+      System.arraycopy(impl, takeIndex, result, 0, rightLength)
+      System.arraycopy(impl, putIndex, result, rightLength, items - rightLength)
+    }
+    result
   }
 
   private[this] def nextPowerOfTwo(x: Int): Int = {
