@@ -115,14 +115,14 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     }
   }
 
-  @inline private[this] def circularBufferCopy(fromIndex: Int, items: Int): Array[I] = {
-    val result = new Array[I](items)
-    val rightLength = capacity - fromIndex
-    if (rightLength >= items) {
-      System.arraycopy(impl, fromIndex, result, 0, items)
+  @inline private[this] def circularBufferCopy(startIndex: Int, length: Int): Array[I] = {
+    val result = new Array[I](length)
+    val rightFragmentLength = capacity - startIndex
+    if (rightFragmentLength >= length) { // Only need one copy, fragment is long enough.
+      System.arraycopy(impl, startIndex, result, 0, length)
     } else {
-      System.arraycopy(impl, fromIndex, result, 0, rightLength)
-      System.arraycopy(impl, putIndex, result, rightLength, items - rightLength)
+      System.arraycopy(impl, startIndex, result, 0, rightFragmentLength)
+      System.arraycopy(impl, putIndex, result, rightFragmentLength, length - rightFragmentLength)
     }
     result
   }
