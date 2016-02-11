@@ -146,6 +146,17 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     }
   }
 
+  def batchProcessAtMost(atMost: Int, p: I => Unit): Unit = {
+    val toProcess = math.min(atMost, _size)
+    var processed = 0
+    while (processed < toProcess) {
+      p(circularBuffer(takeIndex))
+      takeIndex = (takeIndex + 1) & mask
+      processed += 1
+    }
+    _size -= processed
+  }
+
   @inline private[this] def copyFromCircularBuffer(
     buffer: Array[I], startIndex: Int, length: Int): Array[I] = {
     val result = new Array[I](length)

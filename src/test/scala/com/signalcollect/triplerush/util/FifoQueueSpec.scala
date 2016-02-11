@@ -19,6 +19,7 @@ package com.signalcollect.triplerush.util
 import org.scalacheck.Gen
 import org.scalatest.{ Assertions, FlatSpec, Matchers }
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
+import scala.reflect.ClassTag
 
 class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Matchers with Assertions {
 
@@ -27,9 +28,9 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
 
   val someString = "someString"
 
-  val emptyQueueGen = for {
+  def emptyQueueGen[T: ClassTag] = for {
     capacity <- Gen.choose(minQueueCapacity, maxQueueCapacity)
-  } yield new FifoQueue[String](capacity)
+  } yield new FifoQueue[T](capacity)
 
   val fullQueueGen = for {
     strings <- Gen.containerOfN[List, String](maxQueueCapacity, Gen.alphaStr)
@@ -58,14 +59,14 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
   val listOfStringsGen = Gen.containerOfN[List, String](2, Gen.alphaStr)
 
   "FifoQueue" should "support a put on an empty queue" in {
-    forAll(emptyQueueGen, Gen.alphaStr) { (queue: FifoQueue[String], item: String) =>
+    forAll(emptyQueueGen[String], Gen.alphaStr) { (queue: FifoQueue[String], item: String) =>
       val wasPut = queue.put(item)
       wasPut should equal(true)
     }
   }
 
   it should "support using the full queue capacity" in {
-    forAll(emptyQueueGen, Gen.alphaStr) { (queue: FifoQueue[String], item: String) =>
+    forAll(emptyQueueGen[String], Gen.alphaStr) { (queue: FifoQueue[String], item: String) =>
       (1 to queue.capacity).foreach { _ =>
         val wasPut = queue.put(item)
         wasPut should equal(true)
@@ -81,14 +82,14 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
   }
 
   it should "fail a take from an empty queue" in {
-    forAll(emptyQueueGen) { (queue: FifoQueue[String]) =>
+    forAll(emptyQueueGen[String]) { (queue: FifoQueue[String]) =>
       val item = queue.take()
       item should equal(queue.itemAccessFailed)
     }
   }
 
   it should "support put/take on an empty queue" in {
-    forAll(emptyQueueGen, Gen.alphaStr) { (queue: FifoQueue[String], item: String) =>
+    forAll(emptyQueueGen[String], Gen.alphaStr) { (queue: FifoQueue[String], item: String) =>
       val wasPut = queue.put(item)
       wasPut should equal(true)
       val takenItem = queue.take
@@ -163,6 +164,31 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
       val peeked = queue.peek()
       val item = queue.take()
       peeked should equal(item)
+    }
+  }
+
+  it should "support batch processing on an empty queue" in {
+    forAll(emptyQueueGen[Int]) { (queue: FifoQueue[Int]) =>
+      val maxOnes = 10
+      val capacity = queue.capacity
+      val onesAdded = (1 to maxOnes).map(_ => queue.put(1)).map(b => if (b) 1 else 0).sum
+      onesAdded should equal(math.min(capacity, maxOnes))
+      var processed = 0
+      queue.batchProcessAtMost(maxOnes, processed += _)
+      processed should equal(onesAdded)
+    }
+  }
+
+  it should "support batch processing on an arbitrary queue" in {
+    forAll(arbitraryQueueGen, Gen.choose(0, maxQueueCapacity)) { (queue: FifoQueue[String], toProcess) =>
+      queue.batchProcessAtMost(toProcess, _ => Unit)
+    }
+  }
+
+  it should "support batch processing 1 item on an arbitrary queue" in {
+    forAll(arbitraryQueueGen) { (queue: FifoQueue[String]) =>
+      val peeked = queue.peek()
+      queue.batchProcessAtMost(1, item => item should equal(peeked))
     }
   }
 
