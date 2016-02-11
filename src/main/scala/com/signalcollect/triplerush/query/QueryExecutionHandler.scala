@@ -14,20 +14,27 @@
  * limitations under the License.
  */
 
-package com.signalcollect.triplerush.result
+package com.signalcollect.triplerush.query
 
-import scala.annotation.tailrec
-import scala.collection.immutable.Queue
-import com.signalcollect.triplerush.{ Shard, TriplePattern }
-import com.signalcollect.triplerush.index.Index
-import com.signalcollect.triplerush.query.QueryParticle.arrayToParticle
-import akka.actor.{Actor, ActorLogging, actorRef2Scala}
+import com.signalcollect.triplerush.Shard
+import com.signalcollect.triplerush.util.Streamer
+import com.typesafe.config.ConfigFactory
+import akka.actor.{ Actor, ActorLogging, ActorRef, actorRef2Scala }
 import akka.cluster.sharding.ShardRegion
-import akka.event.LoggingReceive
-import akka.stream.actor.ActorPublisher
+import akka.contrib.pattern.ReceivePipeline
 import akka.stream.actor.ActorPublisherMessage.Request
 
 object QueryExecutionHandler extends Shard {
+
+  case object Register
+
+  case class RegisterForQuery(queryId: Int)
+
+  case class RequestResultsForQuery(queryId: Int, count: Int)
+
+  val bufferSizeKey = "triplerush.max-buffer-per-query"
+
+  val maxBufferPerQuery = ConfigFactory.load().getInt(bufferSizeKey)
 
   def apply(): Actor = new QueryExecutionHandler
 
@@ -36,8 +43,10 @@ object QueryExecutionHandler extends Shard {
   case class Tickets(queryid: Int, numberOfTickets: Long)
 
   val idExtractor: ShardRegion.ExtractEntityId = {
-    case BindingsForQuery(queryId, bindings)       => (queryId.toString, bindings)
-    case Tickets(quryId, tickets)                  => (quryId.toString, tickets)
+    case BindingsForQuery(queryId, bindings)        => (queryId.toString, bindings)
+    case Tickets(queryId, tickets)                  => (queryId.toString, tickets)
+    case RegisterForQuery(queryId)                  => (queryId.toString, Register)
+    case RequestResultsForQuery(queryId, requested) => (queryId.toString, requested)
   }
 
   // TODO: Choose query ID such that this will resolve to a shard that is located on the same node.
@@ -46,75 +55,54 @@ object QueryExecutionHandler extends Shard {
   }
 
   val shardResolver: ShardRegion.ExtractShardId = {
-    case BindingsForQuery(queryId, _)              => queryIdToShardId(queryId)
-    case Tickets(quryId, tickets)                  => queryIdToShardId(quryId)
+    case BindingsForQuery(queryId, _)               => queryIdToShardId(queryId)
+    case Tickets(queryId, tickets)                  => queryIdToShardId(queryId)
+    case RegisterForQuery(queryId)                  => queryIdToShardId(queryId)
+    case RequestResultsForQuery(queryId, requested) => queryIdToShardId(queryId)
+    case other =>
+      throw new Exception(s"Could not resolve message $other for shard $name.")
   }
 
 }
 
 // TODO: Define timeout and terminate when it is reached.
-final class QueryExecutionHandler() extends Actor with ActorLogging {
+final class QueryExecutionHandler extends Streamer[Array[Int]] with ActorLogging with ReceivePipeline {
 
   def queryId: String = self.path.name
-  override def toString(): String = {
-    queryId.toInt.toString
+  override def toString(): String = self.path.name
+
+  def bufferSize = QueryExecutionHandler.maxBufferPerQuery
+
+  var downstreamActor: Option[ActorRef] = None
+  var requested: Int = 0
+
+  var missingTickets: Long = QueryExecutionHandler.maxBufferPerQuery
+  def availableTickets = queue.freeCapacity
+
+  def receive = {
+    case Streamer.DeliverFromQueue =>
+      println(s"delivering math.min(demand=$requested, size=${queue.size}) items to $downstreamActor")
+      downstreamActor.foreach { a =>
+        val items = queue.batchTakeAtMost(requested)
+        val sent = a ! items
+        requested -= items.length
+        if (queue.isEmpty && missingTickets == 0) {
+          a ! Streamer.Completed
+        }
+      }
+    case tickets: Long =>
+      missingTickets -= tickets
+      println(s"got $tickets tickets, missingTickets=$missingTickets")
+      ReceivePipeline.HandledCompletely
+    case QueryExecutionHandler.Register =>
+      println(s"got registration from $sender")
+      downstreamActor = Some(sender)
+      ReceivePipeline.HandledCompletely
+    case requestedItems: Int =>
+      println(s"got request for $requestedItems items from $sender")
+      requested += requestedItems
+      downstreamActor = Some(sender)
+      ReceivePipeline.HandledCompletely
   }
-
-  def sendToIndex(indexId: Long, message: Any): Unit = {
-    Index.shard(context.system) ! message
-  }
-
-  def receive: Actor.Receive = ???
-
-
-//  /**
-//   * Stores both the queued result bindings and how many tickets have been received.
-//   */
-//  def resultStreaming(queued: Queue[Array[Int]], missingTickets: Long): Actor.Receive = LoggingReceive {
-//    case bindings: Array[Int] =>
-//      if (queued.isEmpty && totalDemand > 0) {
-//        onNext(bindings)
-//        context.become(resultStreaming(emptyQueue, missingTickets))
-//      } else {
-//        val updatedQueue = queued.enqueue(bindings)
-//        val remainingQueue = deliverFromQueue(updatedQueue, missingTickets == 0)
-//        context.become(resultStreaming(remainingQueue, missingTickets))
-//      }
-//    case tickets: Long =>
-//      val remaining = deliverFromQueue(queued, missingTickets == tickets)
-//      context.become(resultStreaming(remaining, missingTickets - tickets))
-//    case Request(count) =>
-//      val remaining = deliverFromQueue(queued, missingTickets == 0)
-//      context.become(resultStreaming(remaining, missingTickets))
-//  }
-//
-//  /**
-//   * Delivers from `queued' whatever it can, then returns a queue with the remaining items.
-//   * Completes the stream if all results were delivered and the query execution has completed.
-//   */
-//  @tailrec private[this] def deliverFromQueue(queued: Queue[Array[Int]], completed: Boolean): Queue[Array[Int]] = {
-//    if (completed && queued == emptyQueue) {
-//      onCompleteThenStop()
-//      emptyQueue
-//    } else if (totalDemand >= queued.size) {
-//      queued.foreach(onNext)
-//      if (completed) {
-//        onCompleteThenStop()
-//      }
-//      emptyQueue
-//    } else if (totalDemand == 0) {
-//      queued
-//    } else if (totalDemand <= Int.MaxValue) {
-//      val (toDeliver, remaining) = queued.splitAt(totalDemand.toInt)
-//      toDeliver.foreach(onNext)
-//      remaining
-//    } else {
-//      // TODO: Catch this case by ensuring that we deliver if total demand > queue.size.
-//      // afterwards check if we need to deliver again.
-//      val (toDeliver, remaining) = queued.splitAt(Int.MaxValue)
-//      toDeliver.foreach(onNext)
-//      deliverFromQueue(remaining, completed)
-//    }
-//  }
 
 }

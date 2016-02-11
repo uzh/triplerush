@@ -27,7 +27,7 @@ import com.signalcollect.triplerush.query.QueryParticle
 import com.signalcollect.triplerush.query.QueryParticle._
 import com.signalcollect.triplerush.EfficientIndexPattern._
 import com.signalcollect.triplerush.EfficientIndexPattern
-import com.signalcollect.triplerush.result.QueryExecutionHandler
+import com.signalcollect.triplerush.query.QueryExecutionHandler
 import akka.actor.ActorRef
 import com.signalcollect.triplerush.query.ParticleDebug
 

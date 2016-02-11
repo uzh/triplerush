@@ -33,7 +33,8 @@ import org.reactivestreams.Subscriber
 import akka.stream.actor.AbstractActorPublisher
 import akka.cluster.Cluster
 import java.util.concurrent.CountDownLatch
-import com.signalcollect.triplerush.result.QueryExecutionHandler
+import com.signalcollect.triplerush.query.QueryExecutionHandler
+import com.signalcollect.triplerush.result.LocalResultStreamer
 
 object TripleRush {
 
@@ -78,15 +79,12 @@ class TripleRush(system: ActorSystem,
   // TODO: Clean up when a timeout is encountered.
   def query(
     query: Vector[TriplePattern],
-    numberOfSelectVariables: Int,
-    tickets: Long = Long.MaxValue): Source[Array[Int], Unit] = {
+    numberOfSelectVariables: Int): Source[Array[Int], Unit] = {
     val queryId = OperationIds.nextId()
-//    val queryActorFuture = queryRegion ?
-//      Initialize(queryId, query: Seq[TriplePattern], tickets, numberOfSelectVariables)
-//    val queryActor = Await.result(queryActorFuture, timeout.duration).asInstanceOf[ActorRef]
-//    val publisher = ActorPublisher(queryActor)
-//    Source.fromPublisher(publisher)
-    ???
+    val localResultStreamer = system.actorOf(
+      LocalResultStreamer.props(queryId, query, tickets = QueryExecutionHandler.maxBufferPerQuery, numberOfSelectVariables))
+    val publisher = ActorPublisher(localResultStreamer)
+    Source.fromPublisher(publisher)
   }
 
   def close(): Unit = {}

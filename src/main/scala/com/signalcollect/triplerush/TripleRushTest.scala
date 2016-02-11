@@ -36,9 +36,9 @@ import akka.stream.impl.fusing.ActorGraphInterpreter
 import com.typesafe.config.ConfigFactory
 
 object TripleRushTest extends App {
-  
+
   val config = ConfigFactory.load()
-  val numberOfNodes =  config.getInt("triplerush.number-of-nodes")
+  val numberOfNodes = config.getInt("triplerush.number-of-nodes")
   val cluster = ClusterCreator.create(numberOfNodes)
   val tr = TripleRush(Random.shuffle(cluster).head)
 
@@ -49,11 +49,16 @@ object TripleRushTest extends App {
     tr.addTriplePattern(TriplePattern(6, 2, 3)))
   Await.ready(Future.sequence(futures), 30.seconds)
 
-  val results = tr.query(Vector(TriplePattern(-1, 2, 3)), 1, Int.MaxValue)
-
+  val results = tr.query(Vector(TriplePattern(-1, 2, 3)), 1)
   implicit val system = ActorSystem("test")
   implicit val materializer = ActorMaterializer()
-  val printingSink = Sink.foreach[Array[Int]](a => println(a.mkString(", ")))
+  val printingSink = Sink.foreach[Array[Int]](a => println(s"result: ${
+    a.zipWithIndex.map {
+      case (binding, variable) =>
+        s"${-(variable + 1)} -> $binding"
+    }.mkString(", ")
+  }"))
+  println("okay, waiting for results now")
   val printing = results.runWith(printingSink)
 
   Await.ready(printing, 30.seconds)

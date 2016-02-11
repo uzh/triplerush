@@ -130,23 +130,23 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
     }
   }
 
-  def batchTake(batchSize: Int): Array[I] = {
-    if (batchSize > _size) {
-      batchAccessFailed
+  def batchTakeAtMost(atMost: Int): Array[I] = {
+    val batchSize = math.min(atMost, _size)
+    val copy = copyFromCircularBuffer(
+      circularBuffer, startIndex = takeIndex, length = batchSize)
+    if (_size == batchSize) {
+      clear()
     } else {
-      val copy = copyFromCircularBuffer(
-        circularBuffer, startIndex = takeIndex, length = batchSize)
-      if (_size == batchSize) {
-        clear()
-      } else {
-        _size -= batchSize
-        takeIndex = (takeIndex + batchSize) & mask
-      }
-      copy
+      _size -= batchSize
+      takeIndex = (takeIndex + batchSize) & mask
     }
+    copy
   }
 
-  def batchProcessAtMost(atMost: Int, p: I => Unit): Unit = {
+  /**
+   * Returns number of items that were actually processed.
+   */
+  def batchProcessAtMost(atMost: Int, p: I => Unit): Int = {
     val toProcess = math.min(atMost, _size)
     var processed = 0
     while (processed < toProcess) {
@@ -154,7 +154,8 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
       takeIndex = (takeIndex + 1) & mask
       processed += 1
     }
-    _size -= processed
+    _size -= toProcess
+    toProcess
   }
 
   @inline private[this] def copyFromCircularBuffer(

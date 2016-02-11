@@ -25,8 +25,7 @@ trait TripleStore {
 
   def query(
     query: Vector[TriplePattern],
-    numberOfSelectVariables: Int,
-    tickets: Long = Long.MaxValue): Source[Array[Int], Unit]
+    numberOfSelectVariables: Int): Source[Array[Int], Unit]
 
   def close(): Unit
 

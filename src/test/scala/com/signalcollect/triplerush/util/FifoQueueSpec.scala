@@ -49,7 +49,7 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
     val batchTakeIterator = batchTakes.iterator
     strings.forall {
       if (queue.isFull && batchTakeIterator.hasNext) {
-        queue.batchTake(batchTakeIterator.next())
+        queue.batchTakeAtMost(batchTakeIterator.next())
       }
       queue.put
     }
@@ -107,13 +107,9 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
 
   it should "support batch take on an arbitrary queue" in {
     forAll(arbitraryQueueGen, Gen.choose(minQueueCapacity, maxQueueCapacity)) { (queue: FifoQueue[String], batchSize: Int) =>
-      val takeIsPossible = queue.size >= batchSize
-      val taken = queue.batchTake(batchSize)
-      if (takeIsPossible) {
-        taken.length should equal(batchSize)
-      } else {
-        taken should equal(queue.batchAccessFailed)
-      }
+      val queueSize = queue.size
+      val taken = queue.batchTakeAtMost(batchSize)
+      taken.length should equal(math.min(queueSize, batchSize))
     }
   }
 
@@ -123,7 +119,7 @@ class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Mat
       val wasPut = queue.batchPut(strings.toArray)
       wasPut should equal(putIsPossible)
       val queueSize = queue.size
-      val taken = queue.batchTake(queueSize)
+      val taken = queue.batchTakeAtMost(queueSize)
       taken.size should equal(queueSize)
       if (wasPut) {
         val recoveredBatchPutItems = taken.drop(queueSize - strings.size).toList

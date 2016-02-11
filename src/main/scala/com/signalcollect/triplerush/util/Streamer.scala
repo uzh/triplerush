@@ -14,94 +14,60 @@
  * limitations under the License.
  */
 
-package com.signalcollect.triplerush.result
+package com.signalcollect.triplerush.util
 
-import scala.collection.immutable.Queue
+import scala.annotation.elidable
+import scala.annotation.elidable.ASSERTION
 import scala.reflect.ClassTag
-
-import akka.actor.{ Actor, ActorLogging }
-import akka.event.LoggingReceive
-import akka.stream.actor.ActorPublisher
-import akka.stream.actor.ActorPublisherMessage.Request
-
-import collection.JavaConversions._
+import com.signalcollect.triplerush.query.QueryExecutionHandler
+import akka.actor.Actor
+import akka.actor.util.{ Flush, FlushWhenIdle }
+import akka.contrib.pattern.ReceivePipeline
+import akka.contrib.pattern.ReceivePipeline.Inner
 
 object Streamer {
 
   case object Completed
+
+  case object DeliverFromQueue
+
+  class QueueFullException(is: Any) extends Exception(s"Could not add items $is to the queue.")
 
 }
 
 // TODO: Define timeout and terminate when it is reached.
 // TODO: Max buffer size?
 // TODO: Use back pressure before the buffer becomes full.
-abstract class Streamer[I: ClassTag]() extends ActorPublisher[I] with ActorLogging {
+abstract class Streamer[I: ClassTag]() extends Actor with FlushWhenIdle with ReceivePipeline {
 
-  // Point this at an object to save the reference.
-  def emptyQueue = ???
+  def bufferSize: Int
 
-  def receive: Actor.Receive = buffering(emptyQueue, completed = false)
+  protected val queue = new FifoQueue[I](bufferSize)
 
-  /**
-   * Buffers the queued items and stores if the stream has been completed.
-   */
-  protected def buffering(buffer: Queue[I], completed: Boolean): Actor.Receive = LoggingReceive {
-    case item: I =>
-      // Skip buffering if possible.
-      if (buffer.isEmpty && totalDemand > 0) {
-        onNext(item)
-        context.become(buffering(emptyQueue, completed))
+  pipelineInner {
+    case i: I =>
+      val wasPut = queue.put(i)
+      assert(wasPut)
+      if (queue.isFull) {
+        Inner(Streamer.DeliverFromQueue)
       } else {
-        val updatedQueue = buffer.enqueue(item)
-        val remainingQueue = deliverFromQueue(updatedQueue, completed)
-        context.become(buffering(remainingQueue, completed))
+        ReceivePipeline.HandledCompletely
       }
-    case items: Array[I] =>
-      // Skip buffering if possible.
-      if (buffer.isEmpty && totalDemand > items.length) {
-        items.foreach(onNext)
-        context.become(buffering(emptyQueue, completed))
-      } else {
-        val updatedQueue: Queue[I] = ??? //buffer.enqueue(iterableItems)
-        val remainingQueue = deliverFromQueue(updatedQueue, completed)
-        context.become(buffering(remainingQueue, completed))
-      }
-    case Streamer.Completed =>
-      val remaining = deliverFromQueue(buffer, completed)
-      context.become(buffering(remaining, completed))
-    case Request(count) =>
-      val remaining = deliverFromQueue(buffer, completed)
-      context.become(buffering(remaining, completed))
-  }
-
-  /**
-   * Delivers from `queued' whatever it can, then returns a queue with the remaining items.
-   * Completes the out bound stream if all results were delivered the in bound stream has completed.
-   */
-  protected def deliverFromQueue(queued: Queue[I], completed: Boolean): Queue[I] = {
-    if (queued == emptyQueue) {
-      if (completed) {
-        onCompleteThenStop()
-      }
-      emptyQueue
-    } else {
-      // Queue contains elements.
-      if (totalDemand == 0) {
-        queued
-      } else if (totalDemand >= queued.size) {
-        queued.foreach(onNext)
-        if (completed) {
-          onCompleteThenStop()
+    case is: Array[I] =>
+      println(s"streamer received ${is.size} results")
+      if (queue.freeCapacity >= is.length) {
+        val wasPut = queue.batchPut(is)
+        assert(wasPut)
+        if (queue.isFull) {
+          Inner(Streamer.DeliverFromQueue)
+        } else {
+          ReceivePipeline.HandledCompletely
         }
-        emptyQueue
       } else {
-        // we can be sure that totalDemand < queued.size,
-        // which means it can safely be converted to an Int.
-        val (toDeliver, remaining) = queued.splitAt(totalDemand.toInt)
-        toDeliver.foreach(onNext)
-        remaining
+        throw new Streamer.QueueFullException(is)
       }
-    }
+    case Flush =>
+      Inner(Streamer.DeliverFromQueue)
   }
 
 }

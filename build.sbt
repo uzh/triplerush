@@ -20,6 +20,7 @@ val project = Project(
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
       "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaVersion,
       "com.typesafe.akka" %% "akka-stream-experimental" % akkaStreamVersion,
+      "com.typesafe.akka" %% "akka-contrib" % akkaVersion,
       "org.mapdb" % "mapdb" % mapDbVersion,
       "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.0",
       "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion % "test",
