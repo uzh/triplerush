@@ -23,7 +23,10 @@ import com.signalcollect.triplerush.query.VariableEncoding
 
 object TripleStore {
 
+  // Negative Ints represent variables.
   type Variable = Int
+  
+  // Positive Ints represent bindings.
   type Binding = Int
 
 }
