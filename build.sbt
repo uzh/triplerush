@@ -1,9 +1,10 @@
 import com.typesafe.sbt.SbtMultiJvm
 import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
 
-val akkaVersion = "2.4.1"
-val akkaStreamVersion = "2.0.3"
-val mapDbVersion = "3.0.0-M1"
+EclipseKeys.withSource := true
+
+val akkaVersion = "2.4.2"
+val mapDbVersion = "3.0.0-M2"
 
 val project = Project(
   id = "triplerush",
@@ -19,7 +20,7 @@ val project = Project(
       "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
       "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaVersion,
-      "com.typesafe.akka" %% "akka-stream-experimental" % akkaStreamVersion,
+      "com.typesafe.akka" %% "akka-stream" % akkaVersion,
       "com.typesafe.akka" %% "akka-contrib" % akkaVersion,
       "org.mapdb" % "mapdb" % mapDbVersion,
       "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.0",

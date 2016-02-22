@@ -16,26 +16,25 @@
 
 package com.signalcollect.triplerush
 
-import scala.concurrent.{ Await, Future }
+import java.util.concurrent.CountDownLatch
+
+import scala.concurrent.Future
 import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.index.{ FullIndex, Index }
 import com.signalcollect.triplerush.index.{ IndexStructure, IndexType }
 import com.signalcollect.triplerush.index.Index.AddChildId
-import com.signalcollect.triplerush.query.{ OperationIds }
-import akka.actor.{ ActorRef, ActorSystem }
+import com.signalcollect.triplerush.query.{ OperationIds, QueryExecutionHandler, VariableEncoding }
+import com.signalcollect.triplerush.result.LocalResultStreamer
+
+import akka.NotUsed
+import akka.actor.ActorSystem
+import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.stream.actor.ActorPublisher
 import akka.stream.scaladsl.Source
 import akka.util.Timeout
-import org.reactivestreams.Publisher
-import org.reactivestreams.Subscriber
-import akka.stream.actor.AbstractActorPublisher
-import akka.cluster.Cluster
-import java.util.concurrent.CountDownLatch
-import com.signalcollect.triplerush.query.QueryExecutionHandler
-import com.signalcollect.triplerush.result.LocalResultStreamer
-import com.signalcollect.triplerush.query.VariableEncoding
 
 object TripleRush {
 
@@ -78,7 +77,7 @@ class TripleRush(system: ActorSystem,
 
   // TODO: `ActorPublisher` does not support failure handling for distributed use cases yet.
   // TODO: Clean up when a timeout is encountered.
-  def query(query: Vector[TriplePattern]): Source[Array[Int], Unit] = {
+  def query(query: Vector[TriplePattern]): Source[Array[Int], NotUsed] = {
     val numberOfSelectVariables = VariableEncoding.requiredVariableBindingsSlots(query)
     val queryId = OperationIds.nextId()
     val localResultStreamer = system.actorOf(

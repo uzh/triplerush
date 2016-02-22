@@ -16,14 +16,16 @@
 
 package com.signalcollect.triplerush
 
-import akka.stream.scaladsl.Source
 import scala.concurrent.Future
+
+import akka.NotUsed
+import akka.stream.scaladsl.Source
 
 trait TripleStore {
 
   def addTriplePattern(triplePattern: TriplePattern): Future[Unit]
 
-  def query(query: Vector[TriplePattern]): Source[Array[Int], Unit]
+  def query(query: Vector[TriplePattern]): Source[Array[Int], NotUsed]
 
   def close(): Unit
 
