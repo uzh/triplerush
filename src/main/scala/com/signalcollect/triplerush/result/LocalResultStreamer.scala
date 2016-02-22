@@ -27,6 +27,8 @@ import akka.stream.actor.ActorPublisherMessage.Request
 import com.signalcollect.triplerush.query.QueryExecutionHandler.RegisterForQuery
 import com.signalcollect.triplerush.query.QueryExecutionHandler.RequestResultsForQuery
 import akka.contrib.pattern.ReceivePipeline
+import akka.actor.util.Flush
+import com.signalcollect.triplerush.Bindings
 
 object LocalResultStreamer {
 
@@ -47,10 +49,14 @@ final class LocalResultStreamer(
   query: Seq[TriplePattern],
   tickets: Long,
   numberOfSelectVariables: Int)
-    extends Streamer[Array[Int]] with ActorPublisher[Array[Int]] with ReceivePipeline {
+    extends Streamer[Array[Int]] with ActorPublisher[Bindings] with ReceivePipeline {
 
   def bufferSize = QueryExecutionHandler.maxBufferPerQuery
   var completed = false
+
+  def canDeliver: Boolean = {
+    totalDemand > 0
+  }
 
   override def preStart(): Unit = {
     assert(numberOfSelectVariables > 0)
@@ -72,20 +78,26 @@ final class LocalResultStreamer(
 
   def receive = {
     case Streamer.DeliverFromQueue =>
-      println(s"local result streamer got DeliverFromQueue (size=${queue.size}, totalDemand=$totalDemand)")
+      println(s"local result streamer $self got DeliverFromQueue(size=${queue.size}, totalDemand=$totalDemand)")
       if (totalDemand < queue.size) {
         // Safe conversion to Int, because smaller than queue size.
-        queue.batchProcessAtMost(totalDemand.toInt, onNext)
+        queue.batchProcessAtMost(totalDemand.toInt, { i => println(s"local result streamer is onNext'ing $i"); onNext(new Bindings(i)) })
       } else {
-        queue.batchProcessAtMost(queue.size, onNext)
+        // Queue empty afterwards, if completed, we're done, else we'd get more
+        // results again before needing to take action.
+        queue.batchProcessAtMost(queue.size, { i => println(s"local result streamer is onNext'ing $i"); onNext(new Bindings(i)) })
       }
       if (completed && queue.isEmpty) {
         println(s"$self is completing the outgoing stream")
         onCompleteThenStop()
       }
     case Streamer.Completed =>
-      println("got completed message from upstream")
+      println(s"local result streamer $self got completed message from upstream")
       completed = true
+      if (queue.isEmpty) {
+        println(s"$self is completing the outgoing stream")
+        onCompleteThenStop()
+      }
   }
 
 }

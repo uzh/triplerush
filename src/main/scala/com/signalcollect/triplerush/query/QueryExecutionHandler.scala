@@ -76,12 +76,16 @@ final class QueryExecutionHandler extends Streamer[Array[Int]] with ActorLogging
   var downstreamActor: Option[ActorRef] = None
   var requested: Int = 0
 
+  def canDeliver: Boolean = {
+    requested > 0
+  }
+
   var missingTickets: Long = QueryExecutionHandler.maxBufferPerQuery
   def availableTickets = queue.freeCapacity
 
   def receive = {
     case Streamer.DeliverFromQueue =>
-      println(s"delivering math.min(demand=$requested, size=${queue.size}) items to $downstreamActor")
+      println(s"query streamer $self delivering math.min(demand=$requested, size=${queue.size}) items to $downstreamActor")
       downstreamActor.foreach { a =>
         val items = queue.batchTakeAtMost(requested)
         val sent = a ! items
@@ -92,16 +96,15 @@ final class QueryExecutionHandler extends Streamer[Array[Int]] with ActorLogging
       }
     case tickets: Long =>
       missingTickets -= tickets
-      println(s"got $tickets tickets, missingTickets=$missingTickets")
+      println(s"query streamer $self got $tickets tickets, missingTickets=$missingTickets")
       ReceivePipeline.HandledCompletely
     case QueryExecutionHandler.Register =>
-      println(s"got registration from $sender")
+      println(s"query streamer $self got registration from $sender")
       downstreamActor = Some(sender)
       ReceivePipeline.HandledCompletely
     case requestedItems: Int =>
-      println(s"got request for $requestedItems items from $sender")
+      println(s"query streamer $self got request for $requestedItems items from $sender")
       requested += requestedItems
-      downstreamActor = Some(sender)
       ReceivePipeline.HandledCompletely
   }
 

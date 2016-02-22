@@ -42,6 +42,8 @@ abstract class Streamer[I: ClassTag]() extends Actor with FlushWhenIdle with Rec
 
   def bufferSize: Int
 
+  def canDeliver: Boolean
+
   protected val queue = new FifoQueue[I](bufferSize)
 
   pipelineInner {
@@ -54,7 +56,7 @@ abstract class Streamer[I: ClassTag]() extends Actor with FlushWhenIdle with Rec
         ReceivePipeline.HandledCompletely
       }
     case is: Array[I] =>
-      println(s"streamer received ${is.size} results")
+      println(s"$self received ${is.size} results")
       if (queue.freeCapacity >= is.length) {
         val wasPut = queue.batchPut(is)
         assert(wasPut)
@@ -67,7 +69,11 @@ abstract class Streamer[I: ClassTag]() extends Actor with FlushWhenIdle with Rec
         throw new Streamer.QueueFullException(is)
       }
     case Flush =>
-      Inner(Streamer.DeliverFromQueue)
+      if (!queue.isEmpty && canDeliver) {
+        Inner(Streamer.DeliverFromQueue)
+      } else {
+        ReceivePipeline.HandledCompletely
+      }
   }
 
 }

@@ -34,6 +34,8 @@ import akka.stream.Supervision
 import scala.util.Random
 import akka.stream.impl.fusing.ActorGraphInterpreter
 import com.typesafe.config.ConfigFactory
+import akka.stream.scaladsl.Source
+import com.signalcollect.triplerush.query.VariableEncoding
 
 object TripleRushTest extends App {
 
@@ -42,22 +44,18 @@ object TripleRushTest extends App {
   val cluster = ClusterCreator.create(numberOfNodes)
   val tr = TripleRush(Random.shuffle(cluster).head)
 
-  val futures = List(
-    tr.addTriplePattern(TriplePattern(1, 2, 3)),
-    tr.addTriplePattern(TriplePattern(1, 2, 4)),
-    tr.addTriplePattern(TriplePattern(1, 5, 3)),
-    tr.addTriplePattern(TriplePattern(6, 2, 3)))
-  Await.ready(Future.sequence(futures), 30.seconds)
+  val triplesSource = Source(List(
+    TriplePattern(1, 2, 3),
+    TriplePattern(1, 2, 4),
+    TriplePattern(1, 5, 3),
+    TriplePattern(6, 2, 3)))
+  val doneLoading = tr.addTriplePatterns(triplesSource)
+  Await.ready(doneLoading, 30.seconds)
 
   val results = tr.query(Vector(TriplePattern(-1, 2, 3)))
   implicit val system = ActorSystem("test")
   implicit val materializer = ActorMaterializer()
-  val printingSink = Sink.foreach[Array[Int]](a => println(s"result: ${
-    a.zipWithIndex.map {
-      case (binding, variable) =>
-        s"${-(variable + 1)} -> $binding"
-    }.mkString(", ")
-  }"))
+  val printingSink = Sink.foreach[Bindings](b => println(s"BINDINGS: ${b.asString}"))
   println("okay, waiting for results now")
   val printing = results.runWith(printingSink)
 

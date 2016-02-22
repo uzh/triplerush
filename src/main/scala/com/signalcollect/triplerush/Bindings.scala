@@ -16,24 +16,25 @@
 
 package com.signalcollect.triplerush
 
-import scala.concurrent.Future
-import akka.NotUsed
-import akka.stream.scaladsl.Source
 import com.signalcollect.triplerush.query.VariableEncoding
 
-object TripleStore {
+class Bindings(val impl: Array[Int]) extends AnyVal {
+  import TripleStore._
 
-  type Variable = Int
-  type Binding = Int
+  /**
+   * Cannot override `toString` for an AnyVal.
+   */
+  def asString: String = {
+    impl.zipWithIndex.map {
+      case (binding, index) =>
+        s"${VariableEncoding.decodingIndexToVariableId(index)} -> ${binding}"
+    }.mkString(", ")
+  }
 
-}
-
-trait TripleStore {
-
-  def addTriplePatterns(triplePatterns: Source[TriplePattern, NotUsed]): Future[NotUsed]
-
-  def query(query: Vector[TriplePattern]): Source[Bindings, NotUsed]
-
-  def close(): Unit
+  def get(variableId: Variable): Binding = {
+    val index = VariableEncoding.variableIdToDecodingIndex(variableId)
+    assert(index >= 0 && index < impl.length)
+    impl(index)
+  }
 
 }

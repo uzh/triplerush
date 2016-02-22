@@ -17,24 +17,32 @@
 package com.signalcollect.triplerush
 
 import java.util.concurrent.CountDownLatch
-
 import scala.concurrent.Future
 import scala.concurrent.duration.{ DurationInt, FiniteDuration }
-
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.index.{ FullIndex, Index }
 import com.signalcollect.triplerush.index.{ IndexStructure, IndexType }
 import com.signalcollect.triplerush.index.Index.AddChildId
 import com.signalcollect.triplerush.query.{ OperationIds, QueryExecutionHandler, VariableEncoding }
 import com.signalcollect.triplerush.result.LocalResultStreamer
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.stream.actor.ActorPublisher
 import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.Sink
 import akka.util.Timeout
+import akka.stream.scaladsl.FileIO
+import akka.stream.scaladsl.Keep
+import java.io.File
+import akka.util.ByteString
+import akka.stream.scaladsl.Flow
+import scala.concurrent.Await
+import akka.stream.ActorMaterializer
+import scala.concurrent.Promise
+import scala.util.Failure
+import scala.util.Success
 
 object TripleRush {
 
@@ -62,27 +70,44 @@ class TripleRush(system: ActorSystem,
 
   protected val indexRegion = Index.shard(system)
   protected val queryRegion = QueryExecutionHandler.shard(system)
+  protected val parallelism = Runtime.getRuntime.availableProcessors
+  protected implicit val materializer = ActorMaterializer.create(system)
+
+  protected val triplePatternLoader = {
+    Flow[TriplePattern]
+      .mapAsyncUnordered(parallelism) { triplePattern =>
+        val ancestorIds = indexStructure.ancestorIds(triplePattern)
+        val additionFutures = for {
+          parentId <- ancestorIds
+          parentIndexType = IndexType(parentId)
+          delta = triplePattern.parentIdDelta(parentId.toTriplePattern)
+        } yield (indexRegion ? AddChildId(parentId, delta))
+        val future = Future.sequence(additionFutures)
+        Await.ready(future.map(_ => NotUsed), 120.seconds)
+      }
+  }
 
   // TODO: Make efficient by building the index structure recursively.
-  def addTriplePattern(triplePattern: TriplePattern): Future[Unit] = {
-    val ancestorIds = indexStructure.ancestorIds(triplePattern)
-    val additionFutures = for {
-      parentId <- ancestorIds
-      parentIndexType = IndexType(parentId)
-      delta = triplePattern.parentIdDelta(parentId.toTriplePattern)
-    } yield (indexRegion ? AddChildId(parentId, delta))
-    val future = Future.sequence(additionFutures)
-    future.map(_ => Unit)
+  def addTriplePatterns(triplePatterns: Source[TriplePattern, NotUsed]): Future[NotUsed] = {
+    val promise = Promise[NotUsed]()
+    val graph = triplePatterns
+      .via(triplePatternLoader)
+      .to(Sink.onComplete {
+        case Success(_) => promise.success(NotUsed)
+        case Failure(e) => promise.failure(e)
+      }).run()
+    promise.future
   }
 
   // TODO: `ActorPublisher` does not support failure handling for distributed use cases yet.
   // TODO: Clean up when a timeout is encountered.
-  def query(query: Vector[TriplePattern]): Source[Array[Int], NotUsed] = {
+  def query(query: Vector[TriplePattern]): Source[Bindings, NotUsed] = {
     val numberOfSelectVariables = VariableEncoding.requiredVariableBindingsSlots(query)
     val queryId = OperationIds.nextId()
     val localResultStreamer = system.actorOf(
       LocalResultStreamer.props(queryId, query, tickets = QueryExecutionHandler.maxBufferPerQuery, numberOfSelectVariables))
     val publisher = ActorPublisher(localResultStreamer)
+    // TODO: Set `subscriptionTimeout`.
     Source.fromPublisher(publisher)
   }
 
