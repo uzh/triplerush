@@ -93,7 +93,6 @@ class TripleRush(system: ActorSystem,
     promise.future
   }
 
-  // TODO: `ActorPublisher` does not support failure handling for distributed use cases yet.
   // TODO: Clean up when a timeout is encountered.
   def query(query: Vector[TriplePattern]): Source[Bindings, NotUsed] = {
     val numberOfSelectVariables = VariableEncoding.requiredVariableBindingsSlots(query)
