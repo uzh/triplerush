@@ -17,32 +17,26 @@
 package com.signalcollect.triplerush
 
 import java.util.concurrent.CountDownLatch
-import scala.concurrent.Future
+
+import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+import scala.util.{ Failure, Success }
+
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.index.{ FullIndex, Index }
 import com.signalcollect.triplerush.index.{ IndexStructure, IndexType }
 import com.signalcollect.triplerush.index.Index.AddChildId
 import com.signalcollect.triplerush.query.{ OperationIds, QueryExecutionHandler, VariableEncoding }
 import com.signalcollect.triplerush.result.LocalResultStreamer
+
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.pattern.ask
-import akka.stream.actor.ActorPublisher
-import akka.stream.scaladsl.Source
-import akka.stream.scaladsl.Sink
-import akka.util.Timeout
-import akka.stream.scaladsl.FileIO
-import akka.stream.scaladsl.Keep
-import java.io.File
-import akka.util.ByteString
-import akka.stream.scaladsl.Flow
-import scala.concurrent.Await
 import akka.stream.ActorMaterializer
-import scala.concurrent.Promise
-import scala.util.Failure
-import scala.util.Success
+import akka.stream.actor.ActorPublisher
+import akka.stream.scaladsl.{ Flow, Sink, Source }
+import akka.util.Timeout
 
 object TripleRush {
 
