@@ -194,4 +194,3 @@ final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
   }
 
 }
-

@@ -49,7 +49,7 @@ object TripleRushTest extends App {
     tr.addTriplePattern(TriplePattern(6, 2, 3)))
   Await.ready(Future.sequence(futures), 30.seconds)
 
-  val results = tr.query(Vector(TriplePattern(-1, 2, 3)), 1)
+  val results = tr.query(Vector(TriplePattern(-1, 2, 3)))
   implicit val system = ActorSystem("test")
   implicit val materializer = ActorMaterializer()
   val printingSink = Sink.foreach[Array[Int]](a => println(s"result: ${

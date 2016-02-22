@@ -23,9 +23,7 @@ trait TripleStore {
 
   def addTriplePattern(triplePattern: TriplePattern): Future[Unit]
 
-  def query(
-    query: Vector[TriplePattern],
-    numberOfSelectVariables: Int): Source[Array[Int], Unit]
+  def query(query: Vector[TriplePattern]): Source[Array[Int], Unit]
 
   def close(): Unit
 

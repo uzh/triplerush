@@ -35,6 +35,7 @@ import akka.cluster.Cluster
 import java.util.concurrent.CountDownLatch
 import com.signalcollect.triplerush.query.QueryExecutionHandler
 import com.signalcollect.triplerush.result.LocalResultStreamer
+import com.signalcollect.triplerush.query.VariableEncoding
 
 object TripleRush {
 
@@ -77,9 +78,8 @@ class TripleRush(system: ActorSystem,
 
   // TODO: `ActorPublisher` does not support failure handling for distributed use cases yet.
   // TODO: Clean up when a timeout is encountered.
-  def query(
-    query: Vector[TriplePattern],
-    numberOfSelectVariables: Int): Source[Array[Int], Unit] = {
+  def query(query: Vector[TriplePattern]): Source[Array[Int], Unit] = {
+    val numberOfSelectVariables = VariableEncoding.requiredVariableBindingsSlots(query)
     val queryId = OperationIds.nextId()
     val localResultStreamer = system.actorOf(
       LocalResultStreamer.props(queryId, query, tickets = QueryExecutionHandler.maxBufferPerQuery, numberOfSelectVariables))
