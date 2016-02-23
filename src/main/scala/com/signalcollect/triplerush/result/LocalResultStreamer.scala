@@ -19,7 +19,6 @@ package com.signalcollect.triplerush.result
 import scala.collection.immutable.Queue
 import com.signalcollect.triplerush.TriplePattern
 import com.signalcollect.triplerush.index.Index
-import com.signalcollect.triplerush.query.{ ParticleDebug, QueryExecutionHandler, QueryParticle }
 import com.signalcollect.triplerush.util.Streamer
 import akka.actor.Props
 import akka.stream.actor.ActorPublisher
@@ -29,13 +28,15 @@ import com.signalcollect.triplerush.query.QueryExecutionHandler.RequestResultsFo
 import akka.contrib.pattern.ReceivePipeline
 import akka.actor.util.Flush
 import com.signalcollect.triplerush.Bindings
+import com.signalcollect.triplerush.index.QueryParticle
+import com.signalcollect.triplerush.query.QueryExecutionHandler
 
 object LocalResultStreamer {
 
   val emptyQueue = Queue.empty[Array[Int]]
 
   def props(queryId: Int,
-            query: Seq[TriplePattern],
+            query: Vector[TriplePattern],
             tickets: Long,
             numberOfSelectVariables: Int): Props = Props(
     new LocalResultStreamer(queryId, query, tickets, numberOfSelectVariables))
@@ -46,7 +47,7 @@ object LocalResultStreamer {
 // TODO: Max queue size? What to do when full?
 final class LocalResultStreamer(
   queryId: Int,
-  query: Seq[TriplePattern],
+  query: Vector[TriplePattern],
   tickets: Long,
   numberOfSelectVariables: Int)
     extends Streamer[Array[Int]] with ActorPublisher[Bindings] with ReceivePipeline {
@@ -65,13 +66,13 @@ final class LocalResultStreamer(
       self ! Streamer.Completed
     } else {
       val particle = QueryParticle(
-        patterns = query,
-        queryId = queryId,
-        numberOfSelectVariables = numberOfSelectVariables,
-        tickets = tickets)
+        id = queryId,
+        tickets = tickets,
+        bindings = Map.empty[Int, Int],
+        unmatched = query)
       QueryExecutionHandler.shard(context.system) ! RegisterForQuery(queryId)
       QueryExecutionHandler.shard(context.system) ! RequestResultsForQuery(queryId, queue.freeCapacity)
-      println(s"Sending ${ParticleDebug(particle)} on its merry way.")
+      println(s"Sending $particle on its merry way.")
       Index.shard(context.system) ! particle
     }
   }

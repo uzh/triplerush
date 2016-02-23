@@ -18,6 +18,28 @@ package com.signalcollect.triplerush
 
 import com.signalcollect.triplerush.query.VariableEncoding
 
+object Bindings {
+  import TripleStore._
+
+  def apply(m: Map[Variable, Binding]): Array[Int] = {
+    assert(!m.isEmpty)
+    val smallestKey = m.keys.min
+    val requiredLength = VariableEncoding.variableIdToDecodingIndex(smallestKey) + 1
+    // TODO: Remove one of the two calculations.
+    if (m.keys.size != requiredLength) {
+      throw new Exception("Non-contiguous variable ID assignment or variable >= 0.")
+    }
+    val underlying = new Array[Int](requiredLength)
+    m.foreach {
+      case (k, v) =>
+        val index = VariableEncoding.variableIdToDecodingIndex(k)
+        underlying(index) = v
+    }
+    underlying
+  }
+
+}
+
 class Bindings(val impl: Array[Int]) extends AnyVal {
   import TripleStore._
 

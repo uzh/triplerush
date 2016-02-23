@@ -17,18 +17,11 @@
 package com.signalcollect.triplerush
 
 import java.util.concurrent.CountDownLatch
-
 import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 import scala.util.{ Failure, Success }
-
-import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
-import com.signalcollect.triplerush.index.{ FullIndex, Index }
-import com.signalcollect.triplerush.index.{ IndexStructure, IndexType }
-import com.signalcollect.triplerush.index.Index.AddChildId
 import com.signalcollect.triplerush.query.{ OperationIds, QueryExecutionHandler, VariableEncoding }
 import com.signalcollect.triplerush.result.LocalResultStreamer
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
@@ -37,19 +30,22 @@ import akka.stream.ActorMaterializer
 import akka.stream.actor.ActorPublisher
 import akka.stream.scaladsl.{ Flow, Sink, Source }
 import akka.util.Timeout
+import com.signalcollect.triplerush.index.Index.AddEdge
+import com.signalcollect.triplerush.index.Index
+import com.signalcollect.triplerush.index.Outgoing
+import com.signalcollect.triplerush.index.Incoming
 
 object TripleRush {
 
   def apply(
     system: ActorSystem,
-    indexStructure: IndexStructure = FullIndex,
     timeout: FiniteDuration = 300.seconds): TripleRush = {
     val latch = new CountDownLatch(1)
     Cluster(system).registerOnMemberUp {
       latch.countDown()
     }
     latch.await()
-    new TripleRush(system, indexStructure, Timeout(timeout))
+    new TripleRush(system, Timeout(timeout))
   }
 
 }
@@ -58,7 +54,6 @@ object TripleRush {
  * Assumes that the whole cluster has already started.
  */
 class TripleRush(system: ActorSystem,
-                 indexStructure: IndexStructure,
                  implicit protected val timeout: Timeout) extends TripleStore {
   import system.dispatcher
 
@@ -70,18 +65,16 @@ class TripleRush(system: ActorSystem,
   protected val triplePatternLoader = {
     Flow[TriplePattern]
       .mapAsyncUnordered(parallelism) { triplePattern =>
-        val ancestorIds = indexStructure.ancestorIds(triplePattern)
-        val additionFutures = for {
-          parentId <- ancestorIds
-          parentIndexType = IndexType(parentId)
-          delta = triplePattern.parentIdDelta(parentId.toTriplePattern)
-        } yield (indexRegion ? AddChildId(parentId, delta))
-        val future = Future.sequence(additionFutures)
+        val s = triplePattern.s
+        val p = triplePattern.p
+        val o = triplePattern.o
+        val subjectAdditionFuture = indexRegion ? AddEdge(s, Outgoing(p, o))
+        val objectAdditionFuture = indexRegion ? AddEdge(o, Incoming(p, s))
+        val future = Future.sequence(List(subjectAdditionFuture, objectAdditionFuture))
         Await.ready(future.map(_ => NotUsed), 120.seconds)
       }
   }
 
-  // TODO: Make efficient by building the index structure recursively.
   def addTriplePatterns(triplePatterns: Source[TriplePattern, NotUsed]): Future[NotUsed] = {
     val promise = Promise[NotUsed]()
     val graph = triplePatterns

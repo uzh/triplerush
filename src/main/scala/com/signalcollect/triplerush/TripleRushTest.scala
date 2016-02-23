@@ -16,26 +16,16 @@
 
 package com.signalcollect.triplerush
 
-import java.util.UUID
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.DurationInt
-import akka.actor.actorRef2Scala
-import akka.cluster.sharding.ClusterSharding
-import akka.pattern.ask
-import akka.util.Timeout
-import com.signalcollect.triplerush.index.Index
+import scala.Vector
 import scala.concurrent.Await
-import scala.concurrent.Future
-import akka.stream.scaladsl.Sink
-import akka.stream.ActorMaterializerSettings
-import akka.stream.ActorMaterializer
-import akka.actor.ActorSystem
-import akka.stream.Supervision
+import scala.concurrent.duration.DurationInt
 import scala.util.Random
-import akka.stream.impl.fusing.ActorGraphInterpreter
+
 import com.typesafe.config.ConfigFactory
-import akka.stream.scaladsl.Source
-import com.signalcollect.triplerush.query.VariableEncoding
+
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{ Sink, Source }
 
 object TripleRushTest extends App {
 

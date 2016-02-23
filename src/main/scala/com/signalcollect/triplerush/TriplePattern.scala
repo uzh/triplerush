@@ -24,108 +24,7 @@ import scala.Option.option2Iterable
 import scala.language.implicitConversions
 import scala.util.hashing.MurmurHash3.{ finalizeHash, mix, mixLast }
 
-import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.dictionary.RdfDictionary
-import com.signalcollect.triplerush.EfficientIndexPattern._
-
-object EfficientIndexPattern {
-
-  implicit def longToIndexPattern(l: Long): EfficientIndexPattern = new EfficientIndexPattern(l)
-
-  @inline def embed2IntsInALong(i1: Int, i2: Int): Long = {
-    ((i2 | 0L) << 32) | (i1 & 0x00000000FFFFFFFFL)
-  }
-
-  @inline def apply(pattern: TriplePattern): Long = {
-    apply(pattern.s, pattern.p, pattern.o)
-  }
-
-  @inline def apply(s: Int, p: Int, o: Int): Long = {
-    assert(
-      s >= 0 &&
-        p >= 0 &&
-        o >= 0,
-      "EfficientIndexPattern does not support variables.")
-    assert(
-      s == 0 ||
-        p == 0 ||
-        o == 0,
-      "EfficientIndexPattern needs for at least one ID to be a wildcard.")
-    if (s != 0) {
-      val first = s
-      val second = if (o != 0) {
-        o
-      } else {
-        p | Int.MinValue
-      }
-      embed2IntsInALong(first, second)
-    } else {
-      val first = p | Int.MinValue
-      val second = o
-      embed2IntsInALong(first, second)
-    }
-  }
-}
-
-class EfficientIndexPattern(val id: Long) extends AnyVal {
-
-  @inline def isOperationId: Boolean = {
-    id < 0 && id.toInt < 0
-  }
-
-  @inline def toTriplePattern: TriplePattern = {
-    val first = extractFirst
-    val second = extractSecond
-    val s = math.max(0, first)
-    val o = math.max(0, second)
-    val p = if (first < 0) {
-      first & Int.MaxValue
-    } else {
-      if (second < 0) {
-        // second < 0
-        second & Int.MaxValue
-      } else {
-        0
-      }
-    }
-    TriplePattern(s, p, o)
-  }
-
-  @inline def parentIdDelta(parentPattern: Long): Int = {
-    if (parentPattern.s == 0 && s != 0) {
-      s
-    } else if (parentPattern.p == 0 && p != 0) {
-      p
-    } else if (parentPattern.o == 0 && o != 0) {
-      o
-    } else {
-      throw new Exception(s"$parentPattern is not a parent pattern of $this")
-    }
-  }
-
-  @inline def extractFirst = id.toInt
-
-  @inline def extractSecond = (id >> 32).toInt
-
-  @inline def s = math.max(0, extractFirst)
-
-  @inline def o = math.max(0, extractSecond)
-
-  @inline def p = {
-    val first = extractFirst
-    if (first < 0) {
-      first & Int.MaxValue
-    } else {
-      if (id < 0) {
-        // second < 0
-        extractSecond & Int.MaxValue
-      } else {
-        0
-      }
-    }
-  }
-
-}
 
 /**
  * Pattern of 3 expressions (subject, predicate object).
@@ -133,16 +32,70 @@ class EfficientIndexPattern(val id: Long) extends AnyVal {
  */
 case class TriplePattern(s: Int, p: Int, o: Int) {
 
-  def toEfficientIndexPattern = EfficientIndexPattern(s, p, o)
-
   override def hashCode: Int = {
     finalizeHash(mixLast(mix(s, p), o), 3)
+  }
+
+  /**
+   * Binds the current pattern to the values in `tp` and
+   * returns the bindings. `tp` has to be fully bound.
+   * If the binding is impossible returns `None`.
+   */
+  def createBindings(toBind: TriplePattern): Option[Map[Int, Int]] = {
+    assert(toBind.isFullyBound)
+    def getBindings(potentialVar: Int, toBind: Int): Option[Map[Int, Int]] = {
+      if (potentialVar == toBind) {
+        Some(Map.empty)
+      } else if (potentialVar < 0) {
+        Some(Map(potentialVar -> toBind))
+      } else {
+        None
+      }
+    }
+    val sBindingOpt = getBindings(s, toBind.s)
+    sBindingOpt match {
+      case None => None
+      case Some(sBinding) =>
+        val pBindingOpt = if (p == s && p < 0 && toBind.p != toBind.s) {
+          None
+        } else {
+          getBindings(p, toBind.p)
+        }
+        pBindingOpt match {
+          case None => None
+          case Some(pBinding) =>
+            val oBindingOpt = if (o == s && o < 0 && toBind.o != toBind.s) {
+              None
+            } else if (o == p && o < 0 && toBind.o != toBind.p) {
+              None
+            } else {
+              getBindings(o, toBind.o)
+            }
+            oBindingOpt match {
+              case None => None
+              case Some(oBinding) =>
+                Some(sBinding ++ pBinding ++ oBinding)
+            }
+        }
+    }
+
   }
 
   @inline override def equals(other: Any): Boolean = {
     other match {
       case TriplePattern(this.s, this.p, this.o) => true
       case _                                     => false
+    }
+  }
+
+  def bindVariable(variableId: Int, binding: Int): TriplePattern = {
+    val newS = if (s == variableId) binding else s
+    val newP = if (p == variableId) binding else p
+    val newO = if (o == variableId) binding else o
+    if (newS == s && newP == p && newO == o) {
+      this
+    } else {
+      TriplePattern(newS, newP, newO)
     }
   }
 
@@ -243,15 +196,13 @@ case class TriplePattern(s: Int, p: Int, o: Int) {
     s != 0 && p != 0 && o != 0
   }
 
-  /**
-   * Returns the id of the index/triple vertex to which this pattern should be routed.
-   * Any variables (<0) should be converted to "unbound", which is represented by a wildcard.
-   */
-  def routingAddress: Long = {
-    if (s > 0 && p > 0 && o > 0) {
-      EfficientIndexPattern(s, 0, o)
+  def routingAddress: Int = {
+    if (s > 0) {
+      s
+    } else if (o > 0) {
+      o
     } else {
-      EfficientIndexPattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
+      throw new Exception("Cannot route when both subject and object are unbound.")
     }
   }
 

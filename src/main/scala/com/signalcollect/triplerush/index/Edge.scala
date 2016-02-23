@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 
-package com.signalcollect.triplerush
+package com.signalcollect.triplerush.index
 
-trait IntSet {
-  def size: Int
-  def add(i: Int): IntSet
-  def foreach(f: Int => Unit): Unit
-}
+sealed trait Edge
 
-case class SimpleIntSet(items: Set[Int] = Set.empty[Int]) extends IntSet {
-  def size: Int = items.size
-  def add(i: Int) = SimpleIntSet(items + i)
-  def foreach(f: Int => Unit): Unit = items.foreach(f)
-  override def toString = items.toString
-}
+case class Outgoing(p: Int, o: Int) extends Edge
+
+case class Incoming(p: Int, s: Int) extends Edge

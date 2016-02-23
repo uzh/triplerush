@@ -21,9 +21,8 @@
 package com.signalcollect.triplerush.query
 
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.language.implicitConversions
-import com.signalcollect.triplerush.EfficientIndexPattern._
-import com.signalcollect.triplerush.EfficientIndexPattern
 
 object OperationIds {
   private[this] val maxOperationId = new AtomicInteger(0)
@@ -40,25 +39,6 @@ object OperationIds {
   def reset(): Unit = {
     maxOperationId.set(0)
     minOperationId.set(0)
-  }
-
-  // Int.MinValue cannot be embedded
-  @inline def embedInLong(operationId: Int): Long = {
-    assert(operationId != Int.MinValue)
-    if (operationId < 0) {
-      EfficientIndexPattern.embed2IntsInALong(operationId, Int.MinValue)
-    } else {
-      EfficientIndexPattern.embed2IntsInALong(Int.MinValue, operationId | Int.MinValue)
-    }
-  }
-
-  @inline def extractFromLong(efficientIndexId: Long): Int = {
-    val first = efficientIndexId.extractFirst
-    if (first == Int.MinValue) {
-      efficientIndexId.extractSecond & Int.MaxValue
-    } else {
-      first
-    }
   }
 
 }
