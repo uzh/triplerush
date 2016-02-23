@@ -39,12 +39,12 @@ case class QueryParticle(
       case None => None
       case Some(newBindings) =>
         val updatedUnmatched = unmatched.tail.map { pattern =>
-          bindings.foldLeft(pattern) {
+          newBindings.foldLeft(pattern) {
             case (currentPattern, (variable, binding)) =>
               currentPattern.bindVariable(variable, binding)
           }
         }
-        println(s"binding $pattern to $tp produced $newBindings")
+        println(s"binding $pattern to $tp produced $newBindings, updatedUnmatched=$updatedUnmatched")
         Some(this.copy(bindings = bindings ++ newBindings, unmatched = updatedUnmatched))
     }
   }

@@ -38,11 +38,14 @@ object TripleRushTest extends App {
     TriplePattern(1, 2, 3),
     TriplePattern(1, 2, 4),
     TriplePattern(1, 5, 3),
-    TriplePattern(6, 2, 3)))
+    TriplePattern(6, 2, 3),
+    TriplePattern(3, 2, 3)))
   val doneLoading = tr.addTriplePatterns(triplesSource)
   Await.ready(doneLoading, 30.seconds)
 
-  val results = tr.query(Vector(TriplePattern(-1, 2, 3)))
+  val results = tr.query(Vector(
+    TriplePattern(-2, 2, 3),
+    TriplePattern(-1, 2, -2)))
   implicit val system = ActorSystem("test")
   implicit val materializer = ActorMaterializer()
   val printingSink = Sink.foreach[Bindings](b => println(s"BINDINGS: ${b.asString}"))
