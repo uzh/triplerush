@@ -29,6 +29,7 @@ import com.signalcollect.triplerush.query.ParticleDebug
 import akka.actor.Actor
 import akka.actor.ActorRef
 import com.signalcollect.triplerush.Shard
+import com.signalcollect.triplerush.query.QueryExecutionHandler
 
 case class OutOfTicketsException(msg: String) extends Exception(msg)
 
@@ -86,11 +87,33 @@ final class Index extends Actor with ActorLogging {
       sender() ! Index.ChildIdAdded
     case queryParticle: Array[Int] =>
       val indexIdAsLong = indexId.toLong
-      IndexType(indexIdAsLong) match {
-        case f: Forwarding =>
-          Forward.forwardQuery(context.system, indexId.toLong, queryParticle, childIds.size, childIds)
-        case b: Binding =>
-          Bind.bindQuery(context.system, indexId.toLong, queryParticle, childIds.size, childIds)
+      if (queryParticle.lastPattern.isFullyBound) {
+        // TODO: Ensure this always matches the index routing or is dynamically retrieved.
+        val toCheck = queryParticle.lastPattern.o
+        if (childIds.contains(toCheck)) {
+          if (queryParticle.numberOfPatterns == 1) {
+            // It's a result.
+            val query = QueryExecutionHandler.shard(context.system)
+            query ! QueryExecutionHandler.BindingsForQuery(queryParticle.queryId, queryParticle.bindings)
+            query ! QueryExecutionHandler.Tickets(queryParticle.queryId, queryParticle.tickets)
+          } else {
+            // Route it onwards.
+            val indexShard = Index.shard(context.system)
+            val updated = queryParticle.copyWithoutLastPattern
+            indexShard ! updated
+          }
+        } else {
+          // Failed to pass existence check, return tickets.
+          val query = QueryExecutionHandler.shard(context.system)
+          query ! QueryExecutionHandler.Tickets(queryParticle.queryId, queryParticle.tickets)
+        }
+      } else {
+        IndexType(indexIdAsLong) match {
+          case f: Forwarding =>
+            Forward.forwardQuery(context.system, indexId.toLong, queryParticle, childIds.size, childIds)
+          case b: Binding =>
+            Bind.bindQuery(context.system, indexId.toLong, queryParticle, childIds.size, childIds)
+        }
       }
   }
 

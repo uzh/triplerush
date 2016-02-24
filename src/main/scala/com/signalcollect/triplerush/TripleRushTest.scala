@@ -44,15 +44,37 @@ object TripleRushTest extends App {
   val cluster = ClusterCreator.create(numberOfNodes)
   val tr = TripleRush(Random.shuffle(cluster).head)
 
+  val a = 1
+  val customerA = 2
+  val customer = 3
+  val orderA = 4
+  val order = 5
+  val customerB = 6
+  val orderB = 7
+  val ordered = 8
+  val price = 9
+  val oneThousand = 10
+  val oneHundred = 11
+
+  val customerVar = -1
+  val orderVar = -2
+
   val triplesSource = Source(List(
-    TriplePattern(1, 2, 3),
-    TriplePattern(1, 2, 4),
-    TriplePattern(1, 5, 3),
-    TriplePattern(6, 2, 3)))
+    TriplePattern(customerA, a, customer),
+    TriplePattern(customerB, a, customer),
+    TriplePattern(orderA, a, order),
+    TriplePattern(orderA, price, oneHundred),
+    TriplePattern(orderB, price, oneThousand),
+    TriplePattern(orderB, a, order),
+    TriplePattern(customerA, ordered, orderA),
+    TriplePattern(customerB, ordered, orderB)))
   val doneLoading = tr.addTriplePatterns(triplesSource)
   Await.ready(doneLoading, 30.seconds)
 
-  val results = tr.query(Vector(TriplePattern(-1, 2, 3)))
+  val results = tr.query(Vector(
+    TriplePattern(customerVar, a, customer),
+    TriplePattern(customerVar, ordered, orderVar),
+    TriplePattern(orderVar, price, oneThousand)))
   implicit val system = ActorSystem("test")
   implicit val materializer = ActorMaterializer()
   val printingSink = Sink.foreach[Bindings](b => println(s"BINDINGS: ${b.asString}"))

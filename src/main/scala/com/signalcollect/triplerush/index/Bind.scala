@@ -72,9 +72,6 @@ object Bind {
         query ! QueryExecutionHandler.BindingsForQuery(boundParticle.queryId, boundParticle.bindings)
         query ! QueryExecutionHandler.Tickets(boundParticle.queryId, boundParticle.tickets)
       } else {
-        // TODO: Handle existence checks.
-        assert(!boundParticle.lastPattern.isFullyBound,
-          s"Triple existence checks required for ${ParticleDebug(boundParticle)}, but not implemented yet.")
         Index.shard(system) ! boundParticle
       }
     } else {

@@ -387,7 +387,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
       val p = lastPatternP
       val o = lastPatternO
       if (s > 0 && p > 0 && o > 0) {
-        EfficientIndexPattern(s, 0, o)
+        EfficientIndexPattern(s, p, 0)
       } else {
         EfficientIndexPattern(math.max(s, 0), math.max(p, 0), math.max(o, 0))
       }
