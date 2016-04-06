@@ -16,10 +16,8 @@
 
 package com.signalcollect.triplerush.util
 
-import scala.annotation.elidable
-import scala.annotation.elidable.ASSERTION
 import scala.reflect.ClassTag
-import com.signalcollect.triplerush.query.QueryExecutionHandler
+
 import akka.actor.Actor
 import akka.actor.util.{ Flush, FlushWhenIdle }
 import akka.contrib.pattern.ReceivePipeline

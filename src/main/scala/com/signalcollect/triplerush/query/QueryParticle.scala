@@ -20,12 +20,11 @@
 
 package com.signalcollect.triplerush.query
 
-import java.util.concurrent.atomic.AtomicInteger
 import scala.language.implicitConversions
-import com.signalcollect.triplerush.EfficientIndexPattern._
-import QueryParticle._
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.EfficientIndexPattern
+
+import com.signalcollect.triplerush.{ EfficientIndexPattern, TriplePattern }
+
+import QueryParticle.arrayToParticle
 
 object ParticleDebug {
   def apply(p: Array[Int]): ParticleDebug = {
@@ -332,7 +331,7 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
   }
 
   def patterns: IndexedSeq[TriplePattern] = {
-    for {i <- numberOfPatterns - 1 to 0 by -1} yield pattern(i)
+    for { i <- numberOfPatterns - 1 to 0 by -1 } yield pattern(i)
   }
 
   def numberOfPatterns: Int = (r.length - 4 - numberOfBindings) / 3
@@ -435,4 +434,3 @@ class QueryParticle(val r: Array[Int]) extends AnyVal {
     bindSubject(patternS, patternP, patternO, toBindS, toBindP, toBindO, true)
   }
 }
-

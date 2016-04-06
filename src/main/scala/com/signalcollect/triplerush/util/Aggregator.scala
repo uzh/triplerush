@@ -17,9 +17,9 @@
 package com.signalcollect.triplerush.util
 
 import scala.reflect.ClassTag
+
 import akka.actor.{ Actor, ActorLogging, ActorRef }
-import akka.actor.util.FlushWhenIdle
-import akka.actor.util.Flush
+import akka.actor.util.{ Flush, FlushWhenIdle }
 
 abstract class Aggregator[A, N: ClassTag](
   destination: ActorRef,
@@ -28,7 +28,7 @@ abstract class Aggregator[A, N: ClassTag](
 
   def aggregateNext(aggregate: A, nextItem: N): A
 
-  def receive: Receive = aggregating(initial)
+  override def receive: Receive = aggregating(initial)
 
   def aggregating(currentAggregate: A): Receive = {
     case nextItem: N =>

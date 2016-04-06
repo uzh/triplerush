@@ -16,7 +16,7 @@
 
 package com.signalcollect.triplerush.index
 
-import com.signalcollect.triplerush.EfficientIndexPattern._
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.TriplePattern
 
 object IndexType {

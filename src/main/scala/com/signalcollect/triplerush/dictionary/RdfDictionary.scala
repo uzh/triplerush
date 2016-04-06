@@ -21,6 +21,7 @@
 package com.signalcollect.triplerush.dictionary
 
 trait RdfDictionary {
+
   def contains(s: String): Boolean
 
   /**
@@ -33,12 +34,12 @@ trait RdfDictionary {
    * Get an unused ID that will stay reserved and is not associated with a string.
    */
   def getBlankNodeId(): Int
-  
+
   /**
    * Returns true iff `id` represents a blank node.
    */
   def isBlankNodeId(id: Int): Boolean
-  
+
   def contains(i: Int): Boolean
   def apply(i: Int): String
   def get(i: Int): Option[String]

@@ -17,22 +17,21 @@
 package com.signalcollect.triplerush.result
 
 import scala.collection.immutable.Queue
-import com.signalcollect.triplerush.TriplePattern
+
+import com.signalcollect.triplerush.{ Bindings, TriplePattern }
 import com.signalcollect.triplerush.index.Index
-import com.signalcollect.triplerush.query.{ ParticleDebug, QueryExecutionHandler, QueryParticle }
+import com.signalcollect.triplerush.query.{ ParticleDebug, QueryExecutionHandler }
+import com.signalcollect.triplerush.query.QueryExecutionHandler.{ RegisterForQuery, RequestResultsForQuery }
+import com.signalcollect.triplerush.query.QueryParticle
 import com.signalcollect.triplerush.util.Streamer
+
 import akka.actor.Props
-import akka.stream.actor.ActorPublisher
-import akka.stream.actor.ActorPublisherMessage.Request
-import com.signalcollect.triplerush.query.QueryExecutionHandler.RegisterForQuery
-import com.signalcollect.triplerush.query.QueryExecutionHandler.RequestResultsForQuery
 import akka.contrib.pattern.ReceivePipeline
-import akka.actor.util.Flush
-import com.signalcollect.triplerush.Bindings
+import akka.stream.actor.ActorPublisher
 
 object LocalResultStreamer {
 
-  val emptyQueue = Queue.empty[Array[Int]]
+  val emptyQueue: scala.collection.immutable.Queue[Array[Int]] = Queue.empty[Array[Int]]
 
   def props(queryId: Int,
             query: Seq[TriplePattern],
@@ -51,10 +50,10 @@ final class LocalResultStreamer(
   numberOfSelectVariables: Int)
     extends Streamer[Array[Int]] with ActorPublisher[Bindings] with ReceivePipeline {
 
-  def bufferSize = QueryExecutionHandler.maxBufferPerQuery
-  var completed = false
+  override def bufferSize: Int = QueryExecutionHandler.maxBufferPerQuery
+  var completed: Boolean = false
 
-  def canDeliver: Boolean = {
+  override def canDeliver: Boolean = {
     totalDemand > 0
   }
 
@@ -76,7 +75,7 @@ final class LocalResultStreamer(
     }
   }
 
-  def receive = {
+  override def receive: PartialFunction[Any, Unit] = {
     case Streamer.DeliverFromQueue =>
       println(s"local result streamer $self got DeliverFromQueue(size=${queue.size}, totalDemand=$totalDemand)")
       if (totalDemand < queue.size) {

@@ -24,9 +24,9 @@ trait IntSet {
 }
 
 case class SimpleIntSet(items: Set[Int] = Set.empty[Int]) extends IntSet {
-  def size: Int = items.size
-  def add(i: Int) = SimpleIntSet(items + i)
-  def foreach(f: Int => Unit): Unit = items.foreach(f)
-  def contains(i: Int): Boolean = items.contains(i)
-  override def toString = items.toString
+  override def size: Int = items.size
+  override def add(i: Int): com.signalcollect.triplerush.SimpleIntSet = SimpleIntSet(items + i)
+  override def foreach(f: Int => Unit): Unit = items.foreach(f)
+  override def contains(i: Int): Boolean = items.contains(i)
+  override def toString: String = items.toString
 }

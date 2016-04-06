@@ -16,10 +16,11 @@
 
 package com.signalcollect.triplerush.util
 
+import scala.reflect.ClassTag
+
 import org.scalacheck.Gen
 import org.scalatest.{ Assertions, FlatSpec, Matchers }
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import scala.reflect.ClassTag
 
 class FifoQueueSpec extends FlatSpec with GeneratorDrivenPropertyChecks with Matchers with Assertions {
 

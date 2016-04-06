@@ -82,7 +82,7 @@ class TripleRush(system: ActorSystem,
   }
 
   // TODO: Make efficient by building the index structure recursively.
-  def addTriplePatterns(triplePatterns: Source[TriplePattern, NotUsed]): Future[NotUsed] = {
+  override def addTriplePatterns(triplePatterns: Source[TriplePattern, NotUsed]): Future[NotUsed] = {
     val promise = Promise[NotUsed]()
     val graph = triplePatterns
       .via(triplePatternLoader)
@@ -94,7 +94,7 @@ class TripleRush(system: ActorSystem,
   }
 
   // TODO: Clean up when a timeout is encountered.
-  def query(query: Vector[TriplePattern]): Source[Bindings, NotUsed] = {
+  override def query(query: Vector[TriplePattern]): Source[Bindings, NotUsed] = {
     val numberOfSelectVariables = VariableEncoding.requiredVariableBindingsSlots(query)
     val queryId = OperationIds.nextId()
     val localResultStreamer = system.actorOf(
@@ -104,6 +104,6 @@ class TripleRush(system: ActorSystem,
     Source.fromPublisher(publisher)
   }
 
-  def close(): Unit = {}
+  override def close(): Unit = {}
 
 }

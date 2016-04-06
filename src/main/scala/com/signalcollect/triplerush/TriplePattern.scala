@@ -26,7 +26,6 @@ import scala.util.hashing.MurmurHash3.{ finalizeHash, mix, mixLast }
 
 import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.dictionary.RdfDictionary
-import com.signalcollect.triplerush.EfficientIndexPattern._
 
 object EfficientIndexPattern {
 

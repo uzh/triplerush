@@ -17,18 +17,18 @@
 package com.signalcollect.triplerush.util
 
 import scala.reflect.ClassTag
+
 import akka.actor.{ Actor, ActorLogging, ActorRef }
-import akka.actor.util.FlushWhenIdle
-import akka.actor.util.Flush
+import akka.actor.util.{ Flush, FlushWhenIdle }
 
 final class Buffer[I: ClassTag](
   destination: ActorRef,
   maxBufferSize: Int = 10000)
     extends Actor with FlushWhenIdle with ActorLogging {
 
-  private[this] val buffer = new ReusableBuffer[I](maxBufferSize)
+  private[this] val buffer: com.signalcollect.triplerush.util.ReusableBuffer[I] = new ReusableBuffer[I](maxBufferSize)
 
-  def receive: Receive = {
+  override def receive: Receive = {
     case item: I =>
       buffer.add(item)
       if (buffer.isFull) {

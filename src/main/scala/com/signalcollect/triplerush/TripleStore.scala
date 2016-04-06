@@ -17,15 +17,15 @@
 package com.signalcollect.triplerush
 
 import scala.concurrent.Future
+
 import akka.NotUsed
 import akka.stream.scaladsl.Source
-import com.signalcollect.triplerush.query.VariableEncoding
 
 object TripleStore {
 
   // Negative Ints represent variables.
   type Variable = Int
-  
+
   // Positive Ints represent bindings.
   type Binding = Int
 

@@ -16,8 +16,7 @@
 
 package akka.actor.util
 
-import akka.actor.{ Actor, ActorLogging }
-import akka.actor.actorRef2Scala
+import akka.actor.Actor
 
 case object Flush
 
@@ -32,8 +31,8 @@ case object FlushIfIdle
  */
 trait FlushWhenIdle extends Actor {
 
-  private[this] var idle = true
-  private[this] var awaitingFlushIfIdle = false
+  private[this] var idle: Boolean = true
+  private[this] var awaitingFlushIfIdle: Boolean = false
 
   protected[akka] override def aroundReceive(receive: Receive, msg: Any): Unit = msg match {
     case FlushIfIdle =>

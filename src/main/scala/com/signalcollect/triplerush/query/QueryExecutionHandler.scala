@@ -19,10 +19,10 @@ package com.signalcollect.triplerush.query
 import com.signalcollect.triplerush.Shard
 import com.signalcollect.triplerush.util.Streamer
 import com.typesafe.config.ConfigFactory
-import akka.actor.{ Actor, ActorLogging, ActorRef, actorRef2Scala }
+
+import akka.actor.{ Actor, ActorLogging, ActorRef }
 import akka.cluster.sharding.ShardRegion
 import akka.contrib.pattern.ReceivePipeline
-import akka.stream.actor.ActorPublisherMessage.Request
 
 object QueryExecutionHandler extends Shard {
 
@@ -32,17 +32,17 @@ object QueryExecutionHandler extends Shard {
 
   case class RequestResultsForQuery(queryId: Int, count: Int)
 
-  val bufferSizeKey = "triplerush.max-buffer-per-query"
+  val bufferSizeKey: String = "triplerush.max-buffer-per-query"
 
-  val maxBufferPerQuery = ConfigFactory.load().getInt(bufferSizeKey)
+  val maxBufferPerQuery: Int = ConfigFactory.load().getInt(bufferSizeKey)
 
-  def apply(): Actor = new QueryExecutionHandler
+  override def apply(): Actor = new QueryExecutionHandler
 
   case class BindingsForQuery(queryid: Int, resultBindings: Array[Int])
 
   case class Tickets(queryid: Int, numberOfTickets: Long)
 
-  val idExtractor: ShardRegion.ExtractEntityId = {
+  override val idExtractor: ShardRegion.ExtractEntityId = {
     case BindingsForQuery(queryId, bindings)        => (queryId.toString, bindings)
     case Tickets(queryId, tickets)                  => (queryId.toString, tickets)
     case RegisterForQuery(queryId)                  => (queryId.toString, Register)
@@ -54,7 +54,7 @@ object QueryExecutionHandler extends Shard {
     ((indexId.hashCode & Int.MaxValue) % 100).toString
   }
 
-  val shardResolver: ShardRegion.ExtractShardId = {
+  override val shardResolver: ShardRegion.ExtractShardId = {
     case BindingsForQuery(queryId, _)               => queryIdToShardId(queryId)
     case Tickets(queryId, tickets)                  => queryIdToShardId(queryId)
     case RegisterForQuery(queryId)                  => queryIdToShardId(queryId)
@@ -71,19 +71,19 @@ final class QueryExecutionHandler extends Streamer[Array[Int]] with ActorLogging
   def queryId: String = self.path.name
   override def toString(): String = self.path.name
 
-  def bufferSize = QueryExecutionHandler.maxBufferPerQuery
+  override def bufferSize: Int = QueryExecutionHandler.maxBufferPerQuery
 
   var downstreamActor: Option[ActorRef] = None
   var requested: Int = 0
 
-  def canDeliver: Boolean = {
+  override def canDeliver: Boolean = {
     requested > 0
   }
 
   var missingTickets: Long = QueryExecutionHandler.maxBufferPerQuery
-  def availableTickets = queue.freeCapacity
+  def availableTickets: Int = queue.freeCapacity
 
-  def receive = {
+  override def receive: PartialFunction[Any,Unit] = {
     case Streamer.DeliverFromQueue =>
       println(s"query streamer $self delivering math.min(demand=$requested, size=${queue.size}) items to $downstreamActor")
       downstreamActor.foreach { a =>

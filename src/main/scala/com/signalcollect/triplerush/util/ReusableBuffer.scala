@@ -21,7 +21,7 @@ import scala.reflect.ClassTag
 final class ReusableBuffer[I: ClassTag](maxSize: Int) {
   assert(maxSize >= 1)
 
-  private[this] var itemCount = 0
+  private[this] var itemCount: Int = 0
   private[this] val items: Array[I] = new Array[I](maxSize)
 
   def numberOfItems: Int = itemCount

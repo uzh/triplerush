@@ -16,10 +16,11 @@
 
 package com.signalcollect.triplerush
 
-import com.typesafe.config.ConfigFactory
-import akka.actor.ActorSystem
 import com.signalcollect.triplerush.index.Index
 import com.signalcollect.triplerush.query.QueryExecutionHandler
+import com.typesafe.config.ConfigFactory
+
+import akka.actor.ActorSystem
 
 object ClusterCreator {
 

@@ -16,29 +16,24 @@
 
 package com.signalcollect.triplerush
 
-import akka.cluster.sharding.ClusterSharding
-import akka.actor.Props
-import akka.actor.ActorSystem
-import akka.actor.ActorRef
-import akka.cluster.sharding.ClusterShardingSettings
-import akka.cluster.sharding.ShardRegion
-import akka.actor.Actor
+import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
+import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings, ShardRegion }
 
 trait Shard {
-  
+
   def apply(): Actor
-  
+
   val props: Props = Props(apply())
-  
+
   // Simple object class name with dollar sign dropped.
   val name: String = getClass.getSimpleName.dropRight(1).toLowerCase
 
   def shard(system: ActorSystem): ActorRef = ClusterSharding(system).shardRegion(name)
-  
+
   def idExtractor: ShardRegion.ExtractEntityId
 
   def shardResolver: ShardRegion.ExtractShardId
-  
+
   def registerWithSystem(system: ActorSystem): Unit = {
     ClusterSharding(system).start(
       typeName = name,

@@ -16,32 +16,25 @@
 
 package com.signalcollect.triplerush.index
 
-import akka.actor.{ ActorLogging, ActorSystem, Props }
-import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings, ShardRegion }
-import akka.actor.actorRef2Scala
-import com.signalcollect.triplerush.IntSet
-import com.signalcollect.triplerush.SimpleIntSet
-import com.signalcollect.triplerush.EfficientIndexPattern._
-import com.signalcollect.triplerush.TriplePattern
-import com.signalcollect.triplerush.query.QueryParticle
-import com.signalcollect.triplerush.query.QueryParticle._
-import com.signalcollect.triplerush.query.ParticleDebug
-import akka.actor.Actor
-import akka.actor.ActorRef
-import com.signalcollect.triplerush.Shard
-import com.signalcollect.triplerush.query.QueryExecutionHandler
+import com.signalcollect.triplerush.{ IntSet, Shard, SimpleIntSet }
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
+import com.signalcollect.triplerush.query.{ QueryExecutionHandler, QueryParticle }
+import com.signalcollect.triplerush.query.QueryParticle.arrayToParticle
+
+import akka.actor.{ Actor, ActorLogging }
+import akka.cluster.sharding.ShardRegion
 
 case class OutOfTicketsException(msg: String) extends Exception(msg)
 
 object Index extends Shard {
 
-  def apply(): Actor = new Index
+  override def apply(): Actor = new Index
 
   case class AddChildId(indexId: Long, childId: Int)
   case class GetChildIds(indexId: Long)
   case object ChildIdAdded
 
-  val idExtractor: ShardRegion.ExtractEntityId = {
+  override val idExtractor: ShardRegion.ExtractEntityId = {
     case AddChildId(indexId, childId) =>
       (indexId.toString, childId)
     case GetChildIds(indexId) =>
@@ -57,7 +50,7 @@ object Index extends Shard {
     ((indexId.hashCode & Int.MaxValue) % 100).toString
   }
 
-  val shardResolver: ShardRegion.ExtractShardId = {
+  override val shardResolver: ShardRegion.ExtractShardId = {
     case AddChildId(indexId, childId) =>
       indexIdToShardId(indexId)
     case GetChildIds(indexId) =>
@@ -79,7 +72,7 @@ final class Index extends Actor with ActorLogging {
 
   var childIds: IntSet = new SimpleIntSet
 
-  def receive = {
+  override def receive: PartialFunction[Any,Unit] = {
     case Unit =>
       sender() ! childIds
     case childId: Int =>

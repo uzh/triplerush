@@ -20,19 +20,18 @@
 
 package com.signalcollect.triplerush.index
 
-import com.signalcollect.triplerush.EfficientIndexPattern._
-import com.signalcollect.triplerush.query.ParticleDebug
-import com.signalcollect.triplerush.query.QueryParticle
-import com.signalcollect.triplerush.query.QueryParticle._
-import akka.actor.ActorSystem
-import com.signalcollect.triplerush.query.ParticleDebug
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 import com.signalcollect.triplerush.IntSet
+import com.signalcollect.triplerush.query.ParticleDebug
+import com.signalcollect.triplerush.query.QueryParticle.arrayToParticle
+
+import akka.actor.{ ActorSystem, actorRef2Scala }
 
 class NotAForwardingIndex(message: String) extends Exception(message)
 
 object Forward {
 
-  // TODO: Allow for alternative index structures. 
+  // TODO: Allow for alternative index structures.
   def nextRoutingAddress(indexId: Long, childDelta: Int): Long = {
     // TODO: Make more efficient.
     val indexPattern = indexId.toTriplePattern

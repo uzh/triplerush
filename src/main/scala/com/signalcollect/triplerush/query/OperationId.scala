@@ -21,13 +21,15 @@
 package com.signalcollect.triplerush.query
 
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.language.implicitConversions
-import com.signalcollect.triplerush.EfficientIndexPattern._
+
 import com.signalcollect.triplerush.EfficientIndexPattern
+import com.signalcollect.triplerush.EfficientIndexPattern.longToIndexPattern
 
 object OperationIds {
-  private[this] val maxOperationId = new AtomicInteger(0)
-  private[this] val minOperationId = new AtomicInteger(0)
+  private[this] val maxOperationId: java.util.concurrent.atomic.AtomicInteger = new AtomicInteger(0)
+  private[this] val minOperationId: java.util.concurrent.atomic.AtomicInteger = new AtomicInteger(0)
 
   def nextId(): Int = {
     maxOperationId.incrementAndGet & Int.MaxValue

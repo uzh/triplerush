@@ -26,15 +26,15 @@ import scala.reflect.ClassTag
 final class FifoQueue[@specialized I: ClassTag](minCapacity: Int) {
   assert(minCapacity > 1,
     "The minimum capacity needs to be larger than 1.")
-  val capacity = nextPowerOfTwo(minCapacity)
+  val capacity: Int = nextPowerOfTwo(minCapacity)
   assert(capacity >= minCapacity,
     "There is no power of two in Int range that is larger than or equal to the min capacity.")
-  private[this] val mask = capacity - 1
+  private[this] val mask: Int = capacity - 1
 
-  private[this] val circularBuffer = new Array[I](capacity)
-  private[this] var takeIndex = 0
-  private[this] var _size = 0
-  private[this] val emptyTakeAll = Array[I]()
+  private[this] val circularBuffer: Array[I] = new Array[I](capacity)
+  private[this] var takeIndex: Int = 0
+  private[this] var _size: Int = 0
+  private[this] val emptyTakeAll: Array[I] = Array[I]()
   @inline private[this] def putIndex = (takeIndex + size) & mask
   @inline def size: Int = _size
   @inline def isEmpty: Boolean = _size == 0
