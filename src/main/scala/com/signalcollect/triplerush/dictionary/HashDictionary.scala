@@ -16,23 +16,21 @@
 
 package com.signalcollect.triplerush.dictionary
 
-import java.io.ByteArrayOutputStream
-import java.io.DataInput
-import java.io.DataOutput
-import java.io.DataOutputStream
 import java.nio.charset.Charset
 import java.util.Arrays
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.annotation.tailrec
+
+import org.mapdb.{ DataIO, DataInput2, DataOutput2, Serializer }
 import org.mapdb.DBMaker
 import org.mapdb.DBMaker.Maker
-import org.mapdb.DataIO
-import org.mapdb.Serializer
-import org.mapdb.DataInput2
-import org.mapdb.DataOutput2
+
+import net.jpountz.xxhash.XXHashFactory
 
 final object HashDictionary {
 
+  private[this] val hasher = XXHashFactory.fastestInstance().hash32()
   private[this] val utf8 = Charset.forName("UTF-8")
 
   val seed = 2147483647
@@ -45,15 +43,15 @@ final object HashDictionary {
   @inline def hash(bytes: Array[Byte]): Int = {
     val l = bytes.length
     val hash: Long = if (l < fullHashBelow) {
-      DataIO.hash(bytes, 0, l, seed)
+      hasher.hash(bytes, 0, l, seed)
     } else {
       val isProbablyUri = bytes(0) == asciiH
       val prefixHash = if (isProbablyUri) {
-        DataIO.hash(bytes, httpBytes, prefixBytes, seed)
+        hasher.hash(bytes, httpBytes, prefixBytes, seed)
       } else {
-        DataIO.hash(bytes, 0, prefixBytes, seed)
+        hasher.hash(bytes, 0, prefixBytes, seed)
       }
-      val suffixHash = DataIO.hash(bytes, l - suffixBytes, suffixBytes, seed)
+      val suffixHash = hasher.hash(bytes, l - suffixBytes, suffixBytes, seed)
       prefixHash ^ suffixHash
     }
     DataIO.longHash(hash) & Int.MaxValue

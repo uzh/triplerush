@@ -3,8 +3,8 @@ import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
 
 EclipseKeys.withSource := true
 
-val akkaVersion = "2.4.2"
-val mapDbVersion = "3.0.0-M2"
+val akkaVersion = "2.4.3"
+val mapDbVersion = "3.0.0-M4"
 
 val project = Project(
   id = "triplerush",
@@ -13,7 +13,7 @@ val project = Project(
     name := "triplerush",
     version := "10.0.0-SNAPSHOT",
     organization := "com.signalcollect",
-    scalaVersion := "2.11.7",
+    scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
@@ -23,7 +23,8 @@ val project = Project(
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
       "com.typesafe.akka" %% "akka-contrib" % akkaVersion,
       "org.mapdb" % "mapdb" % mapDbVersion,
-      "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.0",
+      "net.jpountz.lz4" % "lz4" % "1.3.0",
+      "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.1",
       "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion % "test",
       "org.scalatest" %% "scalatest" % "2.2.6" % "test",
       "org.scalacheck" %% "scalacheck" % "1.12.5" % "test",
