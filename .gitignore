@@ -52,3 +52,5 @@ lubm1*/
 *history.ntriples.gz
 
 *.prefs
+
+bin/application.conf

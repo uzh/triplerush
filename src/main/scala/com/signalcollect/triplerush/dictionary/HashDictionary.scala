@@ -30,6 +30,7 @@ import org.mapdb.DataIO
 import org.mapdb.Serializer
 import org.mapdb.DataInput2
 import org.mapdb.DataOutput2
+import net.jpountz.xxhash.XXHashFactory
 
 final object HashDictionary {
 
@@ -42,18 +43,20 @@ final object HashDictionary {
   val fullHashBelow = math.max(40, prefixBytes + suffixBytes + httpBytes)
   val asciiH = 'h'.toByte
 
+  val hasher = XXHashFactory.fastestJavaInstance().hash64()
+
   @inline def hash(bytes: Array[Byte]): Int = {
     val l = bytes.length
     val hash: Long = if (l < fullHashBelow) {
-      DataIO.hash(bytes, 0, l, seed)
+      hasher.hash(bytes, 0, l, seed)
     } else {
       val isProbablyUri = bytes(0) == asciiH
       val prefixHash = if (isProbablyUri) {
-        DataIO.hash(bytes, httpBytes, prefixBytes, seed)
+        hasher.hash(bytes, httpBytes, prefixBytes, seed)
       } else {
-        DataIO.hash(bytes, 0, prefixBytes, seed)
+        hasher.hash(bytes, 0, prefixBytes, seed)
       }
-      val suffixHash = DataIO.hash(bytes, l - suffixBytes, suffixBytes, seed)
+      val suffixHash = hasher.hash(bytes, l - suffixBytes, suffixBytes, seed)
       prefixHash ^ suffixHash
     }
     DataIO.longHash(hash) & Int.MaxValue
